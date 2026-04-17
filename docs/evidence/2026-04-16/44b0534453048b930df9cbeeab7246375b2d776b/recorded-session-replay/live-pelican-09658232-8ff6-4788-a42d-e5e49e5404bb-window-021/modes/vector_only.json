@@ -1,0 +1,114 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-94aff36e"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-28T00:13:07.492Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-ea11824c529e92d6901fc6b1db59dc08bf420ffb5c471118dda37a29daa95f3d"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-94aff36e",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-18a79d65870c1039fff71edfa4f4388e09a4851ef5d50fa06483a668534af2e6",
+      "selectedContextIds": [
+        "pack-94aff36e:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+        "pack-94aff36e:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+        "pack-94aff36e:pointer-aware-init"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: d4fe5adc-c09d-4b95-86b2-b106a2a97c64] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Training is still in progress — member 9/15 is running now. Each member takes ~160s, so ~16 minutes remaining. Let me check if the runs file is elsewhere: Stats: runtime 15s • tokens 450 (in 5 / out 445) • prompt/cache 17.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Kee.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 09ac4735-5e22-4e2d-a190-4b942c71ef51] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Good — HEARTBEAT.md confirms this is a combined instance (TFT already done, GBM training in progress). Training was at member 5/15 at 3:27 PM, now at member 12/15 at 3:47 PM. ~160s/member means ~3 more members × ~160s ≈ 8 minutes left. It'll finish around 3:55 PM. Still training — 12/15 members complete, 3 to go. ETA ~4:00 PM PT. Let me update the heartbeat and stay quie.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+      ],
+      "eventExportDigest": "sha256-39e6dc6059214740695d976c36e8314d501c95e9bd9ca1c3054fc02ff15d71e2",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/quant-research",
+        "/ensemble_production_gbm_v5_20260228.pkl',"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/quant-research",
+        "/ensemble_production_gbm_v5_20260228.pkl',"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.516,
+        "routeSelectionMs": 5.835,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.68,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-28T00:13:07.492Z"
+      },
+      "warnings": []
+    }
+  ]
+}

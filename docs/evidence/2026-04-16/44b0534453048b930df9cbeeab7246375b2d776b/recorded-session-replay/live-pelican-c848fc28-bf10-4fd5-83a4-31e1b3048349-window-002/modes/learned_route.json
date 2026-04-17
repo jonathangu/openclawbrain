@@ -1,0 +1,116 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 70,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-464c107b"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-464c107b",
+    "frozenEvalRouterIdentity": "pack-464c107b:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-11T22:17:13.840Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-62c3eff7c7f855bee03c7745e40d9f5600b8c92791347ec63989105ff32356fd"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-464c107b",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-464c107b:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-464c107b:route_fn",
+      "selectionDigest": "sha256-6434eeced960c60f1b73d6db68ff5d042546ff6afd8c2452ef96310680fb7f12",
+      "selectedContextIds": [
+        "pack-464c107b:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
+        "pack-464c107b:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
+        "pack-464c107b:pointer-aware-init"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-B training-contract multi-horizon lane in /Users/guclaw/worktrees/quant-research/202-mh1b-training. Goal: - make GBM/TFT consume multi-horizon rows explicitly - ensure target_dte is active in training/panel paths and artifact/reporting surfaces - keep actual_exp_dte and dte_gap_abs out of model feature inputs - run focused tests for retrai.... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: assistant: I found one contract gap worth fixing, the GBM/TFT feature selectors would still admit a couple of expiry metadata columns if they showed up. I’m tightening that now, then rerunning the focused tests. ToolCall exec {\"command\": \"python3 -m pytest tests/test_train_join_utils.py tests/test_retrain_pipeline_embeddings.py tests/test_tft_v11_bootstrap_panel.py tests/test_tft_v11_bootstrap_embedding_contract.py tests/test_retrain_honest_c. Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-11-cron-removal.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/2026-04-11.md, tasks.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
+      ],
+      "eventExportDigest": "sha256-e42416a0aaaa29d3414bed64d8806a4d4f0abe3a275976746cb0a2b994b8fb51",
+      "expectedContextPhrases": [
+        "/Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py",
+        "/Users/guclaw/worktrees/quant-research/202-mh1b-train"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [
+        "/Users/guclaw/worktrees/quant-research/202-mh1b-train"
+      ],
+      "missedPhrases": [
+        "/Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py"
+      ],
+      "qualityScore": 70,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.318,
+        "routeSelectionMs": 5.967,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.348,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-11T22:17:13.840Z"
+      },
+      "warnings": []
+    }
+  ]
+}

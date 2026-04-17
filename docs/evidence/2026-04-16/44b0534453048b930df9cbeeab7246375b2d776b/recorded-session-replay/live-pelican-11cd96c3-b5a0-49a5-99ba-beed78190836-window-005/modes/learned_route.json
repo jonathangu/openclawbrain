@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-5dd06b32"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-5dd06b32",
+    "frozenEvalRouterIdentity": "pack-5dd06b32:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-12T14:07:40.094Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-f347118be168f72198953c5ed967b9f01a1a55d522f5c22e24b304187d876aaf"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-5dd06b32",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-5dd06b32:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-5dd06b32:route_fn",
+      "selectionDigest": "sha256-0d7d380b391f96ee52dcd239b11235a7f24021cf5b3b7a015dc07871dcca5d06",
+      "selectedContextIds": [
+        "pack-5dd06b32:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-3:feedback",
+        "pack-5dd06b32:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-4:feedback",
+        "pack-5dd06b32:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-5:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 6:59 AM (America/Los_Angeles) / 2026-04-12 13:59 UTC. Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 6:59 AM (America/Los_Angeles) / 2026-04-12 13:59 UTC. Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 6:59 AM (America/Los_Angeles) / 2026-04-12 13:59 UTC. Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-5:interaction."
+      ],
+      "eventExportDigest": "sha256-43dce43da435bff39b3f7f8a35eebd79643f44b6f2552d3c2b3f12c4dce7762c",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/pelican/runtime/quant-research/embed_full_text.py')\\ntext=path.read_text()\\nfor"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/pelican/runtime/quant-research/embed_full_text.py')\\ntext=path.read_text()\\nfor"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.069,
+        "routeSelectionMs": 5.845,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.222,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-12T14:07:40.094Z"
+      },
+      "warnings": []
+    }
+  ]
+}

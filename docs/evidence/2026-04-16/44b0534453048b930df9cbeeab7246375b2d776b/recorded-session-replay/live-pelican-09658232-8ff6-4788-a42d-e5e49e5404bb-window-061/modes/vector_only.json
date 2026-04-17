@@ -1,0 +1,112 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-01130c59"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-28T02:32:19.135Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-57f29037581ff2b0f983d435e79caf623abcf516d004aebca8aaeb347469e462"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-01130c59",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-244b687906fab43c7662abe0d17796c7faf9b75d01c556b88b3330d952fdd481",
+      "selectedContextIds": [
+        "pack-01130c59:pointer-aware-init",
+        "pack-01130c59:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
+        "pack-01130c59:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:47:45 PST] Exec failed (amber-ot, signal SIGTERM) :: === quant-research (non-archive, non-.git) === System: [2026-02-27 17:47:59 PST] Exec failed (tide-sum, signal SIGTERM) Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Good — instance is running in us-west-2. Let me check if the small files uploaded and then push the large files:\" } ``` Stop this. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:55:36 PST] Exec failed (clear-me, signal SIGTERM) :: Relay: i-0c36de1b7a5db73e0 IP: 54.177.174.55 System: [2026-02-27 17:55:51 PST] Exec completed (nova-blo, code 255) :: ssh: connect to host 54.177.174.55 port 22: Operation timed out System: [2026-02-27 17:57:24 PST] Exec completed (crisp-sh, code 0) :: small files directly to S3 via relay === ✓ retrain_honest.py ✓ model_utils.py ✓ model_artifacts.py ✓ ts_utils.py ✓ market_calendar.py ✓ ticker_universe.py ✓ ticker_univ.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
+      ],
+      "eventExportDigest": "sha256-a586aa97413c79066ef8851d78cba6a5e73c8408045bebb485b4edca4a4ac09c",
+      "expectedContextPhrases": [
+        "//polygon-data-collection/tft-training/full_feature_matrix_v4.parquet"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "//polygon-data-collection/tft-training/full_feature_matrix_v4.parquet"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.256,
+        "routeSelectionMs": 4.625,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.63,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-28T02:32:19.135Z"
+      },
+      "warnings": []
+    }
+  ]
+}

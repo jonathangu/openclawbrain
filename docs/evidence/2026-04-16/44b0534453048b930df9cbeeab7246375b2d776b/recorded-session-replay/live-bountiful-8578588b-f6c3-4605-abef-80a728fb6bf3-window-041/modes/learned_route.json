@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-1ef29932"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-1ef29932",
+    "frozenEvalRouterIdentity": "pack-1ef29932:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/bountiful/session-window:memory_compiled",
+        "live/bountiful/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/bountiful/session-window",
+      "freshestCreatedAt": "2026-04-11T09:35:04.058Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-906eaa62fc71a4cb444ea6f557253dc28c30fb014d38632aeb70afeed5f7433b"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-1ef29932",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-1ef29932:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-1ef29932:route_fn",
+      "selectionDigest": "sha256-5ac731f7b640f86925edf8d322736ad5f92d86b0a99a16e4e32c1e053b3eb6d7",
+      "selectedContextIds": [
+        "pack-1ef29932:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:feedback",
+        "pack-1ef29932:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:feedback",
+        "pack-1ef29932:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/workspace-bountiful/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7th, 2026 — 12:01 PM (America/Los_Angeles) / 2026-04-07 19:01 UTC. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction."
+      ],
+      "eventExportDigest": "sha256-5ea6359f96cf2eda7c2e56d807758664838b7e151583b087614d7eaccfda3a0d",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 4.703,
+        "routeSelectionMs": 2.848,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 1.853,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/bountiful/session-window:memory_compiled",
+          "live/bountiful/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/bountiful/session-window",
+        "freshestCreatedAt": "2026-04-11T09:35:04.058Z"
+      },
+      "warnings": []
+    }
+  ]
+}

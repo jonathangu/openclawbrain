@@ -1,0 +1,112 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-4e82178d"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/bountiful/session-window:memory_compiled",
+        "live/bountiful/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/bountiful/session-window",
+      "freshestCreatedAt": "2026-04-11T09:35:04.058Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-0a5ecfc2ecf83c6a831c84f16a4b3c136f6c7e403b77a91e034ca749421f0f13"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-4e82178d",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-f7ce9264e9c8f28b695f91afb890de443abbb8c1e1c81bce004f552dc6d1b0c7",
+      "selectedContextIds": [
+        "pack-4e82178d:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:feedback",
+        "pack-4e82178d:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+        "pack-4e82178d:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15822\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 12:57 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Lets returns to the best way to use heartbeat. Mostly yes. Your writeup is substantively correct, with a few important corrections. The current OpenClaw docs say Heartbeat is the mechanism for periodic proactive.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15824\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 12:58 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Do it turn on the heartbeat for us. If all tasks are finished then don't do anything.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/workspace-bountiful/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7th, 2026 — 12:01 PM (America/Los_Angeles) / 2026-04-07 19:01 UTC. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-2cbe431689438bce0804d2ef0c337970546d1169c97e04d9193e2b0cdcfe985b",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace-bountiful/BOOT.md\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace-bountiful/BOOT.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 3.322,
+        "routeSelectionMs": 2.049,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 1.271,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/bountiful/session-window:memory_compiled",
+          "live/bountiful/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/bountiful/session-window",
+        "freshestCreatedAt": "2026-04-11T09:35:04.058Z"
+      },
+      "warnings": []
+    }
+  ]
+}

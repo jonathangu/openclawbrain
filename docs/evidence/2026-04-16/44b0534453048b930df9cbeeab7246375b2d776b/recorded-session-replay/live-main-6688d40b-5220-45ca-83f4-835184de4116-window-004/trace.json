@@ -1,0 +1,91 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-004",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-15T01:08:30.602Z",
+  "bundleBuiltAt": "2026-04-15T01:36:55.372Z",
+  "agentId": "main",
+  "sessionId": "6688d40b-5220-45ca-83f4-835184de4116",
+  "channel": "live-session",
+  "sourceStream": "live/main/session-window",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/6688d40b-5220-45ca-83f4-835184de4116.jsonl"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-main",
+    "snapshotId": "session-6688d40b-5220-45ca-83f4-835184de4116",
+    "capturedAt": "2026-04-15T01:08:30.602Z",
+    "rootDir": "/Users/guclaw/.openclaw/workspace",
+    "revision": "6688d40b-5220-45ca-83f4-835184de4116",
+    "labels": [
+      "live-history",
+      "main",
+      "interactive",
+      "tool-using-assistant"
+    ]
+  },
+  "seedBuiltAt": "2026-04-15T01:08:41.881Z",
+  "seedActivatedAt": "2026-04-15T01:30:38.502Z",
+  "seedCues": [
+    {
+      "cueId": "cue-1",
+      "createdAt": "2026-04-15T01:08:41.881Z",
+      "content": "user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths - they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"23568\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:03 PDT\" } ``` Sender (untr...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-2",
+      "createdAt": "2026-04-15T01:11:41.941Z",
+      "content": "assistant: I’m here. I dug into the silence. The issue was not Telegram delivery. Pelican got wedged in a long tool/error loop this morning, with context-overflow compaction plus repeated exec-preflight failures, so it kept working internally and never surfaced a clean reply. Current truth is narrower now: label single-truth is fixed, stale status-writer truth is fixed, and the remaining blocker is the embeddings coverage gap for canonical training-input readiness. I’m continuing on that exact seam.",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-3",
+      "createdAt": "2026-04-15T01:11:52.238Z",
+      "content": "assistant: Yep, I found it. Pelican did not lose Telegram. It got wedged in a long internal tool loop this morning, specifically context-overflow compaction plus repeated exec-preflight failures, so it kept grinding and never surfaced a clean chat reply. What I did: - confirmed Telegram/Pelican transport is healthy now - checked the Pelican session and gateway logs - sent a fresh reply into the Pelican chat just now Current Pelican truth: - label single-truth split is fixed - stale status-writer truth i...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-4",
+      "createdAt": "2026-04-15T01:11:52.898Z",
+      "content": "assistant: Yep, I found it. Pelican did not lose Telegram. It got wedged in a long internal tool loop this morning, specifically context-overflow compaction plus repeated exec-preflight failures, so it kept grinding and never surfaced a clean chat reply. What I did: - confirmed Telegram/Pelican transport is healthy now - checked the Pelican session and gateway logs - sent a fresh reply into the Pelican chat just now Current Pelican truth: - label single-truth split is fixed - stale status-writer truth i...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-5",
+      "createdAt": "2026-04-15T01:14:09.900Z",
+      "content": "user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md 1. Read `TASKS.md`. 2. Confirm the principal orchestrator role; `TASKS.md` is single-writer. 3. Resume the highest-priority unfinished unblocked principal task. 4. Restore task state from `TASKS.md`, artifacts, status files, and repo/worktree state. 5. If retry is safe, relaunch stale work; otherwise record the blocker. 6. If merge, test, deploy, or closeout is the next ready phase, do it next. 7. Before edi...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-6",
+      "createdAt": "2026-04-15T01:30:38.502Z",
+      "content": "user: Run the following periodic tasks (only those due based on their intervals): - project-scan: Reread TASKS.md. If an active principal task exists, inspect only the relevant project files needed to advance or close it. If none exists, reply HEARTBEAT_OK. After completing all due tasks, reply HEARTBEAT_OK. Current time: Tuesday, April 14th, 2026 - 6:30 PM (America/Los_Angeles) / 2026-04-15 01:30 UTC",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "createdAt": "2026-04-15T01:36:44.238Z",
+      "deliveredAt": "2026-04-15T01:36:55.372Z",
+      "userMessage": "Conversation info (untrusted metadata): ```json { \"message_id\": \"23573\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:36 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Pelican is down again",
+      "runtimeHints": [
+        "8518484672",
+        "json { \"message_id\": \"23573\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:36 PDT\" }",
+        "Sender (untrusted metadata):",
+        "json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" }"
+      ],
+      "expectedContextPhrases": [
+        "minscore query pelican down",
+        "pelican down prior issue",
+        "query pelican down prior"
+      ]
+    }
+  ]
+}

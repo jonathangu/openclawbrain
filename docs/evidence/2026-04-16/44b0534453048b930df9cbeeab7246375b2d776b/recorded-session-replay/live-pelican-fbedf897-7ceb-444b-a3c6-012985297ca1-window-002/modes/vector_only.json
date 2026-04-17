@@ -1,0 +1,112 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-0680ab04"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-08T13:58:42.832Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-74bdfd2378d9b7ffade417718e7f65d54503dfc52697ed8e4f09e2a4bc11cdc4"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-0680ab04",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-6d119adca2f2cb113d69d76b87d88b7f774669911d42d0c8b52375e9797f6ecb",
+      "selectedContextIds": [
+        "pack-0680ab04:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback",
+        "pack-0680ab04:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-5:feedback",
+        "pack-0680ab04:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-6:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Resolve the active cherry-pick conflict for PEL-087 in /Users/guclaw/worktrees/pelican/18. Context: branch pel-087-112x-113x-harvest has already integrated 112a (occupancy) and 112b (overlap penalties). Cherry-picking 112c (replacement optimizer, commit bc4b392 from /Users/guclaw/worktrees/pelican/13) is in progress and conflicts mainly in run_once.py plus BUGFIX_R.... Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: assistant: The current cherry-pick is resolved and staged. I’m continuing this commit now, then I’ll stop at 112c and report the exact result. ToolCall exec {\"command\": \"git cherry-pick --continue\", \"timeout\": 60, \"workdir\": \"/Users/guclaw/worktrees/pelican/18\", \"yieldMs\": 1000}. Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: assistant: Resolved the 112c cherry-pick and completed it cleanly. What I changed: - Merged `run_once.py` so it preserves: - 112a occupancy handling - 112b overlap-penalty logging/surfaces - 112c incumbent replacement logic - Kept `BUGFIX_REPORT.md` non-blocking with the current branch version. - Added the replacement test coverage in `tests/test_run_once_incumbent_replacement.py`. - Wrote `MERGE_NOTE_112c.md` with the result. Proof run: - `pytest -q tests/test_run_once_concentration.py::test_late_portf.... Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-6:interaction."
+      ],
+      "eventExportDigest": "sha256-1b520600085a24645696204c116a1a7df7b42cdabdcf6e5d8e12e11a5876087b",
+      "expectedContextPhrases": [
+        "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.272,
+        "routeSelectionMs": 4.597,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.673,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-08T13:58:42.832Z"
+      },
+      "warnings": []
+    }
+  ]
+}

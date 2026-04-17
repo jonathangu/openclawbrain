@@ -1,0 +1,112 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-856b6272"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-03T16:10:39.359Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-f35bf4e1311e4682e82cf41d4b351b871a760b095f9453de7411d3ef098e8010"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-856b6272",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-1022b3a90b26da3d391d27ec8cfaba38bdb0fd19b557cbd8afc9bdceecc17a17",
+      "selectedContextIds": [
+        "pack-856b6272:workspace",
+        "pack-856b6272:event:f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:feedback",
+        "pack-856b6272:event:f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction"
+      ],
+      "selectedContextTexts": [
+        "Workspace snapshot session-f554f872-80dc-4165-9326-c85c48df2834 for ws-main captured at 2026-04-03T16:07:51.092Z with revision f554f872-80dc-4165-9326-c85c48df2834.",
+        "Teaching feedback on live-session session f554f872-80dc-4165-9326-c85c48df2834-seed: assistant: ✅ New session started · model: openai-codex/gpt-5.4. Related interaction: f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction.",
+        "Interaction operator_override on live-session session f554f872-80dc-4165-9326-c85c48df2834-seed. Message: cue-1-seed-message."
+      ],
+      "eventExportDigest": "sha256-1136ccb170bfaca43afc8766ba962f6eb9175781bab2bc2759b0e0259d5b77b6",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/BOOT.md\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/BOOT.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 2.217,
+        "routeSelectionMs": 1.39,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 0.825,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-03T16:10:39.359Z"
+      },
+      "warnings": []
+    }
+  ]
+}

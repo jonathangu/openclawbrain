@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-100f7f8f"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-100f7f8f",
+    "frozenEvalRouterIdentity": "pack-100f7f8f:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-28T06:04:02.061Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-a28a4febca81da2f74c8f1206c2e09b69c09f3ddb8bb37a594515f974d4099c1"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-100f7f8f",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-100f7f8f:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-100f7f8f:route_fn",
+      "selectionDigest": "sha256-6380ccbb2c278028222f8685be9ecae894161d7afd9797a76659f96646bd15d9",
+      "selectedContextIds": [
+        "pack-100f7f8f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
+        "pack-100f7f8f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
+        "pack-100f7f8f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 6b291565-3e5a-42bf-a999-00f4d9862b45] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the harvester pipeline and classified Jon's substantive messages from the last 2 hours. Findings below (plain list: classification → extracted rule/pattern/scope → tag). I updated docs/jon-model.md (Layer 3) and docs/quant-lessons.md with the new relaunch-gate (paths at bottom). No regression-level alert to Jon (nothing new that requires immediate escalation). .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 0db80b90-5eeb-46c9-9eee-40efce5153b2] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the extraction pipeline and classified Jon's substantive messages from the last 2 hours. I also checked memory (today + yesterday) for context. Memory check - memory/2026-02-27.md and memory/2026-02-26.md inspected (no contradictory policy found). No prior memory snippet prevented making these gates. What I ran - Command executed: python3 /Users/guclaw/.opencla.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 843fbf03-ac7e-4872-8641-fea100aa31ce] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the extraction pipeline (last 2h). Findings — substantive messages from Jon (sender:8518484672): 1) DIRECTIVE → Feature parity & days_to_exp handling [REF] - Extracted scope + conditions: Enforce feature parity between training and inference. For time-varying features (eg. days_to_exp): only include at inference if it was used during training; if used, require .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction."
+      ],
+      "eventExportDigest": "sha256-d6f343f338a36b549a4be3ad795374e609716d62c866f58ad8651455dc7fa53f",
+      "expectedContextPhrases": [
+        "no_reply"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "no_reply"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 10.035,
+        "routeSelectionMs": 6.736,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.298,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-28T06:04:02.061Z"
+      },
+      "warnings": []
+    }
+  ]
+}

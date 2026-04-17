@@ -1,0 +1,3886 @@
+{
+  "contract": "recorded_session_replay_proof_lane_closeout.v1",
+  "hashAlgorithm": "sha256",
+  "laneDir": "_lane",
+  "sourceManifest": {
+    "contract": "recorded_session_replay_proof_lane_source_manifest.v1",
+    "provided": true,
+    "manifestId": "extracted-semantic-rich-live-535",
+    "manifestContract": "frozen_recorded_session_eval_manifest.v1",
+    "manifestDigest": "sha256-26eec14b9bb8e8c81bd208b65d70f2b4fbbcaa230101db7c212825657218686a"
+  },
+  "verdict": {
+    "verdict": "success_and_proven",
+    "severity": "none",
+    "why": "403/403 replay proof bundles generated successfully and produced deterministic aggregate outputs."
+  },
+  "requestedTraceCount": 403,
+  "successfulTraceCount": 403,
+  "failedTraceCount": 0,
+  "failedTraceIds": [],
+  "modeOrder": [
+    "no_brain",
+    "vector_only",
+    "graph_prior_only",
+    "learned_route"
+  ],
+  "scorecard": {
+    "candidateMode": "learned_route",
+    "baselineMode": "graph_prior_only",
+    "floorMode": "no_brain",
+    "comparableTraceCount": 403,
+    "comparableTurnCount": 403,
+    "traceOutcomeVsBaseline": {
+      "betterCount": 6,
+      "tiedCount": 397,
+      "worseCount": 0,
+      "betterRate": 0.014888,
+      "tieRate": 0.985112,
+      "worseRate": 0,
+      "totalCount": 403
+    },
+    "turnOutcomeVsBaseline": {
+      "betterCount": 6,
+      "tiedCount": 397,
+      "worseCount": 0,
+      "betterRate": 0.014888,
+      "tieRate": 0.985112,
+      "worseRate": 0,
+      "totalCount": 403
+    },
+    "traceTieOrBetterVsBaseline": {
+      "count": 403,
+      "rate": 1,
+      "totalCount": 403
+    },
+    "turnTieOrBetterVsBaseline": {
+      "count": 403,
+      "rate": 1,
+      "totalCount": 403
+    },
+    "regressionVsBaseline": {
+      "count": 0,
+      "rate": 0,
+      "totalCount": 403
+    },
+    "regressionVsFloor": {
+      "count": 0,
+      "rate": 0,
+      "totalCount": 403
+    },
+    "criticalRegressionCount": 0,
+    "requiredContextRecall": {
+      "available": true,
+      "candidateMode": "learned_route",
+      "baselineMode": "graph_prior_only",
+      "candidatePhraseHitCount": 61,
+      "candidatePhraseCount": 832,
+      "candidateRate": 0.073317,
+      "baselinePhraseHitCount": 54,
+      "baselinePhraseCount": 832,
+      "baselineRate": 0.064904,
+      "delta": 0.008413,
+      "summary": "learned_route recalled 61/832 required-context phrases vs graph_prior_only 54/832"
+    },
+    "correctionAbsorption": {
+      "available": false,
+      "observedFeedbackTurnCount": 0,
+      "observedNonApprovalFeedbackTurnCount": 0,
+      "summary": "correction absorption is unavailable in replay-lane outputs because no feedback-bearing turns were recorded here"
+    },
+    "activationPrecision": {
+      "available": true,
+      "observedTurnCount": 403,
+      "activationCount": 403,
+      "beneficialActivationCount": 6,
+      "precision": 0.014888,
+      "sourceCounts": [
+        {
+          "source": "learned_route_fn",
+          "count": 403
+        }
+      ],
+      "summary": "explicit learned-route activation precision is 6/403 across 403 observed candidate turns",
+      "limitations": [
+        "explicit activation is currently defined by emitted activationTaken on learned_route turns",
+        "activation recall is still blocked because replay outputs do not carry an independent beneficial-opportunity oracle"
+      ]
+    },
+    "activationPrecisionProxy": {
+      "available": true,
+      "activationCount": 403,
+      "beneficialActivationCount": 6,
+      "precision": 0.014888,
+      "activationDefinition": "usedLearnedRouteFn OR selectionDigest changed vs graph_prior_only OR activePackId changed vs graph_prior_only",
+      "summary": "selection-divergence proxy activation precision is 6/403 against graph_prior_only",
+      "limitations": [
+        "this is a proxy for nontrivial activation, not a true emitted router activation event",
+        "selectionDigest divergence can overcount activation when learned_route mode never used a learned route function"
+      ]
+    },
+    "successAdjustedEconomics": {
+      "available": true,
+      "successUnit": "validated_trace",
+      "candidateMode": "learned_route",
+      "baselineMode": "graph_prior_only",
+      "successCount": 6,
+      "candidateEstimatedPromptTokensPerSuccess": 393,
+      "baselineEstimatedPromptTokensPerSuccess": 253.666667,
+      "candidateEstimatedPromptCostUsdPerSuccess": 0.000491,
+      "baselineEstimatedPromptCostUsdPerSuccess": 0.000317,
+      "promptTokenDeltaCandidateMinusBaseline": 139.333333,
+      "promptCostUsdDeltaCandidateMinusBaseline": 0.000174,
+      "candidateServePathLatencyMsPerSuccess": 10,
+      "baselineServePathLatencyMsPerSuccess": 6,
+      "servePathLatencyMsDeltaCandidateMinusBaseline": 4,
+      "summary": "learned_route used 393 estimated prompt tokens, 0.000491 estimated prompt USD, and 10 ms serve-path latency per incremental win vs graph_prior_only 253.666667, 0.000317, and 6",
+      "limitations": [
+        "prompt-token values are estimated from selected-context chars using the default 4 chars/token proxy",
+        "prompt USD values are estimated from scripts/pricing-table.v1.json when that pricing table is available",
+        "latency values cover the serve-path hot path only and exclude background work"
+      ]
+    },
+    "failOpen": {
+      "available": true,
+      "degradedTurnCount": 0,
+      "acceptableDegradedTurnCount": 0,
+      "catastrophicDegradedTurnCount": 0,
+      "degradedTurnRate": 0,
+      "acceptableDegradedTurnRate": 0,
+      "catastrophicDegradedTurnRate": 0,
+      "clipRate": 0,
+      "failOpenRate": 0,
+      "summary": "observed 0/403 degraded learned_route turns in this replay lane"
+    },
+    "diagnostics": {
+      "candidateMeanQualityScore": 43.995037,
+      "baselineMeanQualityScore": 43.424318,
+      "floorMeanQualityScore": 0,
+      "candidateMinusBaselineMeanQualityScore": 0.570719,
+      "candidateMinusFloorMeanQualityScore": 43.995037,
+      "winnerModeCounts": [
+        {
+          "mode": "no_brain",
+          "rankedWinnerCount": 0,
+          "sharedTopScoreTraceCount": 0
+        },
+        {
+          "mode": "vector_only",
+          "rankedWinnerCount": 2,
+          "sharedTopScoreTraceCount": 403
+        },
+        {
+          "mode": "graph_prior_only",
+          "rankedWinnerCount": 395,
+          "sharedTopScoreTraceCount": 395
+        },
+        {
+          "mode": "learned_route",
+          "rankedWinnerCount": 6,
+          "sharedTopScoreTraceCount": 401
+        }
+      ]
+    }
+  },
+  "winnerModeCounts": [
+    {
+      "mode": "no_brain",
+      "rankedWinnerCount": 0,
+      "sharedTopScoreTraceCount": 0
+    },
+    {
+      "mode": "vector_only",
+      "rankedWinnerCount": 2,
+      "sharedTopScoreTraceCount": 403
+    },
+    {
+      "mode": "graph_prior_only",
+      "rankedWinnerCount": 395,
+      "sharedTopScoreTraceCount": 395
+    },
+    {
+      "mode": "learned_route",
+      "rankedWinnerCount": 6,
+      "sharedTopScoreTraceCount": 401
+    }
+  ],
+  "traceHashes": [
+    {
+      "traceId": "live-bountiful-15d14a17-411f-4c56-9a11-721dd85132c4-window-002",
+      "bundleHash": "sha256-5e2e7200a9a9945b18f2b9231053293f049fbcf810ed701c4e1f28b40701f58c",
+      "scoreHash": "sha256-edad5498eb9f8f94e1a40f855ab97b38068847bc44ea3e8ceea216d141cb3b21",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-2d41cb3b-c723-4429-9992-37a6a6e30bdc-window-002",
+      "bundleHash": "sha256-c322782281673baafdcbca431aa2807f31099eb158d8be7408b5a838725063b7",
+      "scoreHash": "sha256-ca383356bb66e3e455d52fac6915b81b4a1ef591e88f99aadffda5e52ac01459",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-2d41cb3b-c723-4429-9992-37a6a6e30bdc-window-003",
+      "bundleHash": "sha256-75a14ec5fbf1b53f8c68c3e14fabdfa616bed3ed9bd614f640b188cbe46662cb",
+      "scoreHash": "sha256-a76d4c440d7175a4e1052413c402c2476bdaf5d1a1937e3c593d3491b02f8e0f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 70,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-002",
+      "bundleHash": "sha256-db3ee089aa82dc19d1b2d1ab921ceb2d7f14a891f47c44aa0b584a40def52010",
+      "scoreHash": "sha256-9be37e7fe4f2ee974d323e99c7017606e1e57e409a2a380cae0d4485e4214dd4",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 80,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-003",
+      "bundleHash": "sha256-270b3a0ae225f2e7b7cb06ffa8d3c6f8996a70ee026cffbebcda5dc411f9b54a",
+      "scoreHash": "sha256-93a5defdba8f00241dff694061c89b52607608403d925b03f4f93f878685996b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-004",
+      "bundleHash": "sha256-7231df51a4d54207690da499595c9a2a5259531ae899dc0cbb63acb6d267115b",
+      "scoreHash": "sha256-60b4d0a399e5c77b86aa28ff4484e488191b78944f0279b36542c5b7156b8fb6",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-005",
+      "bundleHash": "sha256-e90bf4d5c191055e0e53c6e2c559496700149560b3a94b94b8920e0705cd2487",
+      "scoreHash": "sha256-4b81f8044d41797faa07b86e7a519954d69317e58568a0185f836164edc6a358",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-006",
+      "bundleHash": "sha256-1544db054e9fccc311a548200c8a034f64dfe3433b59b0ba747f3c64bc5d0020",
+      "scoreHash": "sha256-73c36caa30c0c70079f53f4243f2b1e9f2fbef53e9ae75d3365b1376c6e0f9b8",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-007",
+      "bundleHash": "sha256-f1de7ef850a6a8faff402a198d7dc8f9c6d12349875c7f4dcb3d494723275676",
+      "scoreHash": "sha256-9f10a863469cf7d26675518b7c4d8e035cd08156fc9423f52dac7c8cec6218e5",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-008",
+      "bundleHash": "sha256-a45fb63c60367034d01a618fe510f1736a588db44660d079c979c07a9698a588",
+      "scoreHash": "sha256-f13d68fa5e102e6c62c6df14f6dd15fc6a3984a5f92214bd276ac243e772ea91",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-009",
+      "bundleHash": "sha256-ffecddb5ee66db562acc92f9bc15142e9698705d53304e24b2e400de5ce5030a",
+      "scoreHash": "sha256-bf511b12968fe8f9829a1040f83113db9d953ab07fcd741d0970d51311d8fc95",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-010",
+      "bundleHash": "sha256-bd6ebb282e1a85f94ead2c1e5a177314015cdec1e0ef235f9e5ced8c948346a6",
+      "scoreHash": "sha256-338e0218c444347daf094ca0c4bcdaa0ffb7b5973e14d647e8adfdaf1715e524",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-002",
+      "bundleHash": "sha256-347767059473ab004a38b670a838864619dcaed77becccd5febd7022df85b865",
+      "scoreHash": "sha256-aa0126960148316d00676d56449adbbb3890c7779f0f994befceae703233a63f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-003",
+      "bundleHash": "sha256-a3dc4a84a70a5dcef75d0e87e521fa1e4c9e9c1785c987359c6948860f2bc4dc",
+      "scoreHash": "sha256-f0ee407b20c567749d668b845bacbe759d07c5c45cf0c1bb9b175fafad85bdef",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-004",
+      "bundleHash": "sha256-43598475d878ae349ddeed6d6ba44290f7037bf0d777925d81207fb188f599dd",
+      "scoreHash": "sha256-a601d092837c4189428e81de0573b034ad850a7182940011ca529a3404a529d4",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-005",
+      "bundleHash": "sha256-e58cbcaf220769f5302f771461032a69a4da84667962254e1ced7290820ea082",
+      "scoreHash": "sha256-14aed2475058cc31777b3644109d928b4c2640252a61b70f4a2e78450eb351b9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-006",
+      "bundleHash": "sha256-25f984fd5f059134a78cb928e3e7a5507b68adec333d52c75e7f3198256daed8",
+      "scoreHash": "sha256-3ade80b51c2397b70012698e9741ea7779eaae3ad22a5c7bfc06526e0ca2e681",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-007",
+      "bundleHash": "sha256-fd63879e0bbf98fdecc7a67bc3292d4833a378ef26e9b74d4d8d893a51ec633e",
+      "scoreHash": "sha256-a057eeb69ee0c429eeda815ffa5b3ecc08cdb7dda70d02a6044086d0acc43f81",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-008",
+      "bundleHash": "sha256-23780c431752bb60f000233f3fc5b49cf6a81fcba5aa95a71118ffcd164ee057",
+      "scoreHash": "sha256-f7d079c8c6f713910470e3d239fe42f215181e7b0d675135e0aeb11a2ee598b7",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-009",
+      "bundleHash": "sha256-69edd82667234da523203c3b38056a7a65147a71fc88dadf33f2dd14afd50d61",
+      "scoreHash": "sha256-d9e596bc0c32f0233d64e980eff81de138f1d767b42396190ea7019698200b1e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-010",
+      "bundleHash": "sha256-ba975c73d01fa45668677e3bf660dd1eab6e927f6c74ed7159d99a2a0d135be9",
+      "scoreHash": "sha256-5390743af60108cbc028a123b9fdb31117ed08a995042217afd9a7604d07e20e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-011",
+      "bundleHash": "sha256-a189c15a28798c07bbb4f3fba1e2987f3f630484532516dc94a981cc53d8f7b6",
+      "scoreHash": "sha256-4a145559c8f8a8364881e5e8acd831cb5c773bba16711df9e2037170fc9b9fef",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-012",
+      "bundleHash": "sha256-df0673383542a98047cd4c58e0b27951db022a1007e8dc567adcdac1cb2c902b",
+      "scoreHash": "sha256-ac8038cc19067622fe4ad6b3df92acc38f9451c4d70bc256e5b5c67db45c7bcd",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-013",
+      "bundleHash": "sha256-54bcf737478ca4728cab9031630d5d15561137fca938fb4d8babce045fcd9049",
+      "scoreHash": "sha256-b55d39d215c38901d5c2c9fbc26cf5b71a6ea8e3490bbb85e18dc8eae03f941b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-014",
+      "bundleHash": "sha256-7b039d4ca9a13d0c04f37fa6f9cad387cf45d9756c22be8bb702722b32c21d9f",
+      "scoreHash": "sha256-299a75189dc80e3502d6036e5e5a74fa440c407dc022b9c8b1b2f1a7271b8b6a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-015",
+      "bundleHash": "sha256-1adb96d59f0d10a0063aa7359ab23231c90946292bab7f3de486f83019c11b30",
+      "scoreHash": "sha256-ce8ef2228eeb1ffe286b5191d94082cbf7e79305de83d64d33ce4b82c79d976a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-016",
+      "bundleHash": "sha256-9b5b86a3b091e324b59e953de51a6bc9c330e47fed97e86aa8b975450a296e6e",
+      "scoreHash": "sha256-9a774fdde32aed10eec4dc00bdc28ef6e44e053241725623bbfd26e7b2453a01",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-017",
+      "bundleHash": "sha256-07ccc860857746aa4d1506dc2ac141bc1d1cdf505c23826cc9a21d5dc6db4f1f",
+      "scoreHash": "sha256-77ad94cdc284d149aa415046ff39685e1492e3127008cc5f82196f89023947f3",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-018",
+      "bundleHash": "sha256-c12cd146c24f5dd6a3e6efe8c49e9729b99324548b67cbba16985b645ed5bfe1",
+      "scoreHash": "sha256-34b43e398d99c5af2b7453c404008eb38c6edfe3c8c04d4407133202dc41a2eb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-019",
+      "bundleHash": "sha256-74a0f5ea786dd7ef9ebcaf6afe52566aecce02f84e07aa8d0059b451b648255e",
+      "scoreHash": "sha256-4d4074b8588c74eac659a81b7573f144d19039415b156de1512299340cdaf488",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-020",
+      "bundleHash": "sha256-915db855f9ad0e57def7412cae2f21ea38c6e5d6e3400e891ee67961c08bddd0",
+      "scoreHash": "sha256-ef420ae79a0aff925b41ebd6cc27741ce9282cf9dfc34c0edd15340c8b34654e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-021",
+      "bundleHash": "sha256-9d9ce380042a9ee383c6df0efd91534fbc87234039b23f5cc7282d05e04d9829",
+      "scoreHash": "sha256-615f8255b5aeca3b5cf3ceb676de0f1f4bed337a02d226653ea2d16fbbaf5b94",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-022",
+      "bundleHash": "sha256-4182c07a4deeede369f79aa3dcee4061e92f48c10bda50073a729628124cb1ce",
+      "scoreHash": "sha256-60555b7cf4b90783475b5eab9af48f97174dd358e2df8f373870cb3fc97b33d2",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-002",
+      "bundleHash": "sha256-0f9957b409e14ee62c3df384ae80e1af39a3cdf4321e82764a8426ae2d5dae02",
+      "scoreHash": "sha256-06ed82bc4982d1ad8ae333a94d838c26dcb1a5dccfb961facee152071c257ed2",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-004",
+      "bundleHash": "sha256-f917064b227ebd455a65ee45647953077fe6bfbd3fb4a13a0111eb2274a15048",
+      "scoreHash": "sha256-a0a3152dba6ab2300e9395530f8864ff9697ba0174d486d15d45a93bf62140ad",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-007",
+      "bundleHash": "sha256-456cba4293e7dc8dc59bbfe00dae408d7583c4d4db44e58ce89ab26cb65942f0",
+      "scoreHash": "sha256-9c6eb9a9f3237d5a21c439be071538f06989dc2c6495a6ae024274d288f62625",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-009",
+      "bundleHash": "sha256-eff321371f81d88442d3c947481ac7f7256f5eca092b47f4983076b7ae5354fe",
+      "scoreHash": "sha256-8fcebf98d5c2009244012f83824bc1ffba5b42c02e96e2e10c3b842ecd4c1217",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-010",
+      "bundleHash": "sha256-01a1f4645d16418d9d3539a3640d00cb5bb88c261eff30ffbe8da7973ff1cb97",
+      "scoreHash": "sha256-5080f44549072c46ec0b209fc1cd3ddf361c608898b5c79d346dfface4bee558",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-011",
+      "bundleHash": "sha256-aa9ee2fc47cf61ae658ce9228ffa67d2f6386ffa0d906636dd3f320f76b032f0",
+      "scoreHash": "sha256-3ffe2bc074b6d3ace07a1ebc12032eb960420797832fc7d57f99212d5568ed38",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-013",
+      "bundleHash": "sha256-0da9017ba2e8d7f85f55c325e522ef1d4850d5a5c84ea1eaf7908542802098b0",
+      "scoreHash": "sha256-b4e8ca0398f2de8c92687ab7d5372f0139f3c3d5187326938466befd44b37cdb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-014",
+      "bundleHash": "sha256-baf99244499e13edd6b11606d0addc93d5e898ea5cfd945fdf00dc8d48d58126",
+      "scoreHash": "sha256-84cc968bbaad41ee0d582f845557a7a6c63fa47bafd81b76ac41b9e28ee3206d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-015",
+      "bundleHash": "sha256-7d3026d01dc0c2794e585e96a2fa6157567cd581fe0b935b2f2a82f1e3479fa2",
+      "scoreHash": "sha256-9eed19502b060e3ac71b5a78c006a288a1a8296375725936d3ec948d543e317a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-017",
+      "bundleHash": "sha256-911313a4bf986cbdbf188fcacbc092422e1a9202a8dd366629548bec74677075",
+      "scoreHash": "sha256-3869501d75bc1020f7d618a9b4a1aeaa8cc6eba6d03dadf14a1f74b7ee896a33",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-019",
+      "bundleHash": "sha256-74c8797c12776239c24e372cfa73ee43d25679684a5b8ea39a4322acf61b94e2",
+      "scoreHash": "sha256-12b2d027e2d3e24b7fd3d5bd95cf5142cde54af89424873b06c485c94b060c57",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-020",
+      "bundleHash": "sha256-e0dec1945d64f47c08eec6b7a5c799c1ac1f1abcbcaec2f6b8e9bf0fc0892b96",
+      "scoreHash": "sha256-ca388d0aec96c1b75ce5325c692ffcc8d988537a7d513103684899a3cf9c4d61",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-022",
+      "bundleHash": "sha256-e8df88291a6e0072055ea13ab30a698159453264bbc6d9ebc5d7a08545cec8bc",
+      "scoreHash": "sha256-522a1b0974773037ebe1689caf5655d827fc4dafa6e644d50b1bf7718c7fd0c9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-023",
+      "bundleHash": "sha256-7f98c99d71374641b445d410228cd9aa672e37dac9569542c6b4fe8863543348",
+      "scoreHash": "sha256-af07c2ecc7860f97ede78f5f3e989b44145903e46187dd4462b59408209d3188",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-025",
+      "bundleHash": "sha256-3ddc0d54fa7b4ce8c9abf6e5587285b0bd99a6d85096ac8edaee0bc3858191f7",
+      "scoreHash": "sha256-08bb1d565398b87ef4fa9ca13a6cd88fa14cc89f2725cfb7f56f71dff1f4fc65",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-028",
+      "bundleHash": "sha256-4b377da1058f46655e6bb97855424d631e028f6dbca55ce01c7276fdada5c69d",
+      "scoreHash": "sha256-e519a7a7b811da5edd97f87c948f80cbcbb7710e4ddb775b48b66eb5239d9f0a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-029",
+      "bundleHash": "sha256-65ef1d025eb88d4de7c8a71e95b46ae4f0bffad3a6996e926aa502318d83e0bc",
+      "scoreHash": "sha256-4e9194910279d264fcc62811d9876829f0f7ac06fa130974cd05d6684e045615",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-030",
+      "bundleHash": "sha256-ca6f5079a2c9781b70ff5e8960c6c6149bdf64835e328ed98f7ef0e36d2347eb",
+      "scoreHash": "sha256-96b705fa85993d0daeecbdbe9de0e6febb58b4338fb00f963cb80c6790bfce42",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-031",
+      "bundleHash": "sha256-9981773712057ee70fb95ddd05ce4703e16f61655833143bab3dd8cffd394379",
+      "scoreHash": "sha256-0ae86cff5aa4bcce9d7d92ffb857d3f6059086f4fc04854c97d06ddc9e47c508",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-032",
+      "bundleHash": "sha256-eaf502198cedc2f9f70c94a5369b06813127c1efc034cf431b11e381867a7a97",
+      "scoreHash": "sha256-e89d13e270853b3d954b2b69daf7c70eea054502d2a6a0227d402759f09e5b38",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-033",
+      "bundleHash": "sha256-7eeced61f4db016e9093a7e0a0267d97420b95a8be42ef29cd3de61b6c4d5836",
+      "scoreHash": "sha256-6c67f4e16b7e4cd9a3e2f2d4afeadc11f440392b7b2397322095ad0e860e95f4",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-035",
+      "bundleHash": "sha256-f97c980b8362665bffc360fa700e179439f5b11feac70284d6dacc6fcc4d509e",
+      "scoreHash": "sha256-36e47d3ece6278faaec48b8bddbbdeb6720a05a78934f36a34759a96c97f3aa4",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-038",
+      "bundleHash": "sha256-b744d28650b6cd60c5c3416ba77f9c86f4cc3e03ddb44174037382cf9fa3ee8b",
+      "scoreHash": "sha256-22018385962673db1674b79f805fefa10a862380af9647416153862e127fed4e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-040",
+      "bundleHash": "sha256-f1eccb30a129f6619a889399f451336f14d51bca19ee328d5e0cdec900b9b25e",
+      "scoreHash": "sha256-ec516ad1fa2847d8c98d85caf4790f17aeb107c2631ea9c928c962b581a5e204",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-041",
+      "bundleHash": "sha256-29d85689ef14311909454be787d80e928ed92cf2d6e3c7a413666c6dc84d0a8d",
+      "scoreHash": "sha256-a06ea7ba51bb10a337df560064d991287ec8a2312aee18ca84fa81fc1585d5fb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-042",
+      "bundleHash": "sha256-02eabb6fe08d764c9d8b1bfe34e68556635e79cf657dcd33942490e5df55062a",
+      "scoreHash": "sha256-59837c234fe0ebf6cff0b84341ee744581ad4f83c5634438b761a42cae69b68e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-044",
+      "bundleHash": "sha256-981b0247f8ebf2c79f1b394b0381b50b706c8f2d611caf8f17b4f2046dd2cffc",
+      "scoreHash": "sha256-bcb3ae37393b787792b1371bd58a4b3b33138d7a2f79be1cbc028b74ce38c5ad",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-045",
+      "bundleHash": "sha256-7a7ffa12970e3bc27e17c0576fecd295c63e66083c9cb37f0df5a0137658e10c",
+      "scoreHash": "sha256-86a5a3182c34b2602b5c47331d20d21e2b3072f84e9a515f63a8208e9e08881a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-048",
+      "bundleHash": "sha256-589521f03e4617629bdcbea1548f433286edc2f2bee85bdb614d3e5090f805de",
+      "scoreHash": "sha256-4c3ee149e11c7a08500f088642770d3ff7c3833728cd9b4a3924f725bb0b1f36",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-050",
+      "bundleHash": "sha256-5d2e8f865bcb96cca4f59dda793f087fe0a706ba072120d73e03c504530ed9ce",
+      "scoreHash": "sha256-3907dcaa740218354c7e540cbc46c57f0ee8945908bb704caea1846f52681b01",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-051",
+      "bundleHash": "sha256-8ee98a2d89ff73a28e34c8d702576d33f54b229317981e2f7b8e2ff080a3ba1d",
+      "scoreHash": "sha256-72f88b4bdad95efede484bab11d87ed023b7b0cf21e643082d2bc2a022af4333",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-053",
+      "bundleHash": "sha256-94c7720a8dcf1df5c8f913f7613ec4c1e7620d5c93623e80eea931d6c57ecc0d",
+      "scoreHash": "sha256-20ac59c08652296da52c1dc726708d447327d591f92b37905f4b95ecf91b9a3c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-054",
+      "bundleHash": "sha256-2d57ce3fba7b8ef8d472c704088c2513d43ffe24fa8c59e0da58b00a23dc951c",
+      "scoreHash": "sha256-88d5399f077544fbdcc5d59c4b2129e48e028e86cd60eb2f8e119b039852c36f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-059",
+      "bundleHash": "sha256-3e99027641bb2c8dafe8e64bde4d094015dff49838ab7e319de604ac11ee7525",
+      "scoreHash": "sha256-fa3c6152ddf4d06c6a7061cc10af9ff103c8ecc7218750e12ccbb41b7ba3a51c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-060",
+      "bundleHash": "sha256-b83103b725a8bb960d868ee68377302a3922e031b524c5e41da5ba17890f096f",
+      "scoreHash": "sha256-dbef0109aed8b8706edaebdf2915ea8e76e653920b8e82a84538b5df3647536b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-061",
+      "bundleHash": "sha256-f8a4634430e9421ca1b0110661823f60585beac0054606e79b48acb885e3b664",
+      "scoreHash": "sha256-1d8b282e7675962d6b207728621fee64e2b25d154139ac0abfca0e80f8479928",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-062",
+      "bundleHash": "sha256-f2afce600aaa3adfee682be0cd03ac8f76ec79fcaf5b0c680069c891000d84e2",
+      "scoreHash": "sha256-6424e6ea8e882c50bb71aade9dd01d455d462632cff4d4875c5ca38059af7c21",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-063",
+      "bundleHash": "sha256-3ec17c779d9e8e476bb3ecff26ace56d9825d15d05539c8cc53d7b3a93303949",
+      "scoreHash": "sha256-2c4f4ddd0b0999b4f533fbf6b4813493f192a016c527b73fd6fcbbca74e8217e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-064",
+      "bundleHash": "sha256-d7a836d00281b4a2c94b3941b7b028c6d5faff35177e77fa5c08ea0748718e18",
+      "scoreHash": "sha256-6c8e0ad784d16f12bfdd41fc8f72bce540948b40647bca8f0193a2fe0c5cb867",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-065",
+      "bundleHash": "sha256-a3e4e810da7dc17b489131e5e845357c043ec88abc9ea5a138641fba8f402fc4",
+      "scoreHash": "sha256-04c68c7033243e4218a9b164febf74d21b8d7bf522174f81ddd4e13988b1b2a3",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-066",
+      "bundleHash": "sha256-2ff95c791544d937c482a2785d8c3e3a4aae781b9642f1a1eab3f6c943f95dc1",
+      "scoreHash": "sha256-b462154e801b9b4d2aa3a747535a6eab54e43b551222e695c97374511b24e596",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-067",
+      "bundleHash": "sha256-dd93a65ffb8ab538fea543237a51227aa0e0d41ffffaf887a2390cc921f22074",
+      "scoreHash": "sha256-39f491fc9842c9469532d2d40c3bb8518553f69f376119480ed4fb8634ec44f1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-068",
+      "bundleHash": "sha256-17a702de326f42da3a3a3a7b8c28525325f215df9c6ae00c9bdb98c172d1de3a",
+      "scoreHash": "sha256-396786ed78ce929835bfce2f1791718c189bf5ac438abd7c83c0ca475fe2811b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-070",
+      "bundleHash": "sha256-e9db2c9a120c5e28b243c55b718278f28cef856c14f323bba5e92c87a899fe2f",
+      "scoreHash": "sha256-9debe3ac15b15e511b2878dba994be189c20878ef867eb9f52815cada39b3a33",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-071",
+      "bundleHash": "sha256-ed4d9d436280277ef11945e9bf67da5afd9efbbc6b5590cbcbde942cfd993d2d",
+      "scoreHash": "sha256-d2a7bc880b8647e9ba71b45012b15b4fcda48e3f16d8896e0e7174787ac975a6",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-072",
+      "bundleHash": "sha256-757dfb32df08504ebaaea812060f1f4a19e6bfc388f78b7d78db135c7010d0b9",
+      "scoreHash": "sha256-25da4ce903b520416dbaaa3311b38de00ea104e9e5c3679e5a4c2ca476a6e2b8",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-073",
+      "bundleHash": "sha256-73462e7ee085933cdb8bfeecef86e57ffcb8e7e4683739876b471946ffdf4f86",
+      "scoreHash": "sha256-780e67901873c3e332e3ba014c967ce6f7253223164ca7f144bcbb45a4c418db",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-074",
+      "bundleHash": "sha256-c5450d47cdc158ca3ad68b7fba69eb39fc889141c2ad69c40e053444fe809ef3",
+      "scoreHash": "sha256-ac12b76638a002a50d69096e4350b2907bb74a8e6e8c4024b0923dc78e1fcbaf",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-075",
+      "bundleHash": "sha256-283aafd4647753650508b1811dbbd5014957c200b8cf82bd719fe20002635398",
+      "scoreHash": "sha256-29c6807faf7bee27855a27d04690f69197a44a71a532403658b3eedc201804f2",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-076",
+      "bundleHash": "sha256-6ed0f9f7b0b62aae4ca8fa0743bc3b9338a792ad0682f0b756e93060171ec105",
+      "scoreHash": "sha256-4c4099275c01a97754e285d8a7476c743bc6a5be7eab929797aa95852fbbdbcf",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-077",
+      "bundleHash": "sha256-dfde89dc838d2ab727cdc7e136eba6f25db190b0ff9f76a576a78a12c630c3af",
+      "scoreHash": "sha256-82a8ccc6d974c59b8acf7e7a507bd8a80f853da5f2d5f933dab8bd138a7aae55",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-078",
+      "bundleHash": "sha256-1e081fc93772cca6f464bd67e71b8ceedb58c959fcb92516b143a13cda43894a",
+      "scoreHash": "sha256-6a2ed0ddc2099e09ffd406fa5ea12ff2cc27e2b1eb3e32d62e8fea908ab9175c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-079",
+      "bundleHash": "sha256-928d37241d55ef8b740b1b42e7838ae31015d7289ca378ee1c3ab837aaeaecdc",
+      "scoreHash": "sha256-5f97fde9f9bd7843ef3497a51ff36d823aca979971977a801049b250cbcab738",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-080",
+      "bundleHash": "sha256-d438f153bafcde3f65eb850727d1d5ef6db3751802cca643ee7f1790db4f2616",
+      "scoreHash": "sha256-b7019561acc91f39b2bf4a2cef217e87a15e0882f5dc68fd5208f25539bf2947",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-081",
+      "bundleHash": "sha256-f9e8904222edcf4b76e531cba326a6152c486126ea97812824d9ef124ade5ecb",
+      "scoreHash": "sha256-e732c17d1d88efc6ef2eec514e77cdf29c05bbeddb8043da4b73a80bab0e1d7d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-082",
+      "bundleHash": "sha256-2a02f08023204eab15aa504b4eeb9472f070b129bca15f92efdca2dab924cd8a",
+      "scoreHash": "sha256-269625b62b50d6c4154685037712e763fb74b7e565049e7f9d0421bf8d827338",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-083",
+      "bundleHash": "sha256-323ee64808d93211878d0806b808e981fbc49d9708968fe1f7d7c3f3ddb54b00",
+      "scoreHash": "sha256-7b22f88bb275fee488146dc2d65bb0a81f1319638c4775e46356f7f5327db0e0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-084",
+      "bundleHash": "sha256-8dd808ce43644f338819d06c167bd53f8a6c00e0a52229716da1dd5e148d3bc4",
+      "scoreHash": "sha256-3d174682d401a0b991ae42b363e395fa712082bd11abd675157370faf38020db",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-085",
+      "bundleHash": "sha256-39724d56c65400d464130a483c5fe683fc1d323e3582d5b00f814e1d2bcb17d9",
+      "scoreHash": "sha256-d6ee8668a1e73be8e6e13a2764323ed290867967b0a72579825f3c99495c942c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-086",
+      "bundleHash": "sha256-b8ecec97ba6af157e6712d8886b6c5370ca6a52cc55f952ce3ca353ee3ecdc28",
+      "scoreHash": "sha256-2f8e1c96c32b04116e8cc1454fe831ef3bfb4b05d0b07f714e251ce53ede98d8",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-087",
+      "bundleHash": "sha256-a9c8805ade9ce045f70145e1ed95bc54d43e1a3c77361a53ff2dc58f3276ed07",
+      "scoreHash": "sha256-2e40cf56fac741a81c189bf774531d80247795faf27d7ac772597592ca228739",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-088",
+      "bundleHash": "sha256-1ecd2dacb1b8db67e894a56428a3bb4ccd878345c21018673f00f7f12d1d6b3a",
+      "scoreHash": "sha256-4b6547a46d43e778c6a9ab7d456df96edce8183890f44f1fa4662b4133da25b1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 70,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-006",
+      "bundleHash": "sha256-0a0d68ad8fb850f87b55ec3f8b013900438598e6d71676fd0d23207bead34927",
+      "scoreHash": "sha256-f91b5c96767d42658a3d4dc80c044f6da37510c0911873d775ee1482ab2606bd",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-009",
+      "bundleHash": "sha256-deb0f4ad5ff92572d7467640c1f10cc66c6ed8ec2eb7c00ff10dc5592023eeca",
+      "scoreHash": "sha256-b91bc04590abdb861272741d052a3deb09fb3a893e67420af42e38f279b4a26b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-013",
+      "bundleHash": "sha256-ac343034dc41a717c92219c3a60eb473f849ee51f930b8beccbc9d5d239d7630",
+      "scoreHash": "sha256-1eab2cfb3e459f0b2543ccd8e3deb04323fb9818b2eceaaa1c557373c7acedca",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-016",
+      "bundleHash": "sha256-d302791fd04cd9f099103210dcd484711659386d3ced75b99226393b43dfe133",
+      "scoreHash": "sha256-09a1ede3b4f215eaffb573ddb05de1c6e2fd984171a028ce53a23de7ba9c16fb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-018",
+      "bundleHash": "sha256-edc3009156577a3185c33400529bd22189273be9445f0ae479b0d1245a8f9d62",
+      "scoreHash": "sha256-734485d13d6339b9b52b5d093ea8c4f2ac36e985205ff882be587ff21aa37e61",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-019",
+      "bundleHash": "sha256-be78636cc92ee35ead2688dec6c2183cc23ebae727ca3d52888f3adf4de77e30",
+      "scoreHash": "sha256-50acb5a356898f8d20d302a0d85c0b5e0c2359991d276e6a482f9bb6b963c9f9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-021",
+      "bundleHash": "sha256-0ca34101f67b1a2f525e0c50f129f6bb14be65a711f0e5473184aad38998b328",
+      "scoreHash": "sha256-f66bcfdb676ff8a252e736f6f114b4559b769f81b25d6677d4fcb2347875ef1a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-028",
+      "bundleHash": "sha256-f2ec24ae9cfcea5cbf240c6f2160fd93ecaf691c96185190b0ca24dce2e15662",
+      "scoreHash": "sha256-cb41c71185ba4e7412189648087518bd72cd53c7289f47ff9be8401b8a790a5a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-029",
+      "bundleHash": "sha256-54ad65ef03baed49453d57fd8783c6f6afedd44c01a3739c4238f1330bd4f6d6",
+      "scoreHash": "sha256-ffe97872c42ac7422692e54f5dd3fb05e580bbbeed674eb3e8dace41072726f2",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-031",
+      "bundleHash": "sha256-b295547520ef631170f60b20a58f906a185971deb54aafa062ec9d4d05da76f0",
+      "scoreHash": "sha256-83c5d21a2a6aff104afc29e952dd5e423c613983e67d79b48f6b1dff1bbcc124",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-034",
+      "bundleHash": "sha256-03e4ef729a6e633ac01d753f87e9f53938dd41908b819b8cba4838c53142b090",
+      "scoreHash": "sha256-73d107e11b4722f3b9d85b8a3ed666eda54fd325ffd7f10df44ace3f3e8d6615",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-035",
+      "bundleHash": "sha256-11445ee0491755a6814c696f79cb0fbca79ff201e65fa48a8fc011f8b0d5f713",
+      "scoreHash": "sha256-c7fa2bc25c284c1a2a2d64ffc998d1e54f52f74fac062aa80794ed79af764ecb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-990a8677-d8c4-4854-b56d-fb547c7ec36c-window-003",
+      "bundleHash": "sha256-646e5bcc728ae20e7fe6a6f9a7d6ba8a8cdbaeba6eb6cb572783dbb31d8ac017",
+      "scoreHash": "sha256-81349507f4b05d8deabb64cde242976ba41bc7a07bbe6b9ad20e0edeccc707ad",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-9fe29ce5-b989-46df-bb1c-d79eb7599c65-window-001",
+      "bundleHash": "sha256-70f20fad46c720d08ed5a2f384004f045c0e98f7bb585ac4053c166c1d30a724",
+      "scoreHash": "sha256-afc548d1ff2b18e2064e1b775381b4ee3bba6cacfa72161c622370676ca1d58b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-9fe29ce5-b989-46df-bb1c-d79eb7599c65-window-004",
+      "bundleHash": "sha256-9ef65d1312f296479f9121b90802d8f63fd7aac82a0c49bae8fc3d2227ec9640",
+      "scoreHash": "sha256-e48891cd17c3dc16de5461f64fd41e0d53c2ab98bc6591f1e12de749fd0b1a7b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-9fe29ce5-b989-46df-bb1c-d79eb7599c65-window-005",
+      "bundleHash": "sha256-bda965283a5dac2f399241565cebe559fe5750cb040993d5adc75be5e8812965",
+      "scoreHash": "sha256-587e322a84ba3c3090a289f1ad598f347d79ce13164a65400b0f0f8a7b69a8fa",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-9fe29ce5-b989-46df-bb1c-d79eb7599c65-window-008",
+      "bundleHash": "sha256-4eac2110408f275cc8684b5116fab36e5299c900e14a92769057c61b07e43cd3",
+      "scoreHash": "sha256-40aff0ead9ddcfe635caf76194154c8998437e6e55fe60ada86b870f3a015c08",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-9fe29ce5-b989-46df-bb1c-d79eb7599c65-window-010",
+      "bundleHash": "sha256-8758be9688901e3ece5b824b500fe5391ca5402073e01b9b98ceb580bc00d0fb",
+      "scoreHash": "sha256-4c1bc849bef223663874595cb74983e401b9974bcc3c65c4fc6b7a1a123dd5ad",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-9fe29ce5-b989-46df-bb1c-d79eb7599c65-window-012",
+      "bundleHash": "sha256-fbdf79fc65a306c41f61d0e5c6805b414de91793a359bc2e8d5235c5798cdeb1",
+      "scoreHash": "sha256-ea65c47ca021704ccbe583c1314becea22e6148e517ea24005c6e2cfd56457cf",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-9fe29ce5-b989-46df-bb1c-d79eb7599c65-window-014",
+      "bundleHash": "sha256-fc4699c487f31e9b4c48ab268c3a83b960bbdacec62601768e0e12a3324f1604",
+      "scoreHash": "sha256-169693c1b9b5a9897717a057b071eb0dbf3882c18bd7b4c5b457dabab815177b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-002",
+      "bundleHash": "sha256-edbb981cf2b20019982d727dbab59f5aeae8614d63beb83f58353c6455a18dc4",
+      "scoreHash": "sha256-bf56aac9a86157239c3b9ddffaa6eeb6471a838be28178a898c91622f573db4d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-003",
+      "bundleHash": "sha256-41301df95522255ce02b3cdd29d56a65fb602cae82fbd505f0b81b7b26bbb2f1",
+      "scoreHash": "sha256-086396ae851b6594a2f69b0f71402553b1b6fbf502a7d6e6de2ea61ad2f05d8c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-004",
+      "bundleHash": "sha256-7e45b5cf585d7984ddfed361780b996bb8ca0fe81e3e385acacca2415297ff65",
+      "scoreHash": "sha256-f085a7f23593dd8b5cab05274672bcabdcbbbc4620d87507b751ab02de54c381",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-005",
+      "bundleHash": "sha256-5a79d7ab6ea9e9a6e45ec7ebc747a030eefb36db1daddd591d6fa7824edf348a",
+      "scoreHash": "sha256-84d74b641101f2ce1dbfe6478b6d3b97d786c2f7110116ba53d8d0338b506ccb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 70,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-006",
+      "bundleHash": "sha256-a72f3a2ad4c52774ab86a6dbfc4966300d0cbfa725f13b707bb184e3125c4db9",
+      "scoreHash": "sha256-1ecee8c91b9862bb0c9d11442f47fadb28ad0bbcdda4ef2573faecad0dd18507",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-007",
+      "bundleHash": "sha256-ca551d541bc614b54054d6c0e32e73f7aadd581605eecf93738501003b4bf24e",
+      "scoreHash": "sha256-1e0768b1415345aad541ed9270b24edb656f27db31e201f99f41e001b946214c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-008",
+      "bundleHash": "sha256-de4009ee0635ad40b0f557f0f4b12804b95552f5a9245c62fc7be45fa5e4bc4d",
+      "scoreHash": "sha256-9f862e6b15320c3a12949469b7787cbf949cc310bc8bb7847bf16588ca00a345",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-010",
+      "bundleHash": "sha256-17f9969a0897e8936297a63bc975ebaa6fd0429cef6b2fb2250009ccb8a83053",
+      "scoreHash": "sha256-cbc1f7939e59328e6a6c0b3d2bf5447e10cb1bc46b6a85829499dfecb4b1b58c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-011",
+      "bundleHash": "sha256-91f2f6f14ba339bc672f3e0025faf94a52c61e6707b1254ebbf207967bd386d9",
+      "scoreHash": "sha256-af7d1c391880754a12db684bca1e4f943cb800282f8c51367ff4e8035aacb749",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-012",
+      "bundleHash": "sha256-6f11834b94bf6dd6f3ee6d865b2cf52f1d5558cfc84752997ac6fc350a884764",
+      "scoreHash": "sha256-88c54885e6501aa220cf792c070b72760848b711fb21a87c318013f0eac96c64",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-bountiful-bd13b409-c17e-4af1-89d0-07d6f1a2be24-window-002",
+      "bundleHash": "sha256-a70dee773e2fc9da74c787fdd633fd6b13cbac9ac481589f41f73ae81f96e236",
+      "scoreHash": "sha256-db6f2e8862988e2e4bb3a6ade8b197aeeae86e2d82deb99577d2af03e40e1897",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-0856fc42-5677-417a-94a6-eeed26a9d994-window-003",
+      "bundleHash": "sha256-03657a7d1de0ee1b75f0e0c188a166772278a75e5e4a8a023b00ed0120dad5ce",
+      "scoreHash": "sha256-37e08b64bbe3859c91de0e6b15ebf25a874ec18a02a748e2f865e32312052a06",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-1df6876b-e41e-4352-8c17-b6d259ab93af-window-002",
+      "bundleHash": "sha256-3f448796645371c8eb99a28044f98cbeba66875f97ea3cfdf2efc7378d9b2227",
+      "scoreHash": "sha256-f032fdabe0cdc52a08a4ca3b7b705e49218f1074027dbced1f1d438b771f3ab7",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-40299bc1-00ef-445f-960b-1b1147ffd61f-window-001",
+      "bundleHash": "sha256-f7f04e6a24c57f7dc6ffbcda46d1413144efa167dfdf7657f666ffb23ca55d9d",
+      "scoreHash": "sha256-72ad8277575325815e896921cf1e92c5784d113e945da46a34ff266606336810",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-468355da-cd1f-40fe-adc8-e1dc6dfa55ea-window-003",
+      "bundleHash": "sha256-8ed7b6ea4965f762ae04968dcf62e09aa0892a97616f7d86e6be236d4387018e",
+      "scoreHash": "sha256-8c9d7cbbd57b81ce72bba1b4b2bc44919cd08ced3c73d1d48911878b8f093524",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-560d4776-a50d-4b05-9d1f-caaa2cdb8e31-window-002",
+      "bundleHash": "sha256-951939f7d888061c2682626b447cc0ec8d56b0c9ec21a4cf5850661dd11e31d5",
+      "scoreHash": "sha256-8adced6f7b2dbdf1d1201965ecc3d841f815d9b2a60b89790ec2559ad5ba16fb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 80,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+      "bundleHash": "sha256-fc548a79b1260945b80a0d00d8be27b990207c120686a891f883b9867cdf919f",
+      "scoreHash": "sha256-0eb12253298b27a8b2731f3d072e7034b846d8239f8efb9cc652cec0b6df7d8e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-004",
+      "bundleHash": "sha256-847e0a4538bdf42e9bcbf9532edd39e79eb463e3f56e6cd8ae4b3e7381401b7a",
+      "scoreHash": "sha256-90eb74fd151d818f9068bbaeff8f49feed2e3a6f3985b71f17199c57a0882735",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-009",
+      "bundleHash": "sha256-d2f874f3e9c078eba3bd6ea4497395b7e2ab41ed4718deea22bfc1da82b586a3",
+      "scoreHash": "sha256-5381817d71b1a8e7cc4bdd828b0e953fb9a9934dc3667d4187439dd07ab9e434",
+      "winnerMode": "vector_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-010",
+      "bundleHash": "sha256-1b551b9792ce404edd0523a70182604e990cacaea1659bccaba82d501b65a3a2",
+      "scoreHash": "sha256-f339cd3a2a3465b5c1950697c5c929890a87b7487fad0d658978270646ee9d65",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-011",
+      "bundleHash": "sha256-3fa4d663fa08b9fec0cd488b4d8d9cf9de457b01688ed8ed3a698b779ce17941",
+      "scoreHash": "sha256-3bdf3c2cfd1bfa80bfdc8393a761a3f3eff83da00aad4fee2f4c5da08d526379",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-012",
+      "bundleHash": "sha256-6abdfb1af77335adbe11df62e2db973e5fee0ec62ca81b956bbca3452bcdba76",
+      "scoreHash": "sha256-5773e48e65b2f935bfd4976c2c933d798d15377c512b648c0c0b98dadc392eb9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-014",
+      "bundleHash": "sha256-0bf56677440c724a94d8e6f56f6cc3e8c22b43111c072080fa2a86195ea285d8",
+      "scoreHash": "sha256-f758d3301dfd08eda99369438e697ebfc54c6f68f56a7051a0498f9dcf220592",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-015",
+      "bundleHash": "sha256-e837ea9b2d249c0771306945d2310d5207fefcb25ab5e4c371ffedb750202f07",
+      "scoreHash": "sha256-12f3377744958b840023cacabcab5f93333a64ef3a819c8967a48b511f6365b1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-021",
+      "bundleHash": "sha256-ddb47f585737b01643edd6ac543d8042005fd3f7add4d72060d5b74c83ea6a8e",
+      "scoreHash": "sha256-b49538d67d87920c18cd9c1d149c89bdf6ce9925bb234f97949f7233344e1529",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-027",
+      "bundleHash": "sha256-f51955affffdb1cf98e73a003987bc65bae01a1b6e8e0816e7bbad22c84d7b11",
+      "scoreHash": "sha256-40b2f6c66e0c5b3ac4193e848a83941b0c9efa7d0b8300cf642c5369e7b98cb0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-031",
+      "bundleHash": "sha256-3fcaee97128282b51a5ee7b1c03878d44bfa099ee0f486fdf30012d21f67581b",
+      "scoreHash": "sha256-29038e0c952285835192d41998d14a02bd37a42b25119102e077fd168f96392b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-032",
+      "bundleHash": "sha256-dd95437ed5e94815335318a88d35b12ae25593c9ec1edd9d96f586f69aed422c",
+      "scoreHash": "sha256-d21764d6891789bdbc1b9c05ccd497327146f175ac36c42992740dbd9700bd5b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-037",
+      "bundleHash": "sha256-4cca9febbc02f834f7c3ac62f42f42af58e6c65f2c2ab931c08a11e4697e05a3",
+      "scoreHash": "sha256-a83a0b0c9afd7ee40c80ced40f3d2ed94a999ceb22572c4ed9eb2184db898d0e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-038",
+      "bundleHash": "sha256-fbfa962a6630d57eba3c31ea3eb5bed370e04e60e54f11c3f5b427f8fe689a93",
+      "scoreHash": "sha256-4aea0f9ec440cc2e974ade9a6510b83edc76c0ce8fab8b29f2443f79bf8c0b66",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-039",
+      "bundleHash": "sha256-3dac52750a7734a25be300b5cf3f58e32de81482b4d4336d79e4c4546d0e76c0",
+      "scoreHash": "sha256-31d6aadd04348fa18b3ab740bb5885eb6cf7f26b3b71dc44d736476285d3269b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-041",
+      "bundleHash": "sha256-194214fbb860bb0c0a269ccea1a370cffafc73edafbe1116f5e840aa7a64b521",
+      "scoreHash": "sha256-5f5b05710c9b59b5db6cb3d170cf1620842ac65be6ee459d718fd2c7994e68d5",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-042",
+      "bundleHash": "sha256-cf412f3200cc19dd7564253f7cea52971ec6b6df8f9ad224fbb333ca2ac4c508",
+      "scoreHash": "sha256-d59aa5afa8e9b888f5a021350ad510c784b59ad43a9c0d2e5bebdf78ebddd376",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-044",
+      "bundleHash": "sha256-068a1d08d626d8e219a5caa9fb1965eec731cc8c7f719973e0a26aa8d49e6c4f",
+      "scoreHash": "sha256-c056ade74b9364a5aac68e13c8b05fba4b85c7bafdf62ac5a4e3bd2bb7f16e97",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003",
+      "bundleHash": "sha256-597de5598f63586106059029368124195c19144e9c657cb8b69164a7dfae36fd",
+      "scoreHash": "sha256-7453c0a5b363c7b179d1260777214e4d3df92050fe121a9ec120e086ab8b2717",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-8b5a2fea-a2fd-41f2-ab4e-2582817eb312-window-002",
+      "bundleHash": "sha256-8e257e72d1dc7bc456ccf6c39631b1a4fab940ff71f226f47435cab1b017f9bb",
+      "scoreHash": "sha256-0850fcdc9f0ffa6eebe129b7c2f33e018f86f1613c69bcfd978f48c909de30c3",
+      "winnerMode": "learned_route",
+      "scoreSpread": 80,
+      "candidateRelationVsBaseline": "better",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-9bbddffa-4765-4b8c-822f-3fbac8f66538-window-002",
+      "bundleHash": "sha256-700553189ab807be324428c441ee393e00144902953221cd642b1510feca6b86",
+      "scoreHash": "sha256-2f8412ddcd7f31f48b704730228fdde1a7516bdd2cfd16e35a72942ac3c217a1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-aba6eef9-56f5-4609-aed4-3859e5ad2833-window-001",
+      "bundleHash": "sha256-c685f5a9a77fb6bb7e8d81d3795bac45c1b8dfb8ff0686444e48cb604101b555",
+      "scoreHash": "sha256-489254c87089e09ea51ab4c09cfda997f509b949fd29ce9ea3172f4ea748cb2c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-aba6eef9-56f5-4609-aed4-3859e5ad2833-window-002",
+      "bundleHash": "sha256-0b04794814e898041a82bd6e3530d7beb013fc96790a8a600355eca943b13e97",
+      "scoreHash": "sha256-2e8bca19aaea5ace01864a96c521709322f43efe42b82c2eb35815f20a52e4c8",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-aba6eef9-56f5-4609-aed4-3859e5ad2833-window-003",
+      "bundleHash": "sha256-675ca5eeb68a2e3a0a2ec02b2bfb36d420a5aa9c588fb428808062e1f2d96720",
+      "scoreHash": "sha256-9d7eed78d9b62910a9cf18529b02bab47df025d0ea8e0331a6a3e6e4a5c4e98e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-b0e3391b-baa0-4726-8c00-aef55c962f2e-window-003",
+      "bundleHash": "sha256-f5a0dbf6e7b284b76eb25502d9a9b9469a9468053bb4c47281ee02cca8b38b70",
+      "scoreHash": "sha256-41adb39d60d0a45b782ed3c1b4e5b03663e18f45e0d9af3f912a06802a1410ed",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-dad145d5-21a8-405e-a4b5-229d517ce15f-window-009",
+      "bundleHash": "sha256-232cc9bef0004dac8afe5e3c4b0ae2cd13f6234b6e693cc74222bbb44c334b8f",
+      "scoreHash": "sha256-ad3a0602bdb94ce690b05e5c101eb6d3e13e920116e4ef7172798ada3fcf8ea9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-dd9238f7-bfae-4ab9-9640-9e63a04c89b7-window-002",
+      "bundleHash": "sha256-673b8ee4db6906c52155ffacd3837f43edfcf90fbd1f0d124289669fb12257dd",
+      "scoreHash": "sha256-4762abca830139a714fecc81d2b99536982863a502898ea047c380b4d6266e22",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-ef483339-56ab-4747-8c16-79eac3e5645b-window-002",
+      "bundleHash": "sha256-0d050fd4c1917b339a983c8dea861b001cd2623f3dd834f466097b0a62178c3b",
+      "scoreHash": "sha256-d423bfd77b25590090d126e26086ec4fda59c8ab0a914b2c06b16e1c27628126",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-main-f554f872-80dc-4165-9326-c85c48df2834-window-001",
+      "bundleHash": "sha256-6030bc0eda8da68d8f8064877f6e1799d80caa3ebc8850435ed288c7dd16932f",
+      "scoreHash": "sha256-d9d7065c486b2cfd1fa7c0122ebdfbe80cc0197b5d0cb6c043348c200ce29a48",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-window-002",
+      "bundleHash": "sha256-e3fd3ffdd746cfca04cd3a1b70cc9adc978668d1299eb07ac9b9d23ff0837863",
+      "scoreHash": "sha256-f7eb00a0a0edba1fb1788e80ceebcf79c226ae85b29d816c4eff5aac6148a6df",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-002",
+      "bundleHash": "sha256-7d72b032412d6e478f82dce8254e65f0cef3f6dd60b079a35330b5b3db38231c",
+      "scoreHash": "sha256-95cd17cdfe3239ca30ede77708fe75fc6b8e70c8bb58403124daf079d2a64132",
+      "winnerMode": "vector_only",
+      "scoreSpread": 70,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-003",
+      "bundleHash": "sha256-17fd14f305ac6a4f25036bbd50ef9e85415a513b3576be7522c2a56192d2a86e",
+      "scoreHash": "sha256-ae6462c32c928e8791cdfc1be7c240ce5a3d74db6caafb1fa513882dc6b10601",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-004",
+      "bundleHash": "sha256-154059aec0b5c1b1e59fa3a058a4babc32bb5cdeb60c689cf405fa961a786543",
+      "scoreHash": "sha256-dc0fbeb352ef7fbe48684511a74b6831e0d7f5e3c75d06a7f902fb5f238f36e2",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-006",
+      "bundleHash": "sha256-bef26eb1ff3f4a661db6d2bc8ac85a73cdec4a168058344d8c77f739f047ef25",
+      "scoreHash": "sha256-a037c5b4e02e365f6c3f52cbd9b5908089a9ea0e80b5e5afce36f5a0c1638e53",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-007",
+      "bundleHash": "sha256-4c63872c605e3ded2bcdfa62a201fe8f8b42ca0e07b7f779c02e3fd8e349e979",
+      "scoreHash": "sha256-168c5128651625a0e05f2e8a34bf771f17872c0ac26a5d038241da90ea25757e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-008",
+      "bundleHash": "sha256-9ce1288baec5d172bf7766abaa912932b0a8f91eaf8a33e40e01c655c485de80",
+      "scoreHash": "sha256-d51f81f7f117939a5ecb626c3dd1ef33d9bc998f23958538a6d28a5052029a71",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-009",
+      "bundleHash": "sha256-599c81371cb47bb0e602dfc57dd0bf5df03f2087de1c4eb849216629b39ddd66",
+      "scoreHash": "sha256-d5b59879a4d010be17918d1ee02fd78572fcf8beb4a373d4e96106f7843ad410",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-010",
+      "bundleHash": "sha256-ad28ead0cf5a6218c70ea3db321c0b488ffffdada72ca8448a065a2be51d3bd9",
+      "scoreHash": "sha256-9a78ab20bf6686d4976c94b46e6767a137b886ea5a7a4647d7febd4db070b295",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-011",
+      "bundleHash": "sha256-a14b7e5403972422c4e5e17a164f4d4052ba190f6a27fea29362e18fb30e761a",
+      "scoreHash": "sha256-616d5d85e5b3c31c95befbcaac00906b83cb8ef51d5044cb8a8c6329bdd2c159",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-012",
+      "bundleHash": "sha256-90290fc119d5b8c7225ba159bc6373d487e04ebdaff41b820bf8fafd40293e76",
+      "scoreHash": "sha256-ff59854a3650f1213a8994fd88f92ef064e446965de9a2a9e50d3396af566f94",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-013",
+      "bundleHash": "sha256-f181ae83fc0a21e995ad7813476e75ec54679ee1630204dd23718552e2d6d4ab",
+      "scoreHash": "sha256-74ef290b0f387616704f2d60b214a054a5427283c4d65b60af24e31133e8c58d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-014",
+      "bundleHash": "sha256-191b05c6788812e5635529e122a160cfa39cfe4eead957217cbf5a174e41c2f9",
+      "scoreHash": "sha256-a33d4bd39661c57bbef51d35e5eae5352303acb52db476ea1fc8dd8873d7b9d1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-015",
+      "bundleHash": "sha256-b1d13458478a4c58a96c75fb007f2c0762153f058e1d462ff6492510501cdb2e",
+      "scoreHash": "sha256-3d70f1808d9bee0e4974a45a61d00021c33e25937a7c353d1daf6c586f42eb42",
+      "winnerMode": "learned_route",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "better",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-016",
+      "bundleHash": "sha256-e9644919a290a4fe43758a29eda13352abb416caa0da691b0b33d89885477f87",
+      "scoreHash": "sha256-83aab819e8ee95090ed16ee294b6e685ee33b9a9ec58ba47f54ffa3e2710dc9b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-017",
+      "bundleHash": "sha256-5cbeaaa12f463289b084e06f319432486448c514608b7870c60467eacbe80739",
+      "scoreHash": "sha256-55c402b2728fffc7006555ecf17f8831cc0cbff4076e42e47b58b492d7c1b33b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-018",
+      "bundleHash": "sha256-3b837e77f1904353c6755dd3932a9619deb5a611cb90e49dd4637e4b094e16aa",
+      "scoreHash": "sha256-641e4a27870e276557a959599359bd45a81ddf4091d183f33f53291bc356ba56",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-020",
+      "bundleHash": "sha256-10bedf4539104400763dbe1d13341c61ebae86e9c929d29280a4a3cc2d43ada1",
+      "scoreHash": "sha256-ff8474487ebfe82fefcd01398069bdaf58c7764d92c4428e6c4745ac7be24016",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-021",
+      "bundleHash": "sha256-b2ba89e05121cb611bff69b72ddd1719e041c3a94f8f43454a5f4f3335c0a80f",
+      "scoreHash": "sha256-2b314b9369cf551486704783d79c46fd7a11393827b0daf7b7f70677822b55e1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-022",
+      "bundleHash": "sha256-8c08352d88ddf27e4b3f47cb344d826e0655aed778bfcc3dc518356f6f81be87",
+      "scoreHash": "sha256-1be9e9f185bebe61f274a08f7e612a12ec0c52bb7bf042e553402154faa845cb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-023",
+      "bundleHash": "sha256-c79264ca94119c37933c99350e16d95cde93e091e7888d455a82c165703251d9",
+      "scoreHash": "sha256-3dc629451034c37b6e55ff4a8168b6e1382e0e7504857763433baacd53ff8693",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-024",
+      "bundleHash": "sha256-b45fbf7cfe72eb9da228e4e03030de98c1a4a87afa1bfd1b378a497b349e8232",
+      "scoreHash": "sha256-0ceaab84e7ba5ff0bef8d990b95bbc6a2cceeec7d0d11e056e8eac33126f2907",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-026",
+      "bundleHash": "sha256-2250d05681c9c7d0cc4f6bf579f77655ab8a51b9e4bab866d822a80f7fa0bc53",
+      "scoreHash": "sha256-cfd46c757de66d485cde6540f0e146b1d176d504bb0ba5bdc689e92db9d30e1d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-027",
+      "bundleHash": "sha256-eddd10db35e18894bb43b192b62722192622fb0ef60e85da6c207f7d3ba73d95",
+      "scoreHash": "sha256-8e4cf4fa5276c7391d6ac7351bcb0c8d220286ddd32897b3d97564e6344dccf4",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-028",
+      "bundleHash": "sha256-6735f01e13fa5e9d6225c5a6ba74ba9d74f7f4605b4bc14748b8a36217022c3b",
+      "scoreHash": "sha256-e1f89765e299dfec5086ed55faefbe6327a6343304b5ad8190ba877697cd0529",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-029",
+      "bundleHash": "sha256-2e21d8aa6a57c7d2a8ab1c4a6e98b4590ef447a4c584fdb4dc5b30d3867f8bb7",
+      "scoreHash": "sha256-366d8f61b462b52ae8f571fe50161139262b3fe0c2951f4540e52aac0e7f3fa0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-031",
+      "bundleHash": "sha256-20028703b07459d290c71dd094324e31383b4c9eb4b6eb0c9c5985c274ba00a5",
+      "scoreHash": "sha256-fd768482bc3b7131a6c18eff2fc4074a79039504a5ce869ac7970d784ba3be96",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-032",
+      "bundleHash": "sha256-1032cf8fdd08c814ed704229c62685eb8fdf4bb985fe76ba7223572577262088",
+      "scoreHash": "sha256-f9fd980a7e8d89b476da24b58b42a9932993f256fb3812e9ee7212047ec04303",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-033",
+      "bundleHash": "sha256-de503126f0294b2c296ca435ccec1aab18d4afdc88c530e69d34e7a5be364aab",
+      "scoreHash": "sha256-0b45432175655654d10733c3c9da45b9dbc0a7426c47b01b9aa7dfb482747b57",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-034",
+      "bundleHash": "sha256-c63c2a861b8096b4fea8a5fa5b4b4bcf487545bf339c40da1a54d17e8f7cd935",
+      "scoreHash": "sha256-88c322f4d12a10fc7fd9587ce37571bf5cf495196ecf9676587806d45fb2c729",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-035",
+      "bundleHash": "sha256-21b2562dd57184e524c96cfd41e9d348f97cb53948472f671c062732e8c94ab0",
+      "scoreHash": "sha256-626a2cb0dca916badad7485074d74e2dbf7714eaff3e6f1331d8c049ea2624aa",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-036",
+      "bundleHash": "sha256-b7d4b3bcd9f2ed71d3f2779789da33675f52c32f811799df37118c0fbe753672",
+      "scoreHash": "sha256-0e77e865431b8f172c2463f27327f41358cf3d78b744bd93a3798b1d48ec8d13",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-038",
+      "bundleHash": "sha256-e805471f9b52ac5590b6e8c95804ed2aab9df0c8b50e8bd0ccbc8707051459c8",
+      "scoreHash": "sha256-c78ba9158ca302595040b37221bb9af3a21679c1818fb4079804d142d9a0dbed",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-039",
+      "bundleHash": "sha256-ca87b969c5fcfcf73f4bcd20af8dcdd769c608b5fc6e68fd64345c7f13224600",
+      "scoreHash": "sha256-505c532aeef363328092a4de4dfdcb975552028eff7145c2d0bec7b53d76649a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-040",
+      "bundleHash": "sha256-287ba893a523575b2a26ef641e9bb7230e0e665569afcdd81179b280e2c720ad",
+      "scoreHash": "sha256-913a60ebd9c2a0e3a296d66b277579b6467731044d81cc789300bb24caba2fec",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-041",
+      "bundleHash": "sha256-8d145bb0054cc481840d86aee0712df11b43b0b2508be3b5c85c4c4d21351b43",
+      "scoreHash": "sha256-5abbfce5405d1be6d8fb71768ad27597f46a2b5aabe424a35cc847b24c233881",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-042",
+      "bundleHash": "sha256-2463504f2a2d2cf697849a0e30219e85824533125b87a6e6bcb2700833581fac",
+      "scoreHash": "sha256-330ee603b6016a6d6b4db956cebd0a923e9cca6d1354305831482a5dc38ed9f3",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-043",
+      "bundleHash": "sha256-431bfe358d32f49611acd6fd4162fcf9a7bb51199f467e155c1c499fe9730e30",
+      "scoreHash": "sha256-a7bb78ab6fbb0952e08aa5d4636c70f592b033b093fcb9011e60f834a38bd652",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-044",
+      "bundleHash": "sha256-4a38ac4ac9b477dbcf1d1e12568bd3d5880231a323200ac859562ddc644ad4f4",
+      "scoreHash": "sha256-4a51e05729a1a67669a43edd1bd3af8baac4f9030cf22d43da1b77d287312d7b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-045",
+      "bundleHash": "sha256-2e6c9e14505d9d1f64205c790a2b2674f9e61575c70a917c7cf8b24253c4ebfb",
+      "scoreHash": "sha256-b3b7c3884fa70574247898de952c7cffb979b931030252a22435e75903de16a4",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-046",
+      "bundleHash": "sha256-3574d344db5aaa302ed6d5093bb3377e21db6e339ae90f12c52cf6298549c226",
+      "scoreHash": "sha256-18b512dee94125496107875feb4541af8e7283a6614a59d641f29fb39452c9f5",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-047",
+      "bundleHash": "sha256-f16e4afbfc85183bf38c2aa1979c7a76fe144fd062470f2e8923d97131882f83",
+      "scoreHash": "sha256-1a71cc53da535cc99c8173f49d629d647389aae020e87abf1a8747f478cabf99",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-048",
+      "bundleHash": "sha256-349437f0cfd9664b98c8753fadce74ebeb129751811554dedaf8d25c73753e65",
+      "scoreHash": "sha256-aefac928a4f7e8aa5e5d6b926fd3e60cdabf4eed68e5d217a0028e25c30998e2",
+      "winnerMode": "learned_route",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "better",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-049",
+      "bundleHash": "sha256-f439417c47d5a2117cd437fa12a4397007b1e3b95883156a7eca2da7dc058cf8",
+      "scoreHash": "sha256-b683d0a2c0a705da10107d5a473ab49abf6d57cc23de9b1e2fbc9c49a490afbe",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-050",
+      "bundleHash": "sha256-3e305b73542b578da1081d87f732b78dc0191ef59f6f573b6932d36ebddba042",
+      "scoreHash": "sha256-9fe1bae85babd15c3c6198e7968fa6231d8cb379dda56419fe3bbeb35a30811b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-051",
+      "bundleHash": "sha256-43f76680a8748353e66235e81e5fa5ab1de83b41dda9d482ee11cc6509ac11c8",
+      "scoreHash": "sha256-2580ffa25d592dc8cf8cbc8bba306f21db1c722b867648c54555574e44e8b843",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-052",
+      "bundleHash": "sha256-3f810429548367963cb7fd0707b53c0580a182f86ff2525c2fbb18801f76ed5d",
+      "scoreHash": "sha256-59779954175b198b320a16b9b09fc3ca7b91a57a076810ee58dd387bfd3f9fc3",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-053",
+      "bundleHash": "sha256-ce75d13f941bd99cc9dd9b757cd97630194c7c27d70b7a66a414ec988624da1b",
+      "scoreHash": "sha256-5c7fe4bdff10dae60d05709a35c87bdf824cb69e039d80f45657155da85f5e71",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-054",
+      "bundleHash": "sha256-a935fa574a0dfdbe4318240a9965af3defba877a7244bbb4282b2adbc12e4c86",
+      "scoreHash": "sha256-6550f7be5ef1c47993ba1dfc8c713f266d161241ebac42e7d0f4fd9c550fee45",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-055",
+      "bundleHash": "sha256-e574e8d85a125375ab830c0c92f2882ab26bf3d9e46638c0e4b2ddcdf985a7fd",
+      "scoreHash": "sha256-652abb79b78ef7b3265b0544934c1c6845e61004b490837dbefef8d5db4157aa",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-056",
+      "bundleHash": "sha256-0f8c15771edc62a6ab07dc6e7ab6aa8c33f1e7484fa2a9074bcf8920ef2d6afd",
+      "scoreHash": "sha256-351a608bced09cd334530c2617c71a3956be9f25a75773cb627d2e98e8cc5130",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-057",
+      "bundleHash": "sha256-b4100cd5178c1b83a80c296b8447ed2f0cdc2139df071244272ae1d626d0889e",
+      "scoreHash": "sha256-f581badac383e74cf937be4c7cfbbd3c934229e1e6d364fee265c5312c3616a7",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-058",
+      "bundleHash": "sha256-eb224c2f48576630b438bdb37a54b58bc8a5c09f091d51f9d8de14acd9479217",
+      "scoreHash": "sha256-e0525456990fc99cadf3bfd6bcd136214ca7bab6e69026660d266ac7ddb8b37c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-059",
+      "bundleHash": "sha256-c7bfd8718cf0ea1d97ea36705ef6bbfee2e7a914fa077204c135afe919f004c3",
+      "scoreHash": "sha256-706180bf72dfc6cfbe7aa5d00d67a4949a597020c71080afc967359f9cbb4e0d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-060",
+      "bundleHash": "sha256-7b90307b855265a8237ef0f2a1d2c9c7d5071cba757ae2c7a39249695b747e7f",
+      "scoreHash": "sha256-54eb048e146142f37580ed1c46a39f24d87c7a2c04d1a7fe4e5663fe5864b69c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-061",
+      "bundleHash": "sha256-ec66163ea5a9fada7587735b6754b19aea159131033374f97e240ea86b372813",
+      "scoreHash": "sha256-c584d2317ab80be7a33e5369ecf0140e60c8dedcdb89433a976afea685611cc1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-062",
+      "bundleHash": "sha256-3caee8ccbacc213d0615d3d5ec5cd2273c3c7c6f4b67f989fabcabd5b46c1e09",
+      "scoreHash": "sha256-1ca1b78230f8abdc720f76f16f6b68d5099e78bb30c8250d8ba7e6da5b5466c6",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-063",
+      "bundleHash": "sha256-4217b1ad1c9c41a894377a1b72adba94636f4e6e4927039bbb99046b549ad64b",
+      "scoreHash": "sha256-6b911c9784843c00f864d2d19e6e5a294ada6e1471788a6e5e63fd2ead4ddc63",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-064",
+      "bundleHash": "sha256-6b208c32538da74f88ef153abfba9b64ffafb396ff87a79d57e7299921f1d7b5",
+      "scoreHash": "sha256-53a880b9b9342555e8400250adfea09183a2ded669c623e5e4e42b5e2782cc1c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-065",
+      "bundleHash": "sha256-88243de3317130958cee75980a9bc096fc8c52df09db4c1bdad0bff5b8f1574c",
+      "scoreHash": "sha256-b1eaab09b3c0cf92b977da6762f7373b0ca469c7e65040e409e774e90a1c3816",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-066",
+      "bundleHash": "sha256-7db04a0a48c7a8820e4b41e5ce960190a4695d54b2bba7fff2d59301ae2ac1d6",
+      "scoreHash": "sha256-f37df52afd945ce813c167e17078e3b5e141f55323cb43fea0ba1dc538c42547",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-067",
+      "bundleHash": "sha256-6d4df84012e98cda2ada1ea3116064eef9f3c7126bae36438980ebb39d3b37c2",
+      "scoreHash": "sha256-c6bafb7ff4010ea18434d8e616574f6c4baf0f9e82bee67f9a96d79acf508cc6",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-068",
+      "bundleHash": "sha256-d761a07ea01496a211e645d481434674ce78ea708636c2a9c20789b896489737",
+      "scoreHash": "sha256-2e29d31eb636f038c17520f733c61e74cb1c0c86ed4bfcbf54928c6afa4b2183",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-069",
+      "bundleHash": "sha256-0d3978cd92f1940ea13552e141690a6f9e294fb06951e13417a745686efe58a2",
+      "scoreHash": "sha256-61ba1192c0d00f5618e59ae06345f9c8a1176caa463d6242af86a9d0125e4605",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-070",
+      "bundleHash": "sha256-56ad1c8cbadc8dda7655f8e5be15f71da69955969fca58e4f051f0978609601a",
+      "scoreHash": "sha256-82be90d056d0aa2381aa5ed46c834cca0784255b2b656cd6f4e9c6b99e732d2c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-071",
+      "bundleHash": "sha256-ce29b51f8f5ff8dd131410e903d22f59c4157dafcebb30a40c9732fc7d8adc40",
+      "scoreHash": "sha256-ea447f56ef0f8f9b7af5c68133d125ec58f4ec69c0b41bbdbb8fd6d8e68a0827",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-072",
+      "bundleHash": "sha256-4e33a8af505a3a3d5371314a21adcdfb03d9653bd07469dd4fe2c81ae90b1ce0",
+      "scoreHash": "sha256-e83f5296ba3e0d8a10ace8b6461cbc237bb4ddd7a677a88e28d87fc2a47c65a3",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-073",
+      "bundleHash": "sha256-cd9002cafffdda7c468bcdf4038580d1d8bb6c63d7e34173abcaa938566d6d26",
+      "scoreHash": "sha256-327bab9ec5c4b33f619db51369ee70dde830e4c28a354eec18fcbd84c50cb3b4",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-074",
+      "bundleHash": "sha256-1c5f548c8846a12014415d0263d7553c70007c9a9f5b1d13499041215d1433fe",
+      "scoreHash": "sha256-32419c937dd9aebf7151ffbb648dd40b53144521ed1c2accee3f3ef2113ceea7",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-075",
+      "bundleHash": "sha256-ccd98e20d08603d60ed0a1a9a759f77e5036444601fa85482ec9c8b689de0306",
+      "scoreHash": "sha256-5dd6f316c5b81798814268a6c2a2ad750b0181abe71785e338072de65485558b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-076",
+      "bundleHash": "sha256-fc20c8e9983d13761250f7c4efeb2a28a4056b9aaeb80a4a927f21dbf45778da",
+      "scoreHash": "sha256-b4563b3222a6158ee47007b799e5f799e5f830b60087f47c7a7f789fe662dd57",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-077",
+      "bundleHash": "sha256-773c407d66a6445fcdb75cb63ff8f3221dea0869e16018ba5af3ef73c581ea7d",
+      "scoreHash": "sha256-4e69f77fa550f34006367d5e29ea1311979803a62c4fc58191cbf489cdbc2f86",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-078",
+      "bundleHash": "sha256-d6ef28f0561d2c104c498bbff21ab5a8526bdb63e0b3d3bcc876001cd51f14ac",
+      "scoreHash": "sha256-1798cb09d69ebcaed44b22fdc166f9e4954d00a124b05f4dbd7e54e33a9e2605",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-079",
+      "bundleHash": "sha256-0f4a12bd79649fe9e50f1af7eb7229401fbe142ddbd2147a113ccfdd65a87c80",
+      "scoreHash": "sha256-503860611658b789320a4cc4aab96bd65d87d72bb61d375e69efb77f2e283e7e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-080",
+      "bundleHash": "sha256-183af1919cb7285e0ecfe15cbae9565242aab784638fa9fb07ad3e27e21141e9",
+      "scoreHash": "sha256-92215924756a1efb65a179282241bb39f8da2ef6fa3e433a5567547240c74cf7",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-081",
+      "bundleHash": "sha256-2e6482cb3e9e5a15e0fca52a6d656382fb82ac2b2858c382f7e31f3eeb01fba1",
+      "scoreHash": "sha256-2bd5d1bf5be0150292aefe85800a6aaf303808a9bbacf6f014976b5eb4117859",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-082",
+      "bundleHash": "sha256-5af223dc0d57b9ba1a3b9c382e7b92614c415f41aa97e71d50aa10d4cc6ef21b",
+      "scoreHash": "sha256-2740846fb7fbf5a41edcf9085c20373840e033fea5691c1ed4b29647e792575f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-083",
+      "bundleHash": "sha256-9ff582e632b875ca70123f4177d0b836a4b8e79cf2bff854a03f2897b7bc4f9d",
+      "scoreHash": "sha256-141ee5f525b327d121516c718f53c2ada631851609ef1a0633050c1ab28079df",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-084",
+      "bundleHash": "sha256-b1831aef17b14e771a94ca93dd2a99493ba8e9b27b5610b90761c7b6a60d30d2",
+      "scoreHash": "sha256-b04b096de42871946fe5a7047a12994515170f69f7ec7d1971ca5fa398f7fda6",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-086",
+      "bundleHash": "sha256-19ef54ab03cb516ea54e602b5b1f741e7ac26f6b50d3e644708934e78464c468",
+      "scoreHash": "sha256-a79bbd2605748839463665128fe4395901acfad4c5692158946e310d2be197e7",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-087",
+      "bundleHash": "sha256-0f87ce14dd8d9fec12e6b0685499faaeccf022e951a5479812037da76fa68b9b",
+      "scoreHash": "sha256-a94ba9a987ad3c569210094b2e074b94b9ddb8ee83c09dff47be2ac0a96b3f14",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-088",
+      "bundleHash": "sha256-70087a4c48f4ce7a5ed8c9338ef124e082cc0dd28a90a8be8616b55be458fda4",
+      "scoreHash": "sha256-15bcbf9ebe79f47f22eddac2a5ddba8ea89170f88fbde33b0d6f4ec5caad05bd",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-089",
+      "bundleHash": "sha256-97bbeeea61482e4d9ad64b306334bbae21e8046bbafbc93e2c7123be32264963",
+      "scoreHash": "sha256-3550457154f11c3571390c1c8201ae4aaa225f4c6542a192cc01669ce0fc8d4c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-002",
+      "bundleHash": "sha256-798ca2107cbe4e18450d644026b608067af5d8a049194d46b87d8a6e86220561",
+      "scoreHash": "sha256-0ae8e8c26f07334d04599e1db50f0b2c17bcf922b8b65336c606e4655a39735e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-003",
+      "bundleHash": "sha256-43c5695ba67f259626b5d4cafa149d7f36b9bcdfb9f906f624e6f75f211c2dd0",
+      "scoreHash": "sha256-51c8a1b23612dffce633187bf0432a97898018a3f0aab3389e4670bf602923b4",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-004",
+      "bundleHash": "sha256-23b42e8cd28e4611f0827e0ecf456795547aa3066bb0968e642d5909c3e6b861",
+      "scoreHash": "sha256-6ed43ab4ce1a7f413d031afd1d6ca2070764779ba536bb6ddbbdda96f3458c2e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-005",
+      "bundleHash": "sha256-51af48f2d65813830e919554fe72ff51eacde715ce83c413c50c801cbef19eb6",
+      "scoreHash": "sha256-4da2fd43374f3f71bb78cd7161def0073953102f6c697c7524af788fffb8b20a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-006",
+      "bundleHash": "sha256-9b7db02ddcb777f04443669a2f358f5f51fd307299a60b313ebb327cad4871d3",
+      "scoreHash": "sha256-2a1e0d770323451f37be52692d886ee93aa04555b6e3c6bb0de31127c8e35f5a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-007",
+      "bundleHash": "sha256-cb09918608ff5d7f5415aa8077dbcd371702f89287d20c7a3f4b29cfe81df149",
+      "scoreHash": "sha256-7741d4fce06fb4e8b0cd626065665a5bebe532f1642e7a6beb7300301432b179",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-008",
+      "bundleHash": "sha256-0d5ae2053a127ca1eb7ec14ff02f4bf8708a0a37992c02e40dfbd68e4f972ce1",
+      "scoreHash": "sha256-f2cbbacfe117f5642fcbff41276c40b8e7924600cf1f6efb09b09620cbb23540",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-009",
+      "bundleHash": "sha256-9db5d9781473105906a1f155c0396b890ce0d2f6578466358a5786c946176abf",
+      "scoreHash": "sha256-6e425a8fc8d7d8f9d55c2e4004491be43eaf6245ddc62af45fffd971dc90d6f4",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11cd96c3-b5a0-49a5-99ba-beed78190836-window-003",
+      "bundleHash": "sha256-5ce53081eb1184cabd132835ee8ad96eb3fcd9ac887e564800d24d013244d452",
+      "scoreHash": "sha256-f5a08005bb3067872e3c2fe5258c648e942e1eb926e71bdf9820061643db34e3",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11cd96c3-b5a0-49a5-99ba-beed78190836-window-004",
+      "bundleHash": "sha256-732ba8cfeb796ead0b16bba7e66d30c742ad574c1061a9b6194052d728e0261c",
+      "scoreHash": "sha256-44274d30357e11057cb0591eb5ad6d8d56be3b7ad761a78c244eea42678f94c9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11cd96c3-b5a0-49a5-99ba-beed78190836-window-005",
+      "bundleHash": "sha256-f6c4513b11767fb8472a0f671dfdfbf9c0f2b6821f7f3d9097e2eaeb0c548b94",
+      "scoreHash": "sha256-2f0103a5b9d888e79e6b317c22c8391790279461fd02caa2e11adb1e3cf2ef73",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11cd96c3-b5a0-49a5-99ba-beed78190836-window-007",
+      "bundleHash": "sha256-6418d2b38c9602a0d3ce867eeee168c365f1b61d160dcabc54c514f29b2b63db",
+      "scoreHash": "sha256-5fa8bcf7d036f710949155006dadc07357790a7d5e810a9b3dbdb505630fb605",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-11cd96c3-b5a0-49a5-99ba-beed78190836-window-008",
+      "bundleHash": "sha256-229a3e52c2926c0a4f80fd6745d59735b9d01c85bbee8aff25251d781bf4e6ed",
+      "scoreHash": "sha256-20d812d90f0ff0ed60313154174f977998be1abfab63c73473caf0fcf340059f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-1be4a7c8-6d58-469c-8032-d59f2a613d8f-window-001",
+      "bundleHash": "sha256-8820dd0c7fb4ed41a7f0260e84db589c87b71622527926155a7eeea4fc54b5a1",
+      "scoreHash": "sha256-a83454a60bfb1cd590fa8f81bc1f5b9ba880f2928e6305b3a12bfe34c87ba1e1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-1de98d77-ea36-403b-b685-deef4d7a1723-window-002",
+      "bundleHash": "sha256-af3ca565c0495241da191a1bedc6c82494425301cab47b2b3e7cfcaca7c71002",
+      "scoreHash": "sha256-65fdf89e7d947b87ff8c4173501e1efa6ac202fc83ae0b57680de24657fb725a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-1de98d77-ea36-403b-b685-deef4d7a1723-window-003",
+      "bundleHash": "sha256-2019dc3d6ebf9dbdba0b6131eec51af14541cf7314be6fbd443cd1e98c442d7e",
+      "scoreHash": "sha256-c8f60dc0d05f558cc940ad43083db7da3e6224bdae4ec9aebfc42a97431c4814",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-1de98d77-ea36-403b-b685-deef4d7a1723-window-004",
+      "bundleHash": "sha256-ad25720b39cc0b58d9960765d41a7ea44f0f6adaa89812731bf644c1acf592e2",
+      "scoreHash": "sha256-6ed1bc1446024b65ea6c1eb5cec66989ae8f8be4f0ca99cd35682d83846b0c9c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-1de98d77-ea36-403b-b685-deef4d7a1723-window-008",
+      "bundleHash": "sha256-4d6fcfd8f0ce79d470b5bb2181b32964bd585cd48e1df185bcbc830773969b54",
+      "scoreHash": "sha256-795d14bdb56fcc87282e5be65573b525e5977b687197c5e4ee3ab6e6a941ac4e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-2362908b-54fe-4301-aaaa-003f211ba89c-window-001",
+      "bundleHash": "sha256-0af00d1d1b02d7a1993b3a74adbea6334213d15c55fe5e030ec50b7396c6584b",
+      "scoreHash": "sha256-9e3084b47700311559a30c0e2b071bdd1099c82330dd4b39bf1dd15b3316251b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-2362908b-54fe-4301-aaaa-003f211ba89c-window-002",
+      "bundleHash": "sha256-6b5b4d38531d9bbbd75e268ff08f3489af8523164da2bf79ca96544d54038646",
+      "scoreHash": "sha256-54a7504be69e6761c1901ff0b6d0dcdd3fd9a07dae5e11f0f99dcd650a7dc339",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-2362908b-54fe-4301-aaaa-003f211ba89c-window-003",
+      "bundleHash": "sha256-b86f1b4d05ecd83ec59ec6f0cd7e4a3673b53f111b0efc9714fd111ceca5597d",
+      "scoreHash": "sha256-554e914d2a86af967e7ed5df7fc747114d85dc658c1b56f27266edd2c2035333",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-2362908b-54fe-4301-aaaa-003f211ba89c-window-004",
+      "bundleHash": "sha256-249a72850cda1d70bf3bfee910bea20d85bd4ceb3e4c7821c668dd8953fc12c6",
+      "scoreHash": "sha256-832f490fc03a9224022488708c802f882d75bbfcc45e61d78613e91c43375012",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-002",
+      "bundleHash": "sha256-72bdcaddebd5af3fbbe66ae90bf479a19c89a75afd1b38e87bcab34b8baf655d",
+      "scoreHash": "sha256-daece61a73e87360eb1c3faff0185e26ec34a09f805387fe9fe20ad05226f62d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-003",
+      "bundleHash": "sha256-1663e587cf07cf9dbfca19d98e840c8b7439e6c037f1fb28955ad275baf96f37",
+      "scoreHash": "sha256-6af8bb85a1c39c734237b96aad7b1837926cdcb3b8a1a53b9bfc0584b30b407c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-004",
+      "bundleHash": "sha256-9201e4dc715b3bf55e634af8a4607a511dbcbd1b68b5733b2b4f255e8ec13d92",
+      "scoreHash": "sha256-7213c6e53327a829ff132936486e8ed58da70e6759990e367b45b4d49d3f5704",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-005",
+      "bundleHash": "sha256-77cf9c44f2f780f194b80be166ab392ca017a4a1f29de5204272db2de2a7a4ef",
+      "scoreHash": "sha256-8c8a279d6f0603efa4088893e1256309cf742dfd49a03f4189c645f2a6522bca",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-006",
+      "bundleHash": "sha256-77c86fcc2f5cbfeb2e500d333ec94dcbf7e59fe5f6b79e75f860416dd1eb094f",
+      "scoreHash": "sha256-5fac10ba29855523d8e3f133b903ca62a699b0a745882e5ce0db5c7d87a6c767",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-007",
+      "bundleHash": "sha256-d0da583685a523c98dd4153616ab571142ef2f2eaea83a67fb14422971ec5d38",
+      "scoreHash": "sha256-c8694a3206fdaa34ebaedda63a58726ede24b029942d4d0307734c073c326406",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-008",
+      "bundleHash": "sha256-9eabd517a647d7514096e5b52af5cda91620a617f171648b6478b680b36c5a2e",
+      "scoreHash": "sha256-df615a4858e0f2578c8a2fad8ad7c1b4abf3cd8898f99b235986674cf8643d2e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-009",
+      "bundleHash": "sha256-3d7058ab8f8fd5098a1153419ad5ad6314881bfa7c5aa7f78a0862f1acb08dbb",
+      "scoreHash": "sha256-cba69aaea80f28abbe9d16e2837c30db38977550ea28d2d444baff0681bc3c5d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-011",
+      "bundleHash": "sha256-38130db941f0f4f5cd845c730ce26d83499141425a82fd499434c0590b0f8acc",
+      "scoreHash": "sha256-48b653a75b374c41e454fa08799e9bc36b1b40aac4fccffb88b8f896b508ba20",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-012",
+      "bundleHash": "sha256-880bbed77f2a622d7b0199fba4e8299bd12de4256fcb478fc9171b32cc652d3c",
+      "scoreHash": "sha256-81f41d70c606216b67fc10fb19a564c9f43c2851adaaf9b2433f125f0b4abc7b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-014",
+      "bundleHash": "sha256-f7f6625bc5164e965335f5297d4fb4653ca3c761efdf718e2214c46cd0d53a1c",
+      "scoreHash": "sha256-ca96405f38f73befa34a603c3fae5276d2c61702ee773a38af07833e6b63249f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-015",
+      "bundleHash": "sha256-ce11b25233c45fcbb1c88015f8f53f9b773da06267608642da5913ffb54d04de",
+      "scoreHash": "sha256-2c188e07e2457ce58b1df25fa326cdabbb56a9fae7d1bd3ad02dbea5793ad423",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-016",
+      "bundleHash": "sha256-de9a9b671884865d900f780848205eba608c8f636d4b9d6ec043d1bcad39b314",
+      "scoreHash": "sha256-702870c87d87f02d1f93fa291ce5af6870a9d551e67351a7c67579ffad1d529d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-017",
+      "bundleHash": "sha256-972d6b014a6807a65c147a9258c521ccc6da268a826196935534fd12e2b9164f",
+      "scoreHash": "sha256-77947aee085f21e65a1ef141ab881667453b89d0e0341dbce460c491b37cd82c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-018",
+      "bundleHash": "sha256-a3efe17806c2517d5d2105bf0a91cbbcdb64b4ea7f89cef4c238f9a485fb34bf",
+      "scoreHash": "sha256-4fe228463abe215143a1d360656dffacebb1322f27c9a006b077064eb6e93253",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-268c1732-aacb-4a41-b1d1-028262bee45f-window-020",
+      "bundleHash": "sha256-c4e29d930d41e5e6e6b23826e991944b4d33e518889051a15359d13e2552f2c1",
+      "scoreHash": "sha256-0d5dd1f871ea40935abd903d1dbe88e9f7a86f4ab308a56969b37bd048edf63d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-365dd958-3cda-46dc-a909-eca531206281-window-004",
+      "bundleHash": "sha256-db19b010f5ab4b5e0c27377a5bde8ece090bab1f064f38bcd2f15b65488d66e7",
+      "scoreHash": "sha256-c63686cd7144f1fb52680bfd02534b377f6369ff1e379f6a3b8eb60c6e0a7f1f",
+      "winnerMode": "learned_route",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "better",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-3cb1eac8-82e4-48bf-8898-e9fa5bead77a-window-004",
+      "bundleHash": "sha256-ba76c9aad395eb8904b724bfae052e51a97b6443d504cbfc91a648ea7dc53c62",
+      "scoreHash": "sha256-d28b539d2766e0d622b40d15ee9d750406ad9600ad41678ae122828ac2061dec",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-4654a9d2-02db-4eaa-a316-86d131e91df8-window-002",
+      "bundleHash": "sha256-db2f795036e95b1914eba5698ea515959f40a6401d900c167df71f479623c3ba",
+      "scoreHash": "sha256-d609d2c40bed190f03b704d4d093548d38424cb5ccc5005f1efb1725d551ab69",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-4654a9d2-02db-4eaa-a316-86d131e91df8-window-003",
+      "bundleHash": "sha256-1c8b0a3f19a8d0559cc23b88d15940342beaed963b589820780e852bb753f2c9",
+      "scoreHash": "sha256-158a24a0fe30409e51880fc2818a8ef50ada76d57f8d9756968b71c86f832b79",
+      "winnerMode": "learned_route",
+      "scoreSpread": 70,
+      "candidateRelationVsBaseline": "better",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-469f7b7c-7551-4939-9416-5ac673c3b285-window-002",
+      "bundleHash": "sha256-142781cea318acd6906a264f971a70c0b06bcaba97c54134c3fe19111dcf557e",
+      "scoreHash": "sha256-23aebce269716bef2052becde55fe530f03f759f85e9689ef7569c115d2f26f0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-4e89d5a5-376f-4b67-9e88-3aea314ab451-window-002",
+      "bundleHash": "sha256-ea7ffccee8a7f9a0ff526c7b013f0bcacd1423d3ef68161965a9622400f8c812",
+      "scoreHash": "sha256-09e5094cc7862c15b4bb83b5fa20188083c36708d3b99ddd2882ed4a420d4db8",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-4e9af4bb-5f20-4cfd-85d4-a00bb3d64878-window-003",
+      "bundleHash": "sha256-897b0a035db57a90a008f5de668fd069ee9dde3408f76d8a7853d61ac26bb180",
+      "scoreHash": "sha256-30e26bbfba9d2ac3c1152a7b74f7808242af69077179ec3779cce00bf6355e87",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-5043ea40-b106-4937-bad1-aac2b5627b91-window-002",
+      "bundleHash": "sha256-497034cd9b34acc503fa32f1a5296a0caa4ec8c7fd9cfc7acfb4c73a0e4d05d8",
+      "scoreHash": "sha256-519eb4ea3fcf1196a335976d64d994567914851e23fb60a5de08438fbbc1bfdf",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-58e7c9e8-bc09-492d-8ce5-6e92f0078397-window-003",
+      "bundleHash": "sha256-3f989617db422fcfc52278389507664f4ab31d0be410ce15e6c73623b1d2f09e",
+      "scoreHash": "sha256-9b87ae171cd051389ed75938a6a813a72e7ef7eefbe5a288d3480a364641176c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-002",
+      "bundleHash": "sha256-ec4ff4bfe194f3ac67a6033521d7fdecb72fb2150fee3f87d4521248526f30ef",
+      "scoreHash": "sha256-6ae31eb190e2c73fd81717c921bb1ba72eeb7e8a03324c6ff12514196a627c48",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-003",
+      "bundleHash": "sha256-366030ca41e85403e42263ce8b967f0e4ff450e15d18f51b69c484c8263397d0",
+      "scoreHash": "sha256-15d3f3746470a9a2bc62859d1b3f9126be84779e49d16c35ed697660b82af6da",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-004",
+      "bundleHash": "sha256-75932bba4a75d1bd38e35ede34bdf6f24df7ffaf3195811a66f7b8ef46ec4813",
+      "scoreHash": "sha256-a2dc6c22213ed7c32ac902f786726d3577ebbf36ffa6e554ef26f53da32f76a0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-005",
+      "bundleHash": "sha256-eb6cfe4e974c0fd7433ea49dfbf8b223b251ac880e42c23752298ab31c1bf0cb",
+      "scoreHash": "sha256-9acc3b7c2bda64737b0f7821ef0fc469b9e124869f7e72bfa33b3c1dcb7fd4ef",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-006",
+      "bundleHash": "sha256-f68e3316f2d1ce42546046698d7d0aad6555090ed290bc9b0d7933502cbfd361",
+      "scoreHash": "sha256-9ab89733c23230cb82ad25eab1c941e8c31631a8e389988946c4fe5f3af9d298",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-007",
+      "bundleHash": "sha256-c396e53d89a36ed3ab17ea162a6eb4cd5c1f8cd30a3dd626cbad33729a3c3c95",
+      "scoreHash": "sha256-cd6582a111fcb3eb75cf2223394143d2e4f6dfd073578543bf85315eb5fd70f0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-008",
+      "bundleHash": "sha256-c4aa6f2055b1ddf526a3838c896011dfe6734b5139af7c05f6ba69388c68b54e",
+      "scoreHash": "sha256-ecb5a371c5726a54a067c0485155f8ce4ccae3b636866dcc3f22785a6e8bf4b5",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-009",
+      "bundleHash": "sha256-37d1e5344c6c759ef8986664b5eabdd9e9042df32d9e12ee6719ef467ae37eaa",
+      "scoreHash": "sha256-5b8a4a98c9a998245d2d4a1f735fe2b465a77212e2309b7f5352e1314fcfa051",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-010",
+      "bundleHash": "sha256-8fc7fbf3281fd146f1f0af84ba0d2b0fc7b01db5837046a864c6472a7dd1e5d3",
+      "scoreHash": "sha256-ee5e18a81289e34aa77601e86b393be065236bb0d4daad97b3862ad67e1f04c1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-011",
+      "bundleHash": "sha256-566b1255a6e5d1bcacbf1b6e71da6b54b2cfbb4ab796935c5e60cf9c21dbdf0c",
+      "scoreHash": "sha256-ac96ba8275af238baec329ef47c480063a1aec5f3b48421d42360122d03521c5",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-012",
+      "bundleHash": "sha256-807cc6b29882b20e7c6ef3798e91d7ce1a63657a6d5727f0a206f90e8f7b9c16",
+      "scoreHash": "sha256-690595dcf6d60911238449d2dadf8468da3082ca2949611dbc4ff39401c72b4c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-013",
+      "bundleHash": "sha256-5567c3306422fd8d4ec9058c0a7e148d6b6f6fb37248f833f6d3f9f3ed765267",
+      "scoreHash": "sha256-117f95900ce501eea68a77a7895460708e954bccd40cb77d739d78b0d7651078",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-014",
+      "bundleHash": "sha256-4965db5d770133b758c3f6a2a084b0200151f5e81c38f5077591cb570d1b7d97",
+      "scoreHash": "sha256-22f7cadaf4b71439f9cc4dd41963ffac406d98ac9633faf07c7fb3ea950d617e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-015",
+      "bundleHash": "sha256-50bd08632bb24b2dd2c46fa7eada63e8d8e7e39cfab48c7d15824ce71fc1af21",
+      "scoreHash": "sha256-6f4e3e56d166fd417cc78714ce49f3971ee8d3a4f06f6ca931fb49ce416d92e3",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016",
+      "bundleHash": "sha256-1093ca24a15c2d53382765c9397675056b87e293ce828b57389b47e3c5fa178f",
+      "scoreHash": "sha256-136d354c6f6998c5aab7db85d91ea95ce9b3270867d48f0818cae6cded1230ba",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c178ada-4f98-44da-9ab2-6ca13f2e2441-window-001",
+      "bundleHash": "sha256-7dde72e86dc4a007a08efa4847f643843cb1e36377b58497bad9d664dc0e32fc",
+      "scoreHash": "sha256-d1bfdff62f6dfc6e44383dddca42a7ddbc82c38dac38f52e164ef4658c08633c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-076",
+      "bundleHash": "sha256-73e414855757c04eb555d313543e4a19fb70fbc88eb7f91158bc3a00d69d3aaf",
+      "scoreHash": "sha256-e5616dd297b35357f5d1f81aba4fbde24970c0bbef57291c1217bcbc2bc66d6f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-120",
+      "bundleHash": "sha256-00488b99e1aa5a57b470b1f9b17a9776dcc1805fcf70e785e5855de1133d4eec",
+      "scoreHash": "sha256-a296d4f7de890afab891eb71f11bb3c304a06c17cd649304acab1e2275ac7e1b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-144",
+      "bundleHash": "sha256-cb096af8d1f1bfeffc2f7389a24aa01d8e41ab6e93a7c8d267637fd2770ca522",
+      "scoreHash": "sha256-efe559c52f95b9bd668ccb48f4b815d6c037cb51eae66c1a850d6cd89c8f4716",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-145",
+      "bundleHash": "sha256-03f3b0cfc13bc5606156ed0edd5b347849bd4dc15ce6a6b61f4b852fd06752fa",
+      "scoreHash": "sha256-0ed1f3981cebc782525c3629ba78c9c396e8587e7252aa1ceaebcb5573235b4f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-147",
+      "bundleHash": "sha256-8b6d8547b9142ec54f7fae33c760ee6e3f4f74f2cf6c1e6da774053c0cb4c39f",
+      "scoreHash": "sha256-4c29d02026b8ea0d8deaca9db1b9c6724e2dc2a4ff11e5318a3fb14f9ffec732",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-148",
+      "bundleHash": "sha256-adb8c2713644aefa36de1d1ce3cdf8ce07701a76ea87b02ecb907f5b7d0c6c73",
+      "scoreHash": "sha256-16ce557c2c23e0bd13f437b6578c84a9fe4920dccce8fe15719acf13b322fe42",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-149",
+      "bundleHash": "sha256-371ea0c903dec73328dcaf80f48ff6c9408446bb5115c28b97f3fbb09d99b540",
+      "scoreHash": "sha256-32e68e56cd66378a3386688105a137f1f28026b3b5fee13e1383f2214f942de0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-150",
+      "bundleHash": "sha256-03be0b9d4d6d2a3b68afb5deabda6de21f263ddddd6cfee3a4897faa0970b32b",
+      "scoreHash": "sha256-983d03e338cbf036286beff1e12e22bdd6cb85852c1edf386ebda381ae4a3c88",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-151",
+      "bundleHash": "sha256-1190bb5afdc9193dfa1742a55a09983372300649702bae80437bab0d4c23cade",
+      "scoreHash": "sha256-ad2f2d3e1df94fb6193d84375079c51c40bf3b0c6ad736d568b66ada788aac3d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-152",
+      "bundleHash": "sha256-66e66eedce2feb480874bc6f9c60d2577354a6de5043b6a5bd81ce70121b62ef",
+      "scoreHash": "sha256-cb5c8627d9098f5cbe15721c21b291be79e433fd3e4d23ba08231274c7631cb9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-153",
+      "bundleHash": "sha256-de0a81f6cdd7b1160a5b20d9d4ea38d279eebf92da3891d80caa64b50001d1c3",
+      "scoreHash": "sha256-6a1c1aceed405ea91e033c26a5b3346402e7b93013ef15d575d7a96cdb99fef0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-155",
+      "bundleHash": "sha256-53e2c48b870d42706cf4ac47eaba6de66d74cdd8e1632fa4ffcc07627e53bab7",
+      "scoreHash": "sha256-27804a270e16be6c121eb29d95fb3d919d84167941ba58288d937bdc26fe52eb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-158",
+      "bundleHash": "sha256-d2821271ef369d87fa7764ba45bc2f066a02f68eb3546dd6708a2fb0e5970746",
+      "scoreHash": "sha256-28c6ae873480c63e6c0d252c1bc6adf771a7766487667d9145d87ec40cf9ddb3",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-161",
+      "bundleHash": "sha256-4e18699d8bb7dbf4db386a24ebc679b588de8b2e58954e7d64aaaad1c74a5824",
+      "scoreHash": "sha256-ab86415037e5017bb7e805293a355a28d89ec95611b8595de0be2fe61ef372bc",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-162",
+      "bundleHash": "sha256-c194156639ad0c0f5f1476eb1bb6bd1aa7f401d31df7cea9ebe33d03026a72dd",
+      "scoreHash": "sha256-5584e54d62adba38ef4d4b5fdce83005fa004b6f88d9c85211d232ab0a2ff7a0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-163",
+      "bundleHash": "sha256-acd846a0bdb0e56998aa3bfb147c03629c6f2dc15c8b78a45028eb909300ee08",
+      "scoreHash": "sha256-1f7a1d7520b9ad7c9eea398c353c94c8e8b67ad9171ff06e80f09ee305d5d314",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-164",
+      "bundleHash": "sha256-fdb8bf4459db348b7186a167040bf620051bdf8d86a19052539cb059a37fc7cc",
+      "scoreHash": "sha256-625e8dbb42d2e44dadd6721983dc9ac1687719df22bbe89005d8a6857242421a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-166",
+      "bundleHash": "sha256-0a73555c5feb21fc43828963c4391d5c04e41f24a489298da44230dbf3754d5a",
+      "scoreHash": "sha256-511a7b41684f374e0f96970b72f4cf3ecc5e709331ba138847fa6b0ab80c4265",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-167",
+      "bundleHash": "sha256-d2ec47a554be57511a051da08e9a75d7d80a3033db2e11a94ec63136ad718834",
+      "scoreHash": "sha256-0338842912ba65f32f8741f0bc81c34e46e783a02fee8f60ac6d88e41efb9a86",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-169",
+      "bundleHash": "sha256-fa5536594824ff2952854ccba9aafcf8be1bac35b89db012509aeeccef082d38",
+      "scoreHash": "sha256-2a47ab093c326feb127f5fb099ea801b879fbf88ad5930bc7802357bd63866a2",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-170",
+      "bundleHash": "sha256-0c138a2282946c249a4131593aee29e3e09e5b896b5da702467fa6bf63b25a83",
+      "scoreHash": "sha256-d29d8dbe4543015f626cc47cdb10f5641ef94294e57d179f1b054487cce08f6f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-171",
+      "bundleHash": "sha256-cade37094601076d1829e8ef6756f26fca4e41e23fb099690488f7808add81c3",
+      "scoreHash": "sha256-548a52979e3e95515d882387120ee4679ec736dd4dc9ebdddbcc33b6bfc1aa75",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-172",
+      "bundleHash": "sha256-668fd9fdb30ab0e6d7733be0367adec6aafe29e2bd9f67623a37fcac785a7705",
+      "scoreHash": "sha256-b326c83a4b8ca5f90ddb2589644b454f41a7f761eef55472cfdf089b009bad57",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-173",
+      "bundleHash": "sha256-70e5798c39f4c67fd289f470c7172add217a844209c6e74ccf9768eceea2987f",
+      "scoreHash": "sha256-bd5735247319e5e2f2a907fa867f4d8a4cdc1116cf557955fad7a58327012c20",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-174",
+      "bundleHash": "sha256-6022d719dbed6e7b267843ca00309ef7e9930036573a0555c7b98c440f194a3a",
+      "scoreHash": "sha256-8f3bbdbf0aa85d7b52f03eb12072959c4d143b253fcad525f569b7f81902efeb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-175",
+      "bundleHash": "sha256-6dcd17afc69263c14278805b14a3439c93497837b6735ddc6b0a2e19a35587fc",
+      "scoreHash": "sha256-3decf5e2a83fbb8f562eca3baabc4a6d96d39f3234808debd6efa4d160a05fb6",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-176",
+      "bundleHash": "sha256-0f99b9af31299021b4d329d10c3edbfe2eec4262e22fd824836aeb2c276cc2df",
+      "scoreHash": "sha256-13f8b40885cd6c4b2d0601e75e3ea4ad5d10b83751993cfcbaa7dbcf4a00b8f9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-177",
+      "bundleHash": "sha256-a5904b0de85325920070e79a3c361c5509d0220c67d63457f5b1b4821241ce44",
+      "scoreHash": "sha256-ee0f208d062a1b8923c58eec03045ebc34b1773ce7cf9ed0b255e952f580e465",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-178",
+      "bundleHash": "sha256-38df0aa21e3c5997047ef86e1e925bac9e0e54637ac951b467865932fccaad49",
+      "scoreHash": "sha256-1076dd760ae905de77a3585ca498b23aebd748d6ab39611f6c4ab88daa457be2",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-179",
+      "bundleHash": "sha256-e89b0e780881eb09eb4c86e492fd451c220c8a12f3fa8c740d89bd6da796ce4e",
+      "scoreHash": "sha256-58fe96e5f1f0acbc7405215484e4c7bfb9e1e88c9684c256ff84d6f057f54b7f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-180",
+      "bundleHash": "sha256-2622cfe73fe91c92716a8d1d5bdc400fcb5d4c0448e370c203fd55534c2dc9a0",
+      "scoreHash": "sha256-410ef421fb63a75c3b061d07a8f3a5b7f1bfb01f2185dfe8d6eca885b902a964",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-181",
+      "bundleHash": "sha256-8faa22427fe63e196ae45c2241e856e3e4425a03dd123848650df50c6087f0a6",
+      "scoreHash": "sha256-fac30bf4a39daaa43761f7405fd67a5a331f7e948ffe5b1aea02c3401abcc267",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 80,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-182",
+      "bundleHash": "sha256-2a5aac9d217ed520acc808b83d3e7c4d6c31e90d19a442a6fa9c611a589727d1",
+      "scoreHash": "sha256-161340ab3237b9aad489d47a27ed22e1362f4d55724f98c8dc494526b6aefc88",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 80,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-183",
+      "bundleHash": "sha256-13a39fcbea4255e354bd1af53eec21820bd6d273d791e5c542c3f081e3195fe9",
+      "scoreHash": "sha256-7b4a2c0469db24f5fb9a3aaeb286167abc18f3a4af8f73c19754bf29fa2ba2e1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-184",
+      "bundleHash": "sha256-39904e3fb5c30064c81e6be4d9441416de9e21a11c9dd3801fce7919123f962b",
+      "scoreHash": "sha256-54076c0db7c9ef8d068cb32c182adc5b17b680b4f0f17b1d69a8dfe8fdd0d9b2",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 80,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-185",
+      "bundleHash": "sha256-4326ea59339e3114a68288e54ffa6b79aabd200ad26acc486c52acd84c7fda47",
+      "scoreHash": "sha256-310bb3437a87a2bdcb81886d2b7c5aef50cabebab8360d2ddbf4edca5946a8fa",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-186",
+      "bundleHash": "sha256-088c3e613e8334f63da5361b13fbec2df1118efeacb71e79c0d292605ec0f277",
+      "scoreHash": "sha256-a1f964b757aa882a6df5d51fdbb730a885fa7cbb60884adadac368d30bba8fa0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-187",
+      "bundleHash": "sha256-98edbed7bf7e820bc439b30da311205a9802ddee345dc0ba2f51d77eb785cc07",
+      "scoreHash": "sha256-bba962f2d02819b78ec7d5813231395ec5b3e2837d09b40ff3a6ddd13fd51f03",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-188",
+      "bundleHash": "sha256-13851bc8c4302459e45738a7e0234fbed523131d048abc93ef3c7105cda8be68",
+      "scoreHash": "sha256-2d9c7de756b209527d7c02c0051dc3c41f5714cb08d9339625fa4994eee2591c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-197",
+      "bundleHash": "sha256-f2c23786a24e820a3d0fccff4c5e7c0b97e6bc466f054e28a1ac13b0b0ae9ae7",
+      "scoreHash": "sha256-6a9758cf378f8ed20f6c5fe13161a53cd98987fb0fa74f49c3d36f62a803c467",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-200",
+      "bundleHash": "sha256-ec77949ec672f373af55143a28285633b5b6a9db19e8ac76644397751487a5ea",
+      "scoreHash": "sha256-29af38ee8ab83a3307a9bba0b383c709c4ea739aa77ebdaf7748ecdf74903947",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-201",
+      "bundleHash": "sha256-762caa448d2c51adc90505833ab90003e0fa43080159bee246782c58797b2d60",
+      "scoreHash": "sha256-88a4ed8181c4b7a6e2f9fbaba3c3f5e149c6186b3db9aa8e899afe2ff157e5d6",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-203",
+      "bundleHash": "sha256-4d5e6115fee3c406c4e69727709caf41ee02c821a1ad1c5350b93c31dd94c16b",
+      "scoreHash": "sha256-e08e71eb2e778db5b3e78903897d799be0bde422ad3a64c1a29b471e9808b31b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-204",
+      "bundleHash": "sha256-065c59a770f1c68b88d40ae88f96d9a42fbd243c2c7e339f09e7794778f3ed72",
+      "scoreHash": "sha256-5d6960dcde9cb5ca3f54aea74e26e0da540b94af68cb8420f02b7f4ac791f51e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-205",
+      "bundleHash": "sha256-402a9c4644cc689b64617b07eb008bdee742dfbf389a7ab02e37739c73f9197d",
+      "scoreHash": "sha256-76387b2ff66ce81965fbc3636e322df8712ba98f6dc1dc8fd49941a291950504",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-210",
+      "bundleHash": "sha256-f33dde913e5c6cf4cf699b09345500c90bb90b781351723558089cf135a5a7b0",
+      "scoreHash": "sha256-d817bbe5616ec0424a4f1a0aedaee9489293a173736923b849f08b13a4a9a100",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-211",
+      "bundleHash": "sha256-a13059daa738c1198377dba4cdc4b0401e716df7f3c5e379740d4db0468425df",
+      "scoreHash": "sha256-c7f8704271244d9a89ff79c82f1cae4ab4b5bad509015a4d8f9005556da35d91",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-225",
+      "bundleHash": "sha256-922cf171b3301b2d50594e6b6203c534c248f3cdf47eae90ee46609fca761a1e",
+      "scoreHash": "sha256-2ee40b3cd044b49074e9a287f724a12ab70a3fdc78894a5591be621c805e3343",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-233",
+      "bundleHash": "sha256-9595d08a512f5fa91ac4acf6411005c21ec307835e5a08073acbf18da1dee902",
+      "scoreHash": "sha256-6dd28507d777a59428a40788edb7361f225b66ae29cee0cb6aa68f82fe5f50d4",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-234",
+      "bundleHash": "sha256-0e727c7f4e7f4f3249ab8384ac788fd9c73ae7dfe6b646e481ed454aedb434ca",
+      "scoreHash": "sha256-d74aabfc0d5660e2fe5e95a656dfb1affb4c3346c367f2a98c4a637e012ede48",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-235",
+      "bundleHash": "sha256-0679d275886cce2aeb00ec6ae03eb26becdb6ecea95c141bb3516ca9ba03688e",
+      "scoreHash": "sha256-ffac7ec6eaeff28fe2fe5bc58da48c03dbda267cfa08f4d6d95c790d94346a7f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-6c8e5822-bfa9-4d00-8a6e-732666f3129e-window-257",
+      "bundleHash": "sha256-c91cd3736c9ff31bac5041450ed4e1a6e228d0e88a321738dbdf22684d110044",
+      "scoreHash": "sha256-7bc6a59d97ac6130d325cf894829982359989fe7ed1ea3dd250b2a12ce686156",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 70,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-8b146779-6fd1-4e35-b861-2d0ad85401e4-window-002",
+      "bundleHash": "sha256-c5269b149fe7715abc20783133857d190ff0978b976ff7028e1417b35d86755e",
+      "scoreHash": "sha256-205fdb0d0783ef6287c6009db091d4385e0f4ab19c1acb47ac834d365ebf3c3a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-8b146779-6fd1-4e35-b861-2d0ad85401e4-window-003",
+      "bundleHash": "sha256-16a5e5b1460dc5c417db408ab8e8a91fba81fba3ee7562c278bf488f247159e2",
+      "scoreHash": "sha256-086be815d3856530bf9408efa11d8724737cc55ad575f11c0a8d828d5f93db1b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-window-002",
+      "bundleHash": "sha256-43d59b9c1a5087ee47b45d669e40ddc10fd3fb66e20c8b46dc43beaee5831ad4",
+      "scoreHash": "sha256-9bd24e18c59ee60c1a0ab870d072e98abc2de7b51f9215727d01dbfa7e64c785",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-window-003",
+      "bundleHash": "sha256-35f939b505efc1a84af638edab091d86670a54e1fbf98449a4ba509f294997db",
+      "scoreHash": "sha256-9d4f31913ef00f0eb1c43bcc5850aa10ebb0b9d35451875ffce0557daf0c495c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-window-004",
+      "bundleHash": "sha256-8716251c21f854d0d1781385e9e8e1003fe198b3c18030e641079be00e7f0268",
+      "scoreHash": "sha256-fac9826a059242fd92815f5c9732b46f6873ff189bed435baefc6145b06c5891",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-window-012",
+      "bundleHash": "sha256-7fa8ba1f7a7f798d2df79eb395f204a284afead24f318433e3007958d606d0a8",
+      "scoreHash": "sha256-621e5837b1c7819ac9d66d46800b87005f8e9dc2759a845650c08fde383984b5",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-window-013",
+      "bundleHash": "sha256-fe8e263e689c73ce0d1a6a30d1a9a4f1479b51086db9367ae0e4149956a7be4d",
+      "scoreHash": "sha256-0c88dbf1445805d5198f3a757daeca73f0d5876b3dcdb3070a1ce045f4615fb9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-a509425f-19f1-4b37-8672-1f0162567058-window-002",
+      "bundleHash": "sha256-d3cd30701bb664426b8547a95529882c10472889d56031b2db3e8bf4ad984fad",
+      "scoreHash": "sha256-61859e0fd12f17096401e2a6c0a0ecad5417adfd66005bfed75ebed5406d4175",
+      "winnerMode": "learned_route",
+      "scoreSpread": 60,
+      "candidateRelationVsBaseline": "better",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-ab517e57-6c7d-4bcd-bce3-265ea08c9853-window-004",
+      "bundleHash": "sha256-9319275e188f9c37606876fd62ef07b28c697feafd0850a2fd35fc6d419c184d",
+      "scoreHash": "sha256-43df9b1947cef6ac1da98195816453cc9f7c3fbf6b89a62f9a3f04200583ec6c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-ab517e57-6c7d-4bcd-bce3-265ea08c9853-window-005",
+      "bundleHash": "sha256-6e2a71952b8e6fa22c620bdf812631acfddcb23cc1272cbac1fcb672cf8a6dc7",
+      "scoreHash": "sha256-bad4df646120bffc4dc9359d8825ab5a8466c7fc825de8ea9d6e9e6b6864e787",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 70,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-ad267ee2-3cc5-44dd-9e95-4b908028642a-window-002",
+      "bundleHash": "sha256-68069d26306d06c693e265148d668cd15a0212f5dea98abc24b5e4b2cdf16577",
+      "scoreHash": "sha256-4a4724800c04b4ebe50c5a5c0a5e10a13fc63ee8ee72debe750c769d44dd2367",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-ad267ee2-3cc5-44dd-9e95-4b908028642a-window-003",
+      "bundleHash": "sha256-2c8c83a6f613b0742aef54a7d9027bad629194c4d065b676f4f445f49242c6ec",
+      "scoreHash": "sha256-e78377bc5c2d5a2e4879e487452fb72cd9211efccdc3364709f87ef00567429a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-ad267ee2-3cc5-44dd-9e95-4b908028642a-window-004",
+      "bundleHash": "sha256-ee8b4d739898adbff1435cb3a4a71fc9e835768f61a0a97ffad2c48da2fc7729",
+      "scoreHash": "sha256-9f6ebd737abaefd12c2c00ccde90878c5b6be8608902403a2490d096d9784e7b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-b7da9e48-bfdb-4562-a6ea-fae8b4f3e06a-window-002",
+      "bundleHash": "sha256-f6f84d3e218ac0082aecd08df9082f507fa1fe4231551dfc204c82d32b0053b8",
+      "scoreHash": "sha256-89a587bc42101ad9e9560050dbc9b318f1cfeda7f7bd7e1ed5a425f250502d4a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-befebc12-c656-4c5a-9bc2-9b8329029eda-window-003",
+      "bundleHash": "sha256-574435977bb4afa223bebbd6db344d784f50a48f5d087cc5df0ba68ad030d521",
+      "scoreHash": "sha256-f413fdc566e07b11b9093eaaf737b953a5a5b0f57108b9b71485b231abc9873c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-befebc12-c656-4c5a-9bc2-9b8329029eda-window-004",
+      "bundleHash": "sha256-fb8e6fa91c1fcd0001aedee2a2791c3fb9231a885988336c75b96fe64edbcedc",
+      "scoreHash": "sha256-63f1f1001be313949efea8b2f2de0f63446a0fd49c28f726345282fe605500ad",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-befebc12-c656-4c5a-9bc2-9b8329029eda-window-005",
+      "bundleHash": "sha256-8a3b19c87f825c1e44b85488484eea7d9ccf608b93607001021ce0a2fe248df4",
+      "scoreHash": "sha256-2e512aefc10c925399135a430f2acdff79de00739d6a80841fba9edfeb5ceb3f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-befebc12-c656-4c5a-9bc2-9b8329029eda-window-006",
+      "bundleHash": "sha256-df728a998acc5b2116f64762a071e4f0364c68c5f6ce3fc8098803a3aa9a7373",
+      "scoreHash": "sha256-53278a81416a1bf026d756f3c019ad186954a250a4b32b890b58285af1765c56",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-c1be6f8d-22af-4aac-9f32-234846a9ef57-window-004",
+      "bundleHash": "sha256-d2b85ce9f781b30f4b53ad67526acb6b2313111e6f5b2c60520a9c138eacdd7a",
+      "scoreHash": "sha256-a8693fbc1d0963f7b9b1f04f512e021ac2ba5e0a5cd984c0dfd8e875dc4a3231",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-c1be6f8d-22af-4aac-9f32-234846a9ef57-window-005",
+      "bundleHash": "sha256-325db4d251ac3fb27afe359f9da9e0d41229d8eccb51dd88931eb31cee882cce",
+      "scoreHash": "sha256-d83246b92b9ebf1ff7400c3a4e9d51b6f8fa49fd4650c3aad989bf4dca0f89ef",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-c1be6f8d-22af-4aac-9f32-234846a9ef57-window-006",
+      "bundleHash": "sha256-6ff86611eca16338a583bbefb716958cf0a175e0e2589dd741872b7c6cfeee5b",
+      "scoreHash": "sha256-dea60efd14f314e3c1eca1d45f48b06ecd14f67110cab3a1184ab6c6a1879c2a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-c848fc28-bf10-4fd5-83a4-31e1b3048349-window-002",
+      "bundleHash": "sha256-315095995a4a6261ad1d0e4783a704e493be68b300acf3253819b341c9b62931",
+      "scoreHash": "sha256-419270abab63416f7d92b578d4fe979350ddb0300a46b65c46c842d826635713",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 70,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-c848fc28-bf10-4fd5-83a4-31e1b3048349-window-003",
+      "bundleHash": "sha256-c733e81810363136d58f9a0be8a40307ad144b97f531dd404cc6aec95a12cce0",
+      "scoreHash": "sha256-fa528811dc702fc76861b613ae96ae4fa08a9627dc1ddcdc8b4fbccd1f72ef78",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-002",
+      "bundleHash": "sha256-4afa5edc3bdbe320bf11345d705009b0a20c255d7336cc36b3d92e6e6d4cf1f2",
+      "scoreHash": "sha256-bfe4f55e0aa2282033ad62647a2cf8f178c515b700ed31d1632dedb6c00ae35c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-003",
+      "bundleHash": "sha256-c48b4f5f29ffb86abd85ffe20be1ccf496ab8d71780d849aecfa3f3f9ca6cbb4",
+      "scoreHash": "sha256-7b9b1368c9f2b12e5ceffbc4f97816012a251d34e6354f59be8faa9f1fbb46ab",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-004",
+      "bundleHash": "sha256-32f967d8c775a30221a24bbe1f3f7231473ba0a580328bd8c938656111c480e7",
+      "scoreHash": "sha256-3a4b41d3c3342e3cad8e55f11b4435e87bc3f032c70d684158dd12abc9e88eb8",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-005",
+      "bundleHash": "sha256-de6cf2a6782919e29563f3da904b8400ad5a0794c9aa953b4015318b6bb830be",
+      "scoreHash": "sha256-dec7294f17935e31c7517e5538b49490cb4a5cb086e844e1add78d28bd56b9f1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-006",
+      "bundleHash": "sha256-64c76dfe0e4da0da10006103552bbe2b2dcce11053874d130fca5fce4ecde477",
+      "scoreHash": "sha256-2f8be160e9a6d971f7c200a339f9c6f3e3f10ebaa8637bd6600d7a22e28adeec",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-004",
+      "bundleHash": "sha256-637addd6e43829a253bf759d805cc99ec8111a62b6981ec040273ad1b03e98ac",
+      "scoreHash": "sha256-dcb2f24b046979d938165252e208c8dbbbf1db75d13403890c0cec9e74b65764",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-005",
+      "bundleHash": "sha256-91ebe2fc1954b9685f0a1c360ff70ede434e56b69d35a85c973c882b4a08be55",
+      "scoreHash": "sha256-20b842c35bd06311d9148b0141df854cb149f93282a2a8545554a883615ac11e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-013",
+      "bundleHash": "sha256-c64002f21c4422665a903895b178d9a00548231d5f32bfb858b19ebeaa5a16de",
+      "scoreHash": "sha256-0e828703ddca742ad6e2895a189cc6100194dab79fb1f40395db5360b1249a43",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-014",
+      "bundleHash": "sha256-56c3c6f2e23956cb64aa1de94beaa7f9164098ca447ed7fcddd5269ad333999a",
+      "scoreHash": "sha256-8b6f1a3f973ed90c443de1aa87e13656eb335f24f1f99523324582d3ee80e43b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-015",
+      "bundleHash": "sha256-c178e6fa21ebd93564fe43371f969529e889410341bb36cc6180d59ece23b355",
+      "scoreHash": "sha256-5f2a495bba1bd0a8732a21063b829db4e95d97f13f5f5c36d5ec0330bce4d708",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-016",
+      "bundleHash": "sha256-fdcce6864a96766a901a34704c9d48df5a30fe2c7a82ca8754da5e1b3ad0bf99",
+      "scoreHash": "sha256-1d7470d65fdcc5734fe8cd4130be24242ede1bc30469efc8647d27044d0ddb8f",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-017",
+      "bundleHash": "sha256-5a73efef3cc2eb0b26a34b0e7b892d717300cc27569aa5d3596c5f90dde55605",
+      "scoreHash": "sha256-c4d950898ac985859f05a449e51b2934999d2e94a376b7c8e9489bf14735d8ee",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-018",
+      "bundleHash": "sha256-a75d65cb76c71bf44c4fbe589e3d1226fe8f26584954704b3f59937ecb0a761d",
+      "scoreHash": "sha256-2e88dd27d026190f52c03b4da8407def1fb9ca1aec8dd0c8a9582cc68b97da12",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-019",
+      "bundleHash": "sha256-3514183ffc4ebd6ee2291383fbbb63960245187af77e7999be551c1e64ed4f51",
+      "scoreHash": "sha256-cbcb5badf060378efc1bc645d8c4311c5f4b8d50e3db79aa5fa5edd43f3f81f9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-020",
+      "bundleHash": "sha256-b1dde2292399d1e2548204ce3271a04e1169003a12e80420774dbe89554e64f3",
+      "scoreHash": "sha256-96bf997541a1f1b6ef29d84e61fa49be068ce99524a41c688fe0dea649448898",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-021",
+      "bundleHash": "sha256-89a46ee8c6a40e059878faf154a8ec2caacf867d2836078b0cda39832dc6b09b",
+      "scoreHash": "sha256-d59b4ebaa8a814a412cce1086630fb91dee4f0d4bcbc37e68d6e59efa198a36e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-022",
+      "bundleHash": "sha256-0af14538fdfed2f33bb19c227f7ee443d547e607bc2e7dd7ebadab35cc00f735",
+      "scoreHash": "sha256-6dbe3500bb74f23874b45037e805a0389b966ad61089cb3c06aa668aafae0a74",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-023",
+      "bundleHash": "sha256-eb9d648add5e91a666d5fca4ec5c1caaf32621795fff93ee8a336aac9599e889",
+      "scoreHash": "sha256-20eadf63648b6aad1d42ebf301f7537c0551d7ad35b62f3105f5196e1027fca8",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-024",
+      "bundleHash": "sha256-b8046850b8c61ab601826ae42240bd95ec9063030a68d11ac480034ffdaedbf2",
+      "scoreHash": "sha256-840d26a7287400e4c32c9fc7729fd1c0b1f89cbb7fb0bf84fe984bb8516f7bf8",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-f302b899-9417-4e95-85f3-b81f68966cac-window-025",
+      "bundleHash": "sha256-6ecd39afd00528fdb9e3987b5c60bde24b63cb698760f56fd75ad6e3c7ea454e",
+      "scoreHash": "sha256-ad17654d9cd8b3c8fea407ce977aac4ec2a893816330c54ce7bef411fd79cbbc",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-fbedf897-7ceb-444b-a3c6-012985297ca1-window-002",
+      "bundleHash": "sha256-dc482ad9c2d74b50fb6e60ed097a8953548ab752d3d7a8c67e5bb13a4e4f798a",
+      "scoreHash": "sha256-670d5372e3cb153019c459a333aaf810b70670dc0d06a8c3fa5875f007362e3b",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "live-pelican-ff15db23-d6c9-4d8b-bb5a-55f9c1298001-window-002",
+      "bundleHash": "sha256-88265a9945a334c312394b2f2d5d1bd744551702bdebcc421811c77f772a9afc",
+      "scoreHash": "sha256-aa5a7a656bc35a2bf28529b9d0b70a9d109bd0a2dec0e380088231500cdcf598",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    }
+  ],
+  "files": [
+    {
+      "role": "readme",
+      "path": "README.md",
+      "digest": "sha256-57abcb060b40838c722859568b1afbc1971bb299ae72be2f2f2dca02031f389d",
+      "contract": null
+    },
+    {
+      "role": "index",
+      "path": "index.json",
+      "digest": "sha256-5fd476bba1f35db15a394adf182a226825a4281db2d83deb82554288da11fb14",
+      "contract": "recorded_session_replay_proof_lane_index.v1"
+    },
+    {
+      "role": "summary-tables",
+      "path": "summary-tables.json",
+      "digest": "sha256-25466f78c239ade3cbb41bf871040970af4a983c997cfe02a224fb11aa5677fb",
+      "contract": "recorded_session_replay_proof_lane_summary_tables.v1"
+    },
+    {
+      "role": "pairwise-deltas",
+      "path": "pairwise-deltas.json",
+      "digest": "sha256-bd4b9dcdf5407deccab20555744a6f6208e61ac1a344d3a1bca5b3051f41dcf3",
+      "contract": "recorded_session_replay_proof_lane_pairwise_deltas.v1"
+    },
+    {
+      "role": "win-rate-matrix",
+      "path": "win-rate-matrix.json",
+      "digest": "sha256-5663d335243a40056e9f3d93655a933dd4ae9143677a86f36ad1fc97d05b4f98",
+      "contract": "recorded_session_replay_proof_lane_win_rate_matrix.v1"
+    },
+    {
+      "role": "worked-traces",
+      "path": "worked-traces.md",
+      "digest": "sha256-60eebd51dd8eff45fe50280662fe2a01943cfe37549fa144307a421b4042b933",
+      "contract": null
+    },
+    {
+      "role": "generation-report",
+      "path": "generation-report.json",
+      "digest": "sha256-8bc7225e701b145460bd6b89de4ff371be37c83ac2a120c1805df1458ccabcff",
+      "contract": "recorded_session_replay_proof_lane_generation_report.v1"
+    },
+    {
+      "role": "summary",
+      "path": "summary.md",
+      "digest": "sha256-3fa06a0cafc4e0754f1f30761b22259b52eb0db77a8711e8a4e6fef9298d0ba0",
+      "contract": null
+    }
+  ]
+}

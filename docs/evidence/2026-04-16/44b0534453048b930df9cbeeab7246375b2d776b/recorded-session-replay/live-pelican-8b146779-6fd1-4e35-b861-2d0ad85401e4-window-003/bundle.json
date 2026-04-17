@@ -1,0 +1,479 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-8b146779-6fd1-4e35-b861-2d0ad85401e4-window-003",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-31T16:29:41.560Z",
+  "generatedAt": "2026-03-31T16:54:56.868Z",
+  "traceHash": "sha256-d9ea17f3aebef4af75f0a93c521d6e776070c7076063ed113dca780cff0b9684",
+  "fixtureHash": "sha256-e43f09daa5c7f1f8012274d4f09baa27758aaa51c3e914baa4ee6b5329b895af",
+  "scoreHash": "sha256-086be815d3856530bf9408efa11d8724737cc55ad575f11c0a8d828d5f93db1b",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/8b146779-6fd1-4e35-b861-2d0ad85401e4.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-31T16:54:56.868Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-174fe02cb9d576a687ddb560851b02ab0e12cb6737fa301408229ad552fa41d4"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-8bdd56da8531952e775693fdae43c41eaa7c00811b19cd1e788403d20d3f7ed0",
+          "expectedContextPhrases": [
+            "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.028,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.028,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-31T16:54:56.868Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-c47a83d8"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-31T16:54:56.868Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-6ef768e2cb0570a9effa103084fdcb8df7b6ec583050551265da23e164bad80e"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-c47a83d8",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-1a4d43972cb4df9143d659af92f0b11ace9193ab880f033b63721d84c6bd7148",
+          "selectedContextIds": [
+            "pack-c47a83d8:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:feedback",
+            "pack-c47a83d8:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:feedback",
+            "pack-c47a83d8:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: New explicit directive from Jon: we hard cut over to real money for everything. Interpretation for this fix lane: - treat live production runtime roots and live production broker truth as the only canonical operator surface for active monitoring - eliminate remaining paper/shadow fallback behavior from the dashboard/operator truth path for this slice - if a contract/path default still points to old-root or paper-oriented state for active production monitoring, fix it now - keep safety, but bi.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: In clean worktree /Users/guclaw/worktrees/quant-research/068g-dashboardtruth, fix the remaining live dashboard truth stack end to end. Known hard evidence: - Live production trades exist today in runtime_state/live/production_positions.json: - AAPL order 119331450 entered 2026-03-31T10:01:37-04:00 credit 5.28 - AMZN order 119349858 entered 2026-03-31T10:31:20-04:00.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: assistant: Done. Changed files: - `position_dashboard.py` - `position_store.py` - `refresh_dashboard.py` - `runtime_state.py` - `tests/test_position_store_dashboard_refresh.py` - `tests/test_refresh_dashboard_publish.py` - `tests/test_run_once_dashboard_publish.py` - `tests/test_runtime_state.py` What I fixed: - Live operator/dashboard truth paths now resolve into `runtime_state/live/*` for the broker-truth sources and publish-control paths, instead of the old `state/live/*` defaults. - Dashboard genera.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-b1aa3b8a5511d5f51f7d17325c831b94d8b734e3cb19949dd9d0d35d4c5d2309",
+          "expectedContextPhrases": [
+            "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.663,
+            "routeSelectionMs": 4.961,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.7,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-31T16:54:56.868Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-c47a83d8"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-31T16:54:56.868Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-8445f93ea856bfca7283fe62111118f1044ba9a573ece1a87bdbab9dc8c78478"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-c47a83d8",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-5e1afe566aca2391b26de470e18ef6ba2c957e42c2a38c37f62e7938930caf79",
+          "selectedContextIds": [
+            "pack-c47a83d8:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:feedback",
+            "pack-c47a83d8:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:interaction",
+            "pack-c47a83d8:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: New explicit directive from Jon: we hard cut over to real money for everything. Interpretation for this fix lane: - treat live production runtime roots and live production broker truth as the only canonical operator surface for active monitoring - eliminate remaining paper/shadow fallback behavior from the dashboard/operator truth path for this slice - if a contract/path default still points to old-root or paper-oriented state for active production monitoring, fix it now - keep safety, but bi.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:interaction.",
+            "Interaction operator_override on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed. Message: cue-3-seed-message.",
+            "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: In clean worktree /Users/guclaw/worktrees/quant-research/068g-dashboardtruth, fix the remaining live dashboard truth stack end to end. Known hard evidence: - Live production trades exist today in runtime_state/live/production_positions.json: - AAPL order 119331450 entered 2026-03-31T10:01:37-04:00 credit 5.28 - AMZN order 119349858 entered 2026-03-31T10:31:20-04:00.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:interaction."
+          ],
+          "eventExportDigest": "sha256-dbc996401cf4d4547356b725768c6f7114b7619e0b90eb5d11cda7b2330d8c8b",
+          "expectedContextPhrases": [
+            "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.898,
+            "routeSelectionMs": 5.065,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.831,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-31T16:54:56.868Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-fcd71553"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-fcd71553",
+        "frozenEvalRouterIdentity": "pack-fcd71553:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-31T16:54:56.868Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-f63232b1ad6fd4d1c7f3923968d84eb5a4eb068cd28bdd2929242064bc3f6747"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-fcd71553",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-fcd71553:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-fcd71553:route_fn",
+          "selectionDigest": "sha256-270657a69104681915ea7e2178bf42539f38a418328b0ad6d1597ff817e1fff2",
+          "selectedContextIds": [
+            "pack-fcd71553:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:feedback",
+            "pack-fcd71553:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:feedback",
+            "pack-fcd71553:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-6:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: New explicit directive from Jon: we hard cut over to real money for everything. Interpretation for this fix lane: - treat live production runtime roots and live production broker truth as the only canonical operator surface for active monitoring - eliminate remaining paper/shadow fallback behavior from the dashboard/operator truth path for this slice - if a contract/path default still points to old-root or paper-oriented state for active production monitoring, fix it now - keep safety, but bi.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: In clean worktree /Users/guclaw/worktrees/quant-research/068g-dashboardtruth, fix the remaining live dashboard truth stack end to end. Known hard evidence: - Live production trades exist today in runtime_state/live/production_positions.json: - AAPL order 119331450 entered 2026-03-31T10:01:37-04:00 credit 5.28 - AMZN order 119349858 entered 2026-03-31T10:31:20-04:00.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: assistant: Folded in. What changed in this tighten-up: - Live dashboard/operator monitoring now defaults to `live` / `primary` instead of falling back to paper/shadow. - `position_store` refresh triggers now resolve the live production contract fail-closed, so live monitoring no longer drifts onto paper-oriented contract defaults. - Added/updated tests proving the live monitoring default is live-only. Files changed in this pass: - `refresh_dashboard.py` - `position_store.py` - `tests/test_refresh_dashbo.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-6:interaction."
+          ],
+          "eventExportDigest": "sha256-5898f5c639a9ce2663699ed2e0e7404b63e7c5f13e16493f73a94d092506241c",
+          "expectedContextPhrases": [
+            "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.027,
+            "routeSelectionMs": 5.692,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.334,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-31T16:54:56.868Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-16a5e5b1460dc5c417db408ab8e8a91fba81fba3ee7562c278bf488f247159e2"
+}

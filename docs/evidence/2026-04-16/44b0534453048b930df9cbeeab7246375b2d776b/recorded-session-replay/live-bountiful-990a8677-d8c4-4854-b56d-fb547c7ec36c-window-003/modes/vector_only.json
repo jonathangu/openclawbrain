@@ -1,0 +1,112 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-25ff8add"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/bountiful/session-window:memory_compiled",
+        "live/bountiful/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/bountiful/session-window",
+      "freshestCreatedAt": "2026-03-28T21:54:27.686Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-0461d9f914c59e449c92edfec1ea8199486bae7d9a5485179640972d6f3e2d4f"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-25ff8add",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-bcc618dea6e1b7555827b4e7a550ecf0bb4a719fb45cd604b4f60563f707f85a",
+      "selectedContextIds": [
+        "pack-25ff8add:event:990a8677-d8c4-4854-b56d-fb547c7ec36c-seed:cue-1:feedback",
+        "pack-25ff8add:event:990a8677-d8c4-4854-b56d-fb547c7ec36c-seed:cue-3:feedback",
+        "pack-25ff8add:pointer-aware-init"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 990a8677-d8c4-4854-b56d-fb547c7ec36c-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"14849\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BMarketing id:-5173970578\", \"sender\": \"Jonathan\", \"timestamp\": \"Sat 2026-03-28 14:53 PDT\", \"group_subject\": \"BMarketing\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` /start. Related interaction: 990a8677-d8c4-4854-b56d-fb547c7ec36c-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 990a8677-d8c4-4854-b56d-fb547c7ec36c-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"14850\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BMarketing id:-5173970578\", \"sender\": \"Jonathan\", \"timestamp\": \"Sat 2026-03-28 14:53 PDT\", \"group_subject\": \"BMarketing\", \"is_group_chat\": true, \"was_mentioned\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Hello @bbountiful_bot. Related interaction: 990a8677-d8c4-4854-b56d-fb547c7ec36c-seed:cue-3:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-28-bountiful-domains.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
+      ],
+      "eventExportDigest": "sha256-c4abef4d1e12a7902c2b3c7f28674152ecf0749ece205c75bb29dab4b4b70423",
+      "expectedContextPhrases": [
+        "yep"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "yep"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.055,
+        "routeSelectionMs": 4.442,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.61,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/bountiful/session-window:memory_compiled",
+          "live/bountiful/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/bountiful/session-window",
+        "freshestCreatedAt": "2026-03-28T21:54:27.686Z"
+      },
+      "warnings": []
+    }
+  ]
+}

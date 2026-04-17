@@ -1,0 +1,116 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-2e266c84"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-12T14:50:44.901Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-170794d98cc22bcd94b3970648377c03b7c037fc467b8fd18ccb7dab2b943931"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-2e266c84",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-ada51c53f9676c5d5a436a684a2fd18b5644b7727adda1e343a0b9f80adb8b1a",
+      "selectedContextIds": [
+        "pack-2e266c84:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
+        "pack-2e266c84:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
+        "pack-2e266c84:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction.",
+        "Interaction operator_override on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed. Message: cue-2-seed-message."
+      ],
+      "eventExportDigest": "sha256-adfa01bec43e9b705034e96d673aaa34b38e5ef9c7c4f618f0e6334f396e8866",
+      "expectedContextPhrases": [
+        "next proof step against",
+        "first smallest next proof",
+        "no_same_day_embedding backfill exact-row repair"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "next proof step against",
+        "first smallest next proof",
+        "no_same_day_embedding backfill exact-row repair"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.446,
+        "routeSelectionMs": 5.882,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.562,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-12T14:50:44.901Z"
+      },
+      "warnings": []
+    }
+  ]
+}

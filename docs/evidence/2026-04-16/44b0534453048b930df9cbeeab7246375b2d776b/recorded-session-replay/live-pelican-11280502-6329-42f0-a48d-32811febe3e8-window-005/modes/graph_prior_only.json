@@ -1,0 +1,114 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-7bfaba4e"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-03-02T00:42:21.290Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-da3a55e4d1eb040e9391e3588f022739b5bb8f43939daff6b4840dbbd0150e7e"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-7bfaba4e",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-92664e70d17ac2fd66c76e025fa8269883c7915bd2348fc44c0b318a5ad26be4",
+      "selectedContextIds": [
+        "pack-7bfaba4e:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
+        "pack-7bfaba4e:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction",
+        "pack-7bfaba4e:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-4:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: From now all. All coding is using codex CLI --yolo. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction.",
+        "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-5-seed-message.",
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-4:interaction."
+      ],
+      "eventExportDigest": "sha256-671afd3dc2b13696be1e382f70b4046c10c20f11c5da1b6b99aa89f83d6ea6ab",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/quant-research\\nls",
+        "/dev/null"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/quant-research\\nls",
+        "/dev/null"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 6.773,
+        "routeSelectionMs": 4.245,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.527,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-03-02T00:42:21.290Z"
+      },
+      "warnings": []
+    }
+  ]
+}

@@ -1,0 +1,495 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-15T01:08:30.602Z",
+  "generatedAt": "2026-04-15T01:14:24.171Z",
+  "traceHash": "sha256-2ed84d12aa80219c71f67ac4b4dc49c9c31220d644ee2203f557cfbb2718f653",
+  "fixtureHash": "sha256-a5d98f20c022a45dcdc79196fa677af12fe3ae7a1d81ee01512e8a79553eb0a0",
+  "scoreHash": "sha256-0eb12253298b27a8b2731f3d072e7034b846d8239f8efb9cc652cec0b6df7d8e",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/6688d40b-5220-45ca-83f4-835184de4116.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-15T01:14:24.171Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-2d0401b09442b39c74248dfb10f1b77d9b52939def1349d2c685ecac4f520b39"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-fd3560d08d6f5877b47b14716076f39cfe21fce231ac3d7d1f85903e576d73e7",
+          "expectedContextPhrases": [
+            "T-20260414-244",
+            "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260414-244"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "T-20260414-244",
+            "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260414-244"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.028,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.028,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-15T01:14:24.171Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-f91f5fbb"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-15T01:14:24.171Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-b7738ce1c4a6a254019518d0be878c64b78bea843a04c83ae41cf2c64416ffcc"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-f91f5fbb",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-aa1cd391add8080a40fbee4bdbd45cd0c25de9e2c9a2b7f6416b65fec231622a",
+          "selectedContextIds": [
+            "pack-f91f5fbb:workspace-init:2eaa4a13",
+            "pack-f91f5fbb:workspace-init:02e33be9",
+            "pack-f91f5fbb:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Working-set input BOOT.md selected by pointer-aware init (inbound=2, outbound=1). BOOT.md 1. Read TASKS.md. 2. Confirm the principal orchestrator role; TASKS.md is single-writer. 3. Resume the highest-priority unfinished unblocked principal task. 4. Restore task state from TASKS.md, artifacts, status files, and repo/worktree state. 5. If retry is safe, relaunch stale work; otherwise record the bloc…",
+            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…",
+            "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: assistant: I’m here. I dug into the silence. The issue was not Telegram delivery. Pelican got wedged in a long tool/error loop this morning, with context-overflow compaction plus repeated exec-preflight failures, so it kept working internally and never surfaced a clean reply. Current truth is narrower now: label single-truth is fixed, stale status-writer truth is fixed, and the remaining blocker is the embeddings coverage gap for canonical training-input readiness. I’m continuing on that exact seam.. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-16ed0632c808ac18685c036b666beec10176f9e221624f4c59c64e88f00570a8",
+          "expectedContextPhrases": [
+            "T-20260414-244",
+            "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260414-244"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "T-20260414-244",
+            "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260414-244"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.381,
+            "routeSelectionMs": 4.716,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.664,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-15T01:14:24.171Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-f91f5fbb"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-15T01:14:24.171Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-8dc027f6f9ef485847f5fdbde6b811561bec19f98c2d969096418d62c5c2585f"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-f91f5fbb",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-ea41647529cfd65eacd1cd68a9ecec38e55e0eab3ddcb0dae9d708d5a4a848a5",
+          "selectedContextIds": [
+            "pack-f91f5fbb:workspace-init:2eaa4a13",
+            "pack-f91f5fbb:workspace-init:16415817",
+            "pack-f91f5fbb:workspace-init:02e33be9"
+          ],
+          "selectedContextTexts": [
+            "Working-set input BOOT.md selected by pointer-aware init (inbound=2, outbound=1). BOOT.md 1. Read TASKS.md. 2. Confirm the principal orchestrator role; TASKS.md is single-writer. 3. Resume the highest-priority unfinished unblocked principal task. 4. Restore task state from TASKS.md, artifacts, status files, and repo/worktree state. 5. If retry is safe, relaunch stale work; otherwise record the bloc…",
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=87). TASKS.md — Canonical Task Ledger Last updated: 2026-04-16 12:49 AM PT — 0 active unblocked principal tasks Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they repo…",
+            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…"
+          ],
+          "eventExportDigest": "sha256-cba7ff97262f19bf93e209d5befd31f5f403338faf881c65e826b83693ba7bff",
+          "expectedContextPhrases": [
+            "T-20260414-244",
+            "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260414-244"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "T-20260414-244",
+            "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260414-244"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.273,
+            "routeSelectionMs": 5.654,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.617,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-15T01:14:24.171Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-0d93d422"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-0d93d422",
+        "frozenEvalRouterIdentity": "pack-0d93d422:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-15T01:14:24.171Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-ca10a79486d4aa7891433a725913662a7b6813dce09bdff621276e6d238bb7f5"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-0d93d422",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-0d93d422:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-0d93d422:route_fn",
+          "selectionDigest": "sha256-0c981cdbda23228d6d7716f2ae9337fcb5323c9feb1fcaaae1b12b3ebfe66060",
+          "selectedContextIds": [
+            "pack-0d93d422:workspace-init:2eaa4a13",
+            "pack-0d93d422:workspace-init:02e33be9",
+            "pack-0d93d422:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Working-set input BOOT.md selected by pointer-aware init (inbound=2, outbound=1). BOOT.md 1. Read TASKS.md. 2. Confirm the principal orchestrator role; TASKS.md is single-writer. 3. Resume the highest-priority unfinished unblocked principal task. 4. Restore task state from TASKS.md, artifacts, status files, and repo/worktree state. 5. If retry is safe, relaunch stale work; otherwise record the bloc…",
+            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…",
+            "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: assistant: I’m here. I dug into the silence. The issue was not Telegram delivery. Pelican got wedged in a long tool/error loop this morning, with context-overflow compaction plus repeated exec-preflight failures, so it kept working internally and never surfaced a clean reply. Current truth is narrower now: label single-truth is fixed, stale status-writer truth is fixed, and the remaining blocker is the embeddings coverage gap for canonical training-input readiness. I’m continuing on that exact seam.. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-c1588e2115ae1b59aab5a74eedf59d3130aeed3e7a13d8c1dfcc30bae0864c2a",
+          "expectedContextPhrases": [
+            "T-20260414-244",
+            "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260414-244"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "T-20260414-244",
+            "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260414-244"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.627,
+            "routeSelectionMs": 5.433,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.193,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-15T01:14:24.171Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-fc548a79b1260945b80a0d00d8be27b990207c120686a891f883b9867cdf919f"
+}

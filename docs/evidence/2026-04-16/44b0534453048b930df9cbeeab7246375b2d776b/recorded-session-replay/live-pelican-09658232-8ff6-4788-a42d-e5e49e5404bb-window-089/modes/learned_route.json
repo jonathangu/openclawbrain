@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-8fc1f49d"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-8fc1f49d",
+    "frozenEvalRouterIdentity": "pack-8fc1f49d:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-28T06:31:30.849Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-c0ab91d1d4528f4858b6f115bfde397ad353a1dc56a41813937b241dc78e88e2"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-8fc1f49d",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-8fc1f49d:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-8fc1f49d:route_fn",
+      "selectionDigest": "sha256-78610c27e2818028520861172ed50797d829fbd22f33d234047082a0220fdc02",
+      "selectedContextIds": [
+        "pack-8fc1f49d:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+        "pack-8fc1f49d:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+        "pack-8fc1f49d:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: e44f8983-c431-41b9-b220-e56702ccc914] A cron job \"tft-bulletproof-check\" just completed successfully. Result: Interesting — no `model.tar.gz` yet, but there's a 120MB `.pkl` file uploaded at 8:17 PM PT (about an hour ago). No cloud-init log, which means training is likely still in progress — the pkl is probably an intermediate checkpoint or one of the ensemble members. Let me check if there's any more recent activity. Stats: runtime 24s • tokens 870 (in 7 / out 863) • prompt/cache.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 843fbf03-ac7e-4872-8641-fea100aa31ce] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the extraction pipeline (last 2h). Findings — substantive messages from Jon (sender:8518484672): 1) DIRECTIVE → Feature parity & days_to_exp handling [REF] - Extracted scope + conditions: Enforce feature parity between training and inference. For time-varying features (eg. days_to_exp): only include at inference if it was used during training; if used, require .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 8e1afba8-ea54-47d4-a7ec-40323667551a] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Harvest summary — pelican-interaction-harvester (2026-02-27) I ran the extraction pipeline and classified Jon's substantive messages from this harvest. Most items were already captured in pending/docs; I added three small but actionable Gate items (script error-handling, monitor behavior, sequential-run pattern) and appended matching lessons to quant-lessons.md. Me.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction."
+      ],
+      "eventExportDigest": "sha256-f63774202327ce3b1fbb35163dff6b204492d3ef820286fe130a7b6584c31360",
+      "expectedContextPhrases": [
+        "no_reply"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "no_reply"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.882,
+        "routeSelectionMs": 5.534,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.345,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-28T06:31:30.849Z"
+      },
+      "warnings": []
+    }
+  ]
+}

@@ -1,0 +1,479 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-c1be6f8d-22af-4aac-9f32-234846a9ef57-window-005",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-11T22:14:10.575Z",
+  "generatedAt": "2026-04-11T22:42:24.461Z",
+  "traceHash": "sha256-4b29852ddcae763768818b925bfa513423dbca5c8ad934450c78f0838b90cfab",
+  "fixtureHash": "sha256-f828a5ef63881667b78ea5f5530e5417bb5590176f57bdcf8c4590150136788a",
+  "scoreHash": "sha256-d83246b92b9ebf1ff7400c3a4e9d51b6f8fa49fd4650c3aad989bf4dca0f89ef",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/c1be6f8d-22af-4aac-9f32-234846a9ef57.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-11T22:42:24.461Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-d23197d4b519cff22649347398dfab9ce049fcf294afab672a8b41fd8ebcbbad"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-7cfcc558c9f4e98b0b49f5abcc7a6bb7bab6654b552cc98b58e7a2f983b7da8a",
+          "expectedContextPhrases": [
+            "/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.033,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.033,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-11T22:42:24.461Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-fddfa59d"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-11T22:42:24.461Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-931cfda16d6aed75e7d79288f1f5601fcdd21e6648b13dc211bd4641ceefa21c"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-fddfa59d",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-a84254936904d7ad2bee7ff4023eafcc8482d72f88ce3c5ba407245b8b86abc2",
+          "selectedContextIds": [
+            "pack-fddfa59d:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:feedback",
+            "pack-fddfa59d:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback",
+            "pack-fddfa59d:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: Jon clarified the implementation rule further: For ambiguous horizon-dependent fields, the right fix is to prune them out of the shared snapshot-feature class and re-add them only as explicit horizon-attached known-future fields keyed on (ticker, snapshot_ts, target_dte). So please implement/prove against this split: 1. snapshot-known features stay on the base snapshot row 2. realized future outcomes stay as labels 3. horizon-dependent known-future semantics become their own explicit class at.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-3349a39459183c0759bb9cd6cd05466b0b31df4d82f34134880cc27cddc0f75f",
+          "expectedContextPhrases": [
+            "/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.133,
+            "routeSelectionMs": 4.526,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.606,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-11T22:42:24.461Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-fddfa59d"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-11T22:42:24.461Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-52b8054158617be487f671788c2de2b6d43a774142e388b7de100d1e51f85e75"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-fddfa59d",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-bfaf71e258a306981b4c7939488913343243e28a47d77bf1e0d3df85ce2eb46b",
+          "selectedContextIds": [
+            "pack-fddfa59d:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:feedback",
+            "pack-fddfa59d:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:interaction",
+            "pack-fddfa59d:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: Jon clarified the implementation rule further: For ambiguous horizon-dependent fields, the right fix is to prune them out of the shared snapshot-feature class and re-add them only as explicit horizon-attached known-future fields keyed on (ticker, snapshot_ts, target_dte). So please implement/prove against this split: 1. snapshot-known features stay on the base snapshot row 2. realized future outcomes stay as labels 3. horizon-dependent known-future semantics become their own explicit class at.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:interaction.",
+            "Interaction operator_override on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed. Message: cue-5-seed-message.",
+            "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:interaction."
+          ],
+          "eventExportDigest": "sha256-a5216b618ef42a2f529d183beacefa032bfb2c1c131414c9b57c161b392a3d84",
+          "expectedContextPhrases": [
+            "/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 6.995,
+            "routeSelectionMs": 4.42,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.574,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-11T22:42:24.461Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-bde307de"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-bde307de",
+        "frozenEvalRouterIdentity": "pack-bde307de:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-11T22:42:24.461Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-f82a86510fcd6ca74221d84371a1ff021e38769c9d39e06f0d5e9b8ff12ace94"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-bde307de",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-bde307de:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-bde307de:route_fn",
+          "selectionDigest": "sha256-a6a8beb7bad653b21ddd27a7bbf589737f46efc02b4ec41537aef5829ed8842e",
+          "selectedContextIds": [
+            "pack-bde307de:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:feedback",
+            "pack-bde307de:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback",
+            "pack-bde307de:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: Jon clarified the implementation rule further: For ambiguous horizon-dependent fields, the right fix is to prune them out of the shared snapshot-feature class and re-add them only as explicit horizon-attached known-future fields keyed on (ticker, snapshot_ts, target_dte). So please implement/prove against this split: 1. snapshot-known features stay on the base snapshot row 2. realized future outcomes stay as labels 3. horizon-dependent known-future semantics become their own explicit class at.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-d3a0e844ca96b85d7afc98988e9cc23b4ce01d3224ad8b7e624f150812d3984b",
+          "expectedContextPhrases": [
+            "/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.825,
+            "routeSelectionMs": 5.475,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.349,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-11T22:42:24.461Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-325db4d251ac3fb27afe359f9da9e0d41229d8eccb51dd88931eb31cee882cce"
+}
