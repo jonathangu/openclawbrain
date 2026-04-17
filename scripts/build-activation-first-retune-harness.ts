@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import type { GraphifyRouteObjectiveTraceLabelLikeV1 } from "../src/brain-core/graphify-training-bridge.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,7 @@ const workspaceRoot = path.resolve(repoRoot, "..");
 const FROZEN_RECORDED_SESSION_EVAL_MANIFEST_CONTRACT = "frozen_recorded_session_eval_manifest.v1" as const;
 const LEARNED_ROUTE_TRANCHE_MANIFEST_CONTRACT = "learned_route_eval_tranche_manifest.v1" as const;
 const ACTIVATION_FIRST_RETUNE_HARNESS_CONTRACT = "activation_first_retune_harness.v1" as const;
+const ACTIVATION_FIRST_ROUTE_OBJECTIVE_INPUT_CONTRACT = "activation_first_route_objective_input.v1" as const;
 const LEARNED_ROUTE_LABEL_SCHEMA = "learned-route-labels.v1" as const;
 const DEFAULT_TASK_ID = "T-20260415-257";
 const DEFAULT_FELT_RESUME_MANIFEST = path.join(workspaceRoot, "task-artifacts", DEFAULT_TASK_ID, "felt-resume-25.manifest.json");
@@ -123,6 +125,31 @@ interface ParsedArgs {
   guardrailManifest: string;
   outputDir: string;
   generatedAt: string;
+}
+
+interface ActivationFirstRouteObjectiveInputLaneV1 {
+  trancheId: string;
+  traceCount: number;
+  manifestPath: string;
+  sourceManifestPath: string;
+  traceIds: string[];
+  labelsByTraceId: Record<string, GraphifyRouteObjectiveTraceLabelLikeV1>;
+}
+
+interface ActivationFirstRouteObjectiveInputV1 {
+  contract: typeof ACTIVATION_FIRST_ROUTE_OBJECTIVE_INPUT_CONTRACT;
+  taskId: string;
+  generatedAt: string;
+  labelsTemplatePath: string;
+  lanes: {
+    feltResume: ActivationFirstRouteObjectiveInputLaneV1;
+    mustFire: ActivationFirstRouteObjectiveInputLaneV1;
+    mustNotFire: ActivationFirstRouteObjectiveInputLaneV1;
+  };
+  suggestedTrainingConfig: {
+    focusLaneWeights: Record<string, number>;
+    rowTypeWeights: Record<string, number>;
+  };
 }
 
 function usage(): void {
@@ -427,6 +454,7 @@ function buildReadme(params: {
     mustFireManifestPath: string;
     mustNotFireManifestPath: string;
     labelsPath: string;
+    routeObjectiveInputPath: string;
     harnessJsonPath: string;
   };
 }): string {
@@ -443,6 +471,7 @@ function buildReadme(params: {
     `- must-fire anchor eval manifest: \`${portableRelativePath(path.dirname(params.outputs.harnessJsonPath), params.outputs.mustFireManifestPath)}\``,
     `- must-not-fire anchor eval manifest: \`${portableRelativePath(path.dirname(params.outputs.harnessJsonPath), params.outputs.mustNotFireManifestPath)}\``,
     `- prefilled labels template: \`${portableRelativePath(path.dirname(params.outputs.harnessJsonPath), params.outputs.labelsPath)}\``,
+    `- trainer-ready route-objective input: \`${portableRelativePath(path.dirname(params.outputs.harnessJsonPath), params.outputs.routeObjectiveInputPath)}\``,
     `- harness descriptor: \`${portableRelativePath(path.dirname(params.outputs.harnessJsonPath), params.outputs.harnessJsonPath)}\``,
     "",
     "## Truth boundaries",
@@ -462,6 +491,96 @@ function buildReadme(params: {
   ].join("\n");
 }
 
+function strictHardMemoryEligibleFromRecord(record: LabelRecord): boolean {
+  return record.labels.memory_needed === "yes"
+    && record.labels.wrapper_noise === "no"
+    && record.labels.continuation_only === "no"
+    && record.labels.human_semantic_task === "yes"
+    && record.labels.oracle_best_mode !== "tie";
+}
+
+function routeObjectiveLabelFromRecord(record: LabelRecord): GraphifyRouteObjectiveTraceLabelLikeV1 {
+  return {
+    traceId: record.trace_id,
+    focusLane: record.labels.focus_lane,
+    strictHardMemoryEligible: strictHardMemoryEligibleFromRecord(record),
+    oracleBestMode: record.labels.oracle_best_mode,
+    costSensitive: record.labels.cost_sensitive,
+    hardNegativeClass: record.labels.hard_negative_class,
+  };
+}
+
+function buildLaneTraceLabels(records: LabelRecord[]): Record<string, GraphifyRouteObjectiveTraceLabelLikeV1> {
+  const labelsByTraceId: Record<string, GraphifyRouteObjectiveTraceLabelLikeV1> = {};
+  for (const record of records) {
+    labelsByTraceId[record.trace_id] = routeObjectiveLabelFromRecord(record);
+  }
+  return labelsByTraceId;
+}
+
+function buildRouteObjectiveInput(params: {
+  taskId: string;
+  generatedAt: string;
+  outputDir: string;
+  labelsPath: string;
+  feltResume: TrancheManifest;
+  feltResumeSourceManifestPath: string;
+  feltResumeManifestPath: string;
+  mustFire: TrancheManifest;
+  mustFireSourceManifestPath: string;
+  mustFireManifestPath: string;
+  mustNotFire: TrancheManifest;
+  mustNotFireSourceManifestPath: string;
+  mustNotFireManifestPath: string;
+  feltResumeLabelRecords: LabelRecord[];
+  mustFireLabelRecords: LabelRecord[];
+  mustNotFireLabelRecords: LabelRecord[];
+}): ActivationFirstRouteObjectiveInputV1 {
+  return {
+    contract: ACTIVATION_FIRST_ROUTE_OBJECTIVE_INPUT_CONTRACT,
+    taskId: params.taskId,
+    generatedAt: params.generatedAt,
+    labelsTemplatePath: portableRelativePath(params.outputDir, params.labelsPath),
+    lanes: {
+      feltResume: {
+        trancheId: params.feltResume.trancheId,
+        traceCount: params.feltResume.anchors.length,
+        manifestPath: portableRelativePath(params.outputDir, params.feltResumeManifestPath),
+        sourceManifestPath: portableRelativePath(params.outputDir, params.feltResumeSourceManifestPath),
+        traceIds: params.feltResume.anchors.map((anchor) => anchor.traceId),
+        labelsByTraceId: buildLaneTraceLabels(params.feltResumeLabelRecords),
+      },
+      mustFire: {
+        trancheId: params.mustFire.trancheId,
+        traceCount: params.mustFire.anchors.length,
+        manifestPath: portableRelativePath(params.outputDir, params.mustFireManifestPath),
+        sourceManifestPath: portableRelativePath(params.outputDir, params.mustFireSourceManifestPath),
+        traceIds: params.mustFire.anchors.map((anchor) => anchor.traceId),
+        labelsByTraceId: buildLaneTraceLabels(params.mustFireLabelRecords),
+      },
+      mustNotFire: {
+        trancheId: params.mustNotFire.trancheId,
+        traceCount: params.mustNotFire.anchors.length,
+        manifestPath: portableRelativePath(params.outputDir, params.mustNotFireManifestPath),
+        sourceManifestPath: portableRelativePath(params.outputDir, params.mustNotFireSourceManifestPath),
+        traceIds: params.mustNotFire.anchors.map((anchor) => anchor.traceId),
+        labelsByTraceId: buildLaneTraceLabels(params.mustNotFireLabelRecords),
+      },
+    },
+    suggestedTrainingConfig: {
+      focusLaneWeights: {
+        [params.feltResume.trancheId]: 4,
+        [params.mustFire.trancheId]: 2,
+        [params.mustNotFire.trancheId]: 8,
+      },
+      rowTypeWeights: {
+        activate: 2,
+        abstain: 2,
+      },
+    },
+  };
+}
+
 function main(): void {
   const args = parseArgs(process.argv.slice(2));
   mkdirSync(args.outputDir, { recursive: true });
@@ -477,6 +596,7 @@ function main(): void {
   const mustFireEvalManifestPath = path.join(args.outputDir, "must-fire-anchor-eval.manifest.json");
   const mustNotFireEvalManifestPath = path.join(args.outputDir, "must-not-fire-anchor-eval.manifest.json");
   const labelsPath = path.join(args.outputDir, "activation-first-retune.labels-template.jsonl");
+  const routeObjectiveInputPath = path.join(args.outputDir, "activation-first-route-objective-input.json");
   const harnessJsonPath = path.join(args.outputDir, "activation-first-retune-harness.json");
   const readmePath = path.join(args.outputDir, "README.md");
 
@@ -503,12 +623,35 @@ function main(): void {
   writeJson(mustFireEvalManifestPath, mustFireEvalManifest);
   writeJson(mustNotFireEvalManifestPath, mustNotFireEvalManifest);
 
+  const feltResumeLabelRecords = feltResume.anchors.map((anchor) => feltResumeDefaults(anchor, feltResume.trancheId, args.generatedAt));
+  const mustFireLabelRecords = mustFire.anchors.map((anchor) => mustFireDefaults(anchor, mustFire.trancheId, args.generatedAt));
+  const mustNotFireLabelRecords = mustNotFire.anchors.map((anchor) => mustNotFireDefaults(anchor, mustNotFire.trancheId, bucketToHardNegativeClass, args.generatedAt));
   const labelRecords: LabelRecord[] = [
-    ...feltResume.anchors.map((anchor) => feltResumeDefaults(anchor, feltResume.trancheId, args.generatedAt)),
-    ...mustFire.anchors.map((anchor) => mustFireDefaults(anchor, mustFire.trancheId, args.generatedAt)),
-    ...mustNotFire.anchors.map((anchor) => mustNotFireDefaults(anchor, mustNotFire.trancheId, bucketToHardNegativeClass, args.generatedAt)),
+    ...feltResumeLabelRecords,
+    ...mustFireLabelRecords,
+    ...mustNotFireLabelRecords,
   ];
   writeFileSync(labelsPath, `${labelRecords.map((record) => JSON.stringify(record)).join("\n")}\n`, "utf8");
+
+  const routeObjectiveInput = buildRouteObjectiveInput({
+    taskId: args.taskId,
+    generatedAt: args.generatedAt,
+    outputDir: args.outputDir,
+    labelsPath,
+    feltResume,
+    feltResumeSourceManifestPath: args.feltResumeManifest,
+    feltResumeManifestPath: feltResumeEvalManifestPath,
+    mustFire,
+    mustFireSourceManifestPath: args.mustFireManifest,
+    mustFireManifestPath: mustFireEvalManifestPath,
+    mustNotFire,
+    mustNotFireSourceManifestPath: args.mustNotFireManifest,
+    mustNotFireManifestPath: mustNotFireEvalManifestPath,
+    feltResumeLabelRecords,
+    mustFireLabelRecords,
+    mustNotFireLabelRecords,
+  });
+  writeJson(routeObjectiveInputPath, routeObjectiveInput);
 
   const harnessDescriptor = {
     contract: ACTIVATION_FIRST_RETUNE_HARNESS_CONTRACT,
@@ -516,6 +659,8 @@ function main(): void {
     generatedAt: args.generatedAt,
     missionTestCommand: hardNegativeSpec.missionTestCommand ?? "npm run test:learned-route-mission",
     labelsTemplatePath: portableRelativePath(args.outputDir, labelsPath),
+    routeObjectiveInputPath: portableRelativePath(args.outputDir, routeObjectiveInputPath),
+    suggestedTrainingConfig: routeObjectiveInput.suggestedTrainingConfig,
     primaryOptimizeLane: "felt_resume_25",
     feltResume: {
       trancheId: feltResume.trancheId,
@@ -575,6 +720,7 @@ function main(): void {
       mustFireManifestPath: mustFireEvalManifestPath,
       mustNotFireManifestPath: mustNotFireEvalManifestPath,
       labelsPath,
+      routeObjectiveInputPath,
       harnessJsonPath,
     },
   }), "utf8");
@@ -586,6 +732,7 @@ function main(): void {
       `mustFireManifest: ${mustFireEvalManifestPath}`,
       `mustNotFireManifest: ${mustNotFireEvalManifestPath}`,
       `labelsTemplate: ${labelsPath}`,
+      `routeObjectiveInput: ${routeObjectiveInputPath}`,
       `harnessDescriptor: ${harnessJsonPath}`,
       `readme: ${readmePath}`,
       `labelRecordCount: ${labelRecords.length}`,
