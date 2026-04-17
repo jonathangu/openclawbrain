@@ -1,0 +1,114 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-6a5fe3b9"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-04T06:30:40.358Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-8d5dab5e98f84b691b7d3ed8a7b230850ef9b7429292929fd9c7ca7467e1e7a2"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-6a5fe3b9",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-899f8ec7f86a2f45eb5e97d936e43431bbe1c4e581f3946fd5d8cf1a67a76ae4",
+      "selectedContextIds": [
+        "pack-6a5fe3b9:workspace",
+        "pack-6a5fe3b9:event:40299bc1-00ef-445f-960b-1b1147ffd61f-seed:cue-1:feedback",
+        "pack-6a5fe3b9:human-label-harvest"
+      ],
+      "selectedContextTexts": [
+        "Workspace snapshot session-40299bc1-00ef-445f-960b-1b1147ffd61f for ws-main captured at 2026-04-04T06:30:06.837Z with revision 40299bc1-00ef-445f-960b-1b1147ffd61f.",
+        "Teaching feedback on live-session session 40299bc1-00ef-445f-960b-1b1147ffd61f-seed: assistant: ✅ New session started · model: openai-codex/gpt-5.4. Related interaction: 40299bc1-00ef-445f-960b-1b1147ffd61f-seed:cue-1:interaction.",
+        "Human label harvest is first-class with 2 labels sourced from live/main/session-window/seed:operator_override, live/main/session-window/seed:teaching."
+      ],
+      "eventExportDigest": "sha256-dcbe36b6206a0c0da31ab5b8bfd09c456afd64d670b3782592c580ba1d864fdb",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/BOOT.md\"}",
+        "/Users/guclaw/.openclaw/workspace/TASKS.md\"}"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/BOOT.md\"}",
+        "/Users/guclaw/.openclaw/workspace/TASKS.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 2.256,
+        "routeSelectionMs": 1.338,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 0.916,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-04T06:30:40.358Z"
+      },
+      "warnings": []
+    }
+  ]
+}

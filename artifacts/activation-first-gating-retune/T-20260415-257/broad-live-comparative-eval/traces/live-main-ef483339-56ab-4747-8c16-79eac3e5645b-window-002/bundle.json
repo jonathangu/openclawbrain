@@ -1,0 +1,498 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-main-ef483339-56ab-4747-8c16-79eac3e5645b-window-002",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-04T04:48:08.833Z",
+  "generatedAt": "2026-04-04T05:23:16.710Z",
+  "traceHash": "sha256-5348a011d171022e0b0662292622dd790b7dccb6110063ebe79c7f32c96cfe4b",
+  "fixtureHash": "sha256-076839ee1f2768f5fb0e1a395f80dc28e7868b4aab96a489d4fbcd347a8fc395",
+  "scoreHash": "sha256-20b3a3aad1730a9a5e6006a02c6d3d675c39a0d312d9f84d63482ff6dae85007",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/ef483339-56ab-4747-8c16-79eac3e5645b.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-04T05:23:16.710Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-81e33f098e21a8124ae6ec9568c1d72b0f83fe94e5b59e948eed0392a9dc9438"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-e9d282adb13d0138eda7de03ce56b710c0c96b1cd230b0ee7abeb1165f652f57",
+          "expectedContextPhrases": [
+            "T-20260403-129",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+            "/brain-core/teacher-v3-contracts.test.ts"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "T-20260403-129",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+            "/brain-core/teacher-v3-contracts.test.ts"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.031,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.031,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-04T05:23:16.710Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 60,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-6872046c"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-04T05:23:16.710Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-e156d9f3bcbc6d6bdb4d40c749609308ff57ca5330326b5110e7cf5088920f5d"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-6872046c",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-a7f2187cf9ebe5958b857addd01f5c3ab790df8f671fcaa37a171b1217af1554",
+          "selectedContextIds": [
+            "pack-6872046c:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:feedback",
+            "pack-6872046c:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:feedback",
+            "pack-6872046c:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: assistant: Done. - Implemented the Teacher v3 canary contract as an explicit, bounded, rollback-bound target-state object. - Canary plans now require an explicit `rollbackKey`, stay `surfaceState: \"target\"`, `rolloutMode: \"off\"`, and `enabled: false`. - Added proposal-summary and diff surfacing for `canaryRollout` so the plan is inspectable in higher-level contract summaries. - Updated focused tests for the new shape and rollback-bound behavior. - Refreshed related docs to reflect the explicit rollback-.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane A for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4a on branch t129-gate4a-canary-contracts. Mission: implement the explicit bounded canary plan objects for Teacher v3. Land the narrowest real contract/config surface for canary plans that is inspectable, off by default, and rollback-bound. This lane should own the ca.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-3ed94e90ba34bb87dc1f570bcc9f020de158dcdb36a5c61357f83259b4d565af",
+          "expectedContextPhrases": [
+            "T-20260403-129",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+            "/brain-core/teacher-v3-contracts.test.ts"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "T-20260403-129"
+          ],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+            "/brain-core/teacher-v3-contracts.test.ts"
+          ],
+          "qualityScore": 60,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.757,
+            "routeSelectionMs": 5.057,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.699,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-04T05:23:16.710Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 60,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-6872046c"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-04T05:23:16.710Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-f2a8160eda950aa7149a7b74980edffa5ce73a063a54ac99dec6f3fe93d790fc"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-6872046c",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-2c8ed3a391713c09bd8667282e54a2c63914e5c3fc5e7296cc122e4c71aab4bb",
+          "selectedContextIds": [
+            "pack-6872046c:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:feedback",
+            "pack-6872046c:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction",
+            "pack-6872046c:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: assistant: Done. - Implemented the Teacher v3 canary contract as an explicit, bounded, rollback-bound target-state object. - Canary plans now require an explicit `rollbackKey`, stay `surfaceState: \"target\"`, `rolloutMode: \"off\"`, and `enabled: false`. - Added proposal-summary and diff surfacing for `canaryRollout` so the plan is inspectable in higher-level contract summaries. - Updated focused tests for the new shape and rollback-bound behavior. - Refreshed related docs to reflect the explicit rollback-.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction.",
+            "Interaction operator_override on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed. Message: cue-6-seed-message.",
+            "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane A for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4a on branch t129-gate4a-canary-contracts. Mission: implement the explicit bounded canary plan objects for Teacher v3. Land the narrowest real contract/config surface for canary plans that is inspectable, off by default, and rollback-bound. This lane should own the ca.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:interaction."
+          ],
+          "eventExportDigest": "sha256-ef94053178b1a1aba9e0e9e63e41e82350949f1f1f664f71a8a753e427b04512",
+          "expectedContextPhrases": [
+            "T-20260403-129",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+            "/brain-core/teacher-v3-contracts.test.ts"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "T-20260403-129"
+          ],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+            "/brain-core/teacher-v3-contracts.test.ts"
+          ],
+          "qualityScore": 60,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.701,
+            "routeSelectionMs": 5.022,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.677,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-04T05:23:16.710Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 60,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-a732910d"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-a732910d",
+        "frozenEvalRouterIdentity": "pack-a732910d:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-04T05:23:16.710Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-12134a1167e1003090162d0329194bcd59635305931107a2c896f7c35252b9a1"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-a732910d",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-a732910d:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-a732910d:route_fn",
+          "selectionDigest": "sha256-36871899a376a03ed2a123a1fada6d42bf0d31eefd771e3565bbae793d93ed28",
+          "selectedContextIds": [
+            "pack-a732910d:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:feedback",
+            "pack-a732910d:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:feedback",
+            "pack-a732910d:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: assistant: Done. - Implemented the Teacher v3 canary contract as an explicit, bounded, rollback-bound target-state object. - Canary plans now require an explicit `rollbackKey`, stay `surfaceState: \"target\"`, `rolloutMode: \"off\"`, and `enabled: false`. - Added proposal-summary and diff surfacing for `canaryRollout` so the plan is inspectable in higher-level contract summaries. - Updated focused tests for the new shape and rollback-bound behavior. - Refreshed related docs to reflect the explicit rollback-.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane A for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4a on branch t129-gate4a-canary-contracts. Mission: implement the explicit bounded canary plan objects for Teacher v3. Land the narrowest real contract/config surface for canary plans that is inspectable, off by default, and rollback-bound. This lane should own the ca.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-6228ea414d2a6012475dfe18152a88f508823d46eb1e2f0fc693377e2db82bee",
+          "expectedContextPhrases": [
+            "T-20260403-129",
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+            "/brain-core/teacher-v3-contracts.test.ts"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "T-20260403-129"
+          ],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+            "/brain-core/teacher-v3-contracts.test.ts"
+          ],
+          "qualityScore": 60,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.28,
+            "routeSelectionMs": 5.984,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.294,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-04T05:23:16.710Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 60
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 60
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 60
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-a8279bb36f35b24343315ca5a0788384c74f3b167bde565bc99c27d4f4f4976f"
+}

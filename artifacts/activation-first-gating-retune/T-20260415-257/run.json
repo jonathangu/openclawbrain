@@ -1,6 +1,6 @@
 {
   "taskId": "T-20260415-257",
-  "generatedAt": "2026-04-17T15:17:14.439Z",
+  "generatedAt": "2026-04-17T16:16:25.227Z",
   "includeMustFire": true,
   "harnessPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-257/activation-first-retune-harness/activation-first-retune-harness.json",
   "routeObjectiveInputPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-257/activation-first-retune-harness/activation-first-route-objective-input.json",
@@ -9,9 +9,10 @@
     "outputDir": "/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/candidate-artifact",
     "artifactId": "router-artifact-t-20260415-257-activation-first-gating-only-v1",
     "artifactVersion": "0.0.1",
-    "artifactChecksum": "sha256:6467f27288914cd1f47d1e74859f470686b2b3fff28b5a0338fdd3e518f2ec91",
+    "artifactChecksum": "sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
     "priorBaseArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
-    "priorBaseArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e"
+    "priorBaseArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
+    "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1"
   },
   "training": {
     "totalRows": 94,
@@ -45,7 +46,7 @@
       "warmStartFromArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
       "warmStartFromArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
       "warmStartSummary": "warm-start continuation from router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3 applied 50 continuation rows on top of 44 prior used rows",
-      "checksum": "sha256:6467f27288914cd1f47d1e74859f470686b2b3fff28b5a0338fdd3e518f2ec91",
+      "checksum": "sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
       "runtimeVersion": "openclawbrain-runtime@0.4.43"
     },
     "passed": true,
@@ -1315,7 +1316,7 @@
       "warmStartFromArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
       "warmStartFromArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
       "warmStartSummary": "warm-start continuation from router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3 applied 50 continuation rows on top of 44 prior used rows",
-      "checksum": "sha256:6467f27288914cd1f47d1e74859f470686b2b3fff28b5a0338fdd3e518f2ec91",
+      "checksum": "sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
       "runtimeVersion": "openclawbrain-runtime@0.4.43"
     },
     "passed": true,
@@ -2052,17 +2053,21 @@
       }
     ]
   },
+  "broadLiveEvaluation": {
+    "outputDir": "/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
+    "guardrailManifestPath": "../../T-20260415-250/semantic-rich-live-535-extracted/manifest.json"
+  },
   "broadLive": {
     "available": true,
-    "authoritative": false,
-    "vetoResult": "proof_read_only",
+    "authoritative": true,
+    "vetoResult": "pass",
     "regressions": 0,
     "comparableTraceCount": 403,
     "policyStatus": "pass",
     "gateStatus": "pass",
-    "usedLearnedRouteTurnCount": 0,
-    "boundLearnedRouteTurnCount": 0,
-    "activatedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 403,
+    "boundLearnedRouteTurnCount": 403,
+    "activatedLearnedRouteTurnCount": 403,
     "feltOverlap": {
       "availableTraceCount": 4,
       "totalTraceCount": 25,
@@ -2071,9 +2076,12 @@
       "worseCount": 0
     },
     "notes": [
-      "learned_route never bound a live router function in the broad-live proof surface",
-      "scorecard reports zero learned-route turns that used the learned router function",
-      "summary tables report zero learned-route turns with a bound router identity"
+      "Candidate-specific broad-live comparative eval executed for the just-trained gating-only candidate.",
+      "broad-live candidate run output: artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
+      "broad-live guardrail manifest: ../task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
+      "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "candidate artifact checksum: sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
+      "candidate router identity: router:T-20260415-257:activation-first-gating-only:v1"
     ]
   },
   "scorecard": {
@@ -2099,15 +2107,15 @@
     },
     "broadLive": {
       "available": true,
-      "authoritative": false,
-      "vetoResult": "proof_read_only",
+      "authoritative": true,
+      "vetoResult": "pass",
       "regressions": 0,
       "comparableTraceCount": 403,
       "policyStatus": "pass",
       "gateStatus": "pass",
-      "usedLearnedRouteTurnCount": 0,
-      "boundLearnedRouteTurnCount": 0,
-      "activatedLearnedRouteTurnCount": 0,
+      "usedLearnedRouteTurnCount": 403,
+      "boundLearnedRouteTurnCount": 403,
+      "activatedLearnedRouteTurnCount": 403,
       "feltOverlap": {
         "availableTraceCount": 4,
         "totalTraceCount": 25,
@@ -2116,11 +2124,14 @@
         "worseCount": 0
       },
       "notes": [
-        "learned_route never bound a live router function in the broad-live proof surface",
-        "scorecard reports zero learned-route turns that used the learned router function",
-        "summary tables report zero learned-route turns with a bound router identity"
+        "Candidate-specific broad-live comparative eval executed for the just-trained gating-only candidate.",
+        "broad-live candidate run output: artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
+        "broad-live guardrail manifest: ../task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
+        "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+        "candidate artifact checksum: sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
+        "candidate router identity: router:T-20260415-257:activation-first-gating-only:v1"
       ]
     },
-    "finalCandidateStatus": "architecture_verdict"
+    "finalCandidateStatus": "pass"
   }
 }

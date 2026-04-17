@@ -1,0 +1,89 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "live-main-b0e3391b-baa0-4726-8c00-aef55c962f2e-window-003",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-04T04:24:01.448Z",
+  "bundleBuiltAt": "2026-04-04T05:01:48.823Z",
+  "agentId": "main",
+  "sessionId": "b0e3391b-baa0-4726-8c00-aef55c962f2e",
+  "channel": "live-session",
+  "sourceStream": "live/main/session-window",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/b0e3391b-baa0-4726-8c00-aef55c962f2e.jsonl"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-main",
+    "snapshotId": "session-b0e3391b-baa0-4726-8c00-aef55c962f2e",
+    "capturedAt": "2026-04-04T04:24:01.448Z",
+    "rootDir": "/Users/guclaw/.openclaw/workspace",
+    "revision": "b0e3391b-baa0-4726-8c00-aef55c962f2e",
+    "labels": [
+      "live-history",
+      "main",
+      "interactive"
+    ]
+  },
+  "seedBuiltAt": "2026-04-04T04:24:02.684Z",
+  "seedActivatedAt": "2026-04-04T04:40:13.306Z",
+  "seedCues": [
+    {
+      "cueId": "cue-1",
+      "createdAt": "2026-04-04T04:24:02.684Z",
+      "content": "user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 3 lane C for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate3c on branch t129-gate3c-replay-harvest. Mission: build the shared replay harness/plumbing needed to make Teacher v3 replay outcomes durable and inspectable across proposal classes. Focus on reusable replay result capture, proof-bundle capture of replay outcomes, and ...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-2",
+      "createdAt": "2026-04-04T04:39:01.068Z",
+      "content": "user: System: [2026-04-03 21:38:56 PDT] Exec completed (mellow-r, code 0) :: m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m [32m✓[39m test/brain-store/teacher-v3-proposals.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m [2m Test Files [22m [1m[32m4 p… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/work...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-3",
+      "createdAt": "2026-04-04T04:39:51.347Z",
+      "content": "assistant: /tmp/ocb-t129-gate3c\"}",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-4",
+      "createdAt": "2026-04-04T04:39:56.646Z",
+      "content": "assistant: /tmp/ocb-t129-gate3c\"}",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-5",
+      "createdAt": "2026-04-04T04:40:08.065Z",
+      "content": "assistant: T-20260403-129 ; 20260403",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-6",
+      "createdAt": "2026-04-04T04:40:13.306Z",
+      "content": "assistant: Done. What I accomplished: - Added a shared Teacher v3 replay-outcome harness with normalized explicit outcomes plus bounded derived fallback capture. - Extended Teacher v3 proof-bundle plumbing so bundles now carry `replayOutcomes` and `replayOutcomeSummary`. - Added core contract support for replay outcome types and summaries, plus proposal summary/diff propagation. - Added focused tests for: - explicit promotable + shadow-only replay outcomes - derived proof-bundle replay outcomes - proof ...",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "createdAt": "2026-04-04T05:01:44.207Z",
+      "deliveredAt": "2026-04-04T05:01:48.823Z",
+      "userMessage": "Exec denied (gateway id=9b47f545-b868-4b01-93f0-b7ecd0df1ee1, approval-timeout (obfuscation-detected)): cat > /tmp/modify_teacher_v3_contracts.js <<'NODE' const fs = require('fs'); const path = '/tmp/ocb-t129-gate3c/src/brain-core/teacher-v3-contracts.ts'; let text = fs.readFileSync(path, 'utf8'); function replace(oldText, newText, label) { if (!text.includes(oldText)) throw new Error('missing ' + label); text = text.replace(oldText, newText); } const insertAfterProofLink = [ 'export interface TeacherProposalProofLinkV1 {', ' refId: string;', ' kind: string;', ' path: string;', '}', '', 'export type TeacherProposalReplayOutcomeResultV1 = \"pass\" | \"warn\" | \"fail\";', '', 'export type TeacherProposalReplayOutcomeSourceV1 = \"proposal_record\" | \"proof_bundle\" | \"derived\";', '', 'export interface TeacherProposalReplayOutcomeV1 {', ' outcomeId: string;', ' replaySuite: string;', ' proposalClass: ProposalClass;', ' reviewMode: \"promotable\" | \"shadow_only\";', ' result: TeacherProposalReplayOutcomeResultV1;', ' source: TeacherProposalReplayOutcomeSourceV1;', ' summary: string;', ' evidenceLinks?: TeacherProposalProofLinkV1[];', ' counterevidenceLinks?: TeacherProposalProofLinkV1[];', ' capturedAt: string;', ' notes?: string[];', '}', '', 'export interface TeacherProposalReplayOutcomeSummaryV1 {', ' replayOutcomeCount: number;', ' replaySuites: string[];', ' resultCounts: Record<TeacherProposalReplayOutcomeResultV1, number>;', ' reviewModeCounts: Record<\"promotable\" | \"shadow_only\", number>;', ' sourceCounts: Record<TeacherProposalReplayOutcomeSourceV1, number>;', ' summary: string;', '}', ].join('\\n') + '\\n'; replace([ 'export interface TeacherProposalProofLinkV1 {', ' refId: string;', ' kind: string;', ' path: string;', '}', ].join('\\n') + '\\n', insertAfterProofLink, 'proof link insert'); replace([ 'export interface TeacherProposalProofBundleV1 {', ' bundleId: string;', ' proposalId: string;', ' proposalClass: ProposalClass;', ' status: \"promoted\" | \"rolled_back\";', ' lineage: ProposalLineageV1;', ' rollbackKey: string;', ' replaySuites: string[];', ' surfaceMap: TeacherV3ProofSurfaceRefV1[];', ' evidenceLinks: TeacherProposalProofLinkV1[];', ' counterevidenceLinks?: TeacherProposalProofLinkV1[];', ' summary: string;', ' createdAt: string;', ' updatedAt?: string;', '}', ].join('\\n') + '\\n', [ 'export interface TeacherProposalProofBundleV1 {', ' bundleId: string;', ' proposalId: string;', ' proposalClass: ProposalClass;', ' status: \"promoted\" | \"rolled_back\";', ' lineage: ProposalLineageV1;', ' rollbackKey: string;', ' replaySuites: string[];', ' replayOutcomes?: TeacherProposalReplayOutcomeV1[];', ' replayOutcomeSummary?: TeacherProposalReplayOutcomeSummaryV1;', ' surfaceMap: TeacherV3ProofSurfaceRefV1[];', ' evidenceLinks: TeacherProposalProofLinkV1[];', ' counterevidenceLinks?: TeacherProposalProofLinkV1[];', ' summary: string;', ' createdAt: string;', ' updatedAt?: string;', '}', ].join('\\n') + '\\n', 'proof bundle insert'); replace([ 'export interface TeacherProposalProofBundleSummaryV1 {', ' bundleId: string;', ' proposalId: string;', ' proposalClass: ProposalClass;', ' status: TeacherProposalProofBundleV1[\"status\"];', ' rollbackKey: string;', ' replaySuites: string[];', ' surfaceIds: string[];', ' surfaceCount: number;', ' shippedSurfaceCount: number;', ' targetSurfaceCount: number;', ' evidenceLinkCount: number;', ' counterevidenceLinkCount: number;', ' summary: string;', '}', ].join('\\n') + '\\n', [ 'export interface TeacherProposalProofBundleSummaryV1 {', ' bundleId: string;', ' proposalId: string;', ' proposalClass: ProposalClass;', ' status: TeacherProposalProofBundleV1[\"status\"];', ' rollbackKey: string;', ' replaySuites: string[];', ' replayOutcomeSummary: TeacherProposalReplayOutcomeSummaryV1;', ' surfaceIds: string[];', ' surfaceCount: number;', ' shippedSurfaceCount: number;', ' targetSurfaceCount: number;', ' evidenceLinkCount: number;', ' counterevidenceLinkCount: number;', ' summary: string;', '}', ].join('\\n') + '\\n', 'proof bundle summary insert'); replace([ 'export interface TeacherProposalSummaryV1 {', ' proposalId: string;', ' proposalClass: ProposalClass;', ' lane?: ProposalClass;', ' status: ProposalStatus;', ' lineage: TeacherProposalLineageSummaryV1;', ' subjectIds: string[];', ' subjectCount: number;', ' evidenceIds: string[];', ' evidenceCount: number;', ' counterevidenceIds: string[];', ' counterevidenceCount: number;', ' replaySuites: string[];', ' replaySuiteCount: number;', ' rollbackKey: string;', ' confidence: number;', ' hasProofBundle: boolean;', ' proofBundleId?: string;', ' proofBundleStatus?: TeacherProposalProofBundleV1[\"status\"];', ' createdAt: string;', ' resolvedAt?: string;', '}', ].join('\\n') + '\\n', [ 'export interface TeacherProposalSummaryV1 {', ' proposalId: string;', ' proposalClass: ProposalClass;', ' lane?: ProposalClass;', ' status: ProposalStatus;', ' lineage: TeacherProposalLineageSummaryV1;', ' subjectIds: string[];', ' subjectCount: number;', ' evidenceIds: string[];', ' evidenceCount: number;', ' counterevidenceIds: string[];', ' counterevidenceCount: number;', ' replaySuites: string[];', ' replaySuiteCount: number;', ' rollbackKey: string;', ' confidence: number;', ' hasProofBundle: boolean;', ' proofBundleId?: string;', ' proofBundleStatus?: TeacherProposalProofBundleV1[\"status\"];', ' proofBundleReplayOutcomeSummary?: TeacherProposalReplayOutcomeSummaryV1;', ' createdAt: string;', ' resolvedAt?: string;', '}', ].join('\\n') + '\\n', 'proposal summary insert'); replace([ ' const evidenceIds = uniqueStrings(proposal.evidence.map(canonicalEvidenceRefId));', ' const counterevidenceIds = uniqueStrings((proposal.counterevidence ?? []).map(canonicalEvidenceRefId));', ' const proofBundle = proposal.proofBundle;', '', ' return {', ].join('\\n'), [ ' const evidenceIds = uniqueStrings(proposal.evidence.map(canonicalEvidenceRefId));', ' const counterevidenceIds = uniqueStrings((proposal.counterevidence ?? []).map(canonicalEvidenceRefId));', ' const proofBundle = proposal.proofBundle;', ' const proofBundleReplayOutcomeSummary = proofBundle ? summarizeTeacherProposalReplayOutcomesV1(proofBundle.replayOutcomes ?? []) : undefined;', '', ' return {', ].join('\\n'), 'proposal summary body insert'); replace([ ' hasProofBundle: proofBundle !== undefined,', ' proofBundleId: proofBundle?.bundleId,', ' proofBundleStatus: proofBundle?.status,', ' createdAt: proposal.createdAt,', ].join('\\n'), [ ' hasProofBundle: proofBundle !== undefined,', ' proofBundleId: proofBundle?.bundleId,', ' proofBundleStatus: proofBundle?.status,', ' proofBundleReplayOutcomeSummary,', ' createdAt: proposal.createdAt,', ].join('\\n'), 'proposal summary fields'); replace([ ' compareField(\"proofBundleId\", leftSummary.proofBundleId ?? null, rightSummary.proofBundleId ?? null);', ' compareField(\"proofBundleStatus\", leftSummary.proofBundleStatus ?? null, rightSummary.proofBundleStatus ?? null);', ' compareField(\"createdAt\", leftSummary.createdAt, rightSummary.createdAt);', ].join('\\n'), [ ' compareField(\"proofBundleId\", leftSummary.proofBundleId ?? null, rightSummary.proofBundleId ?? null);', ' compareField(\"proofBundleStatus\", leftSummary.proofBundleStatus ?? null, rightSummary.proofBundleStatus ?? null);', ' compareField(', ' \"proofBundleReplayOutcomeSummary\",', ' leftSummary.proofBundleReplayOutcomeSummary ?? null,', ' rightSummary.proofBundleReplayOutcomeSummary ?? null,', ' );', ' compareField(\"createdAt\", leftSummary.createdAt, rightSummary.createdAt);', ].join('\\n'), 'diff insert'); replace([ 'export function describeTeacherProposalReplayGate(', ' proposalClass: ProposalClass,', '): TeacherProposalReplayGateV1 {', ' return TEACHER_PROPOSAL_REPLAY_GATES_V1[proposalClass];', '}', '', 'export const TEACHER_CANARY_ROLLOUT_PLANS_V1: Record<ProposalClass, TeacherCanaryRolloutPlanV1> = {', ].join('\\n'), [ 'export function describeTeacherProposalReplayGate(', ' proposalClass: ProposalClass,', '): TeacherProposalReplayGateV1 {', ' return TEACHER_PROPOSAL_REP",
+      "runtimeHints": [
+        "/tmp/modify_teacher_v3_contracts.js",
+        "/tmp/ocb-t129-gate3c/src/brain-core/teacher-v3-contracts.ts';",
+        "9b47f545",
+        "b7ecd0df1ee1",
+        "Captured ${replayOutcomeCount} replay outcome${replayOutcomeCount === 1 ? \"\" : \"s\"} across ${uniqueReplaySuites.length} suite${uniqueReplaySuites.length === 1 ? \"\" : \"s\"} (${uniqueReplaySuites.join(\", \") || \"none\"}); results pass=${resultCounts.pass}, warn=${resultCounts.warn}, fail=${resultCounts.fail}; review modes promotable=${reviewModeCounts.promotable}, shadow_only=${reviewModeCounts.shadow_only}; sources proposal_record=${sourceCounts.proposal_record}, proof_bundle=${sourceCounts.proof_bundle}, derived=${sourceCounts.derived}."
+      ],
+      "expectedContextPhrases": [
+        "heartbeat_ok"
+      ]
+    }
+  ]
+}

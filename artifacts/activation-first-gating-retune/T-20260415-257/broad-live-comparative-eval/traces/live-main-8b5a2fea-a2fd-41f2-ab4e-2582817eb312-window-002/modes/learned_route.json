@@ -1,0 +1,118 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 80,
+    "compileOkCount": 1,
+    "phraseHitCount": 2,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-942b5171"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-942b5171",
+    "frozenEvalRouterIdentity": "pack-942b5171:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-04T05:00:16.959Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-82d64283d0dca9a27cddfbd964946265563384e2c2ea633239bb4f413a1586e9"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-942b5171",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-942b5171:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-942b5171:route_fn",
+      "selectionDigest": "sha256-999fa40750dc8ae7584cf5d053d45b245bb4f9da05e3027756e7303b24eecb39",
+      "selectedContextIds": [
+        "pack-942b5171:pointer-aware-init",
+        "pack-942b5171:event:8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-1:feedback",
+        "pack-942b5171:event:8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-6:feedback"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Teaching feedback on live-session session 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 3 lane B for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate3b on branch t129-gate3b-replay-shadow. Mission: implement replay over real candidate state for shadow-only Teacher v3 proposal classes: mutation and forgetting. Build the narrowest real replay path and class-specific replay summaries that keep mutation/forgetting sha.... Related interaction: 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed: assistant: Done. Implemented the Gate 3 shadow-replay path for mutation and forgetting: - Added reusable real replay summaries for: - mutation candidate graphs via shadow candidate state replay + rollback reset - forgetting retention transitions via actual retention evaluation + rollback semantics - Extended the Teacher v3 proof-bundle writer with a `shadowReplay` seam and class-specific shadow-only rendering - Added focused tests covering: - real mutation candidate replay - forgetting replay - user_exp.... Related interaction: 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-6:interaction."
+      ],
+      "eventExportDigest": "sha256-802747a3bbd05f6217b801e5592a2a23bb3f7a612f6d63a0d34d3af760eb985f",
+      "expectedContextPhrases": [
+        "T-20260403-129",
+        "/T-20260403-129/lane-gate3b-replay-shadow.md",
+        "/forgetting"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "T-20260403-129",
+        "/forgetting"
+      ],
+      "missedPhrases": [
+        "/T-20260403-129/lane-gate3b-replay-shadow.md"
+      ],
+      "qualityScore": 80,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.548,
+        "routeSelectionMs": 6.141,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.406,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-04T05:00:16.959Z"
+      },
+      "warnings": []
+    }
+  ]
+}
