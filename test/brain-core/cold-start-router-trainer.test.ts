@@ -228,7 +228,7 @@ function makePolicySupervisionRowFixture(params: {
 function trainActivationFirstFixture(
   outputDir: string,
   datasetId: string,
-  overrides: Partial<Pick<ColdStartRouterTrainingInputV1, "policySupervisionRows" | "focusLaneWeights" | "rowTypeWeights">> = {},
+  overrides: Partial<Pick<ColdStartRouterTrainingInputV1, "policySupervisionRows" | "focusLaneWeights" | "rowTypeWeights" | "interventionHead">> = {},
 ) {
   return trainColdStartRouterArtifactV1({
     artifactId: `router-artifact-${datasetId}`,
@@ -313,6 +313,12 @@ describe("cold-start router trainer", () => {
       abstentionThreshold: 0.55,
       expectedUtilityThreshold: 0,
       stopLocalThreshold: 0.5,
+      interventionHead: {
+        decisionPolicyMode: "router_blended",
+        freezeCandidateSelection: false,
+        freezeStopLocal: false,
+        featureProfile: "default_router",
+      },
     });
     expect(result.model.toolActionPriors.length).toBeGreaterThan(0);
     expect(result.model.toolActionSets.length).toBeGreaterThan(0);
@@ -336,6 +342,9 @@ describe("cold-start router trainer", () => {
       abstentionThreshold: 0.55,
       expectedUtilityThreshold: 0,
       stopLocalThreshold: 0.5,
+      decisionPolicyMode: "router_blended",
+      freezeCandidateSelection: false,
+      freezeStopLocal: false,
       stopReason: null,
     });
     expect(rowScore.decisionSummary.activationProbability).toBeGreaterThan(0);
@@ -383,6 +392,74 @@ describe("cold-start router trainer", () => {
     expect(result.model.stopLabelCounts.CONTINUE).toBeGreaterThan(0.8);
     expect(result.model.stopLabelCounts.STOP_LOCAL).toBeCloseTo(0.8, 6);
     expect(result.model.livePolicyInitializer.policyParams.stopBias).toBeLessThan(0);
+  });
+
+  it("persists an explicit gating-only intervention head and ignores stop-local gating when enabled", () => {
+    const outputDir = createTempRoot("cold-start-router-gating-only-head");
+    const result = trainActivationFirstFixture(outputDir, "dataset_activation_first_gating_only", {
+      interventionHead: {
+        decisionPolicyMode: "gating_only_v1",
+        freezeCandidateSelection: true,
+        freezeStopLocal: true,
+        featureProfile: "resume_gate_v1",
+      },
+    });
+
+    expect(result.model.calibration.interventionHead).toEqual({
+      decisionPolicyMode: "gating_only_v1",
+      freezeCandidateSelection: true,
+      freezeStopLocal: true,
+      featureProfile: "resume_gate_v1",
+    });
+
+    const runtimeBundle = loadColdStartRouterArtifactBundleV1(outputDir);
+    expect(runtimeBundle.model.calibration.interventionHead).toEqual({
+      decisionPolicyMode: "gating_only_v1",
+      freezeCandidateSelection: true,
+      freezeStopLocal: true,
+      featureProfile: "resume_gate_v1",
+    });
+
+    const row = makeGreedyThresholdRouteRow("dataset_activation_first_greedy_lane");
+    const blendedScoring = scoreColdStartRouteRowV1({
+      model: {
+        ...result.model,
+        calibration: {
+          ...result.model.calibration,
+          interventionHead: {
+            decisionPolicyMode: "router_blended",
+            freezeCandidateSelection: false,
+            freezeStopLocal: false,
+            featureProfile: "default_router",
+          },
+          stopLocalThreshold: 0.01,
+        },
+      },
+      row,
+    });
+    const gatingOnlyScoring = scoreColdStartRouteRowV1({
+      model: {
+        ...result.model,
+        calibration: {
+          ...result.model.calibration,
+          stopLocalThreshold: 0.01,
+        },
+      },
+      row,
+    });
+
+    expect(blendedScoring.decisionSummary.activated).toBe(false);
+    expect(blendedScoring.decisionSummary.stopReason).toBe("stop_local");
+    expect(gatingOnlyScoring.decisionSummary.activated).toBe(true);
+    expect(gatingOnlyScoring.decisionSummary.stopReason).toBeNull();
+    expect(gatingOnlyScoring.decisionSummary).toMatchObject({
+      decisionPolicyMode: "gating_only_v1",
+      freezeCandidateSelection: true,
+      freezeStopLocal: true,
+    });
+    expect(gatingOnlyScoring.rankedCandidates[0]?.candidate.candidate_id).toBe(
+      blendedScoring.rankedCandidates[0]?.candidate.candidate_id,
+    );
   });
 
   it("weights felt-lane activation supervision into gating without changing the top-ranked candidate", () => {

@@ -99,6 +99,17 @@ export interface ColdStartRouterCalibrationV1 {
   abstentionThreshold: number;
   expectedUtilityThreshold: number;
   stopLocalThreshold: number;
+  interventionHead: ColdStartRouterInterventionHeadConfigV1;
+}
+
+export type ColdStartRouterDecisionPolicyModeV1 = "router_blended" | "gating_only_v1";
+export type ColdStartRouterInterventionFeatureProfileV1 = "default_router" | "resume_gate_v1";
+
+export interface ColdStartRouterInterventionHeadConfigV1 {
+  decisionPolicyMode: ColdStartRouterDecisionPolicyModeV1;
+  freezeCandidateSelection: boolean;
+  freezeStopLocal: boolean;
+  featureProfile: ColdStartRouterInterventionFeatureProfileV1;
 }
 
 export interface ColdStartRouterFeatureNormalizersV1 {
@@ -277,6 +288,9 @@ export interface ColdStartRouterDecisionSummaryV1 {
   abstentionThreshold: number;
   expectedUtilityThreshold: number;
   stopLocalThreshold: number;
+  decisionPolicyMode: ColdStartRouterDecisionPolicyModeV1;
+  freezeCandidateSelection: boolean;
+  freezeStopLocal: boolean;
   stopReason: ColdStartRouterDecisionStopReasonV1 | null;
 }
 
@@ -305,6 +319,7 @@ export interface ColdStartRouterTrainingInputV1 {
   policySupervisionRows?: PolicySupervisionRowV1[];
   focusLaneWeights?: Record<string, number>;
   rowTypeWeights?: Partial<Record<PolicySupervisionRowType, number>>;
+  interventionHead?: Partial<ColdStartRouterInterventionHeadConfigV1>;
   outputDir: string;
   routerIdentity?: string | null;
   createdAt?: string;
@@ -400,6 +415,47 @@ function validateNonNegativeWeightMap(
     }
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
       throw new Error(`${label}.${key} must be a finite number >= 0`);
+    }
+  }
+}
+
+function defaultInterventionHeadConfig(): ColdStartRouterInterventionHeadConfigV1 {
+  return {
+    decisionPolicyMode: "router_blended",
+    freezeCandidateSelection: false,
+    freezeStopLocal: false,
+    featureProfile: "default_router",
+  };
+}
+
+function normalizeInterventionHeadConfig(
+  config: Partial<ColdStartRouterInterventionHeadConfigV1> | null | undefined,
+): ColdStartRouterInterventionHeadConfigV1 {
+  return {
+    ...defaultInterventionHeadConfig(),
+    ...(config ?? {}),
+  };
+}
+
+function interventionHeadFromCalibration(
+  calibration: Pick<ColdStartRouterCalibrationV1, "interventionHead"> | null | undefined,
+): ColdStartRouterInterventionHeadConfigV1 {
+  return normalizeInterventionHeadConfig(calibration?.interventionHead);
+}
+
+function validateInterventionHeadConfig(config: Partial<ColdStartRouterInterventionHeadConfigV1> | undefined): void {
+  if (!config) {
+    return;
+  }
+  if (config.decisionPolicyMode !== undefined && !["router_blended", "gating_only_v1"].includes(config.decisionPolicyMode)) {
+    throw new Error(`interventionHead.decisionPolicyMode must be router_blended or gating_only_v1, got ${String(config.decisionPolicyMode)}`);
+  }
+  if (config.featureProfile !== undefined && !["default_router", "resume_gate_v1"].includes(config.featureProfile)) {
+    throw new Error(`interventionHead.featureProfile must be default_router or resume_gate_v1, got ${String(config.featureProfile)}`);
+  }
+  for (const key of ["freezeCandidateSelection", "freezeStopLocal"] as const) {
+    if (config[key] !== undefined && typeof config[key] !== "boolean") {
+      throw new Error(`interventionHead.${key} must be a boolean when provided`);
     }
   }
 }
@@ -851,12 +907,15 @@ function buildDecisionSummary(params: {
   const predictedUtility = activationProbability - abstentionProbability;
   const predictedRegretOfAbstaining = Math.max(0, predictedUtility);
   const thresholds = params.model.calibration;
+  const interventionHead = interventionHeadFromCalibration(thresholds);
+  const stopLocalEnabled = !interventionHead.freezeStopLocal
+    && interventionHead.decisionPolicyMode === "router_blended";
 
   let activated = false;
   let stopReason: ColdStartRouterDecisionStopReasonV1 | null = null;
   if (bestTraverse === null) {
     stopReason = "no_candidates";
-  } else if (stopLocalProbability >= thresholds.stopLocalThreshold || params.stopPrediction.label === "STOP_LOCAL") {
+  } else if (stopLocalEnabled && (stopLocalProbability >= thresholds.stopLocalThreshold || params.stopPrediction.label === "STOP_LOCAL")) {
     stopReason = "stop_local";
   } else if (abstentionProbability >= thresholds.abstentionThreshold && abstentionProbability >= activationProbability) {
     stopReason = "abstention_threshold_met";
@@ -882,6 +941,9 @@ function buildDecisionSummary(params: {
     abstentionThreshold: thresholds.abstentionThreshold,
     expectedUtilityThreshold: thresholds.expectedUtilityThreshold,
     stopLocalThreshold: thresholds.stopLocalThreshold,
+    decisionPolicyMode: interventionHead.decisionPolicyMode,
+    freezeCandidateSelection: interventionHead.freezeCandidateSelection,
+    freezeStopLocal: interventionHead.freezeStopLocal,
     stopReason,
   };
 }
@@ -913,6 +975,7 @@ function validateTrainingInputs(params: ColdStartRouterTrainingInputV1): void {
 
   validateNonNegativeWeightMap("focusLaneWeights", params.focusLaneWeights);
   validateNonNegativeWeightMap("rowTypeWeights", params.rowTypeWeights, POLICY_SUPERVISION_ROW_TYPES);
+  validateInterventionHeadConfig(params.interventionHead);
 
   for (const entry of params.registryEntries) {
     const validation = validateDataRegistryEntryV1(entry);
@@ -1033,6 +1096,22 @@ function buildCalibration(): ColdStartRouterCalibrationV1 {
     abstentionThreshold: 0.55,
     expectedUtilityThreshold: 0,
     stopLocalThreshold: 0.5,
+    interventionHead: defaultInterventionHeadConfig(),
+  };
+}
+
+function mergeCalibration(params: {
+  priorCalibration?: ColdStartRouterCalibrationV1 | null;
+  interventionHead?: Partial<ColdStartRouterInterventionHeadConfigV1>;
+}): ColdStartRouterCalibrationV1 {
+  const prior = params.priorCalibration;
+  const base = prior ?? buildCalibration();
+  return {
+    ...base,
+    interventionHead: normalizeInterventionHeadConfig({
+      ...interventionHeadFromCalibration(prior),
+      ...(params.interventionHead ?? {}),
+    }),
   };
 }
 
@@ -1489,7 +1568,10 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
   }
 
   const skippedRowDetails = createSkippedRowDetails(skippedRows);
-  const calibration = warmStart?.bundle.model.calibration ?? buildCalibration();
+  const calibration = mergeCalibration({
+    priorCalibration: warmStart?.bundle.model.calibration ?? null,
+    interventionHead: params.interventionHead,
+  });
   const featureWeightMap = normalizeFeatureWeights(
     featureCounts,
     calibration.smoothing,
