@@ -331,6 +331,54 @@ function trainerStopLabelForRowType(rowType: PolicySupervisionRowType): ColdStar
   }
 }
 
+export interface NormalizedPolicySupervisionReplayExpectationV1 {
+  policyRowId: string;
+  routeRowId: string | null;
+  rowType: PolicySupervisionRowType;
+  focusLane: string | null;
+  weight: number;
+  rowWeight: number;
+  hardNegativeClass: HardNegativeClass | null;
+  oracleBestMode: PolicySupervisionRowV1["oracle_best_mode"];
+  expectedActivated: boolean | null;
+  expectedAbstained: boolean | null;
+  expectedStopLocal: boolean | null;
+}
+
+function replayExpectationsForRowType(rowType: PolicySupervisionRowType): {
+  expectedActivated: boolean | null;
+  expectedAbstained: boolean | null;
+  expectedStopLocal: boolean | null;
+} {
+  switch (rowType) {
+    case "activate":
+    case "continue_expand":
+      return {
+        expectedActivated: true,
+        expectedAbstained: false,
+        expectedStopLocal: null,
+      };
+    case "abstain":
+      return {
+        expectedActivated: false,
+        expectedAbstained: true,
+        expectedStopLocal: null,
+      };
+    case "stop_local":
+      return {
+        expectedActivated: false,
+        expectedAbstained: true,
+        expectedStopLocal: true,
+      };
+    case "select_context":
+      return {
+        expectedActivated: null,
+        expectedAbstained: null,
+        expectedStopLocal: null,
+      };
+  }
+}
+
 export function normalizePolicySupervisionRowsForTrainerV1(
   rows: PolicySupervisionRowV1[],
   options: PolicySupervisionTrainerNormalizationOptionsV1 = {},
@@ -360,6 +408,31 @@ export function normalizePolicySupervisionRowsForTrainerV1(
       focusLane: row.focus_lane,
       hardNegativeClass: row.hard_negative_class,
       oracleBestMode: row.oracle_best_mode,
+    });
+  }
+
+  return normalized;
+}
+
+export function normalizePolicySupervisionRowsForReplayV1(
+  rows: PolicySupervisionRowV1[],
+): NormalizedPolicySupervisionReplayExpectationV1[] {
+  const normalized: NormalizedPolicySupervisionReplayExpectationV1[] = [];
+
+  for (const row of rows) {
+    const expectations = replayExpectationsForRowType(row.row_type);
+    normalized.push({
+      policyRowId: row.row_id,
+      routeRowId: normalizeString(row.trace_slice.route_row_id),
+      rowType: row.row_type,
+      focusLane: row.focus_lane,
+      weight: row.row_weight,
+      rowWeight: row.row_weight,
+      hardNegativeClass: row.hard_negative_class,
+      oracleBestMode: row.oracle_best_mode,
+      expectedActivated: expectations.expectedActivated,
+      expectedAbstained: expectations.expectedAbstained,
+      expectedStopLocal: expectations.expectedStopLocal,
     });
   }
 

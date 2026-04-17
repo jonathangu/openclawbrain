@@ -27,10 +27,50 @@ import {
   type ColdStartRouterSourcePriorsV1,
 } from "./cold-start-router-trainer.ts";
 import { COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1 } from "./graph.js";
+import {
+  normalizePolicySupervisionRowsForReplayV1,
+  validatePolicySupervisionRowV1,
+  type HardNegativeClass,
+  type NormalizedPolicySupervisionReplayExpectationV1,
+  type PolicySupervisionRowType,
+  type PolicySupervisionRowV1,
+} from "./policy-supervision-rows.ts";
 
 export interface ColdStartRouterReplayGateLoadIssueV1 {
   code: string;
   detail: string;
+}
+
+export interface ColdStartRouterReplayGatePolicyExpectationResultV1 {
+  policyRowId: string;
+  routeRowId: string | null;
+  rowType: PolicySupervisionRowType;
+  focusLane: string | null;
+  weight: number;
+  hardNegativeClass: HardNegativeClass | null;
+  oracleBestMode: PolicySupervisionRowV1["oracle_best_mode"];
+  expectedActivated: boolean | null;
+  actualActivated: boolean;
+  expectedAbstained: boolean | null;
+  actualAbstained: boolean;
+  expectedStopLocal: boolean | null;
+  actualStopLocal: boolean;
+  passed: boolean;
+  issues: string[];
+}
+
+export interface ColdStartRouterReplayGateLaneSummaryV1 {
+  lane: string;
+  policyExpectationCount: number;
+  passedPolicyExpectationCount: number;
+  failedPolicyExpectationCount: number;
+  totalWeight: number;
+  activationExpectationCount: number;
+  activationMatchCount: number;
+  abstainExpectationCount: number;
+  abstainMatchCount: number;
+  stopLocalExpectationCount: number;
+  stopLocalMatchCount: number;
 }
 
 export interface ColdStartRouterReplayGateRowResultV1 {
@@ -38,11 +78,13 @@ export interface ColdStartRouterReplayGateRowResultV1 {
   teacherActionKind: RouteDecisionRowV1["teacher_action"]["kind"];
   expectedActivated: boolean | null;
   actualActivated: boolean | null;
+  actualAbstained: boolean | null;
   expectedTopCandidateId: string | null;
   actualTopCandidateId: string | null;
   expectedStopLabel: RouteDecisionRowV1["stop_label"];
   actualStopLabel: RouteDecisionRowV1["stop_label"];
   actualStopReason: string | null;
+  actualStopLocal: boolean | null;
   decisionConfidence: number | null;
   activationProbability: number | null;
   abstentionProbability: number | null;
@@ -55,6 +97,12 @@ export interface ColdStartRouterReplayGateRowResultV1 {
   abstentionThreshold: number | null;
   expectedUtilityThreshold: number | null;
   stopLocalThreshold: number | null;
+  gateEvaluated: boolean;
+  routeRowDiagnosticPassed: boolean;
+  routeRowDiagnosticIssues: string[];
+  policyExpectationCount: number;
+  policyExpectationPassCount: number;
+  policyExpectationResults: ColdStartRouterReplayGatePolicyExpectationResultV1[];
   passed: boolean;
   issues: string[];
 }
@@ -69,7 +117,11 @@ export interface ColdStartRouterReplayGateVerdictV1 {
   passedRowCount: number;
   failedRowCount: number;
   skippedRowCount: number;
+  policyExpectationCount: number;
+  passedPolicyExpectationCount: number;
+  failedPolicyExpectationCount: number;
   loadIssues: ColdStartRouterReplayGateLoadIssueV1[];
+  laneSummaries: ColdStartRouterReplayGateLaneSummaryV1[];
   rowResults: ColdStartRouterReplayGateRowResultV1[];
 }
 
@@ -96,6 +148,100 @@ function findTraverseProbability(params: {
     entry.action.type === "traverse"
       && entry.action.candidate?.candidate_id === params.candidateId
   ))?.probability ?? 0;
+}
+
+const REPLAY_GATE_PRIORITY_LANES = ["felt_resume_25", "must_not_fire_100"] as const;
+
+function booleanStateLabel(value: boolean): "on" | "off" {
+  return value ? "on" : "off";
+}
+
+function buildPolicyExpectationIssues(params: {
+  expectation: NormalizedPolicySupervisionReplayExpectationV1;
+  actualActivated: boolean;
+  actualAbstained: boolean;
+  actualStopLocal: boolean;
+}): string[] {
+  const issues: string[] = [];
+
+  if (params.expectation.expectedActivated !== null && params.actualActivated !== params.expectation.expectedActivated) {
+    issues.push(`activation ${booleanStateLabel(params.actualActivated)} != expected ${booleanStateLabel(params.expectation.expectedActivated)}`);
+  }
+  if (params.expectation.expectedAbstained !== null && params.actualAbstained !== params.expectation.expectedAbstained) {
+    issues.push(`abstain ${booleanStateLabel(params.actualAbstained)} != expected ${booleanStateLabel(params.expectation.expectedAbstained)}`);
+  }
+  if (params.expectation.expectedStopLocal !== null && params.actualStopLocal !== params.expectation.expectedStopLocal) {
+    issues.push(`stop_local ${booleanStateLabel(params.actualStopLocal)} != expected ${booleanStateLabel(params.expectation.expectedStopLocal)}`);
+  }
+
+  return issues;
+}
+
+function summarizePolicyExpectationLanes(
+  expectationResults: readonly ColdStartRouterReplayGatePolicyExpectationResultV1[],
+): ColdStartRouterReplayGateLaneSummaryV1[] {
+  const laneSummaries = new Map<string, ColdStartRouterReplayGateLaneSummaryV1>();
+
+  for (const result of expectationResults) {
+    if (!result.focusLane) {
+      continue;
+    }
+    const laneSummary = laneSummaries.get(result.focusLane) ?? {
+      lane: result.focusLane,
+      policyExpectationCount: 0,
+      passedPolicyExpectationCount: 0,
+      failedPolicyExpectationCount: 0,
+      totalWeight: 0,
+      activationExpectationCount: 0,
+      activationMatchCount: 0,
+      abstainExpectationCount: 0,
+      abstainMatchCount: 0,
+      stopLocalExpectationCount: 0,
+      stopLocalMatchCount: 0,
+    };
+    laneSummary.policyExpectationCount += 1;
+    laneSummary.totalWeight = Number((laneSummary.totalWeight + result.weight).toFixed(6));
+    if (result.passed) {
+      laneSummary.passedPolicyExpectationCount += 1;
+    } else {
+      laneSummary.failedPolicyExpectationCount += 1;
+    }
+    if (result.expectedActivated !== null) {
+      laneSummary.activationExpectationCount += 1;
+      if (result.actualActivated === result.expectedActivated) {
+        laneSummary.activationMatchCount += 1;
+      }
+    }
+    if (result.expectedAbstained !== null) {
+      laneSummary.abstainExpectationCount += 1;
+      if (result.actualAbstained === result.expectedAbstained) {
+        laneSummary.abstainMatchCount += 1;
+      }
+    }
+    if (result.expectedStopLocal !== null) {
+      laneSummary.stopLocalExpectationCount += 1;
+      if (result.actualStopLocal === result.expectedStopLocal) {
+        laneSummary.stopLocalMatchCount += 1;
+      }
+    }
+    laneSummaries.set(result.focusLane, laneSummary);
+  }
+
+  const priorityLaneOrder = new Map(REPLAY_GATE_PRIORITY_LANES.map((lane, index) => [lane, index] as const));
+  return [...laneSummaries.values()].sort((left, right) => {
+    const leftPriority = priorityLaneOrder.get(left.lane);
+    const rightPriority = priorityLaneOrder.get(right.lane);
+    if (leftPriority !== undefined || rightPriority !== undefined) {
+      if (leftPriority === undefined) {
+        return 1;
+      }
+      if (rightPriority === undefined) {
+        return -1;
+      }
+      return leftPriority - rightPriority;
+    }
+    return left.lane.localeCompare(right.lane);
+  });
 }
 
 export interface ColdStartRouterLoadedArtifactV1 {
@@ -360,6 +506,7 @@ export function loadColdStartRouterArtifactV1(artifactDir: string): {
 export function replayColdStartRouterArtifactV1(params: {
   artifactDir: string;
   routeRows: RouteDecisionRowV1[];
+  policySupervisionRows?: PolicySupervisionRowV1[];
 }): ColdStartRouterReplayGateVerdictV1 {
   const loaded = loadColdStartRouterArtifactV1(params.artifactDir);
   if (!loaded.artifact) {
@@ -373,28 +520,79 @@ export function replayColdStartRouterArtifactV1(params: {
       passedRowCount: 0,
       failedRowCount: 0,
       skippedRowCount: 0,
+      policyExpectationCount: 0,
+      passedPolicyExpectationCount: 0,
+      failedPolicyExpectationCount: 0,
       loadIssues: loaded.issues,
+      laneSummaries: [],
       rowResults: [],
     };
   }
 
   const rowResults: ColdStartRouterReplayGateRowResultV1[] = [];
   const loadIssues = loaded.issues;
+  const validPolicyRows: PolicySupervisionRowV1[] = [];
+
+  for (const policyRow of params.policySupervisionRows ?? []) {
+    const validation = validatePolicySupervisionRowV1(policyRow);
+    if (!validation.valid) {
+      recordIssue(loadIssues, "invalid_policy_supervision_row", `${policyRow.row_id}: ${validation.issues.join("; ")}`);
+      continue;
+    }
+    validPolicyRows.push(policyRow);
+  }
+
+  const routeRowIds = new Set(params.routeRows.map((row) => row.row_id));
+  const policyExpectationsByRouteRowId = new Map<string, NormalizedPolicySupervisionReplayExpectationV1[]>();
+  for (const expectation of normalizePolicySupervisionRowsForReplayV1(validPolicyRows)) {
+    if (!expectation.routeRowId) {
+      recordIssue(
+        loadIssues,
+        "invalid_policy_supervision_row",
+        `${expectation.policyRowId}: trace_slice.route_row_id is required for replay gating`,
+      );
+      continue;
+    }
+    if (!routeRowIds.has(expectation.routeRowId)) {
+      recordIssue(
+        loadIssues,
+        "missing_policy_route_row",
+        `${expectation.policyRowId}: route row ${expectation.routeRowId} is not present in replay input`,
+      );
+      continue;
+    }
+    const expectationsForRouteRow = policyExpectationsByRouteRowId.get(expectation.routeRowId) ?? [];
+    expectationsForRouteRow.push(expectation);
+    policyExpectationsByRouteRowId.set(expectation.routeRowId, expectationsForRouteRow);
+  }
+
+  const policyMode = policyExpectationsByRouteRowId.size > 0;
   let skippedRowCount = 0;
 
   for (const row of params.routeRows) {
-    if (row.teacher_action.kind !== "traverse") {
+    const linkedPolicyExpectations = policyExpectationsByRouteRowId.get(row.row_id) ?? [];
+    const expectedActivated = expectedActivatedForReplayRow(row);
+    const expectedTopCandidateId = row.teacher_action.kind === "traverse"
+      ? row.teacher_action.target_ids[0]?.trim() ?? null
+      : null;
+    const shouldScoreRow = row.teacher_action.kind === "traverse" || linkedPolicyExpectations.length > 0;
+
+    if (!shouldScoreRow) {
+      const gateEvaluated = !policyMode;
+      const routeRowDiagnosticIssues = [`unsupported teacher_action kind ${row.teacher_action.kind}`];
       skippedRowCount += 1;
       rowResults.push({
         rowId: row.row_id,
         teacherActionKind: row.teacher_action.kind,
-        expectedActivated: expectedActivatedForReplayRow(row),
+        expectedActivated,
         actualActivated: null,
-        expectedTopCandidateId: null,
+        actualAbstained: null,
+        expectedTopCandidateId,
         actualTopCandidateId: null,
         expectedStopLabel: row.stop_label,
         actualStopLabel: row.stop_label,
         actualStopReason: null,
+        actualStopLocal: null,
         decisionConfidence: null,
         activationProbability: null,
         abstentionProbability: null,
@@ -407,46 +605,88 @@ export function replayColdStartRouterArtifactV1(params: {
         abstentionThreshold: null,
         expectedUtilityThreshold: null,
         stopLocalThreshold: null,
-        passed: false,
-        issues: [`unsupported teacher_action kind ${row.teacher_action.kind}`],
+        gateEvaluated,
+        routeRowDiagnosticPassed: false,
+        routeRowDiagnosticIssues,
+        policyExpectationCount: 0,
+        policyExpectationPassCount: 0,
+        policyExpectationResults: [],
+        passed: gateEvaluated ? false : true,
+        issues: gateEvaluated ? routeRowDiagnosticIssues : [],
       });
       continue;
     }
 
-    const expectedActivated = expectedActivatedForReplayRow(row);
-    const expectedTopCandidateId = row.teacher_action.target_ids[0]?.trim() ?? null;
     const scoring = scoreColdStartRouteRowV1({ model: loaded.artifact.model, row });
     const actualTopCandidateId = scoring.rankedCandidates[0]?.candidate.candidate_id ?? null;
     const actualStopLabel = scoring.stopPrediction.label;
+    const actualActivated = scoring.decisionSummary.activated;
+    const actualAbstained = !actualActivated;
+    const actualStopLocal = actualStopLabel === "STOP_LOCAL" || scoring.decisionSummary.stopReason === "stop_local";
     const topCandidateProbability = findTraverseProbability({
       candidateId: actualTopCandidateId,
       actionDistribution: scoring.policyDistribution.actions,
     });
     const stopProbability = scoring.policyDistribution.stopAction.probability;
-    const issues: string[] = [];
-
-    if (!expectedTopCandidateId) {
-      issues.push("missing expected traverse target");
-    } else if (actualTopCandidateId !== expectedTopCandidateId) {
-      issues.push(`top candidate ${actualTopCandidateId ?? "none"} != expected ${expectedTopCandidateId}`);
+    const routeRowDiagnosticIssues: string[] = [];
+    if (row.teacher_action.kind === "traverse") {
+      if (!expectedTopCandidateId) {
+        routeRowDiagnosticIssues.push("missing expected traverse target");
+      } else if (actualTopCandidateId !== expectedTopCandidateId) {
+        routeRowDiagnosticIssues.push(`top candidate ${actualTopCandidateId ?? "none"} != expected ${expectedTopCandidateId}`);
+      }
     }
-    if (expectedActivated !== null && scoring.decisionSummary.activated !== expectedActivated) {
-      issues.push(`activation ${scoring.decisionSummary.activated ? "on" : "off"} != expected ${expectedActivated ? "on" : "off"}`);
+    if (expectedActivated !== null && actualActivated !== expectedActivated) {
+      routeRowDiagnosticIssues.push(`activation ${booleanStateLabel(actualActivated)} != expected ${booleanStateLabel(expectedActivated)}`);
     }
     if (actualStopLabel !== row.stop_label) {
-      issues.push(`stop label ${actualStopLabel} != expected ${row.stop_label}`);
+      routeRowDiagnosticIssues.push(`stop label ${actualStopLabel} != expected ${row.stop_label}`);
+    }
+    const policyExpectationResults = linkedPolicyExpectations.map((expectation) => {
+      const issues = buildPolicyExpectationIssues({
+        expectation,
+        actualActivated,
+        actualAbstained,
+        actualStopLocal,
+      });
+      return {
+        policyRowId: expectation.policyRowId,
+        routeRowId: expectation.routeRowId,
+        rowType: expectation.rowType,
+        focusLane: expectation.focusLane,
+        weight: expectation.weight,
+        hardNegativeClass: expectation.hardNegativeClass,
+        oracleBestMode: expectation.oracleBestMode,
+        expectedActivated: expectation.expectedActivated,
+        actualActivated,
+        expectedAbstained: expectation.expectedAbstained,
+        actualAbstained,
+        expectedStopLocal: expectation.expectedStopLocal,
+        actualStopLocal,
+        passed: issues.length === 0,
+        issues,
+      } satisfies ColdStartRouterReplayGatePolicyExpectationResultV1;
+    });
+    const policyExpectationIssues = policyExpectationResults.flatMap((result) => result.issues.map((issue) => `[${result.policyRowId}] ${issue}`));
+    const policyExpectationPassCount = policyExpectationResults.filter((result) => result.passed).length;
+    const gateEvaluated = policyMode ? policyExpectationResults.length > 0 : true;
+    const gateIssues = policyMode ? policyExpectationIssues : routeRowDiagnosticIssues;
+    if (!gateEvaluated) {
+      skippedRowCount += 1;
     }
 
     rowResults.push({
       rowId: row.row_id,
       teacherActionKind: row.teacher_action.kind,
       expectedActivated,
-      actualActivated: scoring.decisionSummary.activated,
+      actualActivated,
+      actualAbstained,
       expectedTopCandidateId,
       actualTopCandidateId,
       expectedStopLabel: row.stop_label,
       actualStopLabel,
       actualStopReason: scoring.decisionSummary.stopReason,
+      actualStopLocal,
       decisionConfidence: scoring.decisionSummary.confidence,
       activationProbability: scoring.decisionSummary.activationProbability,
       abstentionProbability: scoring.decisionSummary.abstentionProbability,
@@ -459,34 +699,67 @@ export function replayColdStartRouterArtifactV1(params: {
       abstentionThreshold: scoring.decisionSummary.abstentionThreshold,
       expectedUtilityThreshold: scoring.decisionSummary.expectedUtilityThreshold,
       stopLocalThreshold: scoring.decisionSummary.stopLocalThreshold,
-      passed: issues.length === 0,
-      issues,
+      gateEvaluated,
+      routeRowDiagnosticPassed: routeRowDiagnosticIssues.length === 0,
+      routeRowDiagnosticIssues,
+      policyExpectationCount: policyExpectationResults.length,
+      policyExpectationPassCount,
+      policyExpectationResults,
+      passed: gateEvaluated ? gateIssues.length === 0 : true,
+      issues: gateEvaluated ? gateIssues : [],
     });
   }
 
-  const evaluatedRowCount = rowResults.length;
-  const passedRowCount = rowResults.filter((rowResult) => rowResult.passed).length;
-  const failedRowCount = rowResults.filter((rowResult) => !rowResult.passed).length;
+  const policyExpectationResults = rowResults.flatMap((rowResult) => rowResult.policyExpectationResults);
+  const laneSummaries = summarizePolicyExpectationLanes(policyExpectationResults);
+  const policyExpectationCount = policyExpectationResults.length;
+  const passedPolicyExpectationCount = policyExpectationResults.filter((result) => result.passed).length;
+  const failedPolicyExpectationCount = policyExpectationCount - passedPolicyExpectationCount;
+  const evaluatedRowCount = rowResults.filter((rowResult) => rowResult.gateEvaluated).length;
+  const passedRowCount = rowResults.filter((rowResult) => rowResult.gateEvaluated && rowResult.passed).length;
+  const failedRowCount = rowResults.filter((rowResult) => rowResult.gateEvaluated && !rowResult.passed).length;
   const hasStructuralIssue = loadIssues.length > 0;
-  const hasReplayFailure = failedRowCount > 0;
+  const hasReplayFailure = policyExpectationCount > 0
+    ? failedPolicyExpectationCount > 0
+    : failedRowCount > 0;
   const passed = !hasStructuralIssue && !hasReplayFailure && evaluatedRowCount > 0;
   const verdict: ColdStartRouterReplayGateVerdictV1["verdict"] = hasStructuralIssue || hasReplayFailure
     ? "fail"
     : skippedRowCount > 0 || evaluatedRowCount === 0
       ? "warn"
       : "pass";
+  const activationMatchCount = rowResults.filter((rowResult) => (
+    rowResult.expectedActivated !== null
+      && rowResult.actualActivated !== null
+      && rowResult.expectedActivated === rowResult.actualActivated
+  )).length;
+  const activationComparableCount = rowResults.filter((rowResult) => (
+    rowResult.expectedActivated !== null
+      && rowResult.actualActivated !== null
+  )).length;
+  const laneSummaryText = laneSummaries
+    .filter((laneSummary) => REPLAY_GATE_PRIORITY_LANES.includes(laneSummary.lane as (typeof REPLAY_GATE_PRIORITY_LANES)[number]))
+    .map((laneSummary) => `${laneSummary.lane} ${laneSummary.passedPolicyExpectationCount}/${laneSummary.policyExpectationCount}`)
+    .join(", ");
+  const policySummary = policyExpectationCount > 0
+    ? `; policy expectations ${passedPolicyExpectationCount}/${policyExpectationCount} passed${laneSummaryText.length > 0 ? ` (${laneSummaryText})` : ""}`
+    : "";
 
   return {
     artifactDir: params.artifactDir,
     manifestSummary: loaded.artifact.manifestSummary,
     passed,
     verdict,
-    summary: `${passedRowCount}/${evaluatedRowCount} replay rows passed${skippedRowCount > 0 ? `, ${skippedRowCount} skipped` : ""}; activation matches ${rowResults.filter((rowResult) => rowResult.expectedActivated === rowResult.actualActivated).length}/${rowResults.filter((rowResult) => rowResult.expectedActivated !== null && rowResult.actualActivated !== null).length}`,
+    summary: `${passedRowCount}/${evaluatedRowCount} replay rows passed${skippedRowCount > 0 ? `, ${skippedRowCount} skipped` : ""}; activation matches ${activationMatchCount}/${activationComparableCount}${policySummary}`,
     evaluatedRowCount,
     passedRowCount,
     failedRowCount,
     skippedRowCount,
+    policyExpectationCount,
+    passedPolicyExpectationCount,
+    failedPolicyExpectationCount,
     loadIssues,
+    laneSummaries,
     rowResults,
   };
 }
