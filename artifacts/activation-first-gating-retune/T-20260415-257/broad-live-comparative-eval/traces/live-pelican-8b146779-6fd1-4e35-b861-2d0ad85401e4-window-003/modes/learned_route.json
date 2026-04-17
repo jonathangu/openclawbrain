@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-1b60d0ad"
+      "pack-9187d73f"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-1b60d0ad",
-    "frozenEvalRouterIdentity": "pack-1b60d0ad:route_fn",
+    "frozenEvalPackId": "pack-9187d73f",
+    "frozenEvalRouterIdentity": "pack-9187d73f:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-b761b45dfde0e941248bba4950af2aaa59a84590fcfa5806ee6b9348c4562216"
+    "scoreHash": "sha256-3aa6b0ee74536b6fd4a7cdd3f8ca77cde94a28ca79820d11eb5187c1c9d9626a"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-1b60d0ad",
+      "activePackId": "pack-9187d73f",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-1b60d0ad:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-1b60d0ad:route_fn",
-      "selectionDigest": "sha256-54e0038384ba111420d9df9cf1313267260456b914a6900a92c9aef1accc1804",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-612c04b1b642cedaf7fcaf244653d772c1a1d5300b6ef21576e8c927873a7382",
       "selectedContextIds": [
-        "pack-1b60d0ad:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:feedback",
-        "pack-1b60d0ad:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:feedback",
-        "pack-1b60d0ad:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-6:feedback"
+        "pack-9187d73f:workspace-init:16415817"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: New explicit directive from Jon: we hard cut over to real money for everything. Interpretation for this fix lane: - treat live production runtime roots and live production broker truth as the only canonical operator surface for active monitoring - eliminate remaining paper/shadow fallback behavior from the dashboard/operator truth path for this slice - if a contract/path default still points to old-root or paper-oriented state for active production monitoring, fix it now - keep safety, but bi.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:interaction.",
-        "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: In clean worktree /Users/guclaw/worktrees/quant-research/068g-dashboardtruth, fix the remaining live dashboard truth stack end to end. Known hard evidence: - Live production trades exist today in runtime_state/live/production_positions.json: - AAPL order 119331450 entered 2026-03-31T10:01:37-04:00 credit 5.28 - AMZN order 119349858 entered 2026-03-31T10:31:20-04:00.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:interaction.",
-        "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: assistant: Folded in. What changed in this tighten-up: - Live dashboard/operator monitoring now defaults to `live` / `primary` instead of falling back to paper/shadow. - `position_store` refresh triggers now resolve the live production contract fail-closed, so live monitoring no longer drifts onto paper-oriented contract defaults. - Added/updated tests proving the live monitoring default is live-only. Files changed in this pass: - `refresh_dashboard.py` - `position_store.py` - `tests/test_refresh_dashbo.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-6:interaction."
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=10, outbound=17). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
       ],
-      "eventExportDigest": "sha256-874e053c2dd65f1663ed4ef84eb6d9210575f61d43866c2eaf6f4a6899ffb135",
+      "eventExportDigest": "sha256-80ed7e221056104470c82e2b7adfece6c14396bdc4748f0e75c9bc5c4ac89368",
       "expectedContextPhrases": [
         "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.401,
-        "routeSelectionMs": 5.943,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.456,
+        "totalMs": 9.283,
+        "routeSelectionMs": 5.997,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.285,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

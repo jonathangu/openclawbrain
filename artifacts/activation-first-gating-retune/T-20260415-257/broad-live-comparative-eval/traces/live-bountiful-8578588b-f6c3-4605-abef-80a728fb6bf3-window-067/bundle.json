@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-11T12:58:34.286Z",
   "traceHash": "sha256-c03db6636813d15ab314e1036640845c998fa263e7aac887b43bd18e611eb255",
   "fixtureHash": "sha256-a5250b921f3f7515a2c7a2c53cad821f0baf9317cf0101574260207ef30568c4",
-  "scoreHash": "sha256-39f491fc9842c9469532d2d40c3bb8518553f69f376119480ed4fb8634ec44f1",
+  "scoreHash": "sha256-d45870d79a2f28f96658f35c0d278455e51d21dd27eb792c13be200e68830b0c",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.032,
+            "totalMs": 0.023,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.032,
+            "otherMs": 0.023,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 3.619,
-            "routeSelectionMs": 2.291,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 1.325,
+            "totalMs": 3.343,
+            "routeSelectionMs": 2.106,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 1.236,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 3.596,
-            "routeSelectionMs": 2.245,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 1.349,
+            "totalMs": 3.262,
+            "routeSelectionMs": 2.027,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 1.233,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -351,7 +351,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-4c921c2d"
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-2cec1113c06da70c4bfcd71a25529a54bf18dd16fd103871f1b456ea79fd0b48"
+        "scoreHash": "sha256-34a6b73d303fa1778b0d9dca9869c5a8f45cf27f6d900981898efffb16323cef"
       },
       "turns": [
         {
@@ -397,24 +397,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-4c921c2d:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-4c921c2d:route_fn",
-          "selectionDigest": "sha256-00659b7b16f2c5e819a544d042245b3286036fa5ddb105f22490323300be5f6e",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-141ee3b8cb27719bb748e17900744c1860477ed2e649eb85b0e02799122a645c",
           "selectedContextIds": [
-            "pack-4c921c2d:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
-            "pack-4c921c2d:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:feedback",
-            "pack-4c921c2d:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:feedback"
+            "pack-4c921c2d:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction.",
-            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:interaction.",
-            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:interaction."
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-8a2067428965b2756a880bfe1ac188a4a4f4b834b9bb09e81896e2aaad3e553b",
+          "eventExportDigest": "sha256-b0b043599f0d105862ba65b7d35a29b9ef54cbfd09ebd37780cf1bf4688bce66",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
           ],
@@ -428,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 5.254,
-            "routeSelectionMs": 3.163,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.089,
+            "totalMs": 4.818,
+            "routeSelectionMs": 2.922,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 1.895,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -475,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-e4f07b609aba4d12a6ff5106d7e910b9757974cec8f726bfa813a48619de92d3"
+  "bundleHash": "sha256-164f954d9f21ec3e1102399a66795988704692a3f1ea1dfd467cf6bde0d20cf2"
 }

@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-bfac1c75"
+      "pack-0b2ad77d"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-bfac1c75",
-    "frozenEvalRouterIdentity": "pack-bfac1c75:route_fn",
+    "frozenEvalPackId": "pack-0b2ad77d",
+    "frozenEvalRouterIdentity": "pack-0b2ad77d:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-928695a892eb3bef1a208b856fce96d9ad454b96a5b6d108772c867b5551fec1"
+    "scoreHash": "sha256-0ff2f55bea8f84d4e8d5b83de3d5303545d5dd22955fc9a34d91d368572689e5"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-bfac1c75",
+      "activePackId": "pack-0b2ad77d",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-bfac1c75:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-bfac1c75:route_fn",
-      "selectionDigest": "sha256-f49cc9a28f25a97ef01c27bd695b1cb597924137349c61ec17dc72acafe4bcbe",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-3931ed266258fa62259ec97fffbbede19111ce164eb75177141b7cdf8ff85c1c",
       "selectedContextIds": [
-        "pack-bfac1c75:pointer-aware-init",
-        "pack-bfac1c75:workspace-init:51972c8c",
-        "pack-bfac1c75:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:feedback"
+        "pack-0b2ad77d:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-        "Top-priority boot input memory/2026-02-26-crabpath-eval.md selected by pointer-aware init (inbound=0, outbound=2). CrabPath Installation & Evaluation — 2026-02-26 What Is It Graph-based memory architecture for agents. Documents = nodes, weighted edges, LLM activation function. Claims to learn retrieval paths via policy gradients and inhibitory edges. Installation - **Package:** crabpath v1.0.7 from PyPI - **Venv:** ~/.crabpath/ven…",
-        "Teaching feedback on live-session session ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed: assistant: Bootstrap worked. 214 nodes, 1214 edges from 47 files. Now let me try `install-hook` to wire it into my workspace, then test a query. ToolCall exec {\"command\": \"source ~/.crabpath/venv/bin/activate && source /Users/guclaw/.openclaw/workspace/quant-research/.env 2>/dev/null; export OPENAI_API_KEY; crabpath install-hook --help 2>&1\", \"timeout\": 10}. Related interaction: ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:interaction."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-8527e107e7e43560f9d1245b3ab6170e0afad7778949a81ddaaa8bbe67b1aeb6",
+      "eventExportDigest": "sha256-6b93c020cf23a6eb1ac19036f969aecb4b29b8f7470cd64e60b0c7103742e5a6",
       "expectedContextPhrases": [
         "hey",
         "jon."
@@ -88,10 +84,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.002,
-        "routeSelectionMs": 5.505,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.495,
+        "totalMs": 8.634,
+        "routeSelectionMs": 5.332,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.301,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

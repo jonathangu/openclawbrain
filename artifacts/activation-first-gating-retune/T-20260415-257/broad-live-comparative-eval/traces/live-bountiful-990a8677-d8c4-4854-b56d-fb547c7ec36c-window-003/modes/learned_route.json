@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-27b39f58"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-316aac22e4912f83a82bbf62a8da2270e68c1ff90709e823ff2b9c0ea7ebde39"
+    "scoreHash": "sha256-ecfd768b9f21b267c526f7e9815f0f34c30985f3b1967bf9a193dc2dc856d94e"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-27b39f58:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-27b39f58:route_fn",
-      "selectionDigest": "sha256-612280df4d8b2f2eb0f2edd7eb2b741c2a01ba1a90fa787c420aebd96b2c2ec2",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-3cec0f952cccd3cf256a77baba735dc63311102a94ca94524e142ce5c032f516",
       "selectedContextIds": [
-        "pack-27b39f58:event:990a8677-d8c4-4854-b56d-fb547c7ec36c-seed:cue-1:feedback",
-        "pack-27b39f58:event:990a8677-d8c4-4854-b56d-fb547c7ec36c-seed:cue-3:feedback",
         "pack-27b39f58:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 990a8677-d8c4-4854-b56d-fb547c7ec36c-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"14849\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BMarketing id:-5173970578\", \"sender\": \"Jonathan\", \"timestamp\": \"Sat 2026-03-28 14:53 PDT\", \"group_subject\": \"BMarketing\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` /start. Related interaction: 990a8677-d8c4-4854-b56d-fb547c7ec36c-seed:cue-1:interaction.",
-        "Teaching feedback on live-session session 990a8677-d8c4-4854-b56d-fb547c7ec36c-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"14850\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BMarketing id:-5173970578\", \"sender\": \"Jonathan\", \"timestamp\": \"Sat 2026-03-28 14:53 PDT\", \"group_subject\": \"BMarketing\", \"is_group_chat\": true, \"was_mentioned\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Hello @bbountiful_bot. Related interaction: 990a8677-d8c4-4854-b56d-fb547c7ec36c-seed:cue-3:interaction.",
         "Pointer-aware init keeps fast boot first with anchors memory/2026-03-28-bountiful-domains.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-bb28058ac11cdeaa09df66129abdb3167212642cc919cc21e6aa9eb0bb3eb7e6",
+      "eventExportDigest": "sha256-dc5dd416b491993c1879c3c28ac9d4e9f22955f1c2ae90d1b98fd1f57e753ec6",
       "expectedContextPhrases": [
         "yep"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 10.407,
-        "routeSelectionMs": 6.825,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 3.579,
+        "totalMs": 8.446,
+        "routeSelectionMs": 5.237,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.208,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

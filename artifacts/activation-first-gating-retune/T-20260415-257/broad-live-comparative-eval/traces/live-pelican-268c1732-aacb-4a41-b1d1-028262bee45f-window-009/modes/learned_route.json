@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-0e6fea5e"
+      "pack-35de4d09"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-0e6fea5e",
-    "frozenEvalRouterIdentity": "pack-0e6fea5e:route_fn",
+    "frozenEvalPackId": "pack-35de4d09",
+    "frozenEvalRouterIdentity": "pack-35de4d09:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-5851f6255a5750c7f0ae23f7ee15457afa6ac2975f28bb601ac6783d3ff07af7"
+    "scoreHash": "sha256-47c7941d6b917e5f33613c81aaa5f8ee86b59bc4e5344446c0e4cce6a6b708aa"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-0e6fea5e",
+      "activePackId": "pack-35de4d09",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-0e6fea5e:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-0e6fea5e:route_fn",
-      "selectionDigest": "sha256-496e8d105798cdda6705ca57b06969a002bedca99d8d0dc416a7160aa3a16458",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-9b8d6c789ec14bfefde548a734819f4c40c4447544a69c7096ef60ebfa8cae34",
       "selectedContextIds": [
-        "pack-0e6fea5e:pointer-aware-init",
-        "pack-0e6fea5e:workspace-init:02e33be9",
-        "pack-0e6fea5e:workspace-init:f4134aaa"
+        "pack-35de4d09:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…",
-        "Top-priority boot input TOOLS.md selected by pointer-aware init (inbound=0, outbound=2). TOOLS.md — Pelican execution cheatsheet Defaults - If Jon says to edit files, use the local read / edit / write tools directly in the current Pelican session. - For approval-gated exec, prefer direct file-path commands the approver can inspect quickly. Write the script/file first, then run python3 path.py, bash path.s…"
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-5be582343c839b6d86d2e175d3f56218391072dd31075f6e2d2480c0b2730c51",
+      "eventExportDigest": "sha256-a622e8feb95f052d344e681b51a666e82a4c974acafece38a823f72215f5f508",
       "expectedContextPhrases": [
         "/2026-04-15.md\"}"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.455,
-        "routeSelectionMs": 5.215,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.238,
+        "totalMs": 8.68,
+        "routeSelectionMs": 5.37,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.308,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

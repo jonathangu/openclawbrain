@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-28T06:02:18.782Z",
   "traceHash": "sha256-6bc492042fe348d82c21faa673d938d0577346ee06614b38f34d614d883fe125",
   "fixtureHash": "sha256-166379a9c9e98e60de3e148d45fed20846d7dac8b779bfce9e0299ba405d4f98",
-  "scoreHash": "sha256-c9687fd8d46217de76fcd05eb92e050fdbdd72ff2b4c23470fac3763b3b475fc",
+  "scoreHash": "sha256-0a8f53232c0f18d6738b94520bb40dcd73246cf473a17d03f2b441e38d064cce",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.037,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.037,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.461,
-            "routeSelectionMs": 6.661,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.798,
+            "totalMs": 8.197,
+            "routeSelectionMs": 5.359,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.836,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.145,
-            "routeSelectionMs": 5.309,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.834,
+            "totalMs": 8.136,
+            "routeSelectionMs": 5.301,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.833,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -351,7 +351,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-5c4fcb9d"
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-b82eef4d1233a44c785fe56e99aa3e8a56f79f34f4d83018f7e0cc0997f72e97"
+        "scoreHash": "sha256-8daa34289052d01508c8d90128f31e66907279ded4ec64c08a2bc2c6d342ec33"
       },
       "turns": [
         {
@@ -397,24 +397,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-5c4fcb9d:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-5c4fcb9d:route_fn",
-          "selectionDigest": "sha256-3a94986227733ca5275989f51e8aadf6f5f56ba3c8f33e962a77a7ee4a0f654d",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-dcab9cf4baae8e08c60449b12e50dc33100aab2b67757efc2ed4d43c92af12b8",
           "selectedContextIds": [
-            "pack-5c4fcb9d:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
-            "pack-5c4fcb9d:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
-            "pack-5c4fcb9d:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
+            "pack-5c4fcb9d:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: e44f8983-c431-41b9-b220-e56702ccc914] A cron job \"tft-bulletproof-check\" just completed successfully. Result: Interesting — no `model.tar.gz` yet, but there's a 120MB `.pkl` file uploaded at 8:17 PM PT (about an hour ago). No cloud-init log, which means training is likely still in progress — the pkl is probably an intermediate checkpoint or one of the ensemble members. Let me check if there's any more recent activity. Stats: runtime 24s • tokens 870 (in 7 / out 863) • prompt/cache.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
-            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 0db80b90-5eeb-46c9-9eee-40efce5153b2] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the extraction pipeline and classified Jon's substantive messages from the last 2 hours. I also checked memory (today + yesterday) for context. Memory check - memory/2026-02-27.md and memory/2026-02-26.md inspected (no contradictory policy found). No prior memory snippet prevented making these gates. What I ran - Command executed: python3 /Users/guclaw/.opencla.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
-            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 6b291565-3e5a-42bf-a999-00f4d9862b45] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the harvester pipeline and classified Jon's substantive messages from the last 2 hours. Findings below (plain list: classification → extracted rule/pattern/scope → tag). I updated docs/jon-model.md (Layer 3) and docs/quant-lessons.md with the new relaunch-gate (paths at bottom). No regression-level alert to Jon (nothing new that requires immediate escalation). .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction."
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: e44f8983-c431-41b9-b220-e56702ccc914] A cron job \"tft-bulletproof-check\" just completed successfully. Result: Interesting — no `model.tar.gz` yet, but there's a 120MB `.pkl` file uploaded at 8:17 PM PT (about an hour ago). No cloud-init log, which means training is likely still in progress — the pkl is probably an intermediate checkpoint or one of the ensemble members. Let me check if there's any more recent activity. Stats: runtime 24s • tokens 870 (in 7 / out 863) • prompt/cache.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-5f3554197c72eddd0b1f5339405a5f2466d9bc9f58b215388e1397a56e5bbd84",
+          "eventExportDigest": "sha256-3fed143eda5821f9edbf8111ab711fd7fa7247f709576a96a5e49d42071e71da",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -428,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.033,
-            "routeSelectionMs": 6.404,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.626,
+            "totalMs": 10.939,
+            "routeSelectionMs": 7.292,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.645,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -475,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-43628cadf9cd159df0eb3dd21e76659703818cce60cbb98db4fc542d9466cf81"
+  "bundleHash": "sha256-5fad0001b224a0c1e777db1975940e1a270bb120d92f25dd3e1bccd10fd40937"
 }

@@ -5,19 +5,19 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 60,
+    "qualityScore": 40,
     "compileOkCount": 1,
-    "phraseHitCount": 1,
+    "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-68da5488"
+      "pack-68614f59"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-68da5488",
-    "frozenEvalRouterIdentity": "pack-68da5488:route_fn",
+    "frozenEvalPackId": "pack-68614f59",
+    "frozenEvalRouterIdentity": "pack-68614f59:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-f3d50aa903f949bf422725695deed01a3febe8199fea1af8aa28209712ee4784"
+    "scoreHash": "sha256-0342f8ae6c5ed51e87ccd2207e43674c0b9cc4d2ab985d8edc7fd98274771824"
   },
   "turns": [
     {
@@ -51,50 +51,45 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-68da5488",
+      "activePackId": "pack-68614f59",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-68da5488:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-68da5488:route_fn",
-      "selectionDigest": "sha256-f07987b6180730d8328f608a4975210d88cdec9f3dbae3c1b769c7687e6809b1",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-e0934bfef844aa83096e9408aed067bc4413906d8e63cf42cab1656c28984262",
       "selectedContextIds": [
-        "pack-68da5488:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:feedback",
-        "pack-68da5488:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-5:feedback",
-        "pack-68da5488:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-1:feedback"
+        "pack-68614f59:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8603\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 08:28 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Bountiful you have two worktrees with uncommitted changes. Can you take a look to check there are no regressi.... Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:interaction.",
-        "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8607\", \"reply_to_id\": \"8605\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 09:08 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true, \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender.... Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-5:interaction.",
-        "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"8602\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestam.... Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-1:interaction."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-05-1953.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/archive/2026-03-05-1953.md, docs/jon-model.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-658bc1e624ee86257ba95f79621491bbc18c1c169b0af175f75bb9982495f05a",
+      "eventExportDigest": "sha256-b73592e643297f804dd882b8e65f2f1e5c37b3d236e6276cf378ae3c43d21027",
       "expectedContextPhrases": [
         "toolcall",
         "browser",
         "action"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [
-        "action"
-      ],
+      "phraseHits": [],
       "missedPhrases": [
         "toolcall",
-        "browser"
+        "browser",
+        "action"
       ],
-      "qualityScore": 60,
+      "qualityScore": 40,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.706,
-        "routeSelectionMs": 5.958,
-        "promptAssemblyMs": 0.007,
-        "otherMs": 3.741,
+        "totalMs": 9.094,
+        "routeSelectionMs": 5.758,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.335,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

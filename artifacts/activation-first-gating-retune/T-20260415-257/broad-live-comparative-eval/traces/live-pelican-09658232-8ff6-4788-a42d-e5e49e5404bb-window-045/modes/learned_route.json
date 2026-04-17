@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-9e57c86e"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-9e499810308ad8b226aacefcc7eb70f057d75ee68bdb0963487b0c7c6af65714"
+    "scoreHash": "sha256-eb49458d727bb6aa5e10336edf155dced88a5ad25c106a79a2eaa153cb812de7"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-9e57c86e:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-9e57c86e:route_fn",
-      "selectionDigest": "sha256-3f512903f7ad3b047d1b253071c47dba3a3ce64f5ba1eb21269f5a56cd906886",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-9c4f58a88f34676b4d44a79ffa46ed7c0bb0f744c9208075a22a81ff7aa5f205",
       "selectedContextIds": [
-        "pack-9e57c86e:pointer-aware-init",
-        "pack-9e57c86e:workspace-init:16415817",
-        "pack-9e57c86e:workspace-init:0d01dda4"
+        "pack-9e57c86e:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=4, outbound=100). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 6:14 AM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…",
-        "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=3, outbound=1). MEMORY.md — Long-Term Memory People - Patrick — Jon's 50/50 co-founder for Bountiful Garden; managed by @bbountiful_bot - Bihua Chen — Jon set up an OpenClaw starter kit for her Projects - Bountiful Garden — @bbountiful_bot, workspace workspace-bountiful/, group -5151316478 - Pelican — @ppelican_bot, workspace workspa…"
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-79674a269e1f5850a2faceb6f005c19e638b78eacf27ee4acd656a6acab0c39e",
+      "eventExportDigest": "sha256-cc2f0856ec280248956df64e398080f7009625330c952ed924a91769b28695cd",
       "expectedContextPhrases": [
         "ec2 instances us-west-1 us-west-2",
         "instances us-west-1 us-west-2 then:",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.892,
-        "routeSelectionMs": 5.482,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.408,
+        "totalMs": 10.618,
+        "routeSelectionMs": 6.148,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 4.469,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

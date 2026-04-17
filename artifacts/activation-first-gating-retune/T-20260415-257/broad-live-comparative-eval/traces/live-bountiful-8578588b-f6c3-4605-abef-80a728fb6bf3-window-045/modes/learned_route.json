@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-4b6d18ba"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-423ac1ee3dddfcf6a8cb39c73e2ad7348a2ecb86b2a420d324c5224df32a32b6"
+    "scoreHash": "sha256-c2e6421e532d120f90ae9c5e053aa8673ead2e741a03bd1bfb5391e851ee9e33"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-4b6d18ba:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-4b6d18ba:route_fn",
-      "selectionDigest": "sha256-ecba964f4f594822628da5a2d406d5336a59d2d1dcb401a02dbaa281a04a52b1",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-f6ab4d7caf136eec5deb2d4d0488e7a748861ba792b61523a2e0107a940b6b0f",
       "selectedContextIds": [
-        "pack-4b6d18ba:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
-        "pack-4b6d18ba:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
-        "pack-4b6d18ba:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
+        "pack-4b6d18ba:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
-        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15837\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Please edit heartbeat to make sure the tasks are updated and don't discuss stale work that's already done.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
-        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15832\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 13:33 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes please update all context injection files to be reasonable size!. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction."
+        "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-6-seed-message."
       ],
-      "eventExportDigest": "sha256-a7750f38794d5eb498ae915ae9292274741e1067500014fdd68d8acbea71242a",
+      "eventExportDigest": "sha256-92eb47785ec23604ea375343b126edbf092e2c643ff94b708a1c11665582d93d",
       "expectedContextPhrases": [
         "context injection files reasonable",
         "maxresults minscore query context",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 4.958,
-        "routeSelectionMs": 2.979,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 1.976,
+        "totalMs": 4.699,
+        "routeSelectionMs": 2.83,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 1.868,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

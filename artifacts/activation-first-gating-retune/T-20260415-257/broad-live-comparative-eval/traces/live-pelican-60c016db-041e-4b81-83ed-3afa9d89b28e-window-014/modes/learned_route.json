@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-6a59e4b6"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-f70f36655b5cc7c4562c9704f5db58749415cbf5fff32adaec2dd608cbb97e36"
+    "scoreHash": "sha256-af3aa95064107807ff03fb07ab9e15f19fbb7ae5514f286d26642a94ea29e069"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-6a59e4b6:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-6a59e4b6:route_fn",
-      "selectionDigest": "sha256-6dddca9794ce06b8c4d1b5a31306c26a28532b58a6a8bfb4dc0c6f30026ac3f6",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-17fdabc7d0d8c1c95e45bedb5a57f6ec402268ab8718619bca240a9e0a9aa932",
       "selectedContextIds": [
-        "pack-6a59e4b6:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
-        "pack-6a59e4b6:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback",
-        "pack-6a59e4b6:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
+        "pack-6a59e4b6:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 02:12 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Ship it! Make sure everything is well documented!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
-        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction.",
-        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:08 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Do all improvements! Use codex. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-e72f7bb2392dceb43ed7f3cfe07a785bb83a4bfdf76a72ec6fd2b9a93f3c7195",
+      "eventExportDigest": "sha256-3f926d347041aa32586552099786e4cd54f914159a2acf6e289658c3da862185",
       "expectedContextPhrases": [
         "query matthew meeting evening",
         "matthew meeting evening",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.433,
-        "routeSelectionMs": 5.141,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.29,
+        "totalMs": 8.27,
+        "routeSelectionMs": 5.081,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.189,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

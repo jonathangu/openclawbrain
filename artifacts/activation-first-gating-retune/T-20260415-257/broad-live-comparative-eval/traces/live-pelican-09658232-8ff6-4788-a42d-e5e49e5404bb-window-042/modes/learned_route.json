@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-adb0037c"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-c0320d4d36e1634adf8e2f2f38ae0d649453f788688fc98dc8cae3fd266bdebd"
+    "scoreHash": "sha256-6949e620ca66df80b7acc6e39ee9ae1628a6ef661bbdd3207fc00b519413e6e7"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-adb0037c:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-adb0037c:route_fn",
-      "selectionDigest": "sha256-f9a8b4ccc4476d2d470f92fcbfb4c7850376acbbc4a908904767b6456cd6ca18",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-1ef247320158bac59784af5a1dde2fee95cd900aa2a9e0558483a0b52c1e3fac",
       "selectedContextIds": [
-        "pack-adb0037c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
-        "pack-adb0037c:pointer-aware-init",
-        "pack-adb0037c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction"
+        "pack-adb0037c:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:10:55 PST] Exec completed (lucky-fa, code 1) :: ar.gz (attempt 1/5), retrying... ⚠ Upload verify failed for gbm_ref_model.tar.gz (attempt 2/5), retrying... ⚠ Upload verify failed for gbm_ref_model.tar.gz (attempt 3/5), retrying… System: [2026-02-27 17:11:41 PST] Exec completed (keen-fjo, code 0) :: with 1 file(s) remaining Completed 81.3 MiB/449.3 MiB (3.6 MiB/s) with 1 file(s) remaining Completed 82.3 MiB/449.3 MiB (3.7 MiB/s) with 1 file(s) remaining Completed 83.3 Mi.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-5-seed-message."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-296f836657c74113ae6dc29423bfbc5897ef002dfa531eb581888d45cc257fb9",
+      "eventExportDigest": "sha256-90048be4d34c3e6a0144d4ece630ca4892459c59887fc950f5b813f2c22a8e11",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research\\n\\n#"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.471,
-        "routeSelectionMs": 6.044,
+        "totalMs": 10.496,
+        "routeSelectionMs": 6.854,
         "promptAssemblyMs": 0.002,
-        "otherMs": 3.425,
+        "otherMs": 3.64,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

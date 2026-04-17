@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-17e3cf96"
+      "pack-3f523241"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-17e3cf96",
-    "frozenEvalRouterIdentity": "pack-17e3cf96:route_fn",
+    "frozenEvalPackId": "pack-3f523241",
+    "frozenEvalRouterIdentity": "pack-3f523241:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-43eb25b56f9ae9b0f93d5a40af4a50b29ac49fa2d2d887c0c5d6ce5cc2ab6fbf"
+    "scoreHash": "sha256-d3623ff63a08343fa9034aa8edd0b692e3a0625f49ef04519317cbd3144edfc9"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-17e3cf96",
+      "activePackId": "pack-3f523241",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-17e3cf96:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-17e3cf96:route_fn",
-      "selectionDigest": "sha256-76faa5a4bdf5ecd6c14f24eeac2b51fca26d786dcc431814858e2384f20b17b3",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-ba3df1369370d9df58ecc5cb420924748f7891f708958eaf137a86d3c161349b",
       "selectedContextIds": [
-        "pack-17e3cf96:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-        "pack-17e3cf96:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback",
-        "pack-17e3cf96:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:feedback"
+        "pack-3f523241:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
-        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19098\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:28 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Why not all four? Is there something structurally blocking us. Some calculation? Can you check logs. Is something broken. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:interaction.",
-        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19091\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 02:59 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Clean up tasks and context. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction."
+        "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-c64c1d271c07f1623d5434c1139b53fab02c26de7b101eb6992d0eb624ae06a6",
+      "eventExportDigest": "sha256-1960e2d97968202529ab793b93caf837b8aae34458ac22d46a686056c5fe9d1a",
       "expectedContextPhrases": [
         "/config"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.498,
-        "routeSelectionMs": 5.149,
+        "totalMs": 8.558,
+        "routeSelectionMs": 5.265,
         "promptAssemblyMs": 0.002,
-        "otherMs": 3.347,
+        "otherMs": 3.291,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

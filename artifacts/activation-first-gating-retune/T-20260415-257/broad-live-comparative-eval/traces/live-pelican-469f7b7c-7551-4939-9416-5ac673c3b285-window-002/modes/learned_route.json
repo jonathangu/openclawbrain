@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-d678401a"
+      "pack-4c9f46ac"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-d678401a",
-    "frozenEvalRouterIdentity": "pack-d678401a:route_fn",
+    "frozenEvalPackId": "pack-4c9f46ac",
+    "frozenEvalRouterIdentity": "pack-4c9f46ac:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-a280f76d33161a8367009238f5e4e88ee0c1f33d50e8cff8544d7060e92bb064"
+    "scoreHash": "sha256-0327e57b7ac158af1386cbeb7558dee5a8838138e00ce613c51f5813c939d4d5"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-d678401a",
+      "activePackId": "pack-4c9f46ac",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-d678401a:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-d678401a:route_fn",
-      "selectionDigest": "sha256-823d6e80875f53ba536610d85c28197a40ddf816bfb377790832d2ef6374e7a4",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-52c5d186ea6eb5449a4effbc54de746e8c0c7eb39d74deaa617d27ebae1a39cd",
       "selectedContextIds": [
-        "pack-d678401a:pointer-aware-init",
-        "pack-d678401a:event:469f7b7c-7551-4939-9416-5ac673c3b285-seed:cue-6:feedback",
-        "pack-d678401a:workspace-init:16415817"
+        "pack-4c9f46ac:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-31-context-cleanup.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-        "Teaching feedback on live-session session 469f7b7c-7551-4939-9416-5ac673c3b285-seed: assistant: I landed the code changes for the 15:04 failure class and the no-entry funnel, but I could not finish commit/proof from this environment because shell exec is blocked here. What changed: - `spread_monitor.py` - Repairs missing ticker/expiration/strike geometry from OCC symbols on load - Coerces numeric fields safely - Makes `spread_width` / `max_loss` safe on malformed rows - Skips malformed open positions in exit checks instead of crashing - `exit_rules.py` - Bails out early for malformed po.... Related interaction: 469f7b7c-7551-4939-9416-5ac673c3b285-seed:cue-6:interaction.",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=10, outbound=21). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-31-context-cleanup.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-a7dbb43841e54074243770619db1b90a53855680cda8c1d7007ae20b8c4a8e68",
+      "eventExportDigest": "sha256-72b8c671d2a5a4b473061fb1419a3c1b504ae5dabd106f1ca10c4dff656c422d",
       "expectedContextPhrases": [
         "/cap",
         "/failure",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.716,
-        "routeSelectionMs": 5.381,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.333,
+        "totalMs": 8.566,
+        "routeSelectionMs": 5.318,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.247,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

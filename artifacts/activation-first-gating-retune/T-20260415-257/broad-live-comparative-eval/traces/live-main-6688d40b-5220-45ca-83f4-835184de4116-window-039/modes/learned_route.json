@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-9e5d2297"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-664a7460d345b6f47f343b793068e19a96d4c509ffb2a22fdf572c325dda3236"
+    "scoreHash": "sha256-0cfde691147910ac85797b03f64a5139aac31582529d00798dbf9f14e17d0224"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-9e5d2297:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-9e5d2297:route_fn",
-      "selectionDigest": "sha256-900e6faa7e2357ef3e226959169f51fed69d57252d907a818489401666218425",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-a5237533b1cf752067ec2924f4038989c8f312d6971f516f72727aa56da8d9c1",
       "selectedContextIds": [
-        "pack-9e5d2297:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:feedback",
-        "pack-9e5d2297:pointer-aware-init",
-        "pack-9e5d2297:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback"
+        "pack-9e5d2297:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23633\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 04:31 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Summarize the results in understanding English. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Exec completed (wild-can, code 0) :: nightly aggregate written to /Users/guclaw/.openclaw/workspace/artifacts/openclawbrain-proof-cron/nightly-aggregate scan ms: 324 bundle count: 251 replay proofs: 185 operator proo… System (untrusted): [2026-04-15 03:46:57 PDT] Exec completed (keen-kel, code 0) :: nightly aggregate written to /Users/guclaw/.openclaw/workspace/artifacts/openclawbrain-proof-cron/nightly-aggregate scan ms: 110 bundle count: 251 replay proofs: 185 operator proo… Conversation in.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-4ef956bdcfb8e7e77fff44dfc460f06fda9155679923f65241e6d3720e157694",
+      "eventExportDigest": "sha256-0fba61dfdf32e5408753dc0f0fb447cf2265f7cf5f063242d52d8bc8eb6a8c1e",
       "expectedContextPhrases": [
         "bounded-cost measurement why learned_route",
         "learned_route worse bounded-cost measurement",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 10.345,
-        "routeSelectionMs": 6.876,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 3.466,
+        "totalMs": 9.461,
+        "routeSelectionMs": 6.151,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.309,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

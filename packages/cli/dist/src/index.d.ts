@@ -1,4 +1,4 @@
-import { type CompileSelectionMode } from "@openclawbrain/compiler";
+import { type CompileSelectionMode, type LearnedRouteSelectionOverride } from "@openclawbrain/compiler";
 import { CONTRACT_IDS, type ArtifactManifestV1, type ActivationPointerRecordV1, type ActivationPointerSlot, type RuntimeTurnBrainAttachmentPolicyV1, type ContextCompactionMode, type ContextContributionEvidenceStateV1, type CurrentProfileBrainStatusAnswerV1, type CurrentProfileActivationStateV1, type CurrentProfilePassiveLearningDeltaSummaryV1, type CurrentProfilePassiveLearningWatchStateV1, type CurrentProfileAttachmentStateV1, type CurrentProfileAttachmentProofStateV1, type CurrentProfileHookInstallStateV1, type CurrentProfileHookLoadabilityV1, type CurrentProfileHookLoadProofV1, type BrainServeHotPathTimingV1, type CurrentProfileStructuralDecisionV1, type FeedbackEventKind, type PackGraphConnectDiagnosticsV1, type PackGraphEvolutionV1, type EventSemanticSurfaceV1, type FeedbackEventV1, type KernelSurfaceValidationResultV1, type LearningBootProfile, type LearningCadence, type LearningScanPolicy, type InteractionEventV1, type NormalizedEventExportV1, type NormalizedEventV1, type PrincipalPriorityClassV1, type PrincipalRoleV1, type RouteMode, type RuntimeCompileResponseV1, type RuntimeCompileStructuralSignalsV1, type RuntimeCompileTargetV1, type RuntimeGraphPlasticityStateV1, type RuntimePlasticitySourceV1, type SparseFeedbackPolicyV1, type TeacherAuthorityV1, type TeacherSupervisionArtifactV1, type WorkspaceInjectionSurfaceV1 } from "@openclawbrain/contracts";
 import { type EventExportLaneV1 } from "@openclawbrain/event-export";
 import { type AdvanceAlwaysOnLearningRuntimeInput, type AlwaysOnLearningCadenceV1, type AlwaysOnLearningMaterializationJobV1, type AlwaysOnLearningRuntimePlanV1, type AlwaysOnLearningRuntimeStateV1, type BaselineStateV1, type PendingPrincipalEventV1, type PrincipalLearningCheckpointV1, type LearningSpineServeRouteDecisionLogEntryV1 } from "./local-learner.js";
@@ -129,6 +129,8 @@ export interface CompileRuntimeContextInput {
     _serveRouteBreadcrumbs?: CompileServeRouteBreadcrumbInput;
     /** @internal Freeze the expected active pack/router identity for replay eval scoring. */
     _frozenReplayEvalIdentity?: FrozenReplayEvalIdentityV1;
+    /** @internal Replay-only learned-route selection override. */
+    _learnedRouteSelectionOverride?: LearnedRouteSelectionOverride | null;
 }
 export interface ActiveCompileTarget {
     activationRoot: string;
@@ -393,6 +395,8 @@ export interface RunRuntimeTurnOptions {
     failOpen?: boolean;
     /** @internal Freeze the expected active pack/router identity for replay eval scoring. */
     _frozenReplayEvalIdentity?: FrozenReplayEvalIdentityV1;
+    /** @internal Replay-only learned-route selection override. */
+    _learnedRouteSelectionOverride?: LearnedRouteSelectionOverride | null;
 }
 export type RuntimeTurnResult = RuntimeCompileResult & {
     eventExport: RuntimeEventExportResult;
@@ -1434,9 +1438,14 @@ export interface WriteRecordedSessionReplayProofBundleInputV1 {
     rootDir: string;
     trace: RecordedSessionTraceV1;
     scratchRootDir?: string | null;
+    learnedRouteSelectionOverride?: LearnedRouteSelectionOverride | null;
+}
+export interface RecordedSessionReplayOptionsV1 {
+    /** @internal Replay-only learned-route selection override. */
+    learnedRouteSelectionOverride?: LearnedRouteSelectionOverride | null;
 }
 export declare function buildRecordedSessionReplayFixture(trace: RecordedSessionTraceV1): RecordedSessionReplayFixtureV1;
-export declare function runRecordedSessionReplay(rootDir: string, fixture: RecordedSessionReplayFixtureV1): RecordedSessionReplayBundleV1;
+export declare function runRecordedSessionReplay(rootDir: string, fixture: RecordedSessionReplayFixtureV1, options?: RecordedSessionReplayOptionsV1): RecordedSessionReplayBundleV1;
 export declare function rescoreRecordedSessionReplayBundle(bundle: RecordedSessionReplayBundleV1): RecordedSessionReplayRescoreReportV1;
 export declare function verifyRecordedSessionReplayBundleHashes(bundle: RecordedSessionReplayBundleV1): RecordedSessionReplayBundleHashVerificationV1;
 export declare function loadRecordedSessionReplayProofBundle(rootDir: string): RecordedSessionReplayProofBundleDescriptorV1;

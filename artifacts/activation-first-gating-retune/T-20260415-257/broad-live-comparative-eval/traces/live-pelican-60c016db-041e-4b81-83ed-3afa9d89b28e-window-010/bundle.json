@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T09:24:06.067Z",
   "traceHash": "sha256-838b9295d0df32bf17309a7744670eaab3129f24a6dca2ca9110c4b4940f8ca0",
   "fixtureHash": "sha256-56f7d90cfb38f59327532bc9b6beae4801650c72b03cf0a3e492173ea24b06f6",
-  "scoreHash": "sha256-36088425b6e7ab79c0b46addb4f0367f16b55e398942a16ec64e1b0e04932ed1",
+  "scoreHash": "sha256-d2513ea54cb0e8a8deecfe46c912f3fa029abc6356c294490084bb62b2a21f9f",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.037,
+            "totalMs": 0.038,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.037,
+            "otherMs": 0.038,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.92,
-            "routeSelectionMs": 5.303,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.616,
+            "totalMs": 7.353,
+            "routeSelectionMs": 4.613,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.738,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.146,
-            "routeSelectionMs": 4.508,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.636,
+            "totalMs": 7.173,
+            "routeSelectionMs": 4.514,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.658,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -365,7 +365,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-4cb01ac1"
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-829297d025b4f64ae6f940e950024e5b4368da613883d7bde0bb12df45d129fc"
+        "scoreHash": "sha256-a216a566d1895e4f1049ab86a287a5c5058303ef6b8ec4e88518da930d4254af"
       },
       "turns": [
         {
@@ -411,24 +411,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-4cb01ac1:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-4cb01ac1:route_fn",
-          "selectionDigest": "sha256-914fa108ba73ccf0c6f6f2a805c04e4a1dad25941547e706a56132172d863070",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-5379ebc4016b76ccd68d38a886b6fb7053a6fc55115ac047ab0077813743f7fe",
           "selectedContextIds": [
-            "pack-4cb01ac1:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback",
-            "pack-4cb01ac1:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
             "pack-4cb01ac1:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction.",
-            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:08 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Do all improvements! Use codex. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:56 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Operational excellence for Pelican = (1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery. Biggest remaining wins:\\n\\n1. Execution quality S.... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-f71f0160cb956aea4ff04921b9e51305d3030191432b5c5844d9b5d8425a8130",
+          "eventExportDigest": "sha256-d3633d33a2c54b8656fe29dc60ab2c07b146db2b67662a34a3bd7778c8cf8867",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -447,10 +443,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.582,
-            "routeSelectionMs": 5.233,
+            "totalMs": 9.43,
+            "routeSelectionMs": 5.897,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.347,
+            "otherMs": 3.531,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -494,5 +490,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-1bf5238e9b6416ce043372a3f11ba5a0d627990e4dc6d897cb9dbef8a1f0aebc"
+  "bundleHash": "sha256-805df70ab671c8382260963590d7ea487cf3139f2ac7a7b1140f1e5f1a2fc4fe"
 }

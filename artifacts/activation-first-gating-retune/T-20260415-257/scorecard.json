@@ -21,13 +21,13 @@
   },
   "broadLive": {
     "available": true,
-    "authoritative": true,
-    "vetoResult": "pass",
-    "regressions": 0,
+    "authoritative": false,
+    "vetoResult": "reject",
+    "regressions": 30,
     "comparableTraceCount": 403,
-    "policyStatus": "pass",
-    "gateStatus": "pass",
-    "usedLearnedRouteTurnCount": 403,
+    "policyStatus": "fail",
+    "gateStatus": "fail",
+    "usedLearnedRouteTurnCount": 0,
     "boundLearnedRouteTurnCount": 403,
     "activatedLearnedRouteTurnCount": 403,
     "feltOverlap": {
@@ -39,12 +39,15 @@
     },
     "notes": [
       "Candidate-specific broad-live comparative eval executed for the just-trained gating-only candidate.",
+      "learned_route never bound a live router function in the broad-live proof surface",
+      "Fresh broad-live veto outcome is recorded, but final status stays architecture_verdict until the replay surface binds a learned router identity.",
+      "scorecard reports zero learned-route turns that used the learned router function",
       "broad-live candidate run output: artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
       "broad-live guardrail manifest: ../task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
       "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "candidate artifact checksum: sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
+      "candidate artifact checksum: sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
       "candidate router identity: router:T-20260415-257:activation-first-gating-only:v1"
     ]
   },
-  "finalCandidateStatus": "pass"
+  "finalCandidateStatus": "architecture_verdict"
 }

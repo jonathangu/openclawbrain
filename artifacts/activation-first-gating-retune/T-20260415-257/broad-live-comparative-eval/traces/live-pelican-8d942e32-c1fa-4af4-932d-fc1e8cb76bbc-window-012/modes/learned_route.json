@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-2df57c45"
+      "pack-5563def0"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-2df57c45",
-    "frozenEvalRouterIdentity": "pack-2df57c45:route_fn",
+    "frozenEvalPackId": "pack-5563def0",
+    "frozenEvalRouterIdentity": "pack-5563def0:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-998d832100ab040e2b93ec637e681d1ecd28e59c58232645e71d0b2fc0921b7b"
+    "scoreHash": "sha256-1c480d7ee8870246c26b0613ce90d1fa918c0f502578877ad7761c39821cc8b2"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-2df57c45",
+      "activePackId": "pack-5563def0",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-2df57c45:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-2df57c45:route_fn",
-      "selectionDigest": "sha256-84b8e43f0aba8815a8324aea31f8141f55493079fdac43b5bd9af20f893845a8",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-3ac00031ae6bb5ab4927812307af37f48fd0e0604de6cdf10cc03f6ebd935d39",
       "selectedContextIds": [
-        "pack-2df57c45:workspace-init:02e33be9",
-        "pack-2df57c45:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-1:feedback",
-        "pack-2df57c45:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-2:feedback"
+        "pack-5563def0:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…",
-        "Teaching feedback on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed: user: Exec completed (good-emb, code 134) :: rkaround you can set the environment variable KMP_DUPLICATE_LIB_OK=TRUE to allow the program to continue to execute, but that may cause crashes or silently produce incorrect resul… System (untrusted): [2026-04-13 07:12:12 PDT] Exec failed (young-da, signal SIGKILL) System (untrusted): [2026-04-13 07:12:29 PDT] Exec completed (faint-su, code 3) :: e trading path. Use --allow-market-hours to override. [2026-04-13T14:12:29Z] Status JSON: /Users/guclaw/.open.... Related interaction: 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-1:interaction.",
-        "Teaching feedback on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed: user: Exec completed (good-emb, code 134) :: rkaround you can set the environment variable KMP_DUPLICATE_LIB_OK=TRUE to allow the program to continue to execute, but that may cause crashes or silently produce incorrect resul… System (untrusted): [2026-04-13 07:12:12 PDT] Exec failed (young-da, signal SIGKILL) System (untrusted): [2026-04-13 07:12:29 PDT] Exec completed (faint-su, code 3) :: e trading path. Use --allow-market-hours to override. [2026-04-13T14:12:29Z] Status JSON: /Users/guclaw/.open.... Related interaction: 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-2:interaction."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-0d54e41cb75b05868e0e30be28a9ac943126402ddd3d55c03abe79ae5d94ed64",
+      "eventExportDigest": "sha256-ed2537e232f9dfb19342443013d2c32061dde0b8b0224bee875613cbad542ffe",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/runtime/quant-research",
         "/{run}/run.json',\\n",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.49,
-        "routeSelectionMs": 5.85,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 3.637,
+        "totalMs": 8.808,
+        "routeSelectionMs": 5.436,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.371,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

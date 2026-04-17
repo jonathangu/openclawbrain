@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-09T14:38:24.302Z",
   "traceHash": "sha256-2b0cf5e7b3f41bdf7d892185413608401c24e9c3ad252c16335ba4fe2f91cdd3",
   "fixtureHash": "sha256-ed8248c9b476e9fb2d02b9891cc8e11da35a8ba49c308ca9793fd2e0cd5daeaa",
-  "scoreHash": "sha256-7ff41023a390a89b7d59db29138387d0e7bd2047769d157146e4301292a9dc39",
+  "scoreHash": "sha256-7987654cefb5fb87a59f4aba3a2594adccb7a32104d1d34eb071163e3badf987",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.041,
+            "totalMs": 0.029,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.041,
+            "otherMs": 0.029,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -132,7 +132,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-b176ada5"
+          "pack-06e489fc"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-185860f964f9f745bc14014ab69e578dadb7fa4be4b3131bb05c530aafae7e39"
+        "scoreHash": "sha256-131048105683e00f4a2d1fd47ce851c2f1c36c056a8de2e53a47422c0d1ec150"
       },
       "turns": [
         {
@@ -170,7 +170,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b176ada5",
+          "activePackId": "pack-06e489fc",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -180,18 +180,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-b2df709f52a91e17dcd801d710459b602cc85ce185639543f29c376cc194373e",
+          "selectionDigest": "sha256-0fae376f26951cfa8adef814c0d420d49e33de3a472842d57a4c3dd8604c39bc",
           "selectedContextIds": [
-            "pack-b176ada5:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
-            "pack-b176ada5:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback",
-            "pack-b176ada5:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:feedback"
+            "pack-06e489fc:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
+            "pack-06e489fc:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback",
+            "pack-06e489fc:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: assistant: Work is continuing. I launched the 126a–126d blocker swarm from the retrain single-truth plan and updated `TASKS.md` to reflect that they’re now active. I also checked live market-hours truth on deployed head `d079a46`: the `10:30 ET` cycle processed successfully in explicit GBM-only fallback with no new hold and no TFT crash, so that crash seam is materially closed. Current live issue is narrower now: - latest processed snapshot: `data/2026/04/09/10-30-18.json` - `run_once.status=success` - .... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction.",
             "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: System: [2026-04-09 07:02:47 PDT] Exec completed (briny-ne, code 0) :: e7_35.py M tests/test_native_remake_handoff_contract.py M tests/test_pelican_deep_health.py M tests/test_pipeline_health_check.py M tests/test_refresh_canonical_training_inputs.py… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:interaction.",
             "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Thursday, April 9.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-f4f9e8b0f6c5206c729b6115cfd9eb1611b5468fefb2c472b97a9625b3cdc531",
+          "eventExportDigest": "sha256-8ef1f9d9b0262ae9c7fd961853b61f94193d5b23a756ffacaaa7115f8a376f09",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/126c-listener-scheduler-freshness-2026-04-09.md\"}",
             "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
@@ -207,10 +207,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.184,
-            "routeSelectionMs": 5.412,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.77,
+            "totalMs": 8.015,
+            "routeSelectionMs": 5.302,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.711,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -246,7 +246,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-b176ada5"
+          "pack-06e489fc"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -274,7 +274,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-169307bf3357240d0212891255b8346b7b5d7dab4ebc1633a3745eb7af22bd20"
+        "scoreHash": "sha256-0f492b55bcea4188d163cddbdacf434b8b4613d738fdf8081530a9018fadc555"
       },
       "turns": [
         {
@@ -284,7 +284,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b176ada5",
+          "activePackId": "pack-06e489fc",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -294,18 +294,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-0ffa40e959eb62cbe788b15476837f30e954278a555997b60e5ad9db76b8577f",
+          "selectionDigest": "sha256-e246c986e4a1330a320c7d8ffbb1cec260aadea1c0b13e75e4332fa1c723480f",
           "selectedContextIds": [
-            "pack-b176ada5:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
-            "pack-b176ada5:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction",
-            "pack-b176ada5:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback"
+            "pack-06e489fc:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
+            "pack-06e489fc:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction",
+            "pack-06e489fc:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: assistant: Work is continuing. I launched the 126a–126d blocker swarm from the retrain single-truth plan and updated `TASKS.md` to reflect that they’re now active. I also checked live market-hours truth on deployed head `d079a46`: the `10:30 ET` cycle processed successfully in explicit GBM-only fallback with no new hold and no TFT crash, so that crash seam is materially closed. Current live issue is narrower now: - latest processed snapshot: `data/2026/04/09/10-30-18.json` - `run_once.status=success` - .... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: System: [2026-04-09 07:02:47 PDT] Exec completed (briny-ne, code 0) :: e7_35.py M tests/test_native_remake_handoff_contract.py M tests/test_pelican_deep_health.py M tests/test_pipeline_health_check.py M tests/test_refresh_canonical_training_inputs.py… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-45d1113a8548adea41c33a28895d631d135fc495e8c4bde5800c04fe6fc74655",
+          "eventExportDigest": "sha256-da5ad0810efdb1be6fc97cbdf4d39852e52e877bcdda1044401536dfac8a2a66",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/126c-listener-scheduler-freshness-2026-04-09.md\"}",
             "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
@@ -321,10 +321,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.147,
-            "routeSelectionMs": 5.355,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.79,
+            "totalMs": 7.837,
+            "routeSelectionMs": 5.175,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.66,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -357,15 +357,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-2f3222ca"
+          "pack-849fff21"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-2f3222ca",
-        "frozenEvalRouterIdentity": "pack-2f3222ca:route_fn",
+        "frozenEvalPackId": "pack-849fff21",
+        "frozenEvalRouterIdentity": "pack-849fff21:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -389,7 +389,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-63c1fd4fa895df53a01bcb09cf33572d5a59ee0cfbf0e293996c171fe4d5eac6"
+        "scoreHash": "sha256-2b536b1ad62cdfb6ebd8644b80a9b265a6bd702389241d22e43fbae63ac43715"
       },
       "turns": [
         {
@@ -399,28 +399,24 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-2f3222ca",
+          "activePackId": "pack-849fff21",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-2f3222ca:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-2f3222ca:route_fn",
-          "selectionDigest": "sha256-30f1e8f59d28876e36c2fa2200bdf6dec35374b8239e69c5dd0618d508777f7d",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-c54adcebb23ac84e7f9ac3fecd2b9e5ee5a1f2ba4318b9b0b1868fe28c3b347a",
           "selectedContextIds": [
-            "pack-2f3222ca:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
-            "pack-2f3222ca:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback",
-            "pack-2f3222ca:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:feedback"
+            "pack-849fff21:workspace-init:16415817"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: assistant: Work is continuing. I launched the 126a–126d blocker swarm from the retrain single-truth plan and updated `TASKS.md` to reflect that they’re now active. I also checked live market-hours truth on deployed head `d079a46`: the `10:30 ET` cycle processed successfully in explicit GBM-only fallback with no new hold and no TFT crash, so that crash seam is materially closed. Current live issue is narrower now: - latest processed snapshot: `data/2026/04/09/10-30-18.json` - `run_once.status=success` - .... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction.",
-            "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: System: [2026-04-09 07:02:47 PDT] Exec completed (briny-ne, code 0) :: e7_35.py M tests/test_native_remake_handoff_contract.py M tests/test_pelican_deep_health.py M tests/test_pipeline_health_check.py M tests/test_refresh_canonical_training_inputs.py… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:interaction.",
-            "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Thursday, April 9.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:interaction."
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=17). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
           ],
-          "eventExportDigest": "sha256-f58e88142621c3de7ab9c77f925eec2d5c88111b16ee939845b38e4312e45ca1",
+          "eventExportDigest": "sha256-77df4dd397ba07472c3e18cf00e69ebe70fce4c3835355e7acf132e0758aeb0a",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/126c-listener-scheduler-freshness-2026-04-09.md\"}",
             "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
@@ -436,10 +432,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.983,
-            "routeSelectionMs": 6.425,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.556,
+            "totalMs": 9.757,
+            "routeSelectionMs": 6.362,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.393,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -483,5 +479,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-f133b7e9e7f1df683e297494bc73333dea371b6c701da005e000850d66c8ea3a"
+  "bundleHash": "sha256-b2da35ab5708c1ca2e8f95d746767430331f20052577bde106fc6350797a48f3"
 }

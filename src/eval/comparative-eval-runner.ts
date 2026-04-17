@@ -15,6 +15,7 @@ import {
 import {
   RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER,
   writeRecordedSessionReplayProofLane,
+  type LearnedRouteCandidateArtifactOverrideV1,
   type RecordedSessionReplayProofLaneDescriptorV1,
 } from "../replay-proof-lane.ts";
 
@@ -414,6 +415,7 @@ export interface RunComparativeEvalInput {
   scratchRootDir?: string;
   workedTraceLimit?: number | null;
   policy?: Partial<ComparativeEvalPolicyThresholdsV1>;
+  learnedRouteCandidateArtifactDir?: string;
 }
 
 const DEFAULT_COMPARATIVE_EVAL_POLICY_THRESHOLDS: ComparativeEvalPolicyThresholdsV1 = {
@@ -1737,6 +1739,9 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     `default manifest path is ${DEFAULT_COMPARATIVE_EVAL_MANIFEST_PATH}`,
     `mode order is ${RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER.join(", ")}`,
     "the comparative runner delegates replay execution to writeRecordedSessionReplayProofLane so each trace still runs through the real replay/runtime path",
+    ...(input.learnedRouteCandidateArtifactDir
+      ? [`learned_route replay override artifact: ${path.resolve(input.learnedRouteCandidateArtifactDir)}`]
+      : []),
     ...manifestLoad.notes,
   ];
   const assumptions = [
@@ -1745,6 +1750,9 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     "traceHash, when present in the manifest, is checksumJsonPayload(trace-json)",
     "scorecard prompt-cost metrics are cheap deterministic proxies derived from selected context chars",
     `${policyThresholds.candidateMode} is the candidate mode, ${policyThresholds.baselineMode} is the baseline mode, and ${policyThresholds.floorMode} is the floor anchor for the explicit comparative policy`,
+    ...(input.learnedRouteCandidateArtifactDir
+      ? ["when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state"]
+      : []),
     "this scaffold does not finalize the frozen trace set or widen proof-bundle generation scope",
   ];
 
@@ -1756,6 +1764,10 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
   let issues = [...manifestLoad.issues];
 
   if (issues.length === 0 && manifestLoad.manifest !== null) {
+    const learnedRouteCandidateArtifact: LearnedRouteCandidateArtifactOverrideV1 | null =
+      input.learnedRouteCandidateArtifactDir
+        ? { artifactDir: path.resolve(input.learnedRouteCandidateArtifactDir) }
+        : null;
     laneDescriptor = writeRecordedSessionReplayProofLane({
       artifactRoot: traceRoot,
       traces: manifestLoad.traces.map((trace) => ({
@@ -1766,6 +1778,7 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
       assumptions,
       ...(input.scratchRootDir ? { scratchRootDir: path.resolve(input.scratchRootDir) } : {}),
       ...(input.workedTraceLimit == null ? {} : { workedTraceLimit: input.workedTraceLimit }),
+      ...(learnedRouteCandidateArtifact === null ? {} : { learnedRouteCandidateArtifact }),
     });
     const failedEntries = laneDescriptor.generationReport.entries.filter((entry) => entry.result === "failed");
     issues = [

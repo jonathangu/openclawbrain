@@ -833,10 +833,11 @@ export function validateRuntimeCompileResponse(value) {
     if (value.diagnostics.servedArtifact.packId !== value.packId) {
         errors.push(`diagnostics.servedArtifact packId ${value.diagnostics.servedArtifact.packId} does not match response packId ${value.packId}`);
     }
-    if (value.diagnostics.servedArtifact.routeArtifact.routerIdentity !== value.diagnostics.routerIdentity) {
+    const replayLearnedRouteOverrideActive = value.diagnostics.notes.some((note) => note.startsWith("replay_learned_route_override="));
+    if (!replayLearnedRouteOverrideActive && value.diagnostics.servedArtifact.routeArtifact.routerIdentity !== value.diagnostics.routerIdentity) {
         errors.push(`diagnostics.servedArtifact routeArtifact.routerIdentity ${value.diagnostics.servedArtifact.routeArtifact.routerIdentity ?? "null"} does not match diagnostics routerIdentity ${value.diagnostics.routerIdentity ?? "null"}`);
     }
-    if (value.diagnostics.modeEffective === "learned" && !value.diagnostics.usedLearnedRouteFn) {
+    if (value.diagnostics.modeEffective === "learned" && !value.diagnostics.usedLearnedRouteFn && !replayLearnedRouteOverrideActive) {
         errors.push("learned mode requires usedLearnedRouteFn=true");
     }
     if (value.diagnostics.usedLearnedRouteFn && value.diagnostics.modeEffective !== "learned") {

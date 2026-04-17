@@ -1275,6 +1275,7 @@ function runCandidateSpecificBroadLiveProofRead(params: {
     const descriptor = runComparativeEval({
       manifestPath,
       outputDir: params.broadLiveOutputDir,
+      learnedRouteCandidateArtifactDir: params.candidateArtifact.outputDir,
     });
     const laneSummaryTablesPath = descriptor.report.files.laneSummaryTables === null
       ? null

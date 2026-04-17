@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-09T06:29:42.255Z",
   "traceHash": "sha256-8226e38f2d583af41a4327f3b8df4e5b434ae18ebbdb89d67531a4a854359a44",
   "fixtureHash": "sha256-e3733e9aa09beb01fe43936408b2069d985913ff1742752483045d9debec0829",
-  "scoreHash": "sha256-53b8a60e3f8993a1a532f8b1aeaccc4f71d427e8c3ce05e5614bc305e2ff95d1",
+  "scoreHash": "sha256-4d49b5ef6ce70fc551325389e942113fbcc96706921ee1dc2c4bcf0e71fde3e8",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.028,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.028,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-b2ea0ee8"
+          "pack-0857eb3f"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-7a4862687a52de05524b208f145b73192e96dbfd27560f8868f9bcb9c25c86dd"
+        "scoreHash": "sha256-70ac6f4b5292ad3993fb1bfb733029dfc089f55cb217bcce34dc1127057cc536"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b2ea0ee8",
+          "activePackId": "pack-0857eb3f",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-98e827428c2a3759eee4b72f8e8c8cd75268752539427a897100fc237d0d4299",
+          "selectionDigest": "sha256-76a7a753808b735a08b3694d3d3507f7303636d8ea94efec9ca483a9b1fdbb6c",
           "selectedContextIds": [
-            "pack-b2ea0ee8:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
-            "pack-b2ea0ee8:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
-            "pack-b2ea0ee8:pointer-aware-init"
+            "pack-0857eb3f:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
+            "pack-0857eb3f:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
+            "pack-0857eb3f:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Tighten priority: Jon is explicit that we need the full core 36, not a 35/36 recent slice. Treat any unexpected 35-count as a real bug unless you can prove it is an intended market-data exclusion with single-truth backing. Prioritize root-causing the missing name in the freshest recent slice, determine whether it is extractor/build/filter/attachability drift, and if a narrow safe fix/test can restore or guard the full core-36 contract going forward, land it. Include the exact missing ticker a.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction.",
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Status: **fixed/proof-green** Commit: **181808d938c5a7e1376b34c289323aeaffbe0886** Message: `pelican: guard latest feature slice coverage` Exact proof: - Freshest slice in `full_feature_matrix_v4_refresh.parquet` is **2026-04-07 19:30:21** - That slice has **35 tickers**, not 36 - Missing core ticker: **TSM** - The immediately previous slice at **2026-04-07 19:30:20** has **36 tickers** - Big-date / earnings features in the latest 35-row slice are fully populated: - `days_to_earnings`: **35/3.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-541ede08e458bb18bb3e81fc900b2a3cae696d57dab151d0039ec9b86bf7bde4",
+          "eventExportDigest": "sha256-78468001aa419870cded04a2e824887d5412bd2edc5aa951fed37f6507289719",
           "expectedContextPhrases": [
             "/Users/guclaw/worktrees/pelican/39/build_feature_matrix_v2.py'),",
             "/Users/guclaw/worktrees/pelican/39/production_feature_extractor.py'),",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.543,
-            "routeSelectionMs": 4.78,
+            "totalMs": 7.278,
+            "routeSelectionMs": 4.618,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.761,
+            "otherMs": 2.658,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-b2ea0ee8"
+          "pack-0857eb3f"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-a38ebfae374633cac5284b7322c049eb8436bf5d676b93c9673a9c049852a9e2"
+        "scoreHash": "sha256-159be9c64e49f0ac8eeadfb7906d0a1e6065b8213d6ec005c57dcb1533d51d09"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b2ea0ee8",
+          "activePackId": "pack-0857eb3f",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-5d2a2972ba98295c633eb9accc948694483191dd4247e73106c664e748bcf061",
+          "selectionDigest": "sha256-ae4eab56b9316e8d23dd2c5ee518c2582564a2c241b28b3d13534c927f915332",
           "selectedContextIds": [
-            "pack-b2ea0ee8:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
-            "pack-b2ea0ee8:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction",
-            "pack-b2ea0ee8:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback"
+            "pack-0857eb3f:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
+            "pack-0857eb3f:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction",
+            "pack-0857eb3f:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Tighten priority: Jon is explicit that we need the full core 36, not a 35/36 recent slice. Treat any unexpected 35-count as a real bug unless you can prove it is an intended market-data exclusion with single-truth backing. Prioritize root-causing the missing name in the freshest recent slice, determine whether it is extractor/build/filter/attachability drift, and if a narrow safe fix/test can restore or guard the full core-36 contract going forward, land it. Include the exact missing ticker a.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction.",
             "Interaction operator_override on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed. Message: cue-5-seed-message.",
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Status: **fixed/proof-green** Commit: **181808d938c5a7e1376b34c289323aeaffbe0886** Message: `pelican: guard latest feature slice coverage` Exact proof: - Freshest slice in `full_feature_matrix_v4_refresh.parquet` is **2026-04-07 19:30:21** - That slice has **35 tickers**, not 36 - Missing core ticker: **TSM** - The immediately previous slice at **2026-04-07 19:30:20** has **36 tickers** - Big-date / earnings features in the latest 35-row slice are fully populated: - `days_to_earnings`: **35/3.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-59f5ae5f090ba9d117cce4333835f1eeba168ea2f797464557e347ae59c41b76",
+          "eventExportDigest": "sha256-528f1eed0a4c22bb23e73b851af003372dd4f7b50362e5f7fd91ef7bbd0faa39",
           "expectedContextPhrases": [
             "/Users/guclaw/worktrees/pelican/39/build_feature_matrix_v2.py'),",
             "/Users/guclaw/worktrees/pelican/39/production_feature_extractor.py'),",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.679,
-            "routeSelectionMs": 4.943,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.734,
+            "totalMs": 7.076,
+            "routeSelectionMs": 4.473,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.601,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-5c1c5ff5"
+          "pack-b18a3c4c"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-5c1c5ff5",
-        "frozenEvalRouterIdentity": "pack-5c1c5ff5:route_fn",
+        "frozenEvalPackId": "pack-b18a3c4c",
+        "frozenEvalRouterIdentity": "pack-b18a3c4c:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-48b6089e4a97f7c9dcfd6f6a5463799b5b59ef7010a649c2b78bf53273d118c1"
+        "scoreHash": "sha256-d56215429847fcb6a95c54c565cfc6a9e6ab62c4c3d1ad22c21bd15acd7003bf"
       },
       "turns": [
         {
@@ -405,28 +405,24 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-5c1c5ff5",
+          "activePackId": "pack-b18a3c4c",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-5c1c5ff5:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-5c1c5ff5:route_fn",
-          "selectionDigest": "sha256-f66d2cdd20c48b573ca3ad55a467efe72563fa345aa0444478220c9a43b1ade0",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-46f6ba4d217d9dc0d4f3d33ecc79ec19bb28bd88308ff1c9bb118912bd31cf4f",
           "selectedContextIds": [
-            "pack-5c1c5ff5:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
-            "pack-5c1c5ff5:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
-            "pack-5c1c5ff5:pointer-aware-init"
+            "pack-b18a3c4c:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Tighten priority: Jon is explicit that we need the full core 36, not a 35/36 recent slice. Treat any unexpected 35-count as a real bug unless you can prove it is an intended market-data exclusion with single-truth backing. Prioritize root-causing the missing name in the freshest recent slice, determine whether it is extractor/build/filter/attachability drift, and if a narrow safe fix/test can restore or guard the full core-36 contract going forward, land it. Include the exact missing ticker a.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction.",
-            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Status: **fixed/proof-green** Commit: **181808d938c5a7e1376b34c289323aeaffbe0886** Message: `pelican: guard latest feature slice coverage` Exact proof: - Freshest slice in `full_feature_matrix_v4_refresh.parquet` is **2026-04-07 19:30:21** - That slice has **35 tickers**, not 36 - Missing core ticker: **TSM** - The immediately previous slice at **2026-04-07 19:30:20** has **36 tickers** - Big-date / earnings features in the latest 35-row slice are fully populated: - `days_to_earnings`: **35/3.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-999f552ccfd1f9d1b650ddb68e989c822f09999f555c4d502c2052bdddc4f43d",
+          "eventExportDigest": "sha256-9ba1fc280a7b9f46f1985705853006535566f19776f0bdd76aa031b82917d1b0",
           "expectedContextPhrases": [
             "/Users/guclaw/worktrees/pelican/39/build_feature_matrix_v2.py'),",
             "/Users/guclaw/worktrees/pelican/39/production_feature_extractor.py'),",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.865,
-            "routeSelectionMs": 6.202,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.661,
+            "totalMs": 8.844,
+            "routeSelectionMs": 5.526,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.317,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-874fb79035c8863a6f2dae2ab31a20c6e3c706e49018b99e4b435a721f769ec0"
+  "bundleHash": "sha256-43425b4c05ac4102a5ae235dbafa7027db9baf7f81988c4e71ce6117dff14141"
 }

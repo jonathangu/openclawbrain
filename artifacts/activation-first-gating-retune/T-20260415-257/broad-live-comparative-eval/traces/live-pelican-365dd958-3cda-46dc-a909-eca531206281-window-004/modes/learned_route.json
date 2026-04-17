@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-83720e2a"
+      "pack-aae070d5"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-83720e2a",
-    "frozenEvalRouterIdentity": "pack-83720e2a:route_fn",
+    "frozenEvalPackId": "pack-aae070d5",
+    "frozenEvalRouterIdentity": "pack-aae070d5:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-3339b8f57fb3f216ba9adc995e216056efaf4b09ff9060959d935b0fb9bf7ec7"
+    "scoreHash": "sha256-ddc44c3ec5f48dea24c2c02cd0ad497837cf4e29e57f5a449d163281dd5f5be5"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-83720e2a",
+      "activePackId": "pack-aae070d5",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-83720e2a:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-83720e2a:route_fn",
-      "selectionDigest": "sha256-915ea08a4369a6eb74b63bdf114f94fe020ccb93068744f7a8c0ec791372d055",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-d1d95f865eb589e4884ca7a63217930570439e98b3132fd2894fe34dc45ce7e9",
       "selectedContextIds": [
-        "pack-83720e2a:pointer-aware-init",
-        "pack-83720e2a:event:365dd958-3cda-46dc-a909-eca531206281-seed:cue-1:feedback",
-        "pack-83720e2a:event:365dd958-3cda-46dc-a909-eca531206281-seed:cue-3:feedback"
+        "pack-aae070d5:event:365dd958-3cda-46dc-a909-eca531206281-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-        "Teaching feedback on live-session session 365dd958-3cda-46dc-a909-eca531206281-seed: user: A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Sunday,.... Related interaction: 365dd958-3cda-46dc-a909-eca531206281-seed:cue-1:interaction.",
-        "Teaching feedback on live-session session 365dd958-3cda-46dc-a909-eca531206281-seed: user: A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Sunday,.... Related interaction: 365dd958-3cda-46dc-a909-eca531206281-seed:cue-3:interaction."
+        "Teaching feedback on live-session session 365dd958-3cda-46dc-a909-eca531206281-seed: user: A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Sunday,.... Related interaction: 365dd958-3cda-46dc-a909-eca531206281-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-507a48360a8bf4c5a929e7424cf9af8cd15bc63d0f62e4463566c75cda0e59e6",
+      "eventExportDigest": "sha256-f1c3e87b30b10e0d99136e360b51d87f4b9bdcf07a507a92de5882e132d64bf8",
       "expectedContextPhrases": [
         "hey",
         "jon.",
@@ -91,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.85,
-        "routeSelectionMs": 5.364,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.484,
+        "totalMs": 8.343,
+        "routeSelectionMs": 5.09,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.252,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-42e42cb8"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-4ff25bae52361b155b77973472d5a72095668b01a352e8088752f2809d2e118e"
+    "scoreHash": "sha256-e5a5a7d94be88baf3a154578a292fb28abc266914ee30e47280f3e93f1cccf3f"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-42e42cb8:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-42e42cb8:route_fn",
-      "selectionDigest": "sha256-a31ddfe3f83c71f50845d07b1f4c7edfeaec6f6900596e1a8ce3b42e4d7f01b1",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-a3ab139a1fdc9ad2579902675f0eb0af69d4324b229cd18abecd5b85d4279738",
       "selectedContextIds": [
-        "pack-42e42cb8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
-        "pack-42e42cb8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
         "pack-42e42cb8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 4ff6d91e-8778-4011-b5aa-df96cf3d35c1] A cron job \"tft-v6-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 44s • tokens 1.7k (in 10 / out 1.7k) • prompt/cache 20.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system messa.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: fbb9da7c-1222-4552-984d-393a914dab91] A cron job \"tft-v6-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 1m59s • tokens 3.1k (in 18 / out 3.1k) • prompt/cache 25.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system mes.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: bc2eaeed-c559-4bb6-9413-19dbce5693d4] A cron job \"v6-slim-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 1m42s • tokens 3.7k (in 17 / out 3.7k) • prompt/cache 26.4k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system me.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-c332ef0b52dc05dad0da1521304edea774cf467a72eec864b693ae85662b3835",
+      "eventExportDigest": "sha256-50d6f0afbe7ef0bd94da1c4b701a760c0f51e65bf33d63fd20e28531acca80e6",
       "expectedContextPhrases": [
         "/.ssh/guclaw-tft-v2.pem",
         "retrain_v6_aws.sh",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.701,
-        "routeSelectionMs": 6.249,
+        "totalMs": 10.551,
+        "routeSelectionMs": 6.766,
         "promptAssemblyMs": 0.002,
-        "otherMs": 3.45,
+        "otherMs": 3.783,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-27T23:27:35.287Z",
   "traceHash": "sha256-1d380c2fd8773059a5893ffff2d380e86ca0f972a4140732a5832ea7865e5c2a",
   "fixtureHash": "sha256-55f386f545922fe7856a581e64b7fa651b1de1ce7956a55af05d3b2bdc86946b",
-  "scoreHash": "sha256-d958d4651249baec5bbdf04e73e8da4d36ce490070dd23e069ecf9c766913cae",
+  "scoreHash": "sha256-43b4a2f86bc78c135710de38e9faa8d1b35815cd7f50edfa434e1211c1158f38",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.03,
+            "totalMs": 0.037,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.03,
+            "otherMs": 0.037,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.531,
-            "routeSelectionMs": 4.846,
+            "totalMs": 7.566,
+            "routeSelectionMs": 4.863,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.684,
+            "otherMs": 2.701,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.486,
-            "routeSelectionMs": 4.807,
+            "totalMs": 8.503,
+            "routeSelectionMs": 5.749,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.677,
+            "otherMs": 2.751,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -351,7 +351,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-cfd4f6f9"
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-4953e99b1f64ac939fc911ebf2dc75610af5383eae9aeb46024f7a00f6186dd4"
+        "scoreHash": "sha256-0241b7034d40e8c467acb85a691dbccb0933211cd13dc08bfecaf9ef23263c3d"
       },
       "turns": [
         {
@@ -397,24 +397,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-cfd4f6f9:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-cfd4f6f9:route_fn",
-          "selectionDigest": "sha256-77ba212ac39d0c87d96a41009b405fc8f591bb8a6000b0bf93bb1f674ef3510f",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-43d6c579a6cb0097729a2099ff820140d3e7d8a9376717ab1fce8d68ba3e9654",
           "selectedContextIds": [
-            "pack-cfd4f6f9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-            "pack-cfd4f6f9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-            "pack-cfd4f6f9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
+            "pack-cfd4f6f9:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: ffc1b986-38d1-494c-b5a2-3cac96543fa0] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 34s • tokens 14.1k (in 12.5k / out 1.6k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim. R.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
-            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 14:52:27 PST] Exec completed (cool-wha, code 255) :: ssh: connect to host 44.247.209.229 port 22: Operation timed out Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. Current time: Friday, February 27th, 2026 — 3:00 PM (America/Los_Angeles). Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
-            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: We had training running. How's it going pelican: 🚀 GBM retrain is RUNNING on AWS Instance: g5.xlarge (44.247.209.229) Training: 15 members × 23 quantiles, 31,926 rows, 178 features All embeddings-only, no has_news/news_missing ✅ Had to fight through: • New Ubuntu 24.04/22.04 AMIs auto-terminate on g5 (!) • Old AMI has Python 3.7 → installed lightgbm<4.0 • SCP kills connections >5MB → uploaded via S3 chunks • 6 dead instances along the way ETA: ~30-40 min for GBM, then TFT on same instance (~3.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction."
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-179b2964c12907ca88ce33fae54fafd946283335b91a1e4689c1f1affb014c9b",
+          "eventExportDigest": "sha256-4c1f5239c672a7b141dfb90799383ada1fc3bb0d42b37c51d1fafebdcde83ff5",
           "expectedContextPhrases": [
             "/15"
           ],
@@ -428,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.24,
-            "routeSelectionMs": 5.867,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.372,
+            "totalMs": 9.179,
+            "routeSelectionMs": 5.801,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.376,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -475,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-3fd032a07a1428ec7a9ec3b293e73264579f07222b7f427cff4c3cd2727c0886"
+  "bundleHash": "sha256-f9b1b23b044402aded9ccb14b4b2b7e4d1b14d2940849cf5a6f5010e1e07b4cc"
 }

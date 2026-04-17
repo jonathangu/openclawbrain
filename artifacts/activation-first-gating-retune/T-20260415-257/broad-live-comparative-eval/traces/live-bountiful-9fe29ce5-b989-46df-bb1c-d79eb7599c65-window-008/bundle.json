@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T10:14:36.959Z",
   "traceHash": "sha256-a725d997b61c014cfa09b0556fbe7457ad1066c9e82be586f6e632957134b68e",
   "fixtureHash": "sha256-0175601a40ce3b110cb977baef20750f4bd146a6b251d6933e92137c6f93984a",
-  "scoreHash": "sha256-40aff0ead9ddcfe635caf76194154c8998437e6e55fe60ada86b870f3a015c08",
+  "scoreHash": "sha256-4e5ec02e6b685b17f471ecc499fe3f53005c2325722866c25af915ae0837a6c4",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.036,
+            "totalMs": 0.031,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.036,
+            "otherMs": 0.031,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.123,
-            "routeSelectionMs": 4.991,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.13,
+            "totalMs": 7.426,
+            "routeSelectionMs": 4.768,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 2.654,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.016,
-            "routeSelectionMs": 6.139,
+            "totalMs": 7.448,
+            "routeSelectionMs": 4.734,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.874,
+            "otherMs": 2.711,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -351,7 +351,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-25f278a5"
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-f57c31dd5bf046f94f555fa44ea2efcfcc4e52efc58b60955c138a77adbf483c"
+        "scoreHash": "sha256-50325a475533f982e93bb56a7d01a27457d0e598a4bdb3248abe8a6a3f77d6c8"
       },
       "turns": [
         {
@@ -397,24 +397,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-25f278a5:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-25f278a5:route_fn",
-          "selectionDigest": "sha256-2a68edd48f683cba20a4bf00e894111071e6a515dd86bc22c5c28a96826e7495",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-17f88910d6fe84549ce5f374d1a2a39901f55125e28686cb66175111466c7c14",
           "selectedContextIds": [
-            "pack-25f278a5:pointer-aware-init",
-            "pack-25f278a5:workspace-init:02e33be9",
-            "pack-25f278a5:workspace-init:2c170c1e"
+            "pack-25f278a5:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
-            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Bountiful Use heartbeat to keep Bountiful moving without manual babysitting. 1. Reread TASKS.md from disk, then read only the relevant MEMORY.md snippets and project artifacts for the current live task. 2. Trust current file truth over chat or old summaries. 3. Treat only active tasks as live work. Trea…",
-            "Working-set input task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md selected by pointer-aware init (inbound=5, outbound=17). Last ledger refresh: 2026-03-21 12:55 PT Status keys: active | parked | blocked | done Current queue: **no active principal task**. Next-session default: 1. Read this file and trust it over chat. 2. Start from clean main / prod truth, not stale branch or swarm lore. 3. There is currently **no active principal task**.…"
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-f24ba8ecbfb83071f55bfedff3b0ebc06e56c9a8f35fc7cbf03398682d011b50",
+          "eventExportDigest": "sha256-045b1dd5951a46111c909b59f4e339639f77f297519a69cb13e2ae1979bf5481",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace-bountiful/memory/2026-03-03.md\"}"
           ],
@@ -428,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.49,
-            "routeSelectionMs": 5.961,
-            "promptAssemblyMs": 0.004,
-            "otherMs": 3.526,
+            "totalMs": 9.056,
+            "routeSelectionMs": 5.643,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.411,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -475,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-11c1b99b82758199d828560cdc98a943c8219f49113eb6cdf7ea2a29720ba65c"
+  "bundleHash": "sha256-93fcc47f3285e70d027085b69f04ea454a3bf125ea4ebf83ba04e15342985bac"
 }

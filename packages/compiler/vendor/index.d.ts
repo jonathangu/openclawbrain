@@ -30,10 +30,27 @@ export interface ActivationCompileOptions {
     requirePromotionSafe?: boolean;
     expectedTarget?: RuntimeCompileExpectationV1;
     selectionMode?: CompileSelectionMode;
+    /** @internal Replay-only learned-route selection override. */
+    _learnedRouteSelectionOverride?: LearnedRouteSelectionOverride | null;
     expectation?: never;
 }
 export interface RuntimeCompileOptions {
     selectionMode?: CompileSelectionMode;
+    /** @internal Replay-only learned-route selection override. */
+    _learnedRouteSelectionOverride?: LearnedRouteSelectionOverride | null;
+}
+export interface LearnedRouteSelectionOverrideInput {
+    request: RuntimeCompileRequestV1;
+    ranked: readonly RankedContextBlock[];
+    maxBlocks: number;
+}
+export interface LearnedRouteSelectionOverrideResult {
+    selectedBlockIds: readonly string[];
+    routerIdentity?: string | null;
+    evidenceSource?: string | null;
+}
+export interface LearnedRouteSelectionOverride {
+    select(input: LearnedRouteSelectionOverrideInput): LearnedRouteSelectionOverrideResult;
 }
 export interface TextEmbeddingResult {
     model: string;

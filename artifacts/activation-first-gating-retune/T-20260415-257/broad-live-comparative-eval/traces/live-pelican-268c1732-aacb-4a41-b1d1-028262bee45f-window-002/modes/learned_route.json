@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-740c846a"
+      "pack-9b7ae715"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-740c846a",
-    "frozenEvalRouterIdentity": "pack-740c846a:route_fn",
+    "frozenEvalPackId": "pack-9b7ae715",
+    "frozenEvalRouterIdentity": "pack-9b7ae715:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-3142f8ef608cdcdd39b4f7bc9cf0ac83abb1d204df467486aa8cea59c42e97c9"
+    "scoreHash": "sha256-19b1219a70079e2291aeb2e005c7f8fd313895d4e91cd84fadd24b88002275c0"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-740c846a",
+      "activePackId": "pack-9b7ae715",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-740c846a:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-740c846a:route_fn",
-      "selectionDigest": "sha256-6fa09b342f8bd0d447a429f84434f6481a1e1d987e3c71da16e06c8be96b4ef2",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-ffd448ecfdd725b6456eb02e51d8d37df05ae1bd1c8af2a744df213692aca21a",
       "selectedContextIds": [
-        "pack-740c846a:pointer-aware-init",
-        "pack-740c846a:pointer-passive-expansion",
-        "pack-740c846a:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction"
+        "pack-9b7ae715:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, docs/openclawbrain-upgrade-path.md, docs/quant-lessons.md, +6 more.",
-        "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-2-seed-message."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-d66b26b64d8aabecca0c46a66d42fe65daa9731fe1b7054e25f1ec8c360fc0a8",
+      "eventExportDigest": "sha256-cd8fb01a3075cb45895c8a9120e125dbdfd33973487435cb25336e1ff63abfbc",
       "expectedContextPhrases": [
         "/context"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.44,
-        "routeSelectionMs": 4.55,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.889,
+        "totalMs": 7.431,
+        "routeSelectionMs": 4.603,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.827,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

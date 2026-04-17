@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-bc17c331"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-33fb48467426b1d05b3cfcdf2a0f1e8e3d5b7bf2c896918dc3d5c9755b69cdac"
+    "scoreHash": "sha256-5ac08d857d9a55fbcf244d898bc2e8a3008f09c1114dec31dfd23779ba12f5a8"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-bc17c331:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-bc17c331:route_fn",
-      "selectionDigest": "sha256-6c1c52ec0e9c8431e46caf6f81b4374c3415af043ea4d70b96c8dec3c19ccdf0",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-cbd7fbde3a6577c8d942376b1283b35dd78cba8a6fbf93bdea811993eeb00207",
       "selectedContextIds": [
-        "pack-bc17c331:pointer-aware-init",
-        "pack-bc17c331:workspace-init:0e569182",
-        "pack-bc17c331:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback"
+        "pack-bc17c331:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
-        "Working-set input task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md selected by pointer-aware init (inbound=1, outbound=51). Last ledger refresh: 2026-03-30 16:02 PT Status keys: active | parked | blocked | done Current queue: **(none)** Master-plan snapshot for the next cold start: - Active principal task: **none**. - Canonical repo truth: /Users/guclaw/.openclaw/workspace/backyard-ripe on main at 9689ffa2, clean, synced with origin/main a…",
-        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: assistant: We can’t get to 100% certainty (broker + market data are external), but we *can* get to “high confidence + fail-closed if anything’s off” with a hard preflight + a premarket canary. **Where we are right now (evidence):** - **Daily refresh:** completes in **~3s** when up-to-date (incremental path is working). - **E2E smoke test:** **passes** (GBM+TFT load, calibrated CDF + PIT load, engine ready). It placed **0 trades** only because the newest snapshot on disk is old, so the cycle correctly sk.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-3b5d7f0f119968e0dffd852689969f50be4f9bf12a32fd42b61305839e58ea63",
+      "eventExportDigest": "sha256-da9d16d799b54e71768803fa536c106abc713df72a5b54f9b558771efaf775c4",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research\\n\\n#"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.96,
-        "routeSelectionMs": 5.536,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.422,
+        "totalMs": 9.81,
+        "routeSelectionMs": 5.805,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 4.004,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

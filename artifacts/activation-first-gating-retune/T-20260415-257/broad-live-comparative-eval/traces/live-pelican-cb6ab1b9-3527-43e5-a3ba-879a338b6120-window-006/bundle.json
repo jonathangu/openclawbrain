@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-09T06:47:57.026Z",
   "traceHash": "sha256-4f07ed34ccc6a5c54819d12a1e93195c70560e32cc80e0d0e09592b4765b8105",
   "fixtureHash": "sha256-00d9f388b90351cc79a6666fb1faf09e6f2109bf7c85e8cdc18048263ccb39a6",
-  "scoreHash": "sha256-efbcf2b07b9ade61eb58d1e4690fbfdedd54d16cf3284980bb3c984bf4c99535",
+  "scoreHash": "sha256-f0b983f1af3e0eab90f2dd22823a80a6d5ff1133eb9ce9dd23a1321ca387763f",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.039,
+            "totalMs": 0.027,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.039,
+            "otherMs": 0.027,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -132,7 +132,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-660c84cf"
+          "pack-bb7a6126"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-dff96605aab586a7b50c4a4c5d838ea7fd5bb3174cf1cc0ab7a2303ba811b0fc"
+        "scoreHash": "sha256-90d6cdd2df9b1a0cea99bf26bf90c0a1dd05e123d6c86ec175a92343bed9ddce"
       },
       "turns": [
         {
@@ -170,7 +170,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-660c84cf",
+          "activePackId": "pack-bb7a6126",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -180,18 +180,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-c5a862a2a3deb60b76dd6beff48ee614326db22556ed87c2abba8d95edd3927a",
+          "selectionDigest": "sha256-c57f4fef898ca2c98a0c14ad30ea4e50ad90c8d2813c57ed334bf046fba0e248",
           "selectedContextIds": [
-            "pack-660c84cf:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
-            "pack-660c84cf:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
-            "pack-660c84cf:pointer-aware-init"
+            "pack-bb7a6126:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
+            "pack-bb7a6126:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
+            "pack-bb7a6126:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction.",
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=e465c1e2-b1b2-43e6-a551-54e213ee37d8, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-741118ac74ba599361a825c5cc0ad8d426508a8eb9447d08a9ba2e1fb3afb36f",
+          "eventExportDigest": "sha256-2214d464a6c988521a6d2a7f1d0cd89bcc6191f64afc4a1a84781997a118d6f3",
           "expectedContextPhrases": [
             "/36**.",
             "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
@@ -207,10 +207,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.563,
-            "routeSelectionMs": 5.591,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.971,
+            "totalMs": 7.758,
+            "routeSelectionMs": 5.118,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.639,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -246,7 +246,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-660c84cf"
+          "pack-bb7a6126"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -274,7 +274,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-4b88d534996453bafc49a8c2bde2bbf4bcdc6fda117ac442f04517171f286e79"
+        "scoreHash": "sha256-f8f43b1f16a28812a3c98e4b37a3d6019adcd3b673712d13d104aaf2299afea1"
       },
       "turns": [
         {
@@ -284,7 +284,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-660c84cf",
+          "activePackId": "pack-bb7a6126",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -294,18 +294,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-4e222031d8b9ed872f4fe7d519931a5a1d153f87f551c72d1a8cde64268042c7",
+          "selectionDigest": "sha256-7df805bce221412f22cdd2cbea58b96d4e57077f639edaa0ba0a4928e9830379",
           "selectedContextIds": [
-            "pack-660c84cf:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
-            "pack-660c84cf:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction",
-            "pack-660c84cf:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback"
+            "pack-bb7a6126:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
+            "pack-bb7a6126:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction",
+            "pack-bb7a6126:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction.",
             "Interaction operator_override on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed. Message: cue-4-seed-message.",
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=e465c1e2-b1b2-43e6-a551-54e213ee37d8, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-b02a1be1408989a4ea2d791c052dbd02027a034868020d3118d4d0800b22bfea",
+          "eventExportDigest": "sha256-eaea6344ebac1391ca8f6f3b8f70d1bcdd114ab1047f867b29a1b220d0e0d506",
           "expectedContextPhrases": [
             "/36**.",
             "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
@@ -321,10 +321,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.338,
-            "routeSelectionMs": 5.402,
+            "totalMs": 8.183,
+            "routeSelectionMs": 5.536,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.934,
+            "otherMs": 2.646,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -357,15 +357,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-d1eb9872"
+          "pack-275974c9"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-d1eb9872",
-        "frozenEvalRouterIdentity": "pack-d1eb9872:route_fn",
+        "frozenEvalPackId": "pack-275974c9",
+        "frozenEvalRouterIdentity": "pack-275974c9:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -389,7 +389,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-41f136fc5ce83a75bb23ee713d89ce7f9164f0126e266b7d96681761ddd8f4bb"
+        "scoreHash": "sha256-c6ffdfad43d5de25ba811e4246329a57da85e50dbd5077e71ed0df47b17fee09"
       },
       "turns": [
         {
@@ -399,28 +399,24 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-d1eb9872",
+          "activePackId": "pack-275974c9",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-d1eb9872:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-d1eb9872:route_fn",
-          "selectionDigest": "sha256-d12d345df987b7e4cd500b091faed6eb89aabee48fc871a2fb48ba4f45841ce7",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-639b34f1605b42696f134d5478fc8440e8f81868e929e01aef0284a1b5793340",
           "selectedContextIds": [
-            "pack-d1eb9872:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
-            "pack-d1eb9872:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
-            "pack-d1eb9872:pointer-aware-init"
+            "pack-275974c9:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=e465c1e2-b1b2-43e6-a551-54e213ee37d8, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
-            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-b129e624a8ef3264411819e2f32b05eeb13ec1efcffa89cced5490dad7b0e52b",
+          "eventExportDigest": "sha256-b2faad8d2da833b83f53d55ae188aa592effb579b0f7e6c3743af85edaa5baa9",
           "expectedContextPhrases": [
             "/36**.",
             "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
@@ -436,10 +432,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.831,
-            "routeSelectionMs": 6.312,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.517,
+            "totalMs": 9.428,
+            "routeSelectionMs": 6.126,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.3,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -483,5 +479,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-035b2ff6132d47896fa4a5dc2f6eed1be1e6fd4200f1e22ee31f8b3217142a11"
+  "bundleHash": "sha256-8b3cdc7742d096b8ebf9909ba2ff575bc1963132f6003aa0511e0baec9867c18"
 }

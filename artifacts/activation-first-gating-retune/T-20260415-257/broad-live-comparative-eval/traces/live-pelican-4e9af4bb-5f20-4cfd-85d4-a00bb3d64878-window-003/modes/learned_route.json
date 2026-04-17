@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-7b9b8952"
+      "pack-382f5326"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-7b9b8952",
-    "frozenEvalRouterIdentity": "pack-7b9b8952:route_fn",
+    "frozenEvalPackId": "pack-382f5326",
+    "frozenEvalRouterIdentity": "pack-382f5326:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-b10fb41a6d260f093fb2d6670811ff335cdfbb3956cb1515ab6f6087fe78cdb2"
+    "scoreHash": "sha256-e946b713d653e04d082fea06410981e6d70aa026979f55955e3296510bcff810"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-7b9b8952",
+      "activePackId": "pack-382f5326",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-7b9b8952:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-7b9b8952:route_fn",
-      "selectionDigest": "sha256-984f9323618e96b870d18019d157ec09f7015f2735a63b67244c6cde6d68d0df",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-b9e66453fcdf727c3f924a9256fceef095ca5b38397ae41fb91a37d172779137",
       "selectedContextIds": [
-        "pack-7b9b8952:event:4e9af4bb-5f20-4cfd-85d4-a00bb3d64878-seed:cue-6:feedback",
-        "pack-7b9b8952:event:4e9af4bb-5f20-4cfd-85d4-a00bb3d64878-seed:cue-6:interaction",
-        "pack-7b9b8952:event:4e9af4bb-5f20-4cfd-85d4-a00bb3d64878-seed:cue-1:feedback"
+        "pack-382f5326:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 4e9af4bb-5f20-4cfd-85d4-a00bb3d64878-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 5:37 PM (America/Los_Angeles) / 2026-04-14 00:37 UTC. Related interaction: 4e9af4bb-5f20-4cfd-85d4-a00bb3d64878-seed:cue-6:interaction.",
-        "Interaction operator_override on live-session session 4e9af4bb-5f20-4cfd-85d4-a00bb3d64878-seed. Message: cue-6-seed-message.",
-        "Teaching feedback on live-session session 4e9af4bb-5f20-4cfd-85d4-a00bb3d64878-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: 4e9af4bb-5f20-4cfd-85d4-a00bb3d64878-seed:cue-1:interaction."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-options-entry.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/2026-04-07.md, tasks.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-5e61058cf2bb379295ee9cee663e69221c2ba0b71b02cc32a509454816db414c",
+      "eventExportDigest": "sha256-6c0b2defeebb94c5e6d09e0e35fda6b70a4f31763b4dc50b604c7c498df2ffda",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md\"}",
         "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
@@ -88,10 +84,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.506,
-        "routeSelectionMs": 5.865,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.639,
+        "totalMs": 9.074,
+        "routeSelectionMs": 5.618,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.455,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

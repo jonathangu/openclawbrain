@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-28T03:14:58.893Z",
   "traceHash": "sha256-af0623cd896f3d36aa832764b91c449eb65a56e502af4829ad2995082aa19cee",
   "fixtureHash": "sha256-729b2a143706d45b443dec7a409dfdba222ee805edd97aecb9fe78e30ae910a9",
-  "scoreHash": "sha256-383503fcf343fb2c621af799e1b0343e4954d18a18f1039b9fd20a3639b79e7d",
+  "scoreHash": "sha256-9eebbd854695cf25697f7000c864203aff7b05cde5165226b027da05b608c211",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.027,
+            "totalMs": 0.04,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.027,
+            "otherMs": 0.04,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.521,
-            "routeSelectionMs": 5.857,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.661,
+            "totalMs": 8.092,
+            "routeSelectionMs": 5.174,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.915,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.472,
-            "routeSelectionMs": 4.705,
+            "totalMs": 7.838,
+            "routeSelectionMs": 4.974,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.765,
+            "otherMs": 2.862,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-ee6ed5a1"
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-937f76b939bbf290cae175140383d90abf68c92b8c612e2221cb527aa46c6b3d"
+        "scoreHash": "sha256-6f43b6aeb7ae30404cb670eeb5e93f21af1958e7b43087fb16488864bf07dabb"
       },
       "turns": [
         {
@@ -409,24 +409,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-ee6ed5a1:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-ee6ed5a1:route_fn",
-          "selectionDigest": "sha256-e71886096b63df81ca4c591a839684648348005c0ed91a3e5011643efd779b16",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-af8d7cc6087c7f631a4f6fce114a182d4551e96943a066476e72f5dd3783e97a",
           "selectedContextIds": [
-            "pack-ee6ed5a1:pointer-aware-init",
-            "pack-ee6ed5a1:workspace-init:16415817",
-            "pack-ee6ed5a1:workspace-init:0d01dda4"
+            "pack-ee6ed5a1:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=4, outbound=100). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 6:14 AM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…",
-            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=3, outbound=1). MEMORY.md — Long-Term Memory People - Patrick — Jon's 50/50 co-founder for Bountiful Garden; managed by @bbountiful_bot - Bihua Chen — Jon set up an OpenClaw starter kit for her Projects - Bountiful Garden — @bbountiful_bot, workspace workspace-bountiful/, group -5151316478 - Pelican — @ppelican_bot, workspace workspa…"
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-8166a4aafebd96ebd5735edb7cad9c608d53862b0bfe871aa7ed888e9986321a",
+          "eventExportDigest": "sha256-8224e798b7ffabc5edcfc86cbf9a5978d9121434f06e913aa15925c5bdaec230",
           "expectedContextPhrases": [
             "/.ssh/guclaw-tft-v2.pem",
             "/tmp/tft_v6_train.log",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.357,
-            "routeSelectionMs": 5.727,
+            "totalMs": 9.676,
+            "routeSelectionMs": 5.906,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.628,
+            "otherMs": 3.767,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-2a489c9f2c4eab89eb000f3cf5bbd36cbd1a93f037314ffb986fc96faf1a72d0"
+  "bundleHash": "sha256-8f2efa5fb4c4b7e833525cfa721916f9cc4c80c0607b8bd0dd7f5e79d5ce16de"
 }

@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-14T20:22:16.715Z",
   "traceHash": "sha256-34a774cb3f6c8a06b7737a6a2929058386a540d4a4f6fa06d56dab519cbae33c",
   "fixtureHash": "sha256-38158baa488957f4efebe2494068936f86320ad50d0d4566b804a6468d20bab5",
-  "scoreHash": "sha256-8909bc812d0675ea361d042cad36fa7a2b18a2707e92bb4bcbb26bba907e81a0",
+  "scoreHash": "sha256-196ff218ce3054cc397c02ec06d171b6668703c10ef2a391ca3363e916015dc1",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.031,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.031,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-c0f49fe2"
+          "pack-e863028d"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-b32b0298df2ba2aab9b588c35a317804ac1d3bee7d0a8469db78295dc7fb7bb8"
+        "scoreHash": "sha256-d542c26f668c22710acd232d2983998e7812ca0d4a6ac68eec48f5fd9010badc"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-c0f49fe2",
+          "activePackId": "pack-e863028d",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-5ce5bbb26c6ea3d51ed192b21ece798b0ec39b09fe386040db2edda4d24d97bb",
+          "selectionDigest": "sha256-a3f8895534af4d5cd525f6445c35c30f3c8070cb75847e2b47e60f148aa843f8",
           "selectedContextIds": [
-            "pack-c0f49fe2:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:feedback",
-            "pack-c0f49fe2:workspace-init:16415817",
-            "pack-c0f49fe2:workspace-init:02e33be9"
+            "pack-e863028d:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:feedback",
+            "pack-e863028d:workspace-init:02e33be9",
+            "pack-e863028d:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session a509425f-19f1-4b37-8672-1f0162567058-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 1:21 PM (America/Los_Angeles) / 2026-04-13 20:21 UTC. Related interaction: a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:interaction.",
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=21). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…",
-            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…"
+            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…",
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-04acb84d6fc68403de60926c691c5298ff37b62ed151be2a7b0165f09ec9587b",
+          "eventExportDigest": "sha256-e8cdd414aaed85c36168db81e23df77df103bc00370fb0e25318ae91591302f6",
           "expectedContextPhrases": [
             "toolcall",
             "read",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.489,
-            "routeSelectionMs": 4.745,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.741,
+            "totalMs": 7.022,
+            "routeSelectionMs": 4.383,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.637,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -251,7 +251,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-c0f49fe2"
+          "pack-e863028d"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-c38a879412677c0a89eb3696b3e4d9063a15175dfca62c40c67954b45b9c2e77"
+        "scoreHash": "sha256-23fa69d8372eadfa15adad81b58e71b0e79da49e9639aca42df0a3b60f3bb7ef"
       },
       "turns": [
         {
@@ -289,7 +289,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-c0f49fe2",
+          "activePackId": "pack-e863028d",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -299,18 +299,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-adc06f80069a6532f9e46dca1ae17da40b14458492607d007cb62bc983535c27",
+          "selectionDigest": "sha256-e89935c0890d62bd8ac43deac18d0c120534c799fecd8df2b3b29755687d3bd4",
           "selectedContextIds": [
-            "pack-c0f49fe2:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:feedback",
-            "pack-c0f49fe2:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:interaction",
-            "pack-c0f49fe2:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-2:interaction"
+            "pack-e863028d:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:feedback",
+            "pack-e863028d:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:interaction",
+            "pack-e863028d:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session a509425f-19f1-4b37-8672-1f0162567058-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 1:21 PM (America/Los_Angeles) / 2026-04-13 20:21 UTC. Related interaction: a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:interaction.",
             "Interaction operator_override on live-session session a509425f-19f1-4b37-8672-1f0162567058-seed. Message: cue-1-seed-message.",
             "Interaction operator_override on live-session session a509425f-19f1-4b37-8672-1f0162567058-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-ce71e4a6e9229ceec3090ee839e971e507eb6b5be8175342488dac1062bf507b",
+          "eventExportDigest": "sha256-9caa76b7d20fce0425a2a3510006ac7df04745fadc096d47022d70d19334a5ca",
           "expectedContextPhrases": [
             "toolcall",
             "read",
@@ -328,10 +328,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.484,
-            "routeSelectionMs": 4.706,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.776,
+            "totalMs": 7.102,
+            "routeSelectionMs": 4.443,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.658,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -364,15 +364,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-69a431f9"
+          "pack-911294a4"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-69a431f9",
-        "frozenEvalRouterIdentity": "pack-69a431f9:route_fn",
+        "frozenEvalPackId": "pack-911294a4",
+        "frozenEvalRouterIdentity": "pack-911294a4:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -396,7 +396,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-8a324973de1db5dc2433e936f0cf86729118328af8854470a25cc5d045db3c22"
+        "scoreHash": "sha256-88dd35fa04376a9f126b87a9251f7d6aecbc3049174cab685f32916796598f62"
       },
       "turns": [
         {
@@ -406,28 +406,24 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-69a431f9",
+          "activePackId": "pack-911294a4",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-69a431f9:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-69a431f9:route_fn",
-          "selectionDigest": "sha256-36a2560d4ea4fa8b16111646894c4e219650c98cc0fb8c35f7a9e096627ca314",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-ffe82929647db6198b071949cef6c965b1676f893cead1f789f3904f56633ec3",
           "selectedContextIds": [
-            "pack-69a431f9:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:feedback",
-            "pack-69a431f9:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:interaction",
-            "pack-69a431f9:workspace-init:16415817"
+            "pack-911294a4:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session a509425f-19f1-4b37-8672-1f0162567058-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 1:21 PM (America/Los_Angeles) / 2026-04-13 20:21 UTC. Related interaction: a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:interaction.",
-            "Interaction operator_override on live-session session a509425f-19f1-4b37-8672-1f0162567058-seed. Message: cue-1-seed-message.",
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=21). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-36bc00d6fdb40a72a71815734b04c93aac55570c4d3ea1d742180ae742222081",
+          "eventExportDigest": "sha256-2091d8b4dcf135b0ed5f76907f5d1dba75bb7cdf40efec0243028e8728866e41",
           "expectedContextPhrases": [
             "toolcall",
             "read",
@@ -445,10 +441,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.783,
-            "routeSelectionMs": 5.369,
+            "totalMs": 8.719,
+            "routeSelectionMs": 5.372,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.412,
+            "otherMs": 3.346,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -492,5 +488,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-32553245d8655b3d0c99b3a3ae1efa5d98eea4c8112867b82207dfe0a396119f"
+  "bundleHash": "sha256-b4695d2b8691ed58d6e7034cce969cffd64fc0623be95fc3d33be79e5038ef83"
 }

@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-28T17:54:59.465Z",
   "traceHash": "sha256-791d7ab7e1a39f9248affb0ec38376441778feefca919fa6d5dc852b64c0c740",
   "fixtureHash": "sha256-fc8733ed1be81b69ef5447410e17ee0e67ec342cb6d0c7a27eab065d2955bafe",
-  "scoreHash": "sha256-1e0768b1415345aad541ed9270b24edb656f27db31e201f99f41e001b946214c",
+  "scoreHash": "sha256-daa33196cf1aa7df89e0efbf0c3d62e5a0c644ffcdf26b3c6d5acbe3399ab531",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.028,
+            "totalMs": 0.033,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.028,
+            "otherMs": 0.033,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.89,
-            "routeSelectionMs": 5.216,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.672,
+            "totalMs": 8.213,
+            "routeSelectionMs": 5.4,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.81,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.701,
-            "routeSelectionMs": 5.006,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.692,
+            "totalMs": 8.529,
+            "routeSelectionMs": 5.763,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.763,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-464f5d9b"
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-4ad64c4ee434dd88b120b4a7cbf683628d4afcf39ee8b2bcaeaf0f7e03b3c147"
+        "scoreHash": "sha256-82c52862279bffd1b9533b09d435706d4714eb4a039aeffef501951f91d22f8b"
       },
       "turns": [
         {
@@ -409,24 +409,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-464f5d9b:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-464f5d9b:route_fn",
-          "selectionDigest": "sha256-d5427cd9919073c2374da219a798a7ef021c4311342b9e26773eb451187ed463",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-724f07489b758289babe5e714e37d83ce305e22f94396223ddcb977932c22e3c",
           "selectedContextIds": [
-            "pack-464f5d9b:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-6:feedback",
-            "pack-464f5d9b:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:feedback",
-            "pack-464f5d9b:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-3:feedback"
+            "pack-464f5d9b:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: dc83765f-ea92-4367-9e9e-eb505c6c58f1] A cron job \"bountiful-learning-v2\" just completed successfully. Result: **Learning Harness v2 — Bountiful** Saturday Feb 28, 9:30 AM PT **Harvest (last 4 hours):** - 0 new messages to classify - OpenClawBrain maintenance run: - **bountiful**: 4,840 nodes, 27,948 edges — pruned 1,712, merged 3 - main: 5,588 nodes, 15,527 edges — pruned 1, merged 1 - pelican: 1,550 nodes, 17,644 edges — merged 1 **Database Stats:** - **259 active learnings** (13.... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-6:interaction.",
-            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: System: [2026-02-28 08:30:30 PST] Cron (error): **Learning Harness v2 — Bountiful (4h window)** ✅ Harvest complete — no new messages to classify **Maintenance:** - **main:** 5,591 nodes, 15,631 edges (pruned 2,074, merged 3) - **pelican:** 1,552 nodes, 17,763 edges (pruned 4,275, merged 2) - **bountiful:** 1,723 nodes, 12,274 edges (pruned 13,824, merged 2) **Database stats:** - Active learnings: 259 (136 GATE, 123 REF) - Corrections: 61, Teachings: 24, Directives: 85 - Teachers: 3 - Raw mess.... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:interaction.",
-            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: 3a4cab56-64f1-4eb1-a427-cc6d90dfcea8] A cron job \"bountiful-learning-v2\" just completed successfully. Result: **Learning Harness v2 — Bountiful (4h window)** ✅ Harvest complete — no new messages to classify **Maintenance:** - **main:** 5,591 nodes, 15,631 edges (pruned 2,074, merged 3) - **pelican:** 1,552 nodes, 17,763 edges (pruned 4,275, merged 2) - **bountiful:** 1,723 nodes, 12,274 edges (pruned 13,824, merged 2) **Database stats:** - Active learnings: 259 (136 GATE, 123 REF).... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-3:interaction."
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: dc83765f-ea92-4367-9e9e-eb505c6c58f1] A cron job \"bountiful-learning-v2\" just completed successfully. Result: **Learning Harness v2 — Bountiful** Saturday Feb 28, 9:30 AM PT **Harvest (last 4 hours):** - 0 new messages to classify - OpenClawBrain maintenance run: - **bountiful**: 4,840 nodes, 27,948 edges — pruned 1,712, merged 3 - main: 5,588 nodes, 15,527 edges — pruned 1, merged 1 - pelican: 1,550 nodes, 17,644 edges — merged 1 **Database Stats:** - **259 active learnings** (13.... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-bc789d96494d15ccf2258bb07d43d03e08eb8221cec879e94c255b5c0fa00b8d",
+          "eventExportDigest": "sha256-0bcc3beace52489f57b13af4787b00bb4d724bcb95ada45fb9c439a49e40318c",
           "expectedContextPhrases": [
             "learning harvest cron showing",
             "learning harvest cron",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.645,
-            "routeSelectionMs": 6.275,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.366,
+            "totalMs": 9.869,
+            "routeSelectionMs": 6.411,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.455,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-f2e6d717fdf08bcdd8b3bb3eed4fd6a92a3e80dccc96ee67a73961855c976e7d"
+  "bundleHash": "sha256-4921ef1f7fd2d5ddbb03fb49037fbb48df615f2dc20ef49a7d6d06f71016f915"
 }

@@ -5,19 +5,19 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 60,
+    "qualityScore": 40,
     "compileOkCount": 1,
-    "phraseHitCount": 1,
+    "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-9f65a907"
+      "pack-c6d40bb2"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-9f65a907",
-    "frozenEvalRouterIdentity": "pack-9f65a907:route_fn",
+    "frozenEvalPackId": "pack-c6d40bb2",
+    "frozenEvalRouterIdentity": "pack-c6d40bb2:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-a1034e30a0f7ab0cf1a8fda6b49f7e18d1cedb1b8bbf945835b877250478fa7d"
+    "scoreHash": "sha256-a5f702b6cda33fbe3d9d52457ea9f8166a04aefcf6391683a0dc80f37dad6b53"
   },
   "turns": [
     {
@@ -51,50 +51,45 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-9f65a907",
+      "activePackId": "pack-c6d40bb2",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-9f65a907:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-9f65a907:route_fn",
-      "selectionDigest": "sha256-ef2f1491380ac6fec3abca8823853c2070b3f62bb889b37844383c5e5b4431d5",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-44cc1340b408b7867f8ac882915b00f30bc1d0a1bc531a17dd1a0367df27a951",
       "selectedContextIds": [
-        "pack-9f65a907:pointer-aware-init",
-        "pack-9f65a907:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:feedback",
-        "pack-9f65a907:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:feedback"
+        "pack-c6d40bb2:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-        "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/session-startup-ready-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:interaction.",
-        "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/retrain-runtime-gate-swarm-2026-04-12.md\"} ; /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/weekly-retrain-launch-proof-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:interaction."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-b082b4b2610b5ca04f14d26fb1ca718f31037c8fb013eb863e69bbb2422bb580",
+      "eventExportDigest": "sha256-7fa87af0f319d8c78f460a1a2e03b8e267d085b98cf99e4da158d8dd8050d48b",
       "expectedContextPhrases": [
         "yep",
         "here.",
         "pelican"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [
-        "pelican"
-      ],
+      "phraseHits": [],
       "missedPhrases": [
         "yep",
-        "here."
+        "here.",
+        "pelican"
       ],
-      "qualityScore": 60,
+      "qualityScore": 40,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.386,
-        "routeSelectionMs": 5.143,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 4.241,
+        "totalMs": 8.504,
+        "routeSelectionMs": 5.178,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.325,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

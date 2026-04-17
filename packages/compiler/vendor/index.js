@@ -634,6 +634,78 @@ function buildSelectedContextBlock(entry) {
         ...(entry.compactedFrom !== undefined ? { compactedFrom: entry.compactedFrom } : {})
     });
 }
+function normalizeLearnedRouteSelectionOverrideResult(value) {
+    const selectedBlockIds = Array.isArray(value?.selectedBlockIds)
+        ? [...new Set(value.selectedBlockIds
+                .filter((entry) => typeof entry === "string")
+                .map((entry) => entry.trim())
+                .filter((entry) => entry.length > 0))]
+        : [];
+    const routerIdentity = typeof value?.routerIdentity === "string" && value.routerIdentity.trim().length > 0
+        ? value.routerIdentity.trim()
+        : null;
+    const evidenceSource = typeof value?.evidenceSource === "string" && value.evidenceSource.trim().length > 0
+        ? value.evidenceSource.trim()
+        : "replay_candidate_override";
+    return {
+        selectedBlockIds,
+        routerIdentity,
+        evidenceSource
+    };
+}
+function selectContextBlocksByLearnedRouteOverride(ranked, maxBlocks, selectedBlockIds) {
+    if (maxBlocks === 0 || selectedBlockIds.length === 0) {
+        return {
+            selected: [],
+            matchedSelectedCount: 0,
+            overlapPrunedCount: 0,
+            overlapPrunedBlockIds: [],
+            graphWalkSeedBlockIds: [],
+            graphWalkHopCount: 0,
+            graphWalkLearnedStopPolicyDecisionCount: 0
+        };
+    }
+    const rankedById = new Map(ranked.map((entry) => [entry.blockId, entry]));
+    const selected = [];
+    const coveredIds = new Set();
+    const overlapPrunedBlockIds = [];
+    let matchedSelectedCount = 0;
+    let overlapPrunedCount = 0;
+    const trySelect = (entry) => {
+        if (selected.length >= maxBlocks) {
+            return;
+        }
+        const coverageIds = flattenRankedContextIds(entry);
+        if (coverageIds.some((coverageId) => coveredIds.has(coverageId))) {
+            overlapPrunedCount += 1;
+            overlapPrunedBlockIds.push(entry.blockId);
+            return;
+        }
+        selected.push(buildSelectedContextBlock(entry));
+        for (const coverageId of coverageIds) {
+            coveredIds.add(coverageId);
+        }
+        if (entry.matchedTokens.length > 0) {
+            matchedSelectedCount += 1;
+        }
+    };
+    for (const blockId of selectedBlockIds) {
+        const entry = rankedById.get(blockId);
+        if (entry === undefined) {
+            continue;
+        }
+        trySelect(entry);
+    }
+    return {
+        selected,
+        matchedSelectedCount,
+        overlapPrunedCount,
+        overlapPrunedBlockIds,
+        graphWalkSeedBlockIds: [],
+        graphWalkHopCount: 0,
+        graphWalkLearnedStopPolicyDecisionCount: 0
+    };
+}
 function selectContextBlocks(ranked, maxBlocks) {
     if (maxBlocks === 0) {
         return {
@@ -1411,7 +1483,11 @@ function compileRuntimeCore(packOrRoot, request, options = {}, rankOptions = {})
     const pack = typeof packOrRoot === "string" ? loadPackForCompile(packOrRoot) : packOrRoot;
     assertRequestPackExpectation(pack, request);
     const modeEffective = determineRouteMode(pack, request.modeRequested);
-    const usedLearnedRouteFn = modeEffective === "learned";
+    const learnedRouteSelectionOverride = modeEffective === "learned" &&
+        typeof options._learnedRouteSelectionOverride?.select === "function"
+        ? options._learnedRouteSelectionOverride
+        : null;
+    const usedLearnedRouteFn = modeEffective === "learned" && learnedRouteSelectionOverride === null;
     if (usedLearnedRouteFn && pack.router === null) {
         throw new Error("learned-routing pack cannot compile without a router artifact");
     }
@@ -1420,9 +1496,18 @@ function compileRuntimeCore(packOrRoot, request, options = {}, rankOptions = {})
     const maxBlocks = Math.max(0, request.maxContextBlocks);
     const matched = ranked.filter((entry) => entry.matchedTokens.length > 0);
     const selectionMode = options.selectionMode ?? "flat_rank_v1";
-    const selection = selectionMode === "graph_walk_v1"
-        ? selectContextBlocksByGraphWalk(pack, ranked, maxBlocks)
-        : selectContextBlocks(ranked, maxBlocks);
+    const learnedRouteSelectionOverrideResult = learnedRouteSelectionOverride === null
+        ? null
+        : normalizeLearnedRouteSelectionOverrideResult(learnedRouteSelectionOverride.select({
+            request,
+            ranked,
+            maxBlocks
+        }));
+    const selection = learnedRouteSelectionOverrideResult !== null
+        ? selectContextBlocksByLearnedRouteOverride(ranked, maxBlocks, learnedRouteSelectionOverrideResult.selectedBlockIds)
+        : selectionMode === "graph_walk_v1"
+            ? selectContextBlocksByGraphWalk(pack, ranked, maxBlocks)
+            : selectContextBlocks(ranked, maxBlocks);
     const selected = selection.selected;
     const selectedBlockIds = new Set(selected.map((block) => block.id));
     const compactionMode = request.compactionMode ?? "native";
@@ -1433,15 +1518,17 @@ function compileRuntimeCore(packOrRoot, request, options = {}, rankOptions = {})
     const learnedRoutePolicyUpdateCandidateCount = ranked.filter((entry) => entry.routerPolicyUpdate !== null).length;
     const learnedRoutePolicyUpdateSelectedCount = ranked.filter((entry) => selectedBlockIds.has(entry.blockId) && entry.routerPolicyUpdate !== null).length;
     const learnedRouteStopPolicyDecisionCount = selection.graphWalkLearnedStopPolicyDecisionCount ?? 0;
-    const learnedRouteEvidence = usedLearnedRouteFn
-        ? "learned_route_fn"
-        : learnedRoutePolicyUpdateSelectedCount > 0
-            ? "router_policy_update_selected"
-            : learnedRouteStopPolicyDecisionCount > 0
-                ? "graph_walk_stop_policy"
-                : learnedRoutePolicyUpdateCandidateCount > 0
-                    ? "router_policy_update_candidate_only"
-                    : "none";
+    const learnedRouteEvidence = learnedRouteSelectionOverrideResult !== null
+        ? learnedRouteSelectionOverrideResult.evidenceSource
+        : usedLearnedRouteFn
+            ? "learned_route_fn"
+            : learnedRoutePolicyUpdateSelectedCount > 0
+                ? "router_policy_update_selected"
+                : learnedRouteStopPolicyDecisionCount > 0
+                    ? "graph_walk_stop_policy"
+                    : learnedRoutePolicyUpdateCandidateCount > 0
+                        ? "router_policy_update_candidate_only"
+                        : "none";
     const candidateRoutingChannels = summarizeRoutingChannels(ranked);
     const selectedRoutingChannels = summarizeRoutingChannels(ranked.filter((entry) => selectedContext.some((selectedBlock) => selectedBlock.id === entry.blockId)));
     const structuralSignals = buildStructuralSignals(ranked, selectedContext, selection);
@@ -1467,7 +1554,13 @@ function compileRuntimeCore(packOrRoot, request, options = {}, rankOptions = {})
             ? "selection_tiers=token_match_only"
             : "selection_tiers=priority_fallback_only");
     notes.push("selection_strategy=pack_route_fn_selection_v1");
-    if (selectionMode === "graph_walk_v1") {
+    if (learnedRouteSelectionOverrideResult !== null) {
+        notes.push(`replay_learned_route_override=${learnedRouteSelectionOverrideResult.evidenceSource}`);
+        if (learnedRouteSelectionOverrideResult.routerIdentity !== null) {
+            notes.push(`replay_learned_route_override_router_identity=${learnedRouteSelectionOverrideResult.routerIdentity}`);
+        }
+    }
+    if (selectionMode === "graph_walk_v1" && learnedRouteSelectionOverrideResult === null) {
         notes.push("selection_graph_walk=graph_walk_v1");
         notes.push(`selection_graph_walk_seed_count=${selection.graphWalkSeedBlockIds.length}`);
         notes.push(`selection_graph_walk_hops=${selection.graphWalkHopCount}`);
@@ -1528,7 +1621,7 @@ function compileRuntimeCore(packOrRoot, request, options = {}, rankOptions = {})
     if (initHandoff.learnedRouteUpdateCount !== null) {
         notes.push(`learned_route_update_count=${initHandoff.learnedRouteUpdateCount}`);
     }
-    if (pack.router !== null && learnedRouteEvidence !== "none") {
+    if (pack.router !== null && learnedRouteEvidence !== "none" && learnedRouteSelectionOverrideResult === null) {
         notes.push(`router_strategy=${pack.router.strategy}`);
         notes.push(`router_update_method=${pack.router.training.method}`);
         notes.push(`router_refresh_status=${pack.router.training.status}`);
@@ -1576,7 +1669,7 @@ function compileRuntimeCore(packOrRoot, request, options = {}, rankOptions = {})
             modeRequested: request.modeRequested,
             modeEffective,
             usedLearnedRouteFn,
-            routerIdentity: pack.router?.routerIdentity ?? null,
+            routerIdentity: learnedRouteSelectionOverrideResult?.routerIdentity ?? pack.router?.routerIdentity ?? null,
             servedArtifact: buildServedArtifactProof(describePackCompileTarget(pack), pack.manifest.routeArtifact),
             candidateCount: ranked.length,
             selectedCount: selectedContext.length,

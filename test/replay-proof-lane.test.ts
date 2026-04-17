@@ -2,8 +2,16 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import type { RecordedSessionTraceV1 } from "../packages/cli/dist/src/index.js";
-import { RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT, writeRecordedSessionReplayProofLane } from "../src/replay-proof-lane.js";
+import {
+  loadRecordedSessionReplayProofBundle,
+  type RecordedSessionTraceV1,
+} from "../packages/cli/dist/src/index.js";
+import type { DataRegistryEntryV1, RouteDecisionRowV1 } from "../src/brain-core/cold-start-router-contracts.js";
+import { trainColdStartRouterArtifactV1 } from "../src/brain-core/cold-start-router-trainer.js";
+import {
+  RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT,
+  writeRecordedSessionReplayProofLane,
+} from "../src/replay-proof-lane.js";
 
 const tempDirs: string[] = [];
 
@@ -179,6 +187,120 @@ function createScoreResolutionTrace(): RecordedSessionTraceV1 {
   };
 }
 
+function createReplayOverrideRegistryEntry(datasetId: string): DataRegistryEntryV1 {
+  return {
+    dataset_id: datasetId,
+    source_family: "agent_traces",
+    upstream_url: "https://example.org/replay-override",
+    original_creator: "OpenClaw",
+    license: "internal_local_only",
+    commercial_use_status: "allowed",
+    redistribution_status: "allowed",
+    pii_risk: "none",
+    benchmark_split_status: "train",
+    approval_status: "approved_train",
+    reviewer: "operator",
+    immutable_snapshot_ref: `snapshot:${datasetId}@sha256:replay-override`,
+    exact_files: ["recorded-session-replay.json"],
+    file_hashes: {
+      "recorded-session-replay.json": "sha256:replay-override",
+    },
+    allowed_uses: ["replay proof override"],
+    disallowed_uses: ["redistribution"],
+    notes: ["replay override test fixture"],
+    created_at: "2026-04-17T00:00:00.000Z",
+    updated_at: "2026-04-17T00:00:00.000Z",
+  };
+}
+
+function createReplayStopRouteRows(datasetId: string): RouteDecisionRowV1[] {
+  return [
+    {
+      row_id: "replay-override-stop-1",
+      dataset_id: datasetId,
+      query: "Stay stopped during replay candidate override verification.",
+      cursor_path: ["recorded_session_replay"],
+      candidate_set: [
+        { candidate_id: "candidate:a", candidate_type: "graph_node", score_hint: 0.3 },
+        { candidate_id: "candidate:b", candidate_type: "graph_node", score_hint: 0.2 },
+        { candidate_id: "candidate:c", candidate_type: "graph_node", score_hint: 0.1 },
+        { candidate_id: "candidate:d", candidate_type: "graph_node", score_hint: 0.05 },
+        { candidate_id: "candidate:e", candidate_type: "graph_node", score_hint: 0.01 },
+      ],
+      teacher_action: { kind: "tool", tool_name: "__recorded_session_replay_candidate_override__" },
+      stop_label: "STOP_LOCAL",
+      evidence_spans: [
+        { source_ref: "replay:evidence:0", start: 0, end: 19, excerpt: "Stay stopped." },
+        { source_ref: "replay:evidence:1", start: 0, end: 21, excerpt: "Replay verification." },
+        { source_ref: "replay:evidence:2", start: 0, end: 22, excerpt: "Candidate override." },
+      ],
+      hard_negatives: ["candidate:b"],
+      outcome_gain: 1,
+      provenance: {
+        dataset: datasetId,
+        source_license: "internal_local_only",
+        source_family: "agent_traces",
+        source_snapshot_ref: `snapshot:${datasetId}@sha256:replay-override`,
+        recorded_by: "test",
+        recorded_at: "2026-04-17T00:00:00.000Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-17T00:00:00.000Z",
+    },
+    {
+      row_id: "replay-override-stop-2",
+      dataset_id: datasetId,
+      query: "Replay candidate override should abstain instead of traversing.",
+      cursor_path: ["recorded_session_replay"],
+      candidate_set: [
+        { candidate_id: "candidate:f", candidate_type: "graph_node", score_hint: 0.28 },
+        { candidate_id: "candidate:g", candidate_type: "graph_node", score_hint: 0.18 },
+        { candidate_id: "candidate:h", candidate_type: "graph_node", score_hint: 0.08 },
+        { candidate_id: "candidate:i", candidate_type: "graph_node", score_hint: 0.04 },
+        { candidate_id: "candidate:j", candidate_type: "graph_node", score_hint: 0.02 },
+      ],
+      teacher_action: { kind: "tool", tool_name: "__recorded_session_replay_candidate_override__" },
+      stop_label: "STOP_LOCAL",
+      evidence_spans: [
+        { source_ref: "replay:evidence:3", start: 0, end: 24, excerpt: "Replay abstention." },
+        { source_ref: "replay:evidence:4", start: 0, end: 24, excerpt: "Broad live override." },
+        { source_ref: "replay:evidence:5", start: 0, end: 18, excerpt: "Stay local." },
+      ],
+      hard_negatives: ["candidate:g"],
+      outcome_gain: 1,
+      provenance: {
+        dataset: datasetId,
+        source_license: "internal_local_only",
+        source_family: "agent_traces",
+        source_snapshot_ref: `snapshot:${datasetId}@sha256:replay-override`,
+        recorded_by: "test",
+        recorded_at: "2026-04-17T00:01:00.000Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-17T00:01:00.000Z",
+    },
+  ];
+}
+
+function trainReplayStopArtifact(outputDir: string, routerIdentity: string): void {
+  const datasetId = `dataset:${routerIdentity}`;
+  trainColdStartRouterArtifactV1({
+    artifactId: `artifact:${routerIdentity}`,
+    artifactVersion: "0.0.1",
+    packType: "base",
+    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+    registryEntries: [createReplayOverrideRegistryEntry(datasetId)],
+    routeRows: createReplayStopRouteRows(datasetId),
+    outputDir,
+    routerIdentity,
+    createdAt: "2026-04-17T00:10:00.000Z",
+    trainingDataRefs: [datasetId],
+    replayGateRefs: [`replay:${datasetId}`],
+  });
+}
+
 function readText(root: string, relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
@@ -321,6 +443,43 @@ describe("recorded session replay proof lane", () => {
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/Please do this entire plan end to end/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/trace-comparative-replay/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/diagnostic winner/);
+  });
+
+  it("uses the supplied learned-route candidate artifact instead of replay-trained selection", () => {
+    const trace = createComparativeTrace();
+    const baselineRoot = makeTempDir("replay-proof-lane-baseline-");
+    const overrideRoot = makeTempDir("replay-proof-lane-override-");
+    const candidateArtifactDir = makeTempDir("replay-proof-lane-candidate-");
+    const candidateRouterIdentity = "router:replay-proof-lane-stop";
+
+    trainReplayStopArtifact(candidateArtifactDir, candidateRouterIdentity);
+
+    writeRecordedSessionReplayProofLane({
+      artifactRoot: baselineRoot,
+      traces: [{ trace: structuredClone(trace) }],
+    });
+    writeRecordedSessionReplayProofLane({
+      artifactRoot: overrideRoot,
+      traces: [{ trace: structuredClone(trace) }],
+      learnedRouteCandidateArtifact: {
+        artifactDir: candidateArtifactDir,
+      },
+    });
+
+    const baselineBundle = loadRecordedSessionReplayProofBundle(path.join(baselineRoot, trace.traceId));
+    const overrideBundle = loadRecordedSessionReplayProofBundle(path.join(overrideRoot, trace.traceId));
+    const baselineLearnedRoute = baselineBundle.bundle.modes.find((mode) => mode.mode === "learned_route");
+    const overrideLearnedRoute = overrideBundle.bundle.modes.find((mode) => mode.mode === "learned_route");
+
+    expect(baselineLearnedRoute).toBeDefined();
+    expect(overrideLearnedRoute).toBeDefined();
+    expect(baselineLearnedRoute?.turns.some((turn) => turn.selectedContextIds.length > 0)).toBe(true);
+    expect(overrideLearnedRoute?.summary.usedLearnedRouteTurnCount).toBe(0);
+    expect(overrideLearnedRoute?.turns.every((turn) => turn.usedLearnedRouteFn === false)).toBe(true);
+    expect(overrideLearnedRoute?.turns.every((turn) => turn.activationTaken === true)).toBe(true);
+    expect(overrideLearnedRoute?.turns.every((turn) => turn.routerIdentity === candidateRouterIdentity)).toBe(true);
+    expect(overrideLearnedRoute?.turns.map((turn) => turn.selectedContextIds)).toEqual([[], []]);
+    expect(overrideLearnedRoute?.turns.every((turn) => turn.activationSource?.startsWith("learned_route_artifact:candidate_override:"))).toBe(true);
   });
 
   it("keeps the core _lane artifacts reproducible across different output roots", () => {

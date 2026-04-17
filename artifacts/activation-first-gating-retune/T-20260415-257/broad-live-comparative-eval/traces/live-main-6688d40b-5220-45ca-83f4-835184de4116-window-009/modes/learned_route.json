@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-0db0253e"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-f7d8aba354b30be71b624e7f6155ba85c7598a3d1645d00c962abe2d86bab7f5"
+    "scoreHash": "sha256-c1f2de0fcd0f0885ad62b41c94d990ee1c8afb7c6e6110e0d24fb93a0403ae89"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-0db0253e:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-0db0253e:route_fn",
-      "selectionDigest": "sha256-5bb22b550d6de2240fd2e32d3c21fbad91bae1c337bd1f6a4c6af9df526a6586",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-924c3c7ab042347da8fd660dd7c3cec2707f6aa0a0ff63606f81e61046490cc7",
       "selectedContextIds": [
-        "pack-0db0253e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:feedback",
-        "pack-0db0253e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction",
         "pack-0db0253e:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23573\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:36 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Pelican is down again. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction.",
-        "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-2-seed-message.",
         "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-bb77ebcd472c087c3894f49cd3200d729c651e1788a366292ddf35d0b4672c92",
+      "eventExportDigest": "sha256-f1399ef601e6a1a9644cadfba7e0a04ab640af1b2a5e669702ca4e17da75f04e",
       "expectedContextPhrases": [
         "glad",
         "caught",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.875,
-        "routeSelectionMs": 5.441,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.433,
+        "totalMs": 8.523,
+        "routeSelectionMs": 5.269,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.254,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

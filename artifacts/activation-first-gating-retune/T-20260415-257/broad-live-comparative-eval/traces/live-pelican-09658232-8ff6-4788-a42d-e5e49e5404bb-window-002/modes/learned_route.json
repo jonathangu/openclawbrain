@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-e9841ca6"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-b25f7f5c673e7105feda5515d6e9f960f02d82b5da181b65e04c18e260e85a88"
+    "scoreHash": "sha256-1ccd0d243a9f409c838fdf51a3d35b4f7d8b3037aba0916ed533ed2f3aa53658"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-e9841ca6:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-e9841ca6:route_fn",
-      "selectionDigest": "sha256-6ef3919082756be854aac98c153e5205abcc69a419d72618bd13a39bce302c4d",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-ace555e3e8ed2a4132d9146a3c057e4a87b1770d1f69744c9ddfb1bd292ea133",
       "selectedContextIds": [
-        "pack-e9841ca6:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
-        "pack-e9841ca6:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
-        "pack-e9841ca6:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
+        "pack-e9841ca6:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/reflection-2026-02-27.md\"} ; /Users/guclaw/.openclaw/workspace-pelican/memory/reflection-2026-02-26.md\"}. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: ✅ New session started · model: anthropic/claude-opus-4-6. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction."
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-4bddc6862bb4f2910bf7b282bbbc89e0374ceaa6ace68f024fb290f30b698811",
+      "eventExportDigest": "sha256-864f4edcff9142364aa02ecdeb1f17b737d73a3aa5b42f4dfdf2eff8ce61c03a",
       "expectedContextPhrases": [
         "hey",
         "jon."
@@ -88,10 +84,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.417,
-        "routeSelectionMs": 5.939,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 3.476,
+        "totalMs": 8.284,
+        "routeSelectionMs": 5.077,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.206,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

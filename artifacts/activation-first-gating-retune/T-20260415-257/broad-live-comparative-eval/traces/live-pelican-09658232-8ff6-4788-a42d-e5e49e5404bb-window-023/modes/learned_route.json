@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-b54caa88"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-b38cc6da26d8ae724e1694a3e37992fed067e5d795147c0ae7619fc8aadda643"
+    "scoreHash": "sha256-cb84aac047b59eb5df1d8ed3165ffb201d446fc6f302fe17bf0ea717ed583076"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-b54caa88:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-b54caa88:route_fn",
-      "selectionDigest": "sha256-bb9c52542e2f390cd1b91bf9f6700c14a01cfae3d4434fa570262d89131c3369",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-da04bd4955b33e768ee360fb4778d41200cac5aabc3df2699f9afd18128dc533",
       "selectedContextIds": [
-        "pack-b54caa88:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
-        "pack-b54caa88:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-        "pack-b54caa88:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
+        "pack-b54caa88:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"GBM v5 download in progress — 80+ chunks done, 2 chunk failures so far. Still running. Will retry failed chunks and alert if download completes with failures. Instance i-08beeac52a9ef5cda still running ($1/hr).\\n\\nMarket closed, listener alive, systems nominal otherwise.\" } ``` How's it going. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 09ac4735-5e22-4e2d-a190-4b942c71ef51] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Good — HEARTBEAT.md confirms this is a combined instance (TFT already done, GBM training in progress). Training was at member 5/15 at 3:27 PM, now at member 12/15 at 3:47 PM. ~160s/member means ~3 more members × ~160s ≈ 8 minutes left. It'll finish around 3:55 PM. Still training — 12/15 members complete, 3 to go. ETA ~4:00 PM PT. Let me update the heartbeat and stay quie.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: d4fe5adc-c09d-4b95-86b2-b106a2a97c64] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Training is still in progress — member 9/15 is running now. Each member takes ~160s, so ~16 minutes remaining. Let me check if the runs file is elsewhere: Stats: runtime 15s • tokens 450 (in 5 / out 445) • prompt/cache 17.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Kee.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-ca3c9cfcdab19f469568da3d141bddaa26d4dd1641b9625e738cb093ad0f4f54",
+      "eventExportDigest": "sha256-447d388c2aded3b21a4da1b5b46a21eab3641205ab974098de4e4dc789a49bb2",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research/retrain_v5_aws.sh\"}"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 10.038,
-        "routeSelectionMs": 6.381,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.655,
+        "totalMs": 9.783,
+        "routeSelectionMs": 6.256,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.526,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-06T01:04:08.135Z",
   "traceHash": "sha256-f0f24d3812e038d9d2b67d9309de9db96cd24c2faefb0b5dd93caf569b3c1d1f",
   "fixtureHash": "sha256-6b6c634b067ee2b84c6981ae8fc0d6c41efb6194e1723d88dd7d0087036cd1ac",
-  "scoreHash": "sha256-9b41f1670fdbbbda802ad636c667585ff64b1b2c35ff39582ceaee32a9b28554",
+  "scoreHash": "sha256-2c7d920c1dd7282159c14947e83edebe2d49e150525ca00d447e20e5cd9db85d",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.033,
+            "totalMs": 0.027,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.033,
+            "otherMs": 0.027,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.646,
-            "routeSelectionMs": 4.873,
+            "totalMs": 7.376,
+            "routeSelectionMs": 4.694,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.771,
+            "otherMs": 2.68,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.656,
-            "routeSelectionMs": 4.844,
+            "totalMs": 7.35,
+            "routeSelectionMs": 4.679,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.809,
+            "otherMs": 2.669,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-d77b6cb3"
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-50df4a76a6def5b338949ea4584339a1431f0bf5ac69ce48000ad59fd713c802"
+        "scoreHash": "sha256-a8367a13cca1fe730ec923606bebc759383907b5c7b4ff493827abab09619bd4"
       },
       "turns": [
         {
@@ -409,24 +409,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-d77b6cb3:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-d77b6cb3:route_fn",
-          "selectionDigest": "sha256-e9dcaf866c9bc21327056bbcdf78474862a03144f862515f16b1b3a3ea4e7faa",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-52c33d719673747da64317c9a7fea201676bc1af9cd253d44f8c3e284a532c75",
           "selectedContextIds": [
-            "pack-d77b6cb3:event:dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-5:feedback",
-            "pack-d77b6cb3:event:dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-3:feedback",
             "pack-d77b6cb3:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session dad145d5-21a8-405e-a4b5-229d517ce15f-seed: user: System: [2026-04-05 17:55:55 PDT] Exec completed (young-cr, code 0) :: 6b60f8d56bf227f03914f5f0753d6fa1b359d7104ea\" }, { \"path\": \"hotpot_dev_fullwiki_v1.json\", \"size_bytes\": 47454698, \"sha256\": \"2f1f3e594a3066a3084cc57950ca2713c24712adaad03af6ccce18d… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/work.... Related interaction: dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-5:interaction.",
-            "Teaching feedback on live-session session dad145d5-21a8-405e-a4b5-229d517ce15f-seed: user: System: [2026-04-05 17:54:29 PDT] Exec completed (ember-du, code 0) :: e20294f7a4a\" }, { \"path\": \"data/musique_full_v1.0_test.jsonl\", \"size_bytes\": 55558292, \"sha256\": \"01d7b0f752bdc1fc98856d605560e021a89be903baeb9daff11adeb7fac61328\" }, { \"path\": \"d… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/work.... Related interaction: dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-3:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-b6a6b4452ad892ff7e06c59718bece815f7aea839c012ee9191cac66012f11e7",
+          "eventExportDigest": "sha256-7e46406357f7b24924e367e99909dc7bd86b7efa408c0839f0b07915291ed7db",
           "expectedContextPhrases": [
             "T-20260405-147",
             "/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.332,
-            "routeSelectionMs": 5.79,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.54,
+            "totalMs": 9.111,
+            "routeSelectionMs": 5.659,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.45,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-c9604b99739bae8e831d13a978178e3c89012d35da02502ed9418c5d91a82e76"
+  "bundleHash": "sha256-4dbe009e42da84be947a8bfa101439572e1456d76b73c0aa382fc6a4b8351188"
 }

@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-c75cd185"
+      "pack-eecb3430"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-c75cd185",
-    "frozenEvalRouterIdentity": "pack-c75cd185:route_fn",
+    "frozenEvalPackId": "pack-eecb3430",
+    "frozenEvalRouterIdentity": "pack-eecb3430:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-d0fff149f1bc66d887e7c0479340318b9018fd0bb94b98339ecdb4a41cb860d1"
+    "scoreHash": "sha256-3435c4a547ef527810cb140ed1d87e292f9ba58ba57fdc86f9bbb5f6f4c69456"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-c75cd185",
+      "activePackId": "pack-eecb3430",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-c75cd185:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-c75cd185:route_fn",
-      "selectionDigest": "sha256-458adb41f45e3dfae3019c2b91652831df3005d02d8c9a9df30a5be1ffa676fa",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-dc22428cd3bba35cde47190f212c5b9947ddc010628454bad2071828a04c3f26",
       "selectedContextIds": [
-        "pack-c75cd185:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-3:feedback",
-        "pack-c75cd185:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:feedback",
-        "pack-c75cd185:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-5:feedback"
+        "pack-eecb3430:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 12:12 PM (America/Los_Angeles) / 2026-04-12 19:12 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-3:interaction.",
-        "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 12:25 PM (America/Los_Angeles) / 2026-04-12 19:25 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:interaction.",
-        "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 12:48 PM (America/Los_Angeles) / 2026-04-12 19:48 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-5:interaction."
+        "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 11:24 AM (America/Los_Angeles) / 2026-04-12 18:24 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-9baa5668d5ccb26db5bb9c90dfd636af673a47f9400f23a82b5ab781b143a5cd",
+      "eventExportDigest": "sha256-0c5609d180b0f330943f709ed828c41b0fc08d7e52d639c444f3849a84fbb49f",
       "expectedContextPhrases": [
         "handled internally. status change.",
         "handled internally. status",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.471,
-        "routeSelectionMs": 5.159,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.311,
+        "totalMs": 8.211,
+        "routeSelectionMs": 5.02,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.19,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

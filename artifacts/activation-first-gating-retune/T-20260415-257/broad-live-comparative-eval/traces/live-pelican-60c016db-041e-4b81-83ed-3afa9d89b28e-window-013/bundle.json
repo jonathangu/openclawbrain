@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T10:12:39.924Z",
   "traceHash": "sha256-7e2a057c58ceb7779d689dcd4238dfbc3207e352fc341de03ac7a06d504301da",
   "fixtureHash": "sha256-737f6561e785d3bc05d3981f983d5cf16785ca63d2f46199fbc1baaeee1f2b69",
-  "scoreHash": "sha256-b32f5f00dcebda2d6cfcec8c823f08149b32578e4d016c5a89d14c86124ee743",
+  "scoreHash": "sha256-04ca7aebd9b4fb2117794feccac60796a45e7712f701d46148db40d37256c2b8",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.054,
-            "routeSelectionMs": 4.432,
+            "totalMs": 6.998,
+            "routeSelectionMs": 4.371,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.62,
+            "otherMs": 2.625,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.052,
-            "routeSelectionMs": 4.423,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.627,
+            "totalMs": 7.021,
+            "routeSelectionMs": 4.412,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.607,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -351,7 +351,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-f748b899"
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-fb071eb0fab5ea8096b7729461612f06d657ea158e7f9e948a497e1b0e97ede6"
+        "scoreHash": "sha256-8c6b072cb4a619b5c09fb110f5b74447b688d95bf2632adf22a959ccf9fbf570"
       },
       "turns": [
         {
@@ -397,24 +397,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-f748b899:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-f748b899:route_fn",
-          "selectionDigest": "sha256-e0f7a12144219fc789e38ba7fe8eabab0cc8faf4b55749f903a8c66f254bf421",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-17abc365a53b43fc8037192ff724352357a7969d983547002e7787c16a2dca83",
           "selectedContextIds": [
-            "pack-f748b899:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback",
-            "pack-f748b899:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback",
-            "pack-f748b899:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:feedback"
+            "pack-f748b899:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:38 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes start the wave! Merge it! Ship it!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction.",
-            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction.",
-            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:08 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Do all improvements! Use codex. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:interaction."
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:38 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes start the wave! Merge it! Ship it!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-082e5edebfff6a68fe976976a890cd99a776b51cdf6475dd68e76f3aad962867",
+          "eventExportDigest": "sha256-34d93d86a0d325cb59b7b70fdcb45942324b5d4ec3c6b0846704f6f98acebb4b",
           "expectedContextPhrases": [
             "/Users/guclaw/worktrees/pelican/3"
           ],
@@ -428,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.256,
-            "routeSelectionMs": 5.918,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.336,
+            "totalMs": 8.525,
+            "routeSelectionMs": 5.12,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.404,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -475,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-5981dce1c4e60df032a1534e846e02db1dff1cb3007bf09409ad6277ceec9e78"
+  "bundleHash": "sha256-0654a330e1c48195de88fa0a6cbd7dab46c3d0d882e084b9fb92c0a3050b76bc"
 }

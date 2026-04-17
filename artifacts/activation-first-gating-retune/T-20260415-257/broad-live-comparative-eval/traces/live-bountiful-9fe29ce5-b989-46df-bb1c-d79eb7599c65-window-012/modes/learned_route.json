@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-638c601b"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-b455f3fb4aed09a2e3d9700fd351e68718e03cb3b3bb5f71feeb01eaae90a8ef"
+    "scoreHash": "sha256-4cae7cec677436dbab92769159bdf1dda7a78feb973178f91f13258324cd4ab5"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-638c601b:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-638c601b:route_fn",
-      "selectionDigest": "sha256-c7e12da679dffdc5bce8b1df25770d30ed4b57b8ed32b4068071c34eaa91624a",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-5bc9553843803557b3beef75ad637ea612fe15e8089993d227a04d83f7be395f",
       "selectedContextIds": [
-        "pack-638c601b:event:9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-3:feedback",
-        "pack-638c601b:event:9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-5:feedback",
         "pack-638c601b:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed: user: Pre-compaction memory flush. Store durable memories now (use memory/2026-03-03.md; create memory/ if needed). IMPORTANT: If the file already exists, APPEND new content only and do not overwrite existing entries. If nothing to store, reply with NO_REPLY. Current time: Tuesday, March 3rd, 2026 — 2:14 AM (America/Los_Angeles). Related interaction: 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-3:interaction.",
-        "Teaching feedback on live-session session 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed: user: Pre-compaction memory flush. Store durable memories now (use memory/2026-03-03.md; create memory/ if needed). IMPORTANT: If the file already exists, APPEND new content only and do not overwrite existing entries. If nothing to store, reply with NO_REPLY. Current time: Tuesday, March 3rd, 2026 — 2:28 AM (America/Los_Angeles). Related interaction: 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-5:interaction.",
         "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-ec6b311afe8b269ac766af55d3040f73d8be99d0ec073a4ffcd61e56e20de079",
+      "eventExportDigest": "sha256-de86c6a1dcbc0b963db9ac5f52b1e39157bd3d1cac4a41b007a5217490aec081",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace-bountiful/memory/2026-03-03.md\"}"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 10.296,
-        "routeSelectionMs": 6.435,
-        "promptAssemblyMs": 0.004,
-        "otherMs": 3.857,
+        "totalMs": 9.851,
+        "routeSelectionMs": 6.42,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.428,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

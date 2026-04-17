@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-13T21:20:39.560Z",
   "traceHash": "sha256-7768c82b82cfc9e79b11d2862950b229d848ebccb180ebcb1860140cf56b1f18",
   "fixtureHash": "sha256-e3d4346656fea9fcd52a8093d89ccf43c79e719fec02594aace8851b57c7f190",
-  "scoreHash": "sha256-5bbf1811e04b12a008968a9381371b84efd7ee021b482de482f021e5970cbf74",
+  "scoreHash": "sha256-cd667c06a59ca219592e0a3603e455584acc4f9f5462bfd6253d660f7e290b61",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-f5b80b6c"
+          "pack-1d266e17"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-cde770abbbb2fd1363251f8537fcd64f6b896e05c700790d4a1c4458c990c93b"
+        "scoreHash": "sha256-0efb1860e16bf0c89286e9db2d74cb667ff930c2c985cfc6ca8e8747326e6ea1"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-f5b80b6c",
+          "activePackId": "pack-1d266e17",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-7760d3da12694b1ce09a5ee8e2a9bfe092ed31ce4e7a228e7cf26b9d86671979",
+          "selectionDigest": "sha256-083f76636b81a18b302e42b8e8fa70cc47b31e37fa2f90fae4af3c04b28fca3f",
           "selectedContextIds": [
-            "pack-f5b80b6c:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
-            "pack-f5b80b6c:workspace-init:16415817",
-            "pack-f5b80b6c:pointer-aware-init"
+            "pack-1d266e17:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
+            "pack-1d266e17:pointer-aware-init",
+            "pack-1d266e17:workspace-init:16415817"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: Exec failed (dawn-sea, signal SIGTERM) :: enclaw/pelican/runtime/quant-research/weekly_retrain_tft_status.json [2026-04-13T19:32:02Z] Run ID: v6_20260413_171321_6506b3d_7dc63260 [2026-04-13T19:32:02Z] S3 prefix: s3://poly… An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Monday, .... Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction.",
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=21). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…",
-            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=17). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
           ],
-          "eventExportDigest": "sha256-8883979d0586193b63a2d5c7adc012c01183c16b0f71c55c76a74688ca1988de",
+          "eventExportDigest": "sha256-50159bfffb2c58764166a8bb9fc1dd103a17a775aaaa2dab8f1937227f9b31bf",
           "expectedContextPhrases": [
             "actual result visible transcript",
             "can re-run relevant check",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.135,
-            "routeSelectionMs": 4.464,
+            "totalMs": 8.007,
+            "routeSelectionMs": 5.37,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.668,
+            "otherMs": 2.635,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-f5b80b6c"
+          "pack-1d266e17"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-df21d62baf54d0a32bc9cef9db7ca45290c8f776b8f15b7186faa9f6285c6059"
+        "scoreHash": "sha256-f6df7877e120dd089436b4da2eaa9aa9566c10e1ba2d2424f026d6f51f3ebe50"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-f5b80b6c",
+          "activePackId": "pack-1d266e17",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-0d5fe1c85881bb967ef7a25ca93d5e59c2918282f1f29be573e3fe5bc42f98e6",
+          "selectionDigest": "sha256-d053093fe0b3a710e45fb5110e215f58798ddaf73e8d628112140fb462bc2781",
           "selectedContextIds": [
-            "pack-f5b80b6c:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
-            "pack-f5b80b6c:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction",
-            "pack-f5b80b6c:workspace-init:16415817"
+            "pack-1d266e17:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
+            "pack-1d266e17:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction",
+            "pack-1d266e17:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: Exec failed (dawn-sea, signal SIGTERM) :: enclaw/pelican/runtime/quant-research/weekly_retrain_tft_status.json [2026-04-13T19:32:02Z] Run ID: v6_20260413_171321_6506b3d_7dc63260 [2026-04-13T19:32:02Z] S3 prefix: s3://poly… An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Monday, .... Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction.",
             "Interaction operator_override on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed. Message: cue-4-seed-message.",
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=21). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-315bc33fb60c7e32a909b69a7fec8d8a48f037918cff4d35f1e32b4e06e5073d",
+          "eventExportDigest": "sha256-d4913d59c14462cb6a3b38c7a31ba1fd5a4ee617f47189615eb42e422dcd65fc",
           "expectedContextPhrases": [
             "actual result visible transcript",
             "can re-run relevant check",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.147,
-            "routeSelectionMs": 4.479,
+            "totalMs": 7.098,
+            "routeSelectionMs": 4.45,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.666,
+            "otherMs": 2.646,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-6fb4d05f"
+          "pack-9723330a"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-6fb4d05f",
-        "frozenEvalRouterIdentity": "pack-6fb4d05f:route_fn",
+        "frozenEvalPackId": "pack-9723330a",
+        "frozenEvalRouterIdentity": "pack-9723330a:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-4b2796357768013158c36ff410791407a8061a7392d3ed4449fd6513e22b26fd"
+        "scoreHash": "sha256-22cb262a914c6cd5fe2dac8856b49800b05ae074d80346bc197a5305b9e1dca3"
       },
       "turns": [
         {
@@ -405,28 +405,24 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-6fb4d05f",
+          "activePackId": "pack-9723330a",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-6fb4d05f:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-6fb4d05f:route_fn",
-          "selectionDigest": "sha256-51b66beb37c0afa4ec0771d0e4e59cf0090a0165911a7b9d5f3ee2c43e2a31f3",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-a04b30db41b04da4ba71c526eb5b9fc8237f308eedbed9807285a774ab6aff97",
           "selectedContextIds": [
-            "pack-6fb4d05f:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
-            "pack-6fb4d05f:workspace-init:16415817",
-            "pack-6fb4d05f:pointer-aware-init"
+            "pack-9723330a:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: Exec failed (dawn-sea, signal SIGTERM) :: enclaw/pelican/runtime/quant-research/weekly_retrain_tft_status.json [2026-04-13T19:32:02Z] Run ID: v6_20260413_171321_6506b3d_7dc63260 [2026-04-13T19:32:02Z] S3 prefix: s3://poly… An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Monday, .... Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction.",
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=21). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…",
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-428c34b77b4a50b00c4ca38d18f2c8e7dd18a5f80558271690c2da52ee050c27",
+          "eventExportDigest": "sha256-28ee2620ebda57d5a6049ad797458ddbbb258eede43edfd0148e54ecc3fdeca6",
           "expectedContextPhrases": [
             "actual result visible transcript",
             "can re-run relevant check",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.823,
-            "routeSelectionMs": 5.373,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.447,
+            "totalMs": 8.773,
+            "routeSelectionMs": 5.39,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.382,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-47bcffdee19f09ab67ed4ad9bb4f2b93a703bebb4df0ec2d940c4059cee2af97"
+  "bundleHash": "sha256-a4f0724e8b674d590115f0235408ee65b103c2af514e0d410ae5468d78f3b880"
 }

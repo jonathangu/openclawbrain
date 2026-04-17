@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-85903010"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-f087fef20ef7f8f632205cb188315bb1be61bff3f802616825fc126fb6ec9362"
+    "scoreHash": "sha256-19b70f43c08b12fdcdb57cff75bc3dca333a0b4c56c4df09cca3ad96a05533b7"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-85903010:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-85903010:route_fn",
-      "selectionDigest": "sha256-f74e85704f2deb7381a121d185761c3af5b024446cf0b30fa706b0903784bf17",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-4879dc607b66904076c75e7cd958e5da50f18af6295b2f00b10ac3732732b5c2",
       "selectedContextIds": [
-        "pack-85903010:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:feedback",
-        "pack-85903010:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback",
-        "pack-85903010:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback"
+        "pack-85903010:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: [sessionId: 14210ef4-6dff-4693-816f-bfb689b6ad2d] A subagent task \"Return ONLY Part 2/3 of the critique (max 5,500 characters): bullet list of problems (mental model, trust/safety, UX overload, language), and a clear recommendation about removing the Counter button (yes/no, why) and what replaces it. Do not include Part 1 or Part 3. Screens summary: A Bounty detail: Gather. B Quick sheet: qty chips, message, add from your garden, Gather now, Full proposal. C Full proposal: qty +/- and Send Re.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:interaction.",
-        "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7449\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` lets think deeply about how this trade works. can you ask OPUS 4.6 high thinking. ask it for a full critique. show it screenshots. what is each person \"thinking\" when they see this .... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction.",
-        "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"7436\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:interaction."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-01-https-cutover.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-a6fc03fd32ea88381ccbe6187192f5c6e925e00a53e8864dbfa9c57aec9b435e",
+      "eventExportDigest": "sha256-cc23e72e66839418d7a9172db789fd210e01d9ae79bbf1bd3ac638f4a67761bd",
       "expectedContextPhrases": [
         "546b496d",
         "c4458340c0ee"
@@ -88,10 +84,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 11.005,
-        "routeSelectionMs": 7.073,
-        "promptAssemblyMs": 0.004,
-        "otherMs": 3.928,
+        "totalMs": 10.58,
+        "routeSelectionMs": 7.163,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.415,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

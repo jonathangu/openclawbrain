@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T04:05:49.180Z",
   "traceHash": "sha256-f896b3d7889710642e066f81d9ef38f09a0375e7c4550a3de44bd42b8be0c728",
   "fixtureHash": "sha256-02b10f8d55f27089a7a2cdde95f78ea9472dddb1b95943a1431bda089a73cd5e",
-  "scoreHash": "sha256-3c4e4f73413eccf2e04a5766c37dd792b4b594ba7275356a78273efccb0e5fab",
+  "scoreHash": "sha256-12f826a86e1b116cb03d596483579b7b4aba359bd9e98ee61a6e55180ee29145",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.223,
-            "routeSelectionMs": 5.607,
+            "totalMs": 7.184,
+            "routeSelectionMs": 4.606,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.613,
+            "otherMs": 2.575,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.821,
-            "routeSelectionMs": 4.821,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.997,
+            "totalMs": 8.472,
+            "routeSelectionMs": 5.891,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.579,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-d531dfa5"
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-f4230d76ce863842c027b391261962aff3fac7d22c63a71099e024e57ff5d40f"
+        "scoreHash": "sha256-cbda87fa58912d1339117608a328a01b48132f00cd88f6e139ff329f209f961f"
       },
       "turns": [
         {
@@ -409,24 +409,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-d531dfa5:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-d531dfa5:route_fn",
-          "selectionDigest": "sha256-a9b078c2bcedee4208899e40dde6c7c5260662564db257994b2c1107e9096308",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-a47ccc8dda6a81dca3a68a2d89eadb3a844a359089994bacb132d8abcf88eca0",
           "selectedContextIds": [
-            "pack-d531dfa5:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
-            "pack-d531dfa5:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:feedback",
-            "pack-d531dfa5:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:feedback"
+            "pack-d531dfa5:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8108\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 20:02 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes repo-wide no fruit/fruits. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction.",
-            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8101\", \"reply_to_id\": \"8100\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true, \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:interaction.",
-            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8098\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Get rid of the term fruit in code I do not want to see any fruit mentioned as function names or db .... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:interaction."
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8101\", \"reply_to_id\": \"8100\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true, \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-cb1465e115ba0f4c9610a8b41b2a43d474800762ba419e5c264c4667b99fed64",
+          "eventExportDigest": "sha256-b6882ec854e59a3bfec39103cd7354444b110fad9f1d1d75b10dedc0c686031a",
           "expectedContextPhrases": [
             "codex pass exchange loop",
             "pass exchange loop migration",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.965,
-            "routeSelectionMs": 5.631,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.331,
+            "totalMs": 8.985,
+            "routeSelectionMs": 5.663,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.319,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-5a7e3f615192dd1d89ce983f4a3130bf47149c9041a01ebbeed509b8af99826a"
+  "bundleHash": "sha256-575ea0839661c822b2ad4e663021ad52dfedffc55888cee4856fb7d077c8ccda"
 }

@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-15T01:36:55.372Z",
   "traceHash": "sha256-2210bd8aa54ff55f81e90c13af23591578b0c820206054d3d91e01211b88bae7",
   "fixtureHash": "sha256-a562aa7a1ac863aa823f236bdbc816afd7b8d62760a47e5474f699f78bdac5e9",
-  "scoreHash": "sha256-748d1584556ed14e07226839bfbaf5724071d804b7f87ea32168865d7fe10d6b",
+  "scoreHash": "sha256-924b6422d38ecf2cb860b5cf3f5062d8c10163569d2961d84e1ddb4f346e89e4",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.032,
+            "totalMs": 0.03,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.032,
+            "otherMs": 0.03,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.54,
-            "routeSelectionMs": 4.747,
+            "totalMs": 7.234,
+            "routeSelectionMs": 4.575,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.79,
+            "otherMs": 2.656,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.75,
-            "routeSelectionMs": 5.961,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.788,
+            "totalMs": 7.229,
+            "routeSelectionMs": 4.585,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.643,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-0a6a444c"
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-e1894c679f25b9a122866a2c879599643686411c185529e352b1823b5d742b08"
+        "scoreHash": "sha256-0f71e6e0b01bc56745c15864bebf058feb548b7660c4d9f081b8a9db9539a688"
       },
       "turns": [
         {
@@ -409,24 +409,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-0a6a444c:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-0a6a444c:route_fn",
-          "selectionDigest": "sha256-c00db37debbdd2cf209cdab6f754983b7ea1ab8342071b1c3f71c174d64ce8e3",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-5cccb174afd1e680babde65de876cd0047a343f3583945a2c62a295b1148ff32",
           "selectedContextIds": [
-            "pack-0a6a444c:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
-            "pack-0a6a444c:pointer-aware-init",
-            "pack-0a6a444c:workspace-init:16415817"
+            "pack-0a6a444c:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths - they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"23568\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:03 PDT\" } ``` Sender (untr.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction.",
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=100). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 6:14 AM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-0fe29a0e767159f2aa1329812d5a271ec90bae21bfcf75d97267ab1eb284974d",
+          "eventExportDigest": "sha256-67f99773d33954032ebcc64a5957461c89710f61a3a02deb5d98a9b21cc212d4",
           "expectedContextPhrases": [
             "minscore query pelican down",
             "pelican down prior issue",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.273,
-            "routeSelectionMs": 5.735,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.536,
+            "totalMs": 8.619,
+            "routeSelectionMs": 5.363,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.254,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-d7f8edcda46baa86461a78c2e6cd7a103b98847f91c9840a76c1c52fbcc2e3ed"
+  "bundleHash": "sha256-b9d9c04792654e5ac001025da19888d2557ff1c17413951dd1825b558b21a30c"
 }

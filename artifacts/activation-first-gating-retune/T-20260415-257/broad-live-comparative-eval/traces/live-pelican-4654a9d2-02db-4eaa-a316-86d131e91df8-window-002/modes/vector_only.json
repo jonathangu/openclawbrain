@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-cc32f99c"
+      "pack-a554ba79"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-1657438a535fde0a883e8180f75ed162aaebd8eb449530983ce47f3ce28a40d3"
+    "scoreHash": "sha256-8fe4d659adfb3b2de99ad162d1116bfb9946ec0a0f906b507fe9d4526bf69631"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-cc32f99c",
+      "activePackId": "pack-a554ba79",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-071a5528ca8f2989a41220ecfceb28558634190246f127adabdc320d3ae638ef",
+      "selectionDigest": "sha256-625289a08ec4a2f4e19a9007ad35b172b2a1ba3ab6104a345bf5a2c55d9c640a",
       "selectedContextIds": [
-        "pack-cc32f99c:pointer-aware-init",
-        "pack-cc32f99c:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-5:feedback",
-        "pack-cc32f99c:pointer-passive-expansion"
+        "pack-a554ba79:pointer-aware-init",
+        "pack-a554ba79:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-5:feedback",
+        "pack-a554ba79:workspace-init:02e33be9"
       ],
       "selectedContextTexts": [
         "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-aws-training.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
         "Teaching feedback on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed: assistant: Good — neither feature is in the current production GBM model. They were already filtered out during the v4 embeddings-only training. This is a clean removal — no model retrain needed, just code cleanup. Spawning Codex to strip `has_news` and `news_missing` from all files. ToolCall read {\"limit\": 10, \"offset\": 1, \"path\": \"/Users/guclaw/.openclaw/workspace-pelican/TOOLS.md\"}. Related interaction: 4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-5:interaction.",
-        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, docs/openclawbrain-upgrade-path.md, docs/quant-lessons.md, +6 more."
+        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…"
       ],
-      "eventExportDigest": "sha256-cb281c5481eb2880c4ab98c286662a05cc791153da9e13dbfbca90572d95ba71",
+      "eventExportDigest": "sha256-7cda210b58f695293214e758591ec6993b2fd55f62846826c4d787b74d6c0148",
       "expectedContextPhrases": [
         "embeddings filter training inference",
         "has_news news_missing embeddings filter",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.576,
-        "routeSelectionMs": 5.786,
-        "promptAssemblyMs": 0.004,
-        "otherMs": 2.787,
+        "totalMs": 7.207,
+        "routeSelectionMs": 4.583,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.622,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

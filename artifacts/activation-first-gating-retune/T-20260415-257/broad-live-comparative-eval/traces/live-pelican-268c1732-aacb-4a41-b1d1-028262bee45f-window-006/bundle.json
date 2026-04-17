@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-15T10:34:25.002Z",
   "traceHash": "sha256-fc1409b104d617856751474f01593056b66d1b2ca492e8f5dd879839efd10f66",
   "fixtureHash": "sha256-8310747322d42de0fb2d06597a429aa5eb75a2026f88cf3e458dadef80911084",
-  "scoreHash": "sha256-0f07ce9be4a7e66e7c60100542d92a9e662cd7063d421dbfbfbd0fb9c6c3da3d",
+  "scoreHash": "sha256-23de2cec299e3d2c0acc133300556f1eb0ced846cf4a740b5e8bccc575071f4d",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.032,
+            "totalMs": 0.034,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.032,
+            "otherMs": 0.034,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-eaf34892"
+          "pack-1261ab3d"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-e00b9307371b48b603b128dba44f1cf52b738d120711d961f354ecde3a87337b"
+        "scoreHash": "sha256-b0fb210a626665c76242f54144c1333cd5e676cc6e445fe8b7863a9fd5a8aa98"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-eaf34892",
+          "activePackId": "pack-1261ab3d",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-b626b6a2adfe9b70b8600c02426f914e81ff8d973e5f0c70a31b3dbc936f9ef3",
+          "selectionDigest": "sha256-22a96b89a0d448dfbe67c8399619d2a6986560c04459e1081dffabe32100c001",
           "selectedContextIds": [
-            "pack-eaf34892:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-            "pack-eaf34892:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback",
-            "pack-eaf34892:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:feedback"
+            "pack-1261ab3d:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
+            "pack-1261ab3d:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback",
+            "pack-1261ab3d:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19098\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:28 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Why not all four? Is there something structurally blocking us. Some calculation? Can you check logs. Is something broken. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:interaction.",
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19099\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:29 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Also why are we making all these small beans tiny trades. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-de5b49b9f8c44554de696b62f7d16e08e3cd3869833bc90a75920e2d20ed418a",
+          "eventExportDigest": "sha256-6c7f61960f3ce5ca0841a0a4fee86193974190becbe707f0abe3181ece951cce",
           "expectedContextPhrases": [
             "durable engineering master plan",
             "engineering master plan artifact",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.041,
-            "routeSelectionMs": 4.394,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.645,
+            "totalMs": 7.029,
+            "routeSelectionMs": 4.418,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.61,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-eaf34892"
+          "pack-1261ab3d"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-67053db4c6932add41be9c201370a989514607e5255589dd0c5975310ca90124"
+        "scoreHash": "sha256-a9e013bfe40181b3b5a7ab3b8d4f4e29afb41aeb730d2479fdc6d7359f699355"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-eaf34892",
+          "activePackId": "pack-1261ab3d",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-4382a747ea981cd0897b42098b7b8a375b84e8be6e7f30c2eac1d580b02215ee",
+          "selectionDigest": "sha256-f027530ddddaaffcf5bf42ee5181b314873781521e18a48ede9b3c56a68af113",
           "selectedContextIds": [
-            "pack-eaf34892:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-            "pack-eaf34892:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction",
-            "pack-eaf34892:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback"
+            "pack-1261ab3d:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
+            "pack-1261ab3d:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction",
+            "pack-1261ab3d:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
             "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-4-seed-message.",
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19098\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:28 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Why not all four? Is there something structurally blocking us. Some calculation? Can you check logs. Is something broken. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-02b441e45629e9358bb78bf545de1052a1d7092cd475e1f51563a412e39f72f9",
+          "eventExportDigest": "sha256-3b6e580954b086b20d1e56ae2eb3afcd8cabe98f072fde66a98ca0f0f5d2afb4",
           "expectedContextPhrases": [
             "durable engineering master plan",
             "engineering master plan artifact",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.007,
-            "routeSelectionMs": 4.351,
+            "totalMs": 7.08,
+            "routeSelectionMs": 4.43,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.655,
+            "otherMs": 2.648,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-8df428a3"
+          "pack-b5628b4e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-8df428a3",
-        "frozenEvalRouterIdentity": "pack-8df428a3:route_fn",
+        "frozenEvalPackId": "pack-b5628b4e",
+        "frozenEvalRouterIdentity": "pack-b5628b4e:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-94acc7386e3571bc561533d26e178e6b6ef09b5a7dd176257ccd619f54dd3250"
+        "scoreHash": "sha256-e57561c71ed1a082a89b2b0a4b866c213c8918c3ec46e61dbc0679b5f2c9dac4"
       },
       "turns": [
         {
@@ -405,28 +405,24 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-8df428a3",
+          "activePackId": "pack-b5628b4e",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-8df428a3:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-8df428a3:route_fn",
-          "selectionDigest": "sha256-d57f238a3ff536084c04fcd3ed536f32ddb0a5af87f2ed3b734054972a91a3ad",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-df8eb4924532a0ffd9c2d9f4d06f8cf51623d2499ba900efafc0b5b8decc5bfe",
           "selectedContextIds": [
-            "pack-8df428a3:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-            "pack-8df428a3:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback",
-            "pack-8df428a3:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:feedback"
+            "pack-b5628b4e:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
-            "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19098\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:28 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Why not all four? Is there something structurally blocking us. Some calculation? Can you check logs. Is something broken. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:interaction.",
-            "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19099\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:29 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Also why are we making all these small beans tiny trades. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:interaction."
+            "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-45854442d07c4f4673b414c22dc2d7b6677c89e94c2b6a8f8f313f4411a8f503",
+          "eventExportDigest": "sha256-57f9d7898a07860cca09bdfecf3b2333268012868269697871b93a5d8be459c7",
           "expectedContextPhrases": [
             "durable engineering master plan",
             "engineering master plan artifact",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.362,
-            "routeSelectionMs": 5.122,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.239,
+            "totalMs": 8.464,
+            "routeSelectionMs": 5.189,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.274,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-5e256771c9a4499f9a33523af816073ce9bd06a45833afcc2172abc36a7676e1"
+  "bundleHash": "sha256-044f145ead2d64f1f53d4d5361ba0425c9fd9a0e67247905fdb02890877c4d1d"
 }

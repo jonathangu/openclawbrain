@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-c97fdb5f"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-bfde68ceb2e2909040bc621afe5b4bef230f3c71271e1ae8141c1698b8448e39"
+    "scoreHash": "sha256-aecf8772ebf758668a89bb599eab71a55e1938eaf09301d6f899f6174c4ebea6"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-c97fdb5f:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-c97fdb5f:route_fn",
-      "selectionDigest": "sha256-4b04be55bbf7800c29f72701b3c20b630cec33a3213df20b45fbd13373b5b112",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-ee5dd943fbad6261409c49159f4ead8541340a9f251a4626c6552127ab59873a",
       "selectedContextIds": [
-        "pack-c97fdb5f:event:1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-2:feedback",
-        "pack-c97fdb5f:event:1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-2:interaction",
-        "pack-c97fdb5f:event:1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-4:feedback"
+        "pack-c97fdb5f:event:1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 1df6876b-e41e-4352-8c17-b6d259ab93af-seed: user: A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Monday,.... Related interaction: 1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-2:interaction.",
-        "Interaction operator_override on live-session session 1df6876b-e41e-4352-8c17-b6d259ab93af-seed. Message: cue-2-seed-message.",
-        "Teaching feedback on live-session session 1df6876b-e41e-4352-8c17-b6d259ab93af-seed: assistant: ] Hey Jon — GUCLAW here. I’m awake and on it; what do you want to do next?. Related interaction: 1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-4:interaction."
+        "Interaction operator_override on live-session session 1df6876b-e41e-4352-8c17-b6d259ab93af-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-216bce66bdf60d98ccd3046cbc09857495c55329aed050a2fc8598b60597f059",
+      "eventExportDigest": "sha256-2702ba0cf79416b633b87e14e1c9d3c23af9eb82b5ed676e532a29069a1da671",
       "expectedContextPhrases": [
         "/.openclaw",
         "72ad858"
@@ -88,10 +84,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 4.64,
-        "routeSelectionMs": 3.025,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 1.614,
+        "totalMs": 4.496,
+        "routeSelectionMs": 2.955,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 1.54,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

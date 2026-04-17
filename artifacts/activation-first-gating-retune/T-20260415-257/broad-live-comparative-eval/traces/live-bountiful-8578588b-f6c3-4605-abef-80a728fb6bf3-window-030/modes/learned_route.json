@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-6de024f0"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-9e3063bcee430289a70e4919c3cd231b0a6671667c324ea897e0f980c2b377b9"
+    "scoreHash": "sha256-0a948db662587ad1623d37ac6f1b8024b1bb2ba86ca0ca3d1c6d79d1b9f3062c"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-6de024f0:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-6de024f0:route_fn",
-      "selectionDigest": "sha256-5513d195cfadfc23f1853fc89d3f07fbde6fcd524196514f4dc7caea7a785410",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-0198929443c89eb2840db7d2263a8f96da812593d1fec2760e84d575f9896c44",
       "selectedContextIds": [
-        "pack-6de024f0:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
-        "pack-6de024f0:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:feedback",
-        "pack-6de024f0:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:feedback"
+        "pack-6de024f0:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15878\", \"reply_to_id\": \"15876\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-08 11:08 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"That’s a newer ledger item, not random stale chatter.\\n\\nCurrent disk truth in.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction.",
-        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15873\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-08 11:07 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` What tasks are left to do?. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:interaction.",
-        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15880\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-08 11:08 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` I'll tell you the app store and play store stuff in a month, in may. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:interaction."
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15878\", \"reply_to_id\": \"15876\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-08 11:08 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"That’s a newer ledger item, not random stale chatter.\\n\\nCurrent disk truth in.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-6af086f8b2b2051e2b85107d2b96a25cbb3be343332c98429e26d5b1601a93b8",
+      "eventExportDigest": "sha256-895a039c367a7b991937363c4733edb3843d36921344e55edc251445c6197334",
       "expectedContextPhrases": [
         "hey",
         "jon",
@@ -91,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 4.926,
-        "routeSelectionMs": 2.921,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 2.002,
+        "totalMs": 4.578,
+        "routeSelectionMs": 2.477,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.1,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-29f8ba87"
+      "pack-ed192a0d"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-29f8ba87",
-    "frozenEvalRouterIdentity": "pack-29f8ba87:route_fn",
+    "frozenEvalPackId": "pack-ed192a0d",
+    "frozenEvalRouterIdentity": "pack-ed192a0d:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-b4f6c60040dcfbd8fcc69df01da46bb0f8a82351b721565625d100185cd09ea3"
+    "scoreHash": "sha256-8974d4621d7b6bbb350d5443e012a615976a4ffc04fdec6dce9e429bd9157d7e"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-29f8ba87",
+      "activePackId": "pack-ed192a0d",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-29f8ba87:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-29f8ba87:route_fn",
-      "selectionDigest": "sha256-392ac68c96a362c5f2ea42993c654b1241fdebf0ff57d4cf77538bce0fbdba08",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-c8f9dfce84b3cb913f89b940a4d12894db9562f05e4d18e9c6102abc9e9d1bee",
       "selectedContextIds": [
-        "pack-29f8ba87:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
-        "pack-29f8ba87:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
-        "pack-29f8ba87:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-4:feedback"
+        "pack-ed192a0d:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: Important contract clarification from Jon for the multi-horizon training lane. Use this three-surface model explicitly: 1. snapshot features = facts known at snapshot time and shared across horizons 2. labels = realized future outcomes 3. known-future horizon-attached features = values that are deterministic once you choose the target horizon / attached label row, e.g. target_dte and horizon-relative event semantics like time-until-earnings/FOMC/CPI/NFP and crossing flags Critical rule: - do .... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction.",
-        "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-B training-contract multi-horizon lane in /Users/guclaw/worktrees/quant-research/202-mh1b-training. Goal: - make GBM/TFT consume multi-horizon rows explicitly - ensure target_dte is active in training/panel paths and artifact/reporting surfaces - keep actual_exp_dte and dte_gap_abs out of model feature inputs - run focused tests for retrai.... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction.",
-        "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: assistant: I’m tightening the contract wording in code now so the three surfaces are explicit, not just implied by exclusion rules. ToolCall exec {\"command\": \"grep -Rni \\\"known_future\\\\|snapshot features\\\\|horizon-attached\\\\|three-surface\\\\|surface\\\" /Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py /Users/guclaw/worktrees/quant-research/202-mh1b-train. Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-4:interaction."
+        "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: Important contract clarification from Jon for the multi-horizon training lane. Use this three-surface model explicitly: 1. snapshot features = facts known at snapshot time and shared across horizons 2. labels = realized future outcomes 3. known-future horizon-attached features = values that are deterministic once you choose the target horizon / attached label row, e.g. target_dte and horizon-relative event semantics like time-until-earnings/FOMC/CPI/NFP and crossing flags Critical rule: - do .... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-537f1d050fce1b9a0027f921a2ab25966f91687041294e1b9894f569af6854fa",
+      "eventExportDigest": "sha256-01e4ab7096138b133fba29763e73b8ddef7c63cb1abdfc5253ce1d92e1f1f5e2",
       "expectedContextPhrases": [
         "/openclaw/skills/coding-agent/SKILL.md\"}"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.609,
-        "routeSelectionMs": 5.744,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.863,
+        "totalMs": 9.359,
+        "routeSelectionMs": 5.943,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.415,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

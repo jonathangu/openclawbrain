@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T08:56:20.640Z",
   "traceHash": "sha256-98f498b917834ee9c0a78d5b62a338d5c94ab2df87cb501ae8615cf42d07619a",
   "fixtureHash": "sha256-54eb8df766feda2c6211a7171b884e66a0008ed710f7d28bcb6341bc861e92a9",
-  "scoreHash": "sha256-98231227dc7ff90f1b4d9ddf8b14fdabd3ea7065c09741a81cd2d1eb5a815ffb",
+  "scoreHash": "sha256-7f6ebb5c7fb3c4faecb027e993cfa24a3b0bbea7e0d8f7976cbacfed8ee0ea27",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.037,
+            "totalMs": 0.036,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.037,
+            "otherMs": 0.036,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.202,
-            "routeSelectionMs": 5.434,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.765,
+            "totalMs": 7.661,
+            "routeSelectionMs": 4.981,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.678,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.09,
-            "routeSelectionMs": 5.142,
+            "totalMs": 7.743,
+            "routeSelectionMs": 5.094,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.946,
+            "otherMs": 2.646,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-a5553117"
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-552ffd658c29dfeca2a21850f44a6a0e319e9fa5b989ea228d2a1cc553cdb9af"
+        "scoreHash": "sha256-da23c6fddf173d94b21da439a24d2fb4e9ea87c933a4089963f3544ccf8c996a"
       },
       "turns": [
         {
@@ -409,24 +409,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-a5553117:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-a5553117:route_fn",
-          "selectionDigest": "sha256-c4e9bda4db54411ab46414adbc83a11852e45888becbef24423c11102e75f01b",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-efe861de1b1288693116123ebf597be77eb80c58fecb9a7db4a4ee8aa7d06762",
           "selectedContextIds": [
-            "pack-a5553117:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
-            "pack-a5553117:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback",
-            "pack-a5553117:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback"
+            "pack-a5553117:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: assistant: Operational excellence for Pelican = **(1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery**. Biggest remaining wins: 1) **Execution quality SLOs + guardrails (slippage is still the boss)** - Track: fill-rate, cancel-rate, slippage by *ticker/structure/time/quote-age/spread-width*. - Hard gate: *don’t place/keep repricing* if quote is stale, spread too wide, or expected edge < expected slippage. - Auto-mitigation modes: “slippage-critical ⇒ cancel new entries for .... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
-            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"No new learnings.\" } ``` Is this the heartbeat?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction.",
-            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:53 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` What else for operational excellence?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction."
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"No new learnings.\" } ``` Is this the heartbeat?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-113590028ae2a8812b07151ff952459984caa121b6ce3a68da852a3b15b42e3b",
+          "eventExportDigest": "sha256-e27c8fa67399a0aa4342da967fe3f8f32784b5787a99347be760b4b3b5c95140",
           "expectedContextPhrases": [
             "high-leverage plan operational excellence",
             "label opus-ops-excellence-2026-03-03 mode model",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.925,
-            "routeSelectionMs": 6.403,
+            "totalMs": 10.264,
+            "routeSelectionMs": 6.93,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.52,
+            "otherMs": 3.332,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-73aff5f06ce3e6c45894db6e6616367430a9bb3db59ff90647f5601baaff92cf"
+  "bundleHash": "sha256-37bda2274086e1fe6e79a50c7054a3e3f15edfff925a58de656cbfbd3cdb88d8"
 }

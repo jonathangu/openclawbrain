@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-09T06:47:32.295Z",
   "traceHash": "sha256-80f4bd70b8f229336838d17a92921bfca64745f162a9177679361b11e355a256",
   "fixtureHash": "sha256-1a25c630a19d83ff4b3784d9a97b879e228a965826872ffe6bcc2e6453fbac5a",
-  "scoreHash": "sha256-abd209c2d8619f444d0420a8fb94ecb9effec7464a2d6e13e9c4d804e2db9f91",
+  "scoreHash": "sha256-138d5dc4b188d63b3c16757bcbfee32f9d3831709063a639be809ad2ad423032",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.044,
+            "totalMs": 0.026,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.044,
+            "otherMs": 0.026,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-f414f306"
+          "pack-4982cf5d"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-5a9d0e081f31a517e16f4a1b1af17d61563570efb533d01144e623056550cab7"
+        "scoreHash": "sha256-17c7d2cfe1d596f1009d33a24758fa2c9cf940b26ec9c2a759e4356fbecbf585"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-f414f306",
+          "activePackId": "pack-4982cf5d",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-ce5927618b560a7ed520b529c3b9d24bc266e297b004f057079ab00df841937b",
+          "selectionDigest": "sha256-2fe942bff758dc049109afebdecbf9de6bf0db2db2de86e1716931b18b9e73b3",
           "selectedContextIds": [
-            "pack-f414f306:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
-            "pack-f414f306:pointer-aware-init",
-            "pack-f414f306:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback"
+            "pack-4982cf5d:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
+            "pack-4982cf5d:pointer-aware-init",
+            "pack-4982cf5d:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Hardened. What I changed - Kept the earlier fix: core ticker rows are no longer dropped just because options chain is partial. - Added a **fail-closed guardrail** for the core-36 slice: - if the latest core-36 snapshot has any ticker with - `options_collection_partial_flag > 0`, or - `options_collection_failed_ticker_count > 0`, or - `options_collection_incomplete_ticker_count > 0` - the proof lane now **returns non-zero** and surfaces the exact tickers instead of quietly publishing a degrade.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-9dc4144487e80ad9aac0a1e73fbd0871d7593b9c4844f06dd7f81a83bb008dcc",
+          "eventExportDigest": "sha256-3bb6406a124dcf869f0bea3a8876b7f522604c4b2315b6fd0c056aa10b57e051",
           "expectedContextPhrases": [
             "/test_rebuild_feature_matrix_coverage.py",
             "/retry",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.57,
-            "routeSelectionMs": 5.635,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.933,
+            "totalMs": 7.728,
+            "routeSelectionMs": 5.107,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.62,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-f414f306"
+          "pack-4982cf5d"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-cfe71b2d0932c33d8e30dd14ee9d5bd81298aeca8d9f5d1b920e8acbdfed09a7"
+        "scoreHash": "sha256-feb2b6df1de8c70eaf540a5f3c6324f2cc689dffc3adb30c3619929db1140a64"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-f414f306",
+          "activePackId": "pack-4982cf5d",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-6446110e007de27eeaec757d57e5e1fb274a84042a003c46abb32ef0469b7c40",
+          "selectionDigest": "sha256-06c754cc980fb1ce1e6a49b594bb7496d33b14799abf0b3641bacbed52559b67",
           "selectedContextIds": [
-            "pack-f414f306:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
-            "pack-f414f306:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction",
-            "pack-f414f306:pointer-aware-init"
+            "pack-4982cf5d:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
+            "pack-4982cf5d:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction",
+            "pack-4982cf5d:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction.",
             "Interaction operator_override on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed. Message: cue-5-seed-message.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-3b7e8496fdce01e8ae792364b729265cda794a453edebe71f9bd0e9fc3e5497c",
+          "eventExportDigest": "sha256-efaabc5b6c0d16c2fe0c44c1a2638322ca5c67d82c66845ee63a77c925fbbf1a",
           "expectedContextPhrases": [
             "/test_rebuild_feature_matrix_coverage.py",
             "/retry",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.48,
-            "routeSelectionMs": 5.645,
+            "totalMs": 7.666,
+            "routeSelectionMs": 5.05,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.834,
+            "otherMs": 2.615,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-23eead59"
+          "pack-795c89b0"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-23eead59",
-        "frozenEvalRouterIdentity": "pack-23eead59:route_fn",
+        "frozenEvalPackId": "pack-795c89b0",
+        "frozenEvalRouterIdentity": "pack-795c89b0:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-7d8d69efdb43ed3ca4b63689c93e5cf647c594392b519779a26ad297eb3edaa0"
+        "scoreHash": "sha256-007f1d9fc34bbbde14e952c5bf7662b4fd98952efb24bde1a16732ca081de5b7"
       },
       "turns": [
         {
@@ -405,28 +405,24 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-23eead59",
+          "activePackId": "pack-795c89b0",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-23eead59:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-23eead59:route_fn",
-          "selectionDigest": "sha256-10e9be5d1f54d9d06c296ea50f55f977defec68ee7d4a200c592b89e81f68635",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-8f8d7c6f59fac3fbd2612430c37301e10af571ae6b6c54d40824b89f2b6f0bd6",
           "selectedContextIds": [
-            "pack-23eead59:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
-            "pack-23eead59:pointer-aware-init",
-            "pack-23eead59:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback"
+            "pack-795c89b0:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction.",
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Hardened. What I changed - Kept the earlier fix: core ticker rows are no longer dropped just because options chain is partial. - Added a **fail-closed guardrail** for the core-36 slice: - if the latest core-36 snapshot has any ticker with - `options_collection_partial_flag > 0`, or - `options_collection_failed_ticker_count > 0`, or - `options_collection_incomplete_ticker_count > 0` - the proof lane now **returns non-zero** and surfaces the exact tickers instead of quietly publishing a degrade.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction."
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-7375b91db4c9369852733418fdcacecc54bcaca16ca061ebcea65f6704f7e2ce",
+          "eventExportDigest": "sha256-18cdd290a402810f69984bc1f5d6db7533a87c5076a6d19c113493725bda39f8",
           "expectedContextPhrases": [
             "/test_rebuild_feature_matrix_coverage.py",
             "/retry",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.472,
-            "routeSelectionMs": 6.763,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.707,
+            "totalMs": 9.6,
+            "routeSelectionMs": 6.233,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.365,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-d33573ef3dc38b89c742410f57bcdb1e05c3c31fd5e37c3d9e87357017fc83c5"
+  "bundleHash": "sha256-85d05f147efdb9d7c4a9c2b236d132ee32e9967b149adc7254376068cb5d75b4"
 }

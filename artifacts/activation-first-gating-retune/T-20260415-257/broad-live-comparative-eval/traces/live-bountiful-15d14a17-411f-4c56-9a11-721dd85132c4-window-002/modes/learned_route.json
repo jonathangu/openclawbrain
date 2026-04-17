@@ -5,11 +5,11 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 60,
+    "qualityScore": 40,
     "compileOkCount": 1,
-    "phraseHitCount": 1,
+    "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-30b87ebe"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-579ba3ce31b4e7a22303df662c8f33d1e90f6d43b4d0a63a03c46751782e61a9"
+    "scoreHash": "sha256-00a1e29aa90dd20877bd6ea3fad9acb3288b428990bafa52e8ae0f8a511f12da"
   },
   "turns": [
     {
@@ -55,46 +55,41 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-30b87ebe:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-30b87ebe:route_fn",
-      "selectionDigest": "sha256-3c11311dabf383e50469efad625275b3be94255fe8d01401370483633907708e",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-daf61d4dbdccbfb78d1258a1f978ab2a7486c7b6ce3b4674fcd4a27c262a6bcc",
       "selectedContextIds": [
-        "pack-30b87ebe:pointer-aware-init",
-        "pack-30b87ebe:workspace-init:22063e9a",
-        "pack-30b87ebe:workspace-init:d2acb8c7"
+        "pack-30b87ebe:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
-        "Top-priority boot input USER.md selected by pointer-aware init (inbound=3, outbound=0). USER.md — Bountiful Garden Principals Jonathan (Jon) - **Role:** Technical direction, ML, infrastructure, architecture - **Pronouns:** he/him - **Timezone:** America/Los_Angeles (PT) - PhD Economics UCLA, ML Engineer at Instacart - Analytical decision-maker. Values data over vibes. - Prefers Python/SQL/Julia for ML, T…",
-        "Top-priority boot input IDENTITY.md selected by pointer-aware init (inbound=1, outbound=0). IDENTITY.md — Bountiful Garden agent - **Name:** Clover - **Creature:** a garden ghost in the machine - **Vibe:** warm, sharp, practical - **Emoji:** 🌱 - **Avatar:** _(unset)_ Clover helps neighbors share their harvests with joy."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-a41d0bc300924ceae5a21391dd27c0019a1550ee7ffd135d7fd68d7cb59fdae0",
+      "eventExportDigest": "sha256-a31ba97171a19fd9e63bfd119e30ae1bdbcd25dafd66ed946c16e7ef0d7fc9e9",
       "expectedContextPhrases": [
         "hey",
         "jon",
         "here."
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [
-        "jon"
-      ],
+      "phraseHits": [],
       "missedPhrases": [
         "hey",
+        "jon",
         "here."
       ],
-      "qualityScore": 60,
+      "qualityScore": 40,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.841,
-        "routeSelectionMs": 4.856,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 2.982,
+        "totalMs": 7.86,
+        "routeSelectionMs": 4.844,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.014,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

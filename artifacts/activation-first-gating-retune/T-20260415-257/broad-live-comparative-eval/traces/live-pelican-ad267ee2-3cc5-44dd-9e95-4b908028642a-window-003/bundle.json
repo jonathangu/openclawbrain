@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-01T02:44:34.222Z",
   "traceHash": "sha256-154227e12deeada99188001de1f98c7859b44b0240a0a63280198f0600727836",
   "fixtureHash": "sha256-141e98c67b76e6b544c136b2dc9ec311316dae947241f48af13f9b3f509e9c48",
-  "scoreHash": "sha256-f6068e8c10c274436a84ced54cff8dd0344647322e255fa102b6d4d9a14f6186",
+  "scoreHash": "sha256-1200f9126c4a6dfa660cae258b6a8ef78596815a5b2d2f0d034b45a966aadc78",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.034,
+            "totalMs": 0.029,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.034,
+            "otherMs": 0.029,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-043bd336"
+          "pack-3b4abaeb"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-1ac3b4661d9c37ff8488af4ed574b0745ee3d54b70f7b9403574599136551e10"
+        "scoreHash": "sha256-2c5415aaa0741bafc6fbba4243dc7ba0f76a225326d80f6b1fedf09ae73b1a74"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-043bd336",
+          "activePackId": "pack-3b4abaeb",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-c6b2dea89bc9827ecf90a5b5b2461e0478ec4767314a10728d33e2fe3594e21d",
+          "selectionDigest": "sha256-44eff68f93317e9f9ff06b17bf6f826ba10578860ba19d6fee0580781adc8716",
           "selectedContextIds": [
-            "pack-043bd336:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
-            "pack-043bd336:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
-            "pack-043bd336:pointer-aware-init"
+            "pack-3b4abaeb:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
+            "pack-3b4abaeb:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
+            "pack-3b4abaeb:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: Update: Jon explicitly approved the aggressive path and explicitly said you are welcome to kill existing training jobs. Treat this as permission to optimize for immediate relaunch, not next-run-only. Adjust PEL-072 implementation accordingly: support killing/replacing the current sequential retrain with the new parallel GBM+TFT architecture as soon as the code path is ready. Prioritize a concrete relaunchable implementation and operator runbook/proof path.. Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction.",
             "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-072: fix Pelican retrain architecture for next run in /Users/guclaw/worktrees/quant-research/072a-parallel-retrain. Work only in that worktree. Problem: current AWS retrain is sequential by design (GBM first, TFT second) inside bootstrap-train.sh, with weak observability: GBM/TFT only emit training_started and sparse/empty train logs. Jon explicitly wants GBM a.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-01-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, docs/jon-model.md, docs/checklists.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-f086632dfffb52102540fd6e2096a1c3cc5d6cb6655ee81276b8d1edda73efcd",
+          "eventExportDigest": "sha256-d52cfb9e424ab8929ec41074119b14c1394b01bfc915a70568e7afe25477cd24",
           "expectedContextPhrases": [
             "/retrain_v6_monitor.sh",
             "/weekly_retrain.sh",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.733,
-            "routeSelectionMs": 4.891,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.84,
+            "totalMs": 7.011,
+            "routeSelectionMs": 4.468,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.541,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-043bd336"
+          "pack-3b4abaeb"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-c7db5dc94a8c1d6aeaeda2c3b03d4c834238e2aca7b77b12bea87c63b1501050"
+        "scoreHash": "sha256-da19657116b7d30d7556bfb985f05e631e33592322c2ed3961c6379aff3935fe"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-043bd336",
+          "activePackId": "pack-3b4abaeb",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-fdc62e8e961df0ea547029ef80951ed3ae81d614331527be31e292170400cf86",
+          "selectionDigest": "sha256-6333a94c0b8b8bbdc46867de56f3a7f3ddeb8d744fa7c2426cef6d39b8894428",
           "selectedContextIds": [
-            "pack-043bd336:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
-            "pack-043bd336:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction",
-            "pack-043bd336:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback"
+            "pack-3b4abaeb:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
+            "pack-3b4abaeb:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction",
+            "pack-3b4abaeb:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: Update: Jon explicitly approved the aggressive path and explicitly said you are welcome to kill existing training jobs. Treat this as permission to optimize for immediate relaunch, not next-run-only. Adjust PEL-072 implementation accordingly: support killing/replacing the current sequential retrain with the new parallel GBM+TFT architecture as soon as the code path is ready. Prioritize a concrete relaunchable implementation and operator runbook/proof path.. Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction.",
             "Interaction operator_override on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed. Message: cue-3-seed-message.",
             "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-072: fix Pelican retrain architecture for next run in /Users/guclaw/worktrees/quant-research/072a-parallel-retrain. Work only in that worktree. Problem: current AWS retrain is sequential by design (GBM first, TFT second) inside bootstrap-train.sh, with weak observability: GBM/TFT only emit training_started and sparse/empty train logs. Jon explicitly wants GBM a.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-eb5921a2b7734d9f5c8ed4ca77a95d49d3b1a31543a4d03f5119709d5f400fdb",
+          "eventExportDigest": "sha256-8b18b0c67bab7f5e52811cad0450968a19b1d13afc062e1daf86d406c833be07",
           "expectedContextPhrases": [
             "/retrain_v6_monitor.sh",
             "/weekly_retrain.sh",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.806,
-            "routeSelectionMs": 4.987,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.817,
+            "totalMs": 7.267,
+            "routeSelectionMs": 4.605,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.661,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-6a6ae45d"
+          "pack-a179cc12"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-6a6ae45d",
-        "frozenEvalRouterIdentity": "pack-6a6ae45d:route_fn",
+        "frozenEvalPackId": "pack-a179cc12",
+        "frozenEvalRouterIdentity": "pack-a179cc12:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-6c46eb923d31244eac883608a64e3c7c7de5f9d9c1461c2ff589f670e95152fc"
+        "scoreHash": "sha256-935cd762f39b786575ee17aecad2c4ee25a948aa86223f0599add86a99c09310"
       },
       "turns": [
         {
@@ -405,28 +405,24 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-6a6ae45d",
+          "activePackId": "pack-a179cc12",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-6a6ae45d:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-6a6ae45d:route_fn",
-          "selectionDigest": "sha256-87b9efe928d2b86c7e07caf4b5578e6287d51c0bfad5361cb13f2d2faa7acaa7",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-f8b1208ebfa47da152781ccca2acbdefc4e18a2e8ecccbcba34088eaeb5f0c4a",
           "selectedContextIds": [
-            "pack-6a6ae45d:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
-            "pack-6a6ae45d:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
-            "pack-6a6ae45d:pointer-aware-init"
+            "pack-a179cc12:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: Update: Jon explicitly approved the aggressive path and explicitly said you are welcome to kill existing training jobs. Treat this as permission to optimize for immediate relaunch, not next-run-only. Adjust PEL-072 implementation accordingly: support killing/replacing the current sequential retrain with the new parallel GBM+TFT architecture as soon as the code path is ready. Prioritize a concrete relaunchable implementation and operator runbook/proof path.. Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction.",
-            "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-072: fix Pelican retrain architecture for next run in /Users/guclaw/worktrees/quant-research/072a-parallel-retrain. Work only in that worktree. Problem: current AWS retrain is sequential by design (GBM first, TFT second) inside bootstrap-train.sh, with weak observability: GBM/TFT only emit training_started and sparse/empty train logs. Jon explicitly wants GBM a.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-01-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, docs/jon-model.md, docs/checklists.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-c0444a414ca556e6e73a5ae31d510edfe63c1e1dc33b39d32d9a0d40561d74cb",
+          "eventExportDigest": "sha256-25431396606ab82462dfe15603962bc3e7fa0ed76a59b97d89f30b27b0ff5ede",
           "expectedContextPhrases": [
             "/retrain_v6_monitor.sh",
             "/weekly_retrain.sh",
@@ -444,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.459,
-            "routeSelectionMs": 5.825,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.631,
+            "totalMs": 9.083,
+            "routeSelectionMs": 5.659,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.423,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-aa660adb7fc7a3a17830418964da0238170b31107b2e3b45b972c97147ded604"
+  "bundleHash": "sha256-02d59625d327cacfcb65198f6aedae8f917cefb62f1582f810915c4934a2e7fc"
 }

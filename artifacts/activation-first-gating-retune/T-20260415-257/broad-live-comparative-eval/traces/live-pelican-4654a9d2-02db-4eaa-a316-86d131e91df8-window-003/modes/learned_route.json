@@ -5,19 +5,19 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 70,
+    "qualityScore": 40,
     "compileOkCount": 1,
-    "phraseHitCount": 1,
+    "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-aa28054b"
+      "pack-8349c628"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-aa28054b",
-    "frozenEvalRouterIdentity": "pack-aa28054b:route_fn",
+    "frozenEvalPackId": "pack-8349c628",
+    "frozenEvalRouterIdentity": "pack-8349c628:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-c21015bbd30ce871e15ff5a8b1302c0e7c8c2074ee600abffe82324186465ef6"
+    "scoreHash": "sha256-6f911fc35f1058390a8617bb9ef630930a9f4d6cef369652a0f1eafc3f645773"
   },
   "turns": [
     {
@@ -51,48 +51,43 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-aa28054b",
+      "activePackId": "pack-8349c628",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-aa28054b:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-aa28054b:route_fn",
-      "selectionDigest": "sha256-338e88430a5df6087ea418c9358cd779d850a474627246356781023eaeec4df5",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-6d929a6689bb3a1f11c9dad9d81ed41b2955eb5e3c500594c0ce499138346833",
       "selectedContextIds": [
-        "pack-aa28054b:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:feedback",
-        "pack-aa28054b:pointer-aware-init",
-        "pack-aa28054b:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-2:feedback"
+        "pack-8349c628:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed: assistant: Good — neither feature is in the current production GBM model. They were already filtered out during the v4 embeddings-only training. This is a clean removal — no model retrain needed, just code cleanup. Spawning Codex to strip `has_news` and `news_missing` from all files. ToolCall read {\"limit\": 10, \"offset\": 1, \"path\": \"/Users/guclaw/.openclaw/workspace-pelican/TOOLS.md\"}. Related interaction: 4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-aws-training.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-        "Teaching feedback on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed: assistant: Got the full picture. ~13 files, ~70+ references. This is a solid Codex job — scoped removal across the codebase. Let me also check the config and feature matrix to understand if these are in the trained models. ToolCall exec {\"command\": \"grep -n \\\"has_news\\\\|news_missing\\\" /Users/guclaw/.openclaw/workspace/quant-research/.trigger_config.json 2>/dev/null; echo \\\"---\\\"; grep -n \\\"has_news\\\\|news_missing\\\" /Users/guclaw/.openclaw/workspace/quan. Related interaction: 4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-2:interaction."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-aws-training.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-e619d452d90a8b1f7759acb29774b24ac7554f11b697ef9ef1fcefe040391773",
+      "eventExportDigest": "sha256-1b303bf332c05905581321bfb50690f4520ffe706f3644b9fd92657171872846",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research",
         "/dev/null\","
       ],
       "minimumPhraseHits": 2,
-      "phraseHits": [
-        "/Users/guclaw/.openclaw/workspace/quant-research"
-      ],
+      "phraseHits": [],
       "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/quant-research",
         "/dev/null\","
       ],
-      "qualityScore": 70,
+      "qualityScore": 40,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 10.047,
-        "routeSelectionMs": 6.574,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.471,
+        "totalMs": 9.061,
+        "routeSelectionMs": 5.799,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.261,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-09T08:07:20.715Z",
   "traceHash": "sha256-1df02420998a45ff18b6fa7592e1d6cd553e69e00670f629819f48f156232f3b",
   "fixtureHash": "sha256-d26e41f8ffbf777f72220318ad80ec7f532c81cc4e8c86beb0f89befd769d272",
-  "scoreHash": "sha256-e816ad8952b9e0e7768605f519d5ac42264084305fdff2182a6d11207dac96ae",
+  "scoreHash": "sha256-db225c375eb481ec941fb248d151164b6c40d25a208178d136be27dca285bda6",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.025,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.025,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-86015ffc"
+          "pack-db6f3c53"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-d9ccadc3eda4f12bf710188051a463abbacb3b335d3ae23815b1001a8d14166f"
+        "scoreHash": "sha256-50bb9fff042b77f0ae8dafb265473361a1cdc92ed41536fa4cb9e25865e612a8"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-86015ffc",
+          "activePackId": "pack-db6f3c53",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-aa4647d0f8f69d8d1f1e914c10115e343d9fa153a8de1c03bb1928570ec2c394",
+          "selectionDigest": "sha256-f6e20dad5729dd0c1e0a144a5d60d2ccd1416e8b132e3c61fe869c75fe9826c5",
           "selectedContextIds": [
-            "pack-86015ffc:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
-            "pack-86015ffc:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback",
-            "pack-86015ffc:pointer-aware-init"
+            "pack-db6f3c53:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
+            "pack-db6f3c53:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback",
+            "pack-db6f3c53:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the state machine module in place; now I’m wiring it into the off-hotpath alert suite and adding recovery provenance handling without touching the live collector path. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\npath = Path('/Users/guclaw/worktrees/pelican/49/scripts/pel087_core36_alert_suite.py')\\ntext = path.read_text()\\ntext = text.replace('from ticker_universe import TR. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction.",
             "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the new state machine, alert-suite wiring, and tests in place. Next I’m running focused pytest on the new slice plus the existing core-36 alert tests to catch any leakage or typing regressions. ToolCall exec {\"command\": \"python3 -m pytest -q tests/test_core_capture_state_machine.py tests/test_pel087_core36_alert_suite.py\", \"timeout\": 120, \"workdir\": \"/Users/guclaw/worktrees/pelican/49\"}. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-f88b0e2f84379e286d58ef06accbae702df9d1d94d58dce6e33fed2d178b5eaa",
+          "eventExportDigest": "sha256-1797061908124d61f508140f5775d091089ec8b9b91b30555d9a47d518acb032",
           "expectedContextPhrases": [
             "/pel087_core36_alert_suite.py",
             "/test_core_capture_state_machine.py",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.979,
-            "routeSelectionMs": 5.234,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.741,
+            "totalMs": 8.012,
+            "routeSelectionMs": 5.352,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.659,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-86015ffc"
+          "pack-db6f3c53"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-7eae22e6202e946265c9f7f97f632669d1772dbdad25cddf1c8fe5c5feb855a8"
+        "scoreHash": "sha256-5753f118890c23cf8f1da569cb64e7a03e0da6849b85bc27846f28709cbb2841"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-86015ffc",
+          "activePackId": "pack-db6f3c53",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-58d2bf22aeafa63f9286f8c09c30a4c113b935cc0756693f0da7afd0e10255b0",
+          "selectionDigest": "sha256-f1b79349aaf550b762fb9dac3cb6018019a065a2e92f153bf13b72acd9e6e185",
           "selectedContextIds": [
-            "pack-86015ffc:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
-            "pack-86015ffc:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction",
-            "pack-86015ffc:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback"
+            "pack-db6f3c53:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
+            "pack-db6f3c53:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction",
+            "pack-db6f3c53:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the state machine module in place; now I’m wiring it into the off-hotpath alert suite and adding recovery provenance handling without touching the live collector path. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\npath = Path('/Users/guclaw/worktrees/pelican/49/scripts/pel087_core36_alert_suite.py')\\ntext = path.read_text()\\ntext = text.replace('from ticker_universe import TR. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction.",
             "Interaction operator_override on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed. Message: cue-3-seed-message.",
             "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the new state machine, alert-suite wiring, and tests in place. Next I’m running focused pytest on the new slice plus the existing core-36 alert tests to catch any leakage or typing regressions. ToolCall exec {\"command\": \"python3 -m pytest -q tests/test_core_capture_state_machine.py tests/test_pel087_core36_alert_suite.py\", \"timeout\": 120, \"workdir\": \"/Users/guclaw/worktrees/pelican/49\"}. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-b7e6e48af1e2f9f67a38e82f50285820467093ca2c68d82838785900aafede65",
+          "eventExportDigest": "sha256-e5547d641d5b04de41bc96332c5a082c933db2d6d6c573962facbb6999845151",
           "expectedContextPhrases": [
             "/pel087_core36_alert_suite.py",
             "/test_core_capture_state_machine.py",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.944,
-            "routeSelectionMs": 5.173,
+            "totalMs": 7.769,
+            "routeSelectionMs": 5.077,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.769,
+            "otherMs": 2.691,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -359,19 +359,19 @@
         "activationStrategy": "continuous_learned_loop",
         "modeRequested": "learned",
         "selectionEngine": "graph_walk_v1",
-        "qualityScore": 100,
+        "qualityScore": 40,
         "compileOkCount": 1,
-        "phraseHitCount": 3,
+        "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-c5bc7c07"
+          "pack-1b2a585e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-c5bc7c07",
-        "frozenEvalRouterIdentity": "pack-c5bc7c07:route_fn",
+        "frozenEvalPackId": "pack-1b2a585e",
+        "frozenEvalRouterIdentity": "pack-1b2a585e:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-2e2e8b0d19772fee4eef2bd1223889644730e1e28ece1d458a86b613c2252050"
+        "scoreHash": "sha256-ea6793ac6bc49e1c96aa1fe41416b9a8ab6c1607cba54a267c84105465ffd6ee"
       },
       "turns": [
         {
@@ -405,49 +405,45 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-c5bc7c07",
+          "activePackId": "pack-1b2a585e",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-c5bc7c07:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-c5bc7c07:route_fn",
-          "selectionDigest": "sha256-a281d22e30fe673091f8e4f4ff98c59e840a72870e183489a94f30865e9a65cc",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-aa241bd52a522eb2f34c820e548d71b8091467313309b3d75ce9dc9ea92794b4",
           "selectedContextIds": [
-            "pack-c5bc7c07:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
-            "pack-c5bc7c07:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback",
-            "pack-c5bc7c07:pointer-aware-init"
+            "pack-1b2a585e:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the state machine module in place; now I’m wiring it into the off-hotpath alert suite and adding recovery provenance handling without touching the live collector path. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\npath = Path('/Users/guclaw/worktrees/pelican/49/scripts/pel087_core36_alert_suite.py')\\ntext = path.read_text()\\ntext = text.replace('from ticker_universe import TR. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction.",
-            "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the new state machine, alert-suite wiring, and tests in place. Next I’m running focused pytest on the new slice plus the existing core-36 alert tests to catch any leakage or typing regressions. ToolCall exec {\"command\": \"python3 -m pytest -q tests/test_core_capture_state_machine.py tests/test_pel087_core36_alert_suite.py\", \"timeout\": 120, \"workdir\": \"/Users/guclaw/worktrees/pelican/49\"}. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-1856f4e0bcf0b5bf73890ed61cce4f300aad472ae4396e80505e6b74b6117564",
+          "eventExportDigest": "sha256-18e675537dbc055016c53be7e2d2fa2c73b04631bdd7e376f0a0634df4c77a06",
           "expectedContextPhrases": [
             "/pel087_core36_alert_suite.py",
             "/test_core_capture_state_machine.py",
             "/test_pel087_core36_alert_suite.py"
           ],
           "minimumPhraseHits": 3,
-          "phraseHits": [
+          "phraseHits": [],
+          "missedPhrases": [
             "/pel087_core36_alert_suite.py",
             "/test_core_capture_state_machine.py",
             "/test_pel087_core36_alert_suite.py"
           ],
-          "missedPhrases": [],
-          "qualityScore": 100,
+          "qualityScore": 40,
           "compileActiveVersion": 1,
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.807,
-            "routeSelectionMs": 6.275,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.53,
+            "totalMs": 9.853,
+            "routeSelectionMs": 6.417,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.435,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -478,12 +474,12 @@
         "qualityScore": 100
       },
       {
-        "mode": "learned_route",
+        "mode": "vector_only",
         "qualityScore": 100
       },
       {
-        "mode": "vector_only",
-        "qualityScore": 100
+        "mode": "learned_route",
+        "qualityScore": 40
       },
       {
         "mode": "no_brain",
@@ -491,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-ebf4ee5930b2800c2239c51c6371fcdd8efa52d75458a95551bacf73c0454c36"
+  "bundleHash": "sha256-c17a4709b860cc13711ddd16093294e01efbc2ab094a46af0bda3fe27830b673"
 }

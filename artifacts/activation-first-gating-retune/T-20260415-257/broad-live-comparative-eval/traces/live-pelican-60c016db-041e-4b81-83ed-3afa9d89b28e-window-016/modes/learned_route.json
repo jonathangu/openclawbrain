@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-45d0c810"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-18ba4abf4cf6f295c44b30a9c38840f9675d59b7d092882cc51d49edc1d6ce3d"
+    "scoreHash": "sha256-f13d454b1f1e18447aaa669ad35546e74ead1bbd3786cfd98485fc2d9e8369ff"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-45d0c810:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-45d0c810:route_fn",
-      "selectionDigest": "sha256-cbd0d04dea3cc8eb8c81a182bba6c684ff956ad284aecea7db4308107d1c3389",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-68f6cf32a90f5e0f1bddba7157b2edcd1527ce8410557c3ee9134cabfec5cdaf",
       "selectedContextIds": [
-        "pack-45d0c810:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
-        "pack-45d0c810:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback",
-        "pack-45d0c810:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:feedback"
+        "pack-45d0c810:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 02:13 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make sure everything will work!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
-        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:38 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes start the wave! Merge it! Ship it!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction.",
-        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:56 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Are we on wave 3 yet?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:interaction."
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:38 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes start the wave! Merge it! Ship it!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-68c1c96347f425e16dc5611625a768d2f4762288490dc74fb2ba02d691edf5c8",
+      "eventExportDigest": "sha256-c689b5fa0c03b4a84faf5e53b483ac550bfae876e22fef080f676f1ebd875968",
       "expectedContextPhrases": [
         "exec gpt-5.3-codex-spark yolo wave",
         "gpt-5.3-codex-spark yolo wave execution",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.575,
-        "routeSelectionMs": 5.23,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.343,
+        "totalMs": 8.695,
+        "routeSelectionMs": 5.449,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.245,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

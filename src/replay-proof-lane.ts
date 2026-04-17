@@ -2,6 +2,10 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import type {
+  LearnedRouteSelectionOverride,
+  LearnedRouteSelectionOverrideInput,
+} from "../packages/compiler/vendor/index.js";
 import {
   validateRecordedSessionReplayProofBundle,
   writeRecordedSessionReplayProofBundle,
@@ -13,6 +17,15 @@ import {
   type RecordedSessionTraceTurnV1,
   type RecordedSessionTraceV1,
 } from "../packages/cli/dist/src/index.js";
+import type {
+  RouteCandidateV1,
+  RouteDecisionRowV1 as ColdStartRouteDecisionRowV1,
+} from "./brain-core/cold-start-router-contracts.ts";
+import {
+  loadColdStartRouterArtifactBundleV1,
+  selectColdStartRouteCandidateIdsFromArtifactBundleV1,
+  summarizeColdStartRouterArtifactBundleRuntimeTruthV1,
+} from "./brain-core/cold-start-router-runtime.ts";
 
 export const RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER = [
   "no_brain",
@@ -36,6 +49,9 @@ export const RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT = {
 
 const DEFAULT_WORKED_TRACE_LIMIT = 8;
 const DEFAULT_WORKED_TURN_LIMIT = 2;
+const REPLAY_LEARNED_ROUTE_OVERRIDE_CREATED_AT = "2026-04-17T00:00:00.000Z";
+const REPLAY_LEARNED_ROUTE_OVERRIDE_CANDIDATE_LIMIT = 5;
+const REPLAY_LEARNED_ROUTE_OVERRIDE_EVIDENCE_LIMIT = 3;
 const RECORDED_SESSION_REPLAY_PROOF_LANE_SOURCE_MANIFEST_CONTRACT = "recorded_session_replay_proof_lane_source_manifest.v1";
 const RECORDED_SESSION_REPLAY_PROOF_LANE_CLOSEOUT_CONTRACT = "recorded_session_replay_proof_lane_closeout.v1";
 const RECORDED_SESSION_REPLAY_PROOF_LANE_SUMMARY_TABLES_CONTRACT = "recorded_session_replay_proof_lane_summary_tables.v1";
@@ -72,6 +88,10 @@ export interface RecordedSessionReplayProofLaneTraceInputV1 {
   bundleDir?: string | null;
 }
 
+export interface LearnedRouteCandidateArtifactOverrideV1 {
+  artifactDir: string;
+}
+
 export interface WriteRecordedSessionReplayProofLaneInputV1 {
   artifactRoot: string;
   traces: RecordedSessionReplayProofLaneTraceInputV1[];
@@ -79,6 +99,7 @@ export interface WriteRecordedSessionReplayProofLaneInputV1 {
   workedTraceLimit?: number | null;
   sourceManifestPath?: string | null;
   assumptions?: readonly string[] | null;
+  learnedRouteCandidateArtifact?: LearnedRouteCandidateArtifactOverrideV1 | null;
 }
 
 interface RecordedSessionReplayProofLaneModeTraceRowV1 {
@@ -669,6 +690,122 @@ function normalizeStringArray(values: readonly string[] | null | undefined): str
     normalized.push(trimmed);
   }
   return normalized;
+}
+
+function normalizeReplayOverrideExcerpt(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+  return normalized.length > 160 ? `${normalized.slice(0, 157)}...` : normalized;
+}
+
+function buildReplayLearnedRouteDecisionRow(params: {
+  artifactDatasetId: string;
+  input: LearnedRouteSelectionOverrideInput;
+}): ColdStartRouteDecisionRowV1 | null {
+  if (params.input.maxBlocks <= 0 || params.input.ranked.length === 0) {
+    return null;
+  }
+  const candidateLimit = Math.min(
+    params.input.ranked.length,
+    Math.max(params.input.maxBlocks, REPLAY_LEARNED_ROUTE_OVERRIDE_CANDIDATE_LIMIT),
+  );
+  const replayCandidates = params.input.ranked.slice(0, candidateLimit);
+  const candidateSet: RouteCandidateV1[] = replayCandidates.map((entry) => ({
+    candidate_id: entry.blockId,
+    candidate_type: "graph_node",
+    authority: "recorded_session_replay",
+    freshness: "replay_eval",
+    ...(typeof entry.tokenCount === "number" && Number.isFinite(entry.tokenCount)
+      ? { token_cost: Math.max(0, Math.round(entry.tokenCount)) }
+      : {}),
+    ...(Number.isFinite(entry.score) ? { score_hint: entry.score } : {}),
+  }));
+  if (candidateSet.length === 0) {
+    return null;
+  }
+  const query = normalizeReplayOverrideExcerpt(params.input.request.userMessage)
+    ?? "recorded session replay candidate override";
+  const evidenceExcerpts = normalizeStringArray([
+    query,
+    ...replayCandidates
+      .slice(0, Math.max(0, REPLAY_LEARNED_ROUTE_OVERRIDE_EVIDENCE_LIMIT - 1))
+      .map((entry) => normalizeReplayOverrideExcerpt(entry.text)),
+  ]);
+  const rowDigest = sha256Text(JSON.stringify({
+    query,
+    candidateIds: candidateSet.map((candidate) => candidate.candidate_id),
+  })).slice(7, 23);
+
+  return {
+    row_id: `recorded-session-replay-override:${rowDigest}`,
+    dataset_id: params.artifactDatasetId,
+    query,
+    cursor_path: ["recorded_session_replay"],
+    candidate_set: candidateSet,
+    teacher_action: {
+      kind: "tool",
+      tool_name: "__recorded_session_replay_candidate_override__",
+    },
+    stop_label: "CONTINUE",
+    evidence_spans: evidenceExcerpts.map((excerpt, index) => ({
+      source_ref: `recorded-session-replay-override:evidence:${index}`,
+      start: 0,
+      end: Math.max(1, excerpt.length),
+      excerpt,
+    })),
+    hard_negatives: candidateSet.slice(1, 2).map((candidate) => candidate.candidate_id),
+    outcome_gain: 1,
+    provenance: {
+      dataset: params.artifactDatasetId,
+      source_license: "internal_local_only",
+      source_family: "agent_traces",
+      source_snapshot_ref: params.artifactDatasetId,
+      recorded_by: "recorded-session-replay-proofs",
+      recorded_at: REPLAY_LEARNED_ROUTE_OVERRIDE_CREATED_AT,
+      review_status: "approved_eval_only",
+    },
+    split_tag: "eval_only",
+    created_at: REPLAY_LEARNED_ROUTE_OVERRIDE_CREATED_AT,
+  };
+}
+
+function createLearnedRouteSelectionOverride(
+  input: LearnedRouteCandidateArtifactOverrideV1,
+): LearnedRouteSelectionOverride {
+  const artifactBundle = loadColdStartRouterArtifactBundleV1(input.artifactDir);
+  const artifactTruth = summarizeColdStartRouterArtifactBundleRuntimeTruthV1(artifactBundle);
+  const artifactDatasetId = `recorded_session_replay_candidate_override:${artifactTruth.artifactId}`;
+  const evidenceSource = `candidate_override:${artifactTruth.artifactId}@${artifactTruth.artifactVersion}`;
+
+  return {
+    select(selectionInput) {
+      const row = buildReplayLearnedRouteDecisionRow({
+        artifactDatasetId,
+        input: selectionInput,
+      });
+      if (row === null) {
+        return {
+          selectedBlockIds: [],
+          routerIdentity: artifactTruth.routerIdentity,
+          evidenceSource,
+        };
+      }
+      const selection = selectColdStartRouteCandidateIdsFromArtifactBundleV1({
+        artifactBundle,
+        row,
+      });
+      return {
+        selectedBlockIds: selection.selectedCandidateIds,
+        routerIdentity: artifactTruth.routerIdentity,
+        evidenceSource,
+      };
+    },
+  };
 }
 
 function normalizeWorkedTraceLimit(value: number | null | undefined): number {
@@ -1830,6 +1967,9 @@ export function writeRecordedSessionReplayProofLane(
   const assumptions = normalizeStringArray(input.assumptions);
   const sourceManifest = readSourceManifest(input.sourceManifestPath ?? null);
   const pricingTable = loadPricingTable();
+  const learnedRouteSelectionOverride = input.learnedRouteCandidateArtifact == null
+    ? null
+    : createLearnedRouteSelectionOverride(input.learnedRouteCandidateArtifact);
   ensureDir(artifactRoot);
   rmSync(laneDir, { recursive: true, force: true });
   ensureDir(laneDir);
@@ -1846,6 +1986,7 @@ export function writeRecordedSessionReplayProofLane(
         rootDir: bundleDir,
         trace: traceInput.trace,
         scratchRootDir: input.scratchRootDir ?? undefined,
+        ...(learnedRouteSelectionOverride === null ? {} : { learnedRouteSelectionOverride }),
       });
       const validation = validateRecordedSessionReplayProofBundle(bundleDir);
       writeJson(validationPath, validation);

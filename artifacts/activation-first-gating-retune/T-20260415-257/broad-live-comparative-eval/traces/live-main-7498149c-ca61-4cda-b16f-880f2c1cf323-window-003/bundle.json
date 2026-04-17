@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-11T09:16:03.981Z",
   "traceHash": "sha256-e725d27535b9af2607edfc55a55297b3d0ba2750ec3f143ed7ff11bf77f51432",
   "fixtureHash": "sha256-ad7016b7c1b3014d2314a0a7c149b979d45fc36075f6fdac2c19edc868ece1f9",
-  "scoreHash": "sha256-0647f8982657da9911f4e82a25ea8c378d8346905b0ac508d4cae2df51faffb0",
+  "scoreHash": "sha256-294b691e2946130e24783607068fb0ec9a7cbca224e3fdc69eb09604b4336a98",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.033,
+            "totalMs": 0.024,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.033,
+            "otherMs": 0.024,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.98,
-            "routeSelectionMs": 5.159,
+            "totalMs": 7.669,
+            "routeSelectionMs": 4.993,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.819,
+            "otherMs": 2.674,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.942,
-            "routeSelectionMs": 5.151,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.789,
+            "totalMs": 7.43,
+            "routeSelectionMs": 4.899,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.53,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -351,7 +351,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-b0ce67f0"
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-65310d2510031dfc47d7144b70a8470736edbc9371ad0de22199a014bae13c23"
+        "scoreHash": "sha256-78557b8a9c614f8eda90e7abe8eb1ab0a2cc29aad93974d251be184195e5e2ac"
       },
       "turns": [
         {
@@ -397,24 +397,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-b0ce67f0:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-b0ce67f0:route_fn",
-          "selectionDigest": "sha256-3dff6b5414f00eeada17aa8de493073864a8baaa5cc52f3d2dd1f6f879f72e6f",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-1a2af951020d61ca55094a63ab7ef3c17c4bb033b4d271c06812f81d531e874d",
           "selectedContextIds": [
-            "pack-b0ce67f0:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
-            "pack-b0ce67f0:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:feedback",
-            "pack-b0ce67f0:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:feedback"
+            "pack-b0ce67f0:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction.",
-            "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I’m loading the requested artifacts/tests first, then I’ll reproduce the failures and fix the real behavior on this branch. ToolCall read {\"path\": \"/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/final-replay-eval-swarm-board.md\"}. Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:interaction.",
-            "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I found the real regression: this branch’s clean-install path resolves `@openclawbrain/*` to the lightweight local bridge packages added in Lane C, while the passing `main` checkout was still picking up richer nested package installs under `packages/cli/node_modules`. The bridge versions are too weak for replay/eval runtime use. I’m tightening the local `contracts` and `event-export` bridges so clean installs behave like the real packages instead of degrading to partial/blocked. ToolCall edit.... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:interaction."
+            "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-f70bee3359e90457d4137c016cd9c4547a46e6ba2114ca80ff7c4e4b5e1d20ba",
+          "eventExportDigest": "sha256-19627a18c8e2d45d59b807cc7593766915927a5fc21c16ce7125167f62b20c63",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
           ],
@@ -428,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.736,
-            "routeSelectionMs": 6.213,
+            "totalMs": 9.447,
+            "routeSelectionMs": 6.095,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.52,
+            "otherMs": 3.351,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -475,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-61345a1a3b9bff865de3f1e304fc791d39ad6501cf4acb3e3856a299970f17e5"
+  "bundleHash": "sha256-1b87b1089cb91aeb89d26f94ad5f1d0a949cfd9504120a9a3c690a8b65db0c5f"
 }

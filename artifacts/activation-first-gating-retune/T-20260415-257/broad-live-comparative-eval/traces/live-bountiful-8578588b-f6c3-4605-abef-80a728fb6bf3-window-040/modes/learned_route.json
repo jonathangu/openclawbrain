@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-11dd01ab"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-404ad054d368efdf964b2f9015dbe777a4bb3802329f7982fb06ee7d535cc9c4"
+    "scoreHash": "sha256-463c8de712ff07e98cb818cba4baf757bc1cfb8cfa1c95e146898cc48928ed5a"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-11dd01ab:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-11dd01ab:route_fn",
-      "selectionDigest": "sha256-72335612fa5dd597ba9d8b2f86598d9b0c752a5314e993c9e413486bfb1729cc",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-95256cd6dbcf96414ebb982051f83bdcd511fd1fd63f47246e422c42899b176c",
       "selectedContextIds": [
-        "pack-11dd01ab:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
-        "pack-11dd01ab:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:feedback",
-        "pack-11dd01ab:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:feedback"
+        "pack-11dd01ab:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15822\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 12:57 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Lets returns to the best way to use heartbeat. Mostly yes. Your writeup is substantively correct, with a few important corrections. The current OpenClaw docs say Heartbeat is the mechanism for periodic proactive.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
-        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/workspace-bountiful/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7th, 2026 — 12:01 PM (America/Los_Angeles) / 2026-04-07 19:01 UTC. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:interaction.",
-        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/workspace-bountiful/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7th, 2026 — 12:31 PM (America/Los_Angeles) / 2026-04-07 19:31 UTC. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:interaction."
+        "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-6-seed-message."
       ],
-      "eventExportDigest": "sha256-510c9a6554ba76e06e5cbf6979dac68f3ab3f2e8a7287f55f2bb692206dcd9c3",
+      "eventExportDigest": "sha256-da6e5bb196e61dff7027693cd177ce2737e0a4103956d723d987beb68715f3b9",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace-bountiful/HEARTBEAT.md\"}"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 4.971,
-        "routeSelectionMs": 2.95,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.018,
+        "totalMs": 4.804,
+        "routeSelectionMs": 2.852,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 1.951,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

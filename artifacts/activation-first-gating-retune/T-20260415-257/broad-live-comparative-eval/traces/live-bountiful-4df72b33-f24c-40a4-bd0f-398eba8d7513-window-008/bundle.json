@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T04:02:48.660Z",
   "traceHash": "sha256-70911ec1e7805ccec970087d6c2246db12da18117e08ef4135c17a78ab963e90",
   "fixtureHash": "sha256-5f3ce437bc5a34220be72a905054c7058ccdfb9aee9afb407a944b39db8e43dd",
-  "scoreHash": "sha256-6655513668c54c908d076cd694d993e53983f3c6696f01c5a9deeba1cc49700c",
+  "scoreHash": "sha256-ae40af128be90035ae486b2e3a36218badaf22e29dec0fda98fd0642c8f5fc5a",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.031,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.031,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -207,10 +207,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.355,
-            "routeSelectionMs": 4.577,
+            "totalMs": 7.211,
+            "routeSelectionMs": 4.544,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.776,
+            "otherMs": 2.665,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -321,10 +321,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.237,
-            "routeSelectionMs": 4.553,
+            "totalMs": 7.979,
+            "routeSelectionMs": 4.594,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.681,
+            "otherMs": 3.382,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -357,7 +357,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 1,
+        "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
           "pack-824b7c12"
@@ -389,7 +389,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-4c7322883a4758d761938f672d0b469d366abd89eb310f8f7c46340411402421"
+        "scoreHash": "sha256-f7a67a1ccc7fe8ddfce0e8b7b58809dde2461d72450846b5d01fbcf9e009cba9"
       },
       "turns": [
         {
@@ -403,24 +403,20 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": true,
+          "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_fn",
-          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-824b7c12:route_fn",
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
-          "routerIdentity": "pack-824b7c12:route_fn",
-          "selectionDigest": "sha256-e5ed70934b0e355ccafbaeda3a06fe5c59bb024779d69a6da169cbd8a2fd70d2",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-8a577e734fa97ab6c5b3349fedc66719d9951da5cb17c8059fa23660740ec5a2",
           "selectedContextIds": [
-            "pack-824b7c12:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
-            "pack-824b7c12:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
             "pack-824b7c12:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8103\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 20:00 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` How's it going. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction.",
-            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8104\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 20:00 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Find bugs and squash them use codex and Claude code. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8095\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:25 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Hello?. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-8172400ae0f247ed6dbcdbe21d653eda40aab0b1e8d7fd7478840ac90f859f86",
+          "eventExportDigest": "sha256-7d66d7492a9f60f310aadc2fda59089c933c66af6bf394c4f7f5196a1006689c",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe",
             "/main\","
@@ -436,10 +432,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.83,
-            "routeSelectionMs": 5.45,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.378,
+            "totalMs": 8.845,
+            "routeSelectionMs": 5.473,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.37,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -483,5 +479,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-39abd75361ca15af9227d0413a4a6ccc8b52d6d6bbb039a4cf5ba314258838a3"
+  "bundleHash": "sha256-0cd394fd0df018963e92f6a8899ad3e71f70426e34c89249ad161a72fb5a8d89"
 }

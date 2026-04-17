@@ -1,6 +1,6 @@
 {
   "contract": "openclawbrain_explainable_eval_scorecard.v1",
-  "generatedAt": "2026-04-17T16:16:25.288Z",
+  "generatedAt": "2026-04-17T16:53:46.354Z",
   "manifestId": "extracted-semantic-rich-live-535",
   "manifestContract": "frozen_recorded_session_eval_manifest.v1",
   "modeOrder": [
@@ -20,10 +20,10 @@
     "formula": "compileOkCount == turnCount && phraseHitCount == phraseCount"
   },
   "headline": [
-    "learned_route was worse than graph_prior_only on 0/403 validated traces.",
-    "learned_route tied or beat graph_prior_only on 403/403 validated traces (better 5, tied 398, worse 0).",
-    "learned_route retrieved required replay phrases at 0.072115 recall versus 0.064904 for graph_prior_only.",
-    "learned_route used 0.000781 higher estimated prompt cost per replay-successful trace versus graph_prior_only.",
+    "learned_route was worse than graph_prior_only on 30/403 validated traces.",
+    "learned_route tied or beat graph_prior_only on 373/403 validated traces (better 1, tied 372, worse 30).",
+    "learned_route retrieved required replay phrases at 0.022837 recall versus 0.064904 for graph_prior_only.",
+    "learned_route used not available (estimated prompt cost per replay-successful trace) versus graph_prior_only.",
     "Summary-routing telemetry for expand-before-assert is not available in this bundle."
   ],
   "failOpenLanguage": "Comparative replay does not prove live safe-fallback or worker-down serving. It does expose a no_brain floor anchor: 0/403 validated traces met the replay success proxy under no_brain.",
@@ -37,7 +37,7 @@
       "availability": "proxy",
       "kind": "rate",
       "unit": "rate",
-      "value": 0,
+      "value": 0.074442,
       "leftMode": "learned_route",
       "rightMode": "graph_prior_only",
       "formula": {
@@ -47,7 +47,7 @@
             "id": "worse_than_prior_count",
             "label": "Traces where learned_route scored below graph_prior_only",
             "role": "numerator",
-            "value": 0,
+            "value": 30,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -60,7 +60,7 @@
           }
         ]
       },
-      "language": "learned_route was worse than graph_prior_only on 0/403 validated traces.",
+      "language": "learned_route was worse than graph_prior_only on 30/403 validated traces.",
       "notes": [
         "Uses deterministic replay trace quality ordering as the comparison surface.",
         "This is a replay metric, not a live serve-path fail-open proof."
@@ -110,7 +110,7 @@
       "availability": "proxy",
       "kind": "rate",
       "unit": "rate",
-      "value": 0,
+      "value": 0.074442,
       "leftMode": "learned_route",
       "rightMode": "graph_prior_only",
       "formula": {
@@ -120,7 +120,7 @@
             "id": "critical_regression_count",
             "label": "Traces where learned_route lost compile-ok turns or required-context hits versus graph_prior_only",
             "role": "numerator",
-            "value": 0,
+            "value": 30,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -136,7 +136,7 @@
             "id": "required_context_regression_trace_count",
             "label": "Traces where learned_route hit fewer required phrases than graph_prior_only",
             "role": "input",
-            "value": 0,
+            "value": 30,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -149,7 +149,7 @@
           }
         ]
       },
-      "language": "critical regressions were observed on 0/403 validated traces when compile coverage or required-context hits worsened versus graph_prior_only.",
+      "language": "critical regressions were observed on 30/403 validated traces when compile coverage or required-context hits worsened versus graph_prior_only.",
       "notes": [
         "Critical here means a replay-observed drop in compile-ok coverage or required-context hits."
       ]
@@ -162,7 +162,7 @@
       "availability": "proxy",
       "kind": "rate",
       "unit": "rate",
-      "value": 1,
+      "value": 0.925558,
       "leftMode": "learned_route",
       "rightMode": "graph_prior_only",
       "formula": {
@@ -172,7 +172,7 @@
             "id": "better_than_prior_count",
             "label": "Traces where learned_route scored above graph_prior_only",
             "role": "input",
-            "value": 5,
+            "value": 1,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -180,7 +180,7 @@
             "id": "tied_with_prior_count",
             "label": "Traces where learned_route tied graph_prior_only",
             "role": "input",
-            "value": 398,
+            "value": 372,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -188,7 +188,7 @@
             "id": "worse_than_prior_count",
             "label": "Traces where learned_route scored below graph_prior_only",
             "role": "input",
-            "value": 0,
+            "value": 30,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -201,7 +201,7 @@
           }
         ]
       },
-      "language": "learned_route tied or beat graph_prior_only on 403/403 validated traces (better 5, tied 398, worse 0).",
+      "language": "learned_route tied or beat graph_prior_only on 373/403 validated traces (better 1, tied 372, worse 30).",
       "notes": [
         "The strict better/tied/worse decomposition is surfaced directly instead of only reporting a winner mode."
       ]
@@ -214,7 +214,7 @@
       "availability": "measured",
       "kind": "rate",
       "unit": "rate",
-      "value": 0.072115,
+      "value": 0.022837,
       "leftMode": "learned_route",
       "rightMode": null,
       "formula": {
@@ -224,7 +224,7 @@
             "id": "retrieved_required_evidence_count",
             "label": "Required phrases hit by learned_route",
             "role": "numerator",
-            "value": 60,
+            "value": 19,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -246,7 +246,7 @@
           }
         ]
       },
-      "language": "learned_route retrieved required replay phrases at 0.072115 recall versus 0.064904 for graph_prior_only.",
+      "language": "learned_route retrieved required replay phrases at 0.022837 recall versus 0.064904 for graph_prior_only.",
       "notes": [
         "Uses recorded-session expected context phrases as the required-evidence surface."
       ]
@@ -259,7 +259,7 @@
       "availability": "measured",
       "kind": "rate",
       "unit": "rate",
-      "value": 0.927885,
+      "value": 0.977163,
       "leftMode": "learned_route",
       "rightMode": null,
       "formula": {
@@ -269,7 +269,7 @@
             "id": "missing_required_evidence_count",
             "label": "Required phrases missed by learned_route",
             "role": "numerator",
-            "value": 772,
+            "value": 813,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -283,7 +283,7 @@
           }
         ]
       },
-      "language": "learned_route missed 772/832 required replay phrases.",
+      "language": "learned_route missed 813/832 required replay phrases.",
       "notes": [
         "Lower is better."
       ]
@@ -296,7 +296,7 @@
       "availability": "proxy",
       "kind": "delta",
       "unit": "tokens",
-      "value": 620.15,
+      "value": null,
       "leftMode": "learned_route",
       "rightMode": "graph_prior_only",
       "formula": {
@@ -306,7 +306,7 @@
             "id": "candidate_prompt_tokens",
             "label": "Estimated prompt tokens for learned_route",
             "role": "input",
-            "value": 162084,
+            "value": 45846,
             "unit": "tokens",
             "mode": "learned_route"
           },
@@ -314,7 +314,7 @@
             "id": "candidate_successful_trace_proxy_count",
             "label": "Validated replay trace success proxy count for learned_route",
             "role": "input",
-            "value": 10,
+            "value": 0,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -322,7 +322,7 @@
             "id": "prior_prompt_tokens",
             "label": "Estimated prompt tokens for graph_prior_only",
             "role": "input",
-            "value": 124706,
+            "value": 124710,
             "unit": "tokens",
             "mode": "graph_prior_only"
           },
@@ -336,7 +336,7 @@
           }
         ]
       },
-      "language": "learned_route used 620.15 higher estimated prompt tokens per replay-successful trace versus graph_prior_only.",
+      "language": "learned_route used not available (estimated prompt tokens per replay-successful trace) versus graph_prior_only.",
       "notes": [
         "Success is a replay success proxy: every turn compiled and no required phrase was missed on that trace.",
         "Prompt tokens are a deterministic proxy derived from selected context chars."
@@ -350,7 +350,7 @@
       "availability": "proxy",
       "kind": "delta",
       "unit": "usd",
-      "value": 0.000781,
+      "value": null,
       "leftMode": "learned_route",
       "rightMode": "graph_prior_only",
       "formula": {
@@ -360,7 +360,7 @@
             "id": "candidate_prompt_cost_usd",
             "label": "Estimated prompt cost for learned_route",
             "role": "input",
-            "value": 0.20269,
+            "value": 0.057331,
             "unit": "usd",
             "mode": "learned_route"
           },
@@ -368,7 +368,7 @@
             "id": "candidate_successful_trace_proxy_count",
             "label": "Validated replay trace success proxy count for learned_route",
             "role": "input",
-            "value": 10,
+            "value": 0,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -376,7 +376,7 @@
             "id": "prior_prompt_cost_usd",
             "label": "Estimated prompt cost for graph_prior_only",
             "role": "input",
-            "value": 0.155905,
+            "value": 0.155909,
             "unit": "usd",
             "mode": "graph_prior_only"
           },
@@ -390,7 +390,7 @@
           }
         ]
       },
-      "language": "learned_route used 0.000781 higher estimated prompt cost per replay-successful trace versus graph_prior_only.",
+      "language": "learned_route used not available (estimated prompt cost per replay-successful trace) versus graph_prior_only.",
       "notes": [
         "Prompt cost is a deterministic proxy; this comparative replay does not measure end-to-end API or latency economics."
       ]
@@ -413,7 +413,7 @@
             "id": "candidate_prompt_tokens",
             "label": "Estimated prompt tokens for learned_route",
             "role": "input",
-            "value": 162084,
+            "value": 45846,
             "unit": "tokens",
             "mode": "learned_route"
           },
@@ -421,7 +421,7 @@
             "id": "candidate_successful_trace_proxy_count",
             "label": "Validated replay trace success proxy count for learned_route",
             "role": "input",
-            "value": 10,
+            "value": 0,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -466,7 +466,7 @@
             "id": "candidate_prompt_cost_usd",
             "label": "Estimated prompt cost for learned_route",
             "role": "input",
-            "value": 0.20269,
+            "value": 0.057331,
             "unit": "usd",
             "mode": "learned_route"
           },
@@ -474,7 +474,7 @@
             "id": "candidate_successful_trace_proxy_count",
             "label": "Validated replay trace success proxy count for learned_route",
             "role": "input",
-            "value": 10,
+            "value": 0,
             "unit": "count",
             "mode": "learned_route"
           },
@@ -807,7 +807,7 @@
       "availability": "proxy",
       "kind": "scalar",
       "unit": "score",
-      "value": 43.945409,
+      "value": 40.992556,
       "leftMode": "learned_route",
       "rightMode": null,
       "formula": {
@@ -841,7 +841,7 @@
             "id": "learned_route_mean_quality_score",
             "label": "Mean qualityScore for learned_route",
             "role": "input",
-            "value": 43.945409,
+            "value": 40.992556,
             "unit": "score",
             "mode": "learned_route"
           }
@@ -860,7 +860,7 @@
       "availability": "proxy",
       "kind": "count",
       "unit": "count",
-      "value": 5,
+      "value": 1,
       "leftMode": "learned_route",
       "rightMode": null,
       "formula": {
@@ -878,7 +878,7 @@
             "id": "vector_only_ranked_winner_count",
             "label": "Validated traces where vector_only ranked first by qualityScore",
             "role": "input",
-            "value": 3,
+            "value": 7,
             "unit": "count",
             "mode": "vector_only"
           },
@@ -894,7 +894,7 @@
             "id": "learned_route_ranked_winner_count",
             "label": "Validated traces where learned_route ranked first by qualityScore",
             "role": "input",
-            "value": 5,
+            "value": 1,
             "unit": "count",
             "mode": "learned_route"
           }
@@ -913,7 +913,7 @@
       "availability": "proxy",
       "kind": "count",
       "unit": "count",
-      "value": 400,
+      "value": 366,
       "leftMode": "learned_route",
       "rightMode": null,
       "formula": {
@@ -947,7 +947,7 @@
             "id": "learned_route_shared_top_score_trace_count",
             "label": "Validated traces where learned_route shared the top qualityScore",
             "role": "input",
-            "value": 400,
+            "value": 366,
             "unit": "count",
             "mode": "learned_route"
           }
@@ -972,6 +972,6 @@
     "correction absorption and fail-open remain placeholder surfaces unless a richer proof surface is wired in",
     "the scorecard is observational scaffold output; it does not claim long-run task or API economics"
   ],
-  "scorecardHash": "sha256-3653a8b13f85075d5be1b46a390a4a60f74ecd026103d624323e12c60c4f05a7"
+  "scorecardHash": "sha256-0b6c82fde4585714e16b8d7e0e9ea01bc040640b203831602783bc4a1b543d73"
 }
 

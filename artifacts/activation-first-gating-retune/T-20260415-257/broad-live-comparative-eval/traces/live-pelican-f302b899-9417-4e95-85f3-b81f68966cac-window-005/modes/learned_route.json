@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-0e746a00"
+      "pack-35e2ccab"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-0e746a00",
-    "frozenEvalRouterIdentity": "pack-0e746a00:route_fn",
+    "frozenEvalPackId": "pack-35e2ccab",
+    "frozenEvalRouterIdentity": "pack-35e2ccab:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-ee1b12985f7df34359c2792d5b1fc34722c2392a2b814c1e961116b44eec4dd8"
+    "scoreHash": "sha256-0a1079b563439eecaf9695bde42df85cf36a1826968f70313cf0f48e63b72150"
   },
   "turns": [
     {
@@ -51,28 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-0e746a00",
+      "activePackId": "pack-35e2ccab",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-0e746a00:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-0e746a00:route_fn",
-      "selectionDigest": "sha256-4a0819877ff73e770be1560982282674af7270d6375534d49528efa4c0ebaee2",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-d6bfffed4ba35c503f9e0cd5de644c57e9d844cb1632c166de211b79ba5333cf",
       "selectedContextIds": [
-        "pack-0e746a00:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:feedback",
-        "pack-0e746a00:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-1:feedback",
-        "pack-0e746a00:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-1:interaction"
+        "pack-35e2ccab:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 7:18 AM (America/Los_Angeles) / 2026-04-12 14:18 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:interaction.",
-        "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 6:15 AM (America/Los_Angeles) / 2026-04-12 13:15 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-1:interaction.",
-        "Interaction operator_override on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed. Message: cue-1-seed-message."
+        "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 7:18 AM (America/Los_Angeles) / 2026-04-12 14:18 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-0f8fdc2037ce539bca1e674fd489d1d04850caefdfbadaae6334f56f43ea90f9",
+      "eventExportDigest": "sha256-31d045218bf25a670572e300bfbb4866e3113f0ea5049b2a3c77b0e3dc47ebb0",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/runtime/quant-research')\\npatterns",
         "/coverage_rebuild/**/*."
@@ -88,10 +84,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.717,
-        "routeSelectionMs": 5.346,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.369,
+        "totalMs": 8.53,
+        "routeSelectionMs": 5.278,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.251,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

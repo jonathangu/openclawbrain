@@ -3138,6 +3138,7 @@ export function compileRuntimeContext(input) {
     let maxContextChars;
     let mode = "heuristic";
     let frozenReplayEvalIdentity = null;
+    let learnedRouteSelectionOverride = null;
     let routeSelectionStartedAtNs = null;
     let routeSelectionMs = null;
     let promptAssemblyStartedAtNs = null;
@@ -3157,6 +3158,7 @@ export function compileRuntimeContext(input) {
         mode = compileModePlan.routeMode;
         selectionMode = compileModePlan.selectionMode;
         frozenReplayEvalIdentity = normalizeFrozenReplayEvalIdentity(input._frozenReplayEvalIdentity);
+        learnedRouteSelectionOverride = input._learnedRouteSelectionOverride ?? null;
     }
     catch (error) {
         result = failOpenCompileResult(error, fallbackActivationRoot, buildBrainServeHotPathTiming({
@@ -3188,7 +3190,8 @@ export function compileRuntimeContext(input) {
             ...(input.compactionMode !== undefined ? { compactionMode: input.compactionMode } : {}),
             ...(runtimeHints.length > 0 ? { runtimeHints } : {})
         }, {
-            ...(selectionMode !== undefined ? { selectionMode } : {})
+            ...(selectionMode !== undefined ? { selectionMode } : {}),
+            ...(learnedRouteSelectionOverride === null ? {} : { _learnedRouteSelectionOverride: learnedRouteSelectionOverride })
         });
         routeSelectionMs = elapsedMsFrom(routeSelectionStartedAtNs);
         const selectionEngine = selectionMode ?? "flat_rank_v1";
@@ -4129,6 +4132,7 @@ export function runRuntimeTurn(turn, options = {}) {
         ...(turn.selectionMode !== undefined ? { selectionMode: turn.selectionMode } : {}),
         ...(turn.runtimeHints !== undefined ? { runtimeHints: turn.runtimeHints } : {}),
         ...(options._frozenReplayEvalIdentity !== undefined ? { _frozenReplayEvalIdentity: options._frozenReplayEvalIdentity } : {}),
+        ...(options._learnedRouteSelectionOverride !== undefined ? { _learnedRouteSelectionOverride: options._learnedRouteSelectionOverride } : {}),
         _suppressServeLog: true
     };
     const compileResult = compileRuntimeContext(compileInput);
@@ -4783,9 +4787,6 @@ function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options
     const observability = buildRecordedSessionTurnObservability(result);
     const eventExportDigest = result.eventExport.ok === true ? result.eventExport.normalizedEventExport.provenance.exportDigest : null;
     const activation = buildRecordedSessionTurnActivation(replayMode, result);
-    const reportedLearnedRouteUsage = result.ok
-        ? resolveReportedLearnedRouteUsageFromDiagnostics(result.compileResponse.diagnostics)
-        : { active: false, source: null };
     return {
         turnId: turnFixture.turnId,
         replayMode,
@@ -4797,7 +4798,7 @@ function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options
         modeRequested: plan.routeModeRequested,
         modeEffective: result.ok ? result.compileResponse.diagnostics.modeEffective : null,
         selectionEngine: plan.selectionEngine,
-        usedLearnedRouteFn: reportedLearnedRouteUsage.active,
+        usedLearnedRouteFn: result.ok ? result.compileResponse.diagnostics.usedLearnedRouteFn === true : false,
         activationTaken: activation.activationTaken,
         activationSource: activation.activationSource,
         activationReason: activation.activationReason,
@@ -5096,9 +5097,32 @@ function runRecordedSessionSeededComparativeMode(rootDir, fixture, replayMode) {
     });
     return buildRecordedSessionReplayModeReport(replayMode, turns);
 }
-function runRecordedSessionLearnedRouteMode(rootDir, fixture) {
+function runRecordedSessionLearnedRouteMode(rootDir, fixture, options = {}) {
     const modeRoot = prepareReplayModeRoot(rootDir, "learned_route");
     const { activationRoot } = prepareSeedActivation(modeRoot, fixture, true);
+    const learnedRouteSelectionOverride = options.learnedRouteSelectionOverride ?? null;
+    if (learnedRouteSelectionOverride !== null) {
+        const frozenEvalIdentity = readRecordedSessionReplayFrozenEvalIdentity(activationRoot);
+        const turns = fixture.turns.map((turnFixture) => {
+            const result = runRuntimeTurn({
+                ...turnFixture.turn,
+                export: buildRecordedSessionTurnExportRoot(modeRoot, turnFixture.turnId)
+            }, {
+                activationRoot,
+                failOpen: false,
+                ...(frozenEvalIdentity === null ? {} : { _frozenReplayEvalIdentity: frozenEvalIdentity }),
+                _learnedRouteSelectionOverride: learnedRouteSelectionOverride
+            });
+            return buildRecordedSessionTurnReport("learned_route", turnFixture, result, {
+                phase: "eval",
+                compileActiveVersion: 1,
+                promoted: false
+            });
+        });
+        return buildRecordedSessionReplayModeReport("learned_route", turns, {
+            frozenEvalIdentity: cloneRecordedSessionReplayFrozenEvalIdentity(frozenEvalIdentity)
+        });
+    }
     const loopRoot = path.join(modeRoot, "loop");
     const turnPlan = buildRecordedSessionReplayTurnPlan(fixture);
     let state;
@@ -5157,7 +5181,7 @@ function runRecordedSessionLearnedRouteMode(rootDir, fixture) {
         frozenEvalIdentity: cloneRecordedSessionReplayFrozenEvalIdentity(frozenEvalIdentity)
     });
 }
-export function runRecordedSessionReplay(rootDir, fixture) {
+export function runRecordedSessionReplay(rootDir, fixture, options = {}) {
     const resolvedRoot = path.resolve(normalizeNonEmptyString(rootDir, "rootDir"));
     const seedExportErrors = validateNormalizedEventExport(fixture.seedExport);
     if (seedExportErrors.length > 0) {
@@ -5171,7 +5195,7 @@ export function runRecordedSessionReplay(rootDir, fixture) {
         runRecordedSessionNoBrainMode(resolvedRoot, fixture),
         runRecordedSessionSeededComparativeMode(resolvedRoot, fixture, "vector_only"),
         runRecordedSessionSeededComparativeMode(resolvedRoot, fixture, "graph_prior_only"),
-        runRecordedSessionLearnedRouteMode(resolvedRoot, fixture)
+        runRecordedSessionLearnedRouteMode(resolvedRoot, fixture, options)
     ];
     const ranking = modes
         .map((mode) => ({
@@ -5764,7 +5788,9 @@ export function writeRecordedSessionReplayProofBundle(input) {
     const scratchRoot = mkdtempSync(path.join(scratchRootParent, "openclawbrain-recorded-session-replay-"));
     let bundle;
     try {
-        bundle = runRecordedSessionReplay(scratchRoot, fixture);
+        bundle = runRecordedSessionReplay(scratchRoot, fixture, {
+            ...(input.learnedRouteSelectionOverride == null ? {} : { learnedRouteSelectionOverride: input.learnedRouteSelectionOverride })
+        });
     }
     finally {
         rmSync(scratchRoot, { recursive: true, force: true });

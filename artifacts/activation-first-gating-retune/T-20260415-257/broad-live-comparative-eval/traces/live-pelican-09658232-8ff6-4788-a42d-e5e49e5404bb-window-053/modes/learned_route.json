@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-2cbd34d6"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-07d8077848896260b4db8a9922b38967ca373a39331360f70b67b1de86e8c10a"
+    "scoreHash": "sha256-1429bc27bf962d50f26bd32bc4152e78eb005adebe06913a864ac45ae3b1228c"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-2cbd34d6:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-2cbd34d6:route_fn",
-      "selectionDigest": "sha256-304b34061a87a07a40375634bfca68cca46d927867055aed9f1d926bf0ceb157",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-1b73ad6351bfa1bb498980513e1dfa31e7f6116c5dd7491fcd9aee1ffb4d0d73",
       "selectedContextIds": [
-        "pack-2cbd34d6:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
-        "pack-2cbd34d6:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-        "pack-2cbd34d6:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
+        "pack-2cbd34d6:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: Note: The previous agent run was aborted by the user. Resume carefully or ask for clarification. Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Now let me check on the chunked upload that's still running for the training instance:\" } ``` I killed this. See my message about the AWS region. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:38:10 PST] Exec completed (swift-cr, code 1) :: erify failed for embeddings_contextual.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for embeddings_contextual.parquet (attempt 3/5), retrying... ⚠ Upload verify faile… System: [2026-02-27 17:39:30 PST] Exec completed (quick-ba, code 0) :: ation is currently not supported. Please check the documentation for supported configurations. Instance: (us-west-1) Waiter InstanceRunning failed: An error occurred (Missing.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:27:53 PST] Exec failed (wild-slu, signal SIGTERM) :: === n_estimators references === System: [2026-02-27 17:28:11 PST] Exec completed (quick-pr, code 0) :: s, 430 features (has _x/_y bug, replacing) ./archive/audits/GPT52_CALIBRATION_AUDIT.md:53:- Trains 15 bootstrap members × 23 quantile LightGBM models. ./docs/SYSTEM.md:112:- **Arc… System: [2026-02-27 17:32:52 PST] Exec completed (good-can, code 0) :: === Large files (chunked SCP) === full_feature_matrix_v4.parquet: .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-1e32ffef24de48643bd956b7f6bf383c07defde22500836dffbe2c7e973511e3",
+      "eventExportDigest": "sha256-2edf6f60811c5bcd84ac5b559d70059aaadaf569b8582eb0d15dae3111df3a59",
       "expectedContextPhrases": [
         "exec kill all running",
         "all running instances both",
@@ -90,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.868,
-        "routeSelectionMs": 5.508,
+        "totalMs": 10.044,
+        "routeSelectionMs": 6.383,
         "promptAssemblyMs": 0.002,
-        "otherMs": 3.358,
+        "otherMs": 3.659,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -1,6 +1,6 @@
 {
   "taskId": "T-20260415-257",
-  "generatedAt": "2026-04-17T16:16:25.227Z",
+  "generatedAt": "2026-04-17T16:53:45.871Z",
   "includeMustFire": true,
   "harnessPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-257/activation-first-retune-harness/activation-first-retune-harness.json",
   "routeObjectiveInputPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-257/activation-first-retune-harness/activation-first-route-objective-input.json",
@@ -9,7 +9,7 @@
     "outputDir": "/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/candidate-artifact",
     "artifactId": "router-artifact-t-20260415-257-activation-first-gating-only-v1",
     "artifactVersion": "0.0.1",
-    "artifactChecksum": "sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
+    "artifactChecksum": "sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
     "priorBaseArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
     "priorBaseArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
     "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1"
@@ -46,7 +46,7 @@
       "warmStartFromArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
       "warmStartFromArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
       "warmStartSummary": "warm-start continuation from router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3 applied 50 continuation rows on top of 44 prior used rows",
-      "checksum": "sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
+      "checksum": "sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
       "runtimeVersion": "openclawbrain-runtime@0.4.43"
     },
     "passed": true,
@@ -1316,7 +1316,7 @@
       "warmStartFromArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
       "warmStartFromArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
       "warmStartSummary": "warm-start continuation from router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3 applied 50 continuation rows on top of 44 prior used rows",
-      "checksum": "sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
+      "checksum": "sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
       "runtimeVersion": "openclawbrain-runtime@0.4.43"
     },
     "passed": true,
@@ -2059,13 +2059,13 @@
   },
   "broadLive": {
     "available": true,
-    "authoritative": true,
-    "vetoResult": "pass",
-    "regressions": 0,
+    "authoritative": false,
+    "vetoResult": "reject",
+    "regressions": 30,
     "comparableTraceCount": 403,
-    "policyStatus": "pass",
-    "gateStatus": "pass",
-    "usedLearnedRouteTurnCount": 403,
+    "policyStatus": "fail",
+    "gateStatus": "fail",
+    "usedLearnedRouteTurnCount": 0,
     "boundLearnedRouteTurnCount": 403,
     "activatedLearnedRouteTurnCount": 403,
     "feltOverlap": {
@@ -2077,10 +2077,13 @@
     },
     "notes": [
       "Candidate-specific broad-live comparative eval executed for the just-trained gating-only candidate.",
+      "learned_route never bound a live router function in the broad-live proof surface",
+      "Fresh broad-live veto outcome is recorded, but final status stays architecture_verdict until the replay surface binds a learned router identity.",
+      "scorecard reports zero learned-route turns that used the learned router function",
       "broad-live candidate run output: artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
       "broad-live guardrail manifest: ../task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
       "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "candidate artifact checksum: sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
+      "candidate artifact checksum: sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
       "candidate router identity: router:T-20260415-257:activation-first-gating-only:v1"
     ]
   },
@@ -2107,13 +2110,13 @@
     },
     "broadLive": {
       "available": true,
-      "authoritative": true,
-      "vetoResult": "pass",
-      "regressions": 0,
+      "authoritative": false,
+      "vetoResult": "reject",
+      "regressions": 30,
       "comparableTraceCount": 403,
-      "policyStatus": "pass",
-      "gateStatus": "pass",
-      "usedLearnedRouteTurnCount": 403,
+      "policyStatus": "fail",
+      "gateStatus": "fail",
+      "usedLearnedRouteTurnCount": 0,
       "boundLearnedRouteTurnCount": 403,
       "activatedLearnedRouteTurnCount": 403,
       "feltOverlap": {
@@ -2125,13 +2128,16 @@
       },
       "notes": [
         "Candidate-specific broad-live comparative eval executed for the just-trained gating-only candidate.",
+        "learned_route never bound a live router function in the broad-live proof surface",
+        "Fresh broad-live veto outcome is recorded, but final status stays architecture_verdict until the replay surface binds a learned router identity.",
+        "scorecard reports zero learned-route turns that used the learned router function",
         "broad-live candidate run output: artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
         "broad-live guardrail manifest: ../task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
         "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-        "candidate artifact checksum: sha256:9cd7140c872405ab55d35cd7a4f1fbc64c75fe26057ef4daf04249bf4e3c3a88",
+        "candidate artifact checksum: sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
         "candidate router identity: router:T-20260415-257:activation-first-gating-only:v1"
       ]
     },
-    "finalCandidateStatus": "pass"
+    "finalCandidateStatus": "architecture_verdict"
   }
 }

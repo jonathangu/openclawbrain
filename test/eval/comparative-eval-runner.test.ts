@@ -15,7 +15,13 @@ import {
   type FrozenRecordedSessionEvalManifestV1,
 } from "../../src/eval/comparative-eval-runner.js";
 import { OPENCLAWBRAIN_EXPLAINABLE_EVAL_SCORECARD_CONTRACT } from "../../src/eval/openclawbrain-explainable-scorecard.js";
-import { buildRecordedSessionReplayFixture, runRecordedSessionReplay } from "../../packages/cli/dist/src/index.js";
+import {
+  buildRecordedSessionReplayFixture,
+  loadRecordedSessionReplayProofBundle,
+  runRecordedSessionReplay,
+} from "../../packages/cli/dist/src/index.js";
+import type { DataRegistryEntryV1, RouteDecisionRowV1 } from "../../src/brain-core/cold-start-router-contracts.js";
+import { trainColdStartRouterArtifactV1 } from "../../src/brain-core/cold-start-router-trainer.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -205,6 +211,120 @@ function buildUnsanitizedTrace(rootDir: string, label: string) {
       sanitized: false,
     },
   };
+}
+
+function createReplayOverrideRegistryEntry(datasetId: string): DataRegistryEntryV1 {
+  return {
+    dataset_id: datasetId,
+    source_family: "agent_traces",
+    upstream_url: "https://example.org/replay-override",
+    original_creator: "OpenClaw",
+    license: "internal_local_only",
+    commercial_use_status: "allowed",
+    redistribution_status: "allowed",
+    pii_risk: "none",
+    benchmark_split_status: "train",
+    approval_status: "approved_train",
+    reviewer: "operator",
+    immutable_snapshot_ref: `snapshot:${datasetId}@sha256:replay-override`,
+    exact_files: ["recorded-session-replay.json"],
+    file_hashes: {
+      "recorded-session-replay.json": "sha256:replay-override",
+    },
+    allowed_uses: ["replay proof override"],
+    disallowed_uses: ["redistribution"],
+    notes: ["replay override test fixture"],
+    created_at: "2026-04-17T00:00:00.000Z",
+    updated_at: "2026-04-17T00:00:00.000Z",
+  };
+}
+
+function createReplayStopRouteRows(datasetId: string): RouteDecisionRowV1[] {
+  return [
+    {
+      row_id: "comparative-eval-replay-stop-1",
+      dataset_id: datasetId,
+      query: "Stay stopped during comparative replay override verification.",
+      cursor_path: ["recorded_session_replay"],
+      candidate_set: [
+        { candidate_id: "candidate:a", candidate_type: "graph_node", score_hint: 0.3 },
+        { candidate_id: "candidate:b", candidate_type: "graph_node", score_hint: 0.2 },
+        { candidate_id: "candidate:c", candidate_type: "graph_node", score_hint: 0.1 },
+        { candidate_id: "candidate:d", candidate_type: "graph_node", score_hint: 0.05 },
+        { candidate_id: "candidate:e", candidate_type: "graph_node", score_hint: 0.01 },
+      ],
+      teacher_action: { kind: "tool", tool_name: "__recorded_session_replay_candidate_override__" },
+      stop_label: "STOP_LOCAL",
+      evidence_spans: [
+        { source_ref: "replay:evidence:0", start: 0, end: 19, excerpt: "Stay stopped." },
+        { source_ref: "replay:evidence:1", start: 0, end: 21, excerpt: "Replay verification." },
+        { source_ref: "replay:evidence:2", start: 0, end: 22, excerpt: "Candidate override." },
+      ],
+      hard_negatives: ["candidate:b"],
+      outcome_gain: 1,
+      provenance: {
+        dataset: datasetId,
+        source_license: "internal_local_only",
+        source_family: "agent_traces",
+        source_snapshot_ref: `snapshot:${datasetId}@sha256:replay-override`,
+        recorded_by: "test",
+        recorded_at: "2026-04-17T00:00:00.000Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-17T00:00:00.000Z",
+    },
+    {
+      row_id: "comparative-eval-replay-stop-2",
+      dataset_id: datasetId,
+      query: "Comparative replay override should abstain instead of traversing.",
+      cursor_path: ["recorded_session_replay"],
+      candidate_set: [
+        { candidate_id: "candidate:f", candidate_type: "graph_node", score_hint: 0.28 },
+        { candidate_id: "candidate:g", candidate_type: "graph_node", score_hint: 0.18 },
+        { candidate_id: "candidate:h", candidate_type: "graph_node", score_hint: 0.08 },
+        { candidate_id: "candidate:i", candidate_type: "graph_node", score_hint: 0.04 },
+        { candidate_id: "candidate:j", candidate_type: "graph_node", score_hint: 0.02 },
+      ],
+      teacher_action: { kind: "tool", tool_name: "__recorded_session_replay_candidate_override__" },
+      stop_label: "STOP_LOCAL",
+      evidence_spans: [
+        { source_ref: "replay:evidence:3", start: 0, end: 24, excerpt: "Replay abstention." },
+        { source_ref: "replay:evidence:4", start: 0, end: 24, excerpt: "Broad live override." },
+        { source_ref: "replay:evidence:5", start: 0, end: 18, excerpt: "Stay local." },
+      ],
+      hard_negatives: ["candidate:g"],
+      outcome_gain: 1,
+      provenance: {
+        dataset: datasetId,
+        source_license: "internal_local_only",
+        source_family: "agent_traces",
+        source_snapshot_ref: `snapshot:${datasetId}@sha256:replay-override`,
+        recorded_by: "test",
+        recorded_at: "2026-04-17T00:01:00.000Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-17T00:01:00.000Z",
+    },
+  ];
+}
+
+function trainReplayStopArtifact(outputDir: string, routerIdentity: string): void {
+  const datasetId = `dataset:${routerIdentity}`;
+  trainColdStartRouterArtifactV1({
+    artifactId: `artifact:${routerIdentity}`,
+    artifactVersion: "0.0.1",
+    packType: "base",
+    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+    registryEntries: [createReplayOverrideRegistryEntry(datasetId)],
+    routeRows: createReplayStopRouteRows(datasetId),
+    outputDir,
+    routerIdentity,
+    createdAt: "2026-04-17T00:10:00.000Z",
+    trainingDataRefs: [datasetId],
+    replayGateRefs: [`replay:${datasetId}`],
+  });
 }
 
 function writeTrace(rootDir: string, trace: Record<string, unknown>) {
@@ -397,6 +517,38 @@ describe("comparative eval runner", () => {
     expect(learnedTurn?.activationTaken).toBe(true);
     expect(learnedTurn?.activationSource).toBe("learned_route_fn");
     expect(learnedTurn?.routerIdentity).toMatch(/:route_fn$/);
+  });
+
+  it("threads a learned-route candidate artifact override through comparative eval", () => {
+    const rootDir = createTempRoot("comparative-eval-runner-override");
+    const outputDir = path.join(rootDir, "output");
+    const candidateArtifactDir = path.join(rootDir, "candidate-artifact");
+    const candidateRouterIdentity = "router:comparative-eval-override-stop";
+    const comparativeTrace = writeTrace(rootDir, buildComparativeTrace(rootDir, "override-a"));
+    const manifestPath = writeFrozenManifest(rootDir, "override-eval", [comparativeTrace]);
+
+    trainReplayStopArtifact(candidateArtifactDir, candidateRouterIdentity);
+
+    const descriptor = runComparativeEval({
+      manifestPath,
+      outputDir,
+      scratchRootDir: rootDir,
+      learnedRouteCandidateArtifactDir: candidateArtifactDir,
+      policy: {
+        maxCandidateTiePromotionDeltaVsBaseline: 2,
+      },
+    });
+
+    const proofBundle = loadRecordedSessionReplayProofBundle(path.join(outputDir, "traces", comparativeTrace.traceId));
+    const learnedRouteMode = proofBundle.bundle.modes.find((mode) => mode.mode === "learned_route");
+
+    expect(descriptor.report.notes).toContain(`learned_route replay override artifact: ${candidateArtifactDir}`);
+    expect(learnedRouteMode).toBeDefined();
+    expect(learnedRouteMode?.summary.usedLearnedRouteTurnCount).toBe(0);
+    expect(learnedRouteMode?.turns.every((turn) => turn.usedLearnedRouteFn === false)).toBe(true);
+    expect(learnedRouteMode?.turns.every((turn) => turn.activationTaken === true)).toBe(true);
+    expect(learnedRouteMode?.turns.every((turn) => turn.routerIdentity === candidateRouterIdentity)).toBe(true);
+    expect(learnedRouteMode?.turns.map((turn) => turn.selectedContextIds)).toEqual([[], []]);
   });
 
   it("fails the gate when learned routing adds promotion churn on tie traces", () => {

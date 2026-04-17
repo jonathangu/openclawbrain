@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 1,
+    "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
       "pack-0a1aac31"
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-db225ff1576da3ab26b5e5f1991a462e04fb093a8cd80a6041f2b5141b0537c2"
+    "scoreHash": "sha256-83cdd821ddd1fd0736d9c7c1aee0110ba597d64b0a90fb0f8f652c57c30f2560"
   },
   "turns": [
     {
@@ -55,24 +55,20 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": true,
+      "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_fn",
-      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-0a1aac31:route_fn",
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
-      "routerIdentity": "pack-0a1aac31:route_fn",
-      "selectionDigest": "sha256-e77cfe97f9c150be9f6fd46ffef81bf659bc0ee574d2675ca6668e14629e1adf",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-05cb987b8a3b9e3fd8788bb6e995ac99675fa07d5b109ca2db7f5ed2027f435c",
       "selectedContextIds": [
-        "pack-0a1aac31:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:feedback",
-        "pack-0a1aac31:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
         "pack-0a1aac31:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Run the following periodic tasks (only those due based on their intervals): - project-scan: Reread TASKS.md. If an active principal task exists, inspect only the relevant project files needed to advance or close it. If none exists, reply HEARTBEAT_OK. After completing all due tasks, reply HEARTBEAT_OK. Current time: Tuesday, April 14th, 2026 - 8:32 PM (America/Los_Angeles) / 2026-04-15 03:32 UTC. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:interaction.",
-        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Run the following periodic tasks (only those due based on their intervals): - task-ledger-review: Reread TASKS.md. If an active unblocked principal task exists, reread MEMORY.md plus only the needed project files, then execute the best next ready step. Only report a real milestone, blocker, or completion; otherwise reply HEARTBEAT_OK. After completing all due tasks, reply HEARTBEAT_OK. Current time: Tuesday, April 14th, 2026 - 8:15 PM (America/Los_Angeles) / 2026-04-15 03:15 UTC. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction.",
         "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-61c5cdb048568c7b8cab6809a0782fa3260aaee40559ee443fcd349144c1260c",
+      "eventExportDigest": "sha256-97b6dda8e7787f5fb04d58b54b4a7c303501542c95035d6e8279c9b4aec2b4e4",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/memory/2026-04-14.md\"}"
       ],
@@ -86,10 +82,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.154,
-        "routeSelectionMs": 5.735,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.417,
+        "totalMs": 8.538,
+        "routeSelectionMs": 5.34,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.197,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },
