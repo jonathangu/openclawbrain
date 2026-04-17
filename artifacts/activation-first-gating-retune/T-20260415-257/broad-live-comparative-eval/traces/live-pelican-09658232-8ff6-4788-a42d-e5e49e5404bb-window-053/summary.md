@@ -5,7 +5,7 @@
 - trace hash: `sha256-ebe19ca9bc459ccc52f05cb3ef8e24277b70f060cd7939f534aee99c63488ae5`
 - fixture hash: `sha256-83e33e2dc3d5736fb8b475959b3f799a1522431a9ceb8bc4c7fc74edb18967c0`
 - score hash: `sha256-61ca5698b5d487fa03a3d26ed38d1c725041dcf38fac14f6d2825c697297c819`
-- bundle hash: `sha256-7e12842bdc9c64a910df6461638a594040dd074043e0bd372ae134c2aa71014e`
+- bundle hash: `sha256-16ea523c4a9b477995246d56bf0c4f3865fdac8a8b2037096b86c0f7f186647c`
 
 ## Ranking
 | rank | mode | quality score |

@@ -1,0 +1,114 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-b02ef600"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-09T14:02:47.860Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-cfe14bea8fa607474eb1f9bcf863186c28819c8fb57b7df7da5ea83cca4251c3"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-b02ef600",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-3f936c12e503b62ec2e59207de98b6dc8723c2b97b9d1fcc58aa2bd39b7b5bb9",
+      "selectedContextIds": [
+        "pack-b02ef600:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:feedback",
+        "pack-b02ef600:pointer-aware-init",
+        "pack-b02ef600:pointer-passive-expansion"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260409-192 lane C. Map the exact install/build/promotion code paths for the live router and determine whether the live learned route function is literally initialized from approved cold-start prior parameters or only same-family generically. Propose the exact contract/schema/promotion/status changes needed to enforce literal cold-start-rooted lineage for every .... Related interaction: 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more."
+      ],
+      "eventExportDigest": "sha256-036c4d79978367124955101b916072a3641af4355f1027e21b061bd4e304476a",
+      "expectedContextPhrases": [
+        "/src",
+        "route_fn"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/src",
+        "route_fn"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.396,
+        "routeSelectionMs": 4.651,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.743,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-09T14:02:47.860Z"
+      },
+      "warnings": []
+    }
+  ]
+}

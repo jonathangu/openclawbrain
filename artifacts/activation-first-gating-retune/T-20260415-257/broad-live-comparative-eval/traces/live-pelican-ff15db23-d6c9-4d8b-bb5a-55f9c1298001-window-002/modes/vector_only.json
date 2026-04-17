@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-7af1c20e"
+      "pack-b1ed61af"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-3380b430ace55ca36d2b2cf2a46974bc8c5832c6a6079cd7c9ba04a9190dd7c8"
+    "scoreHash": "sha256-1ce1901092fe939858cc36385fc97cb6a6aae541f5bd122b0756e3ba5ede4640"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-7af1c20e",
+      "activePackId": "pack-b1ed61af",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-1f28d8cf67f0355df4445ae424e76788f545263aaa8eebed7eb63bc397a6ba88",
+      "selectionDigest": "sha256-52679baff9d69676805e890287cf4ece9aefa07c32958187f226dc29fa8564eb",
       "selectedContextIds": [
-        "pack-7af1c20e:pointer-aware-init",
-        "pack-7af1c20e:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:feedback",
-        "pack-7af1c20e:workspace-init:51972c8c"
+        "pack-b1ed61af:pointer-aware-init",
+        "pack-b1ed61af:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:feedback",
+        "pack-b1ed61af:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
         "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
         "Teaching feedback on live-session session ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed: assistant: Bootstrap worked. 214 nodes, 1214 edges from 47 files. Now let me try `install-hook` to wire it into my workspace, then test a query. ToolCall exec {\"command\": \"source ~/.crabpath/venv/bin/activate && source /Users/guclaw/.openclaw/workspace/quant-research/.env 2>/dev/null; export OPENAI_API_KEY; crabpath install-hook --help 2>&1\", \"timeout\": 10}. Related interaction: ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:interaction.",
-        "Top-priority boot input memory/2026-02-26-crabpath-eval.md selected by pointer-aware init (inbound=0, outbound=2). CrabPath Installation & Evaluation — 2026-02-26 What Is It Graph-based memory architecture for agents. Documents = nodes, weighted edges, LLM activation function. Claims to learn retrieval paths via policy gradients and inhibitory edges. Installation - **Package:** crabpath v1.0.7 from PyPI - **Venv:** ~/.crabpath/ven…"
+        "Teaching feedback on live-session session ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed: assistant: Dry run says it would add a block to AGENTS.md. Let me skip the hook for now (I don't want to auto-modify AGENTS.md without understanding what it writes) and instead test the actual query pipeline. ToolCall exec {\"command\": \"source ~/.crabpath/venv/bin/activate && source /Users/guclaw/.openclaw/workspace/quant-research/.env 2>/dev/null; export OPENAI_API_KEY; crabpath query \\\"how does the exit monitor work\\\" --graph ~/.crabpath/. Related interaction: ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-7f8efc3d3bddaf694c38df827e66353565910a2a29e58dca36556845003556b6",
+      "eventExportDigest": "sha256-3bd635854dbdefa07b5380706f5908153772df018086c2ab635a907e14ccbe50",
       "expectedContextPhrases": [
         "hey",
         "jon."
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.142,
-        "routeSelectionMs": 4.49,
+        "totalMs": 7.609,
+        "routeSelectionMs": 5.007,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.65,
+        "otherMs": 2.6,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -1,0 +1,114 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-ecfb6ca1"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-07T00:09:13.211Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-7fd6d0d9bb1fd372aecb1580883e755fdf44fd27a78922f96eb4292317d3e949"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-ecfb6ca1",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-e7f17366e73f5f824d386cd7f90d2d3bec389cc69862e5de51122a744881c10e",
+      "selectedContextIds": [
+        "pack-ecfb6ca1:pointer-aware-init",
+        "pack-ecfb6ca1:pointer-passive-expansion",
+        "pack-ecfb6ca1:event:716b770f-85c9-4b7e-ab26-cfe2594bb715-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-07-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more.",
+        "Teaching feedback on live-session session 716b770f-85c9-4b7e-ab26-cfe2594bb715-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260406-162 publish/docs/sites wave — Lane A (repo release/docs bump). Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Goal: cut the public 0.4.35 pass for the finished tool-action symmetry work. Scope: bump split-package versions to 0.4.35 where appropriate, update README.md, CHANGELOG.md, docs/README.md, docs/END_STATE.md, docs/release-notes-0.4.35.md.... Related interaction: 716b770f-85c9-4b7e-ab26-cfe2594bb715-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-953f0974fda72591c5818da10e2343f61d49e30573ccd11247865d8798517f3d",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/openclawbrain/README.md\"}",
+        "/Users/guclaw/.openclaw/workspace/openclawbrain/CHANGELOG.md\"}"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/openclawbrain/README.md\"}",
+        "/Users/guclaw/.openclaw/workspace/openclawbrain/CHANGELOG.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.621,
+        "routeSelectionMs": 4.788,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.83,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-07T00:09:13.211Z"
+      },
+      "warnings": []
+    }
+  ]
+}

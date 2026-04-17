@@ -1,6 +1,6 @@
 {
   "taskId": "T-20260415-257",
-  "generatedAt": "2026-04-17T16:53:45.871Z",
+  "generatedAt": "2026-04-17T21:25:23.491Z",
   "includeMustFire": true,
   "harnessPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-257/activation-first-retune-harness/activation-first-retune-harness.json",
   "routeObjectiveInputPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-257/activation-first-retune-harness/activation-first-route-objective-input.json",
@@ -9,7 +9,7 @@
     "outputDir": "/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/candidate-artifact",
     "artifactId": "router-artifact-t-20260415-257-activation-first-gating-only-v1",
     "artifactVersion": "0.0.1",
-    "artifactChecksum": "sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
+    "artifactChecksum": "sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845",
     "priorBaseArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
     "priorBaseArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
     "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1"
@@ -46,12 +46,12 @@
       "warmStartFromArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
       "warmStartFromArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
       "warmStartSummary": "warm-start continuation from router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3 applied 50 continuation rows on top of 44 prior used rows",
-      "checksum": "sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
+      "checksum": "sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845",
       "runtimeVersion": "openclawbrain-runtime@0.4.43"
     },
     "passed": true,
     "verdict": "pass",
-    "summary": "25/25 replay rows passed; activation matches 0/25; policy expectations 25/25 passed (felt_resume_25 25/25)",
+    "summary": "25/25 replay rows passed; policy activation matches 25/25, abstain matches 25/25; policy expectations 25/25 passed (felt_resume_25 25/25)",
     "evaluatedRowCount": 25,
     "passedRowCount": 25,
     "failedRowCount": 0,
@@ -1303,6 +1303,22 @@
       }
     ]
   },
+  "feltComparativeEvaluation": {
+    "available": true,
+    "comparableTraceCount": 25,
+    "betterCount": 0,
+    "tiedCount": 21,
+    "worseCount": 4,
+    "regressions": 4,
+    "requiredContextRecallSummary": "learned_route recalled 0/63 required-context phrases vs graph_prior_only 4/63",
+    "outputDir": "artifacts/activation-first-gating-retune/T-20260415-257/felt-optimize-comparative-eval",
+    "notes": [
+      "Candidate-specific felt optimize comparative eval executed for the just-trained gating-only candidate.",
+      "felt optimize manifest: ../task-artifacts/T-20260415-257/activation-first-retune-harness/felt-resume-eval.manifest.json",
+      "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "candidate artifact checksum: sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845"
+    ]
+  },
   "mustNotFireReplay": {
     "artifactDir": "/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/candidate-artifact",
     "manifestSummary": {
@@ -1316,12 +1332,12 @@
       "warmStartFromArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
       "warmStartFromArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
       "warmStartSummary": "warm-start continuation from router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3 applied 50 continuation rows on top of 44 prior used rows",
-      "checksum": "sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
+      "checksum": "sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845",
       "runtimeVersion": "openclawbrain-runtime@0.4.43"
     },
     "passed": true,
     "verdict": "pass",
-    "summary": "15/15 replay rows passed; activation matches 15/15; policy expectations 15/15 passed",
+    "summary": "15/15 replay rows passed; policy activation matches 15/15, abstain matches 15/15, stop_local matches 15/15; policy expectations 15/15 passed",
     "evaluatedRowCount": 15,
     "passedRowCount": 15,
     "failedRowCount": 0,
@@ -2083,13 +2099,36 @@
       "broad-live candidate run output: artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
       "broad-live guardrail manifest: ../task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
       "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "candidate artifact checksum: sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
+      "candidate artifact checksum: sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845",
       "candidate router identity: router:T-20260415-257:activation-first-gating-only:v1"
     ]
   },
   "scorecard": {
     "candidateArtifactDir": "artifacts/activation-first-gating-retune/T-20260415-257/candidate-artifact",
     "feltUniqueWinsTiesRegressions": {
+      "availableTraceCount": 25,
+      "totalTraceCount": 25,
+      "betterCount": 0,
+      "tiedCount": 21,
+      "worseCount": 4
+    },
+    "feltComparativeEval": {
+      "available": true,
+      "comparableTraceCount": 25,
+      "betterCount": 0,
+      "tiedCount": 21,
+      "worseCount": 4,
+      "regressions": 4,
+      "requiredContextRecallSummary": "learned_route recalled 0/63 required-context phrases vs graph_prior_only 4/63",
+      "outputDir": "artifacts/activation-first-gating-retune/T-20260415-257/felt-optimize-comparative-eval",
+      "notes": [
+        "Candidate-specific felt optimize comparative eval executed for the just-trained gating-only candidate.",
+        "felt optimize manifest: ../task-artifacts/T-20260415-257/activation-first-retune-harness/felt-resume-eval.manifest.json",
+        "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+        "candidate artifact checksum: sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845"
+      ]
+    },
+    "feltBroadLiveOverlap": {
       "availableTraceCount": 4,
       "totalTraceCount": 25,
       "betterCount": 0,
@@ -2134,7 +2173,7 @@
         "broad-live candidate run output: artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
         "broad-live guardrail manifest: ../task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
         "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-        "candidate artifact checksum: sha256:11cac7eb0e4f7e0f40177344495810336754749cb62d0d3c83d4e3710b57172a",
+        "candidate artifact checksum: sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845",
         "candidate router identity: router:T-20260415-257:activation-first-gating-only:v1"
       ]
     },

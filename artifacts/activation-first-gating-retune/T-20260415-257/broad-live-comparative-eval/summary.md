@@ -6,10 +6,10 @@
 - manifest path: `/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json`
 - manifest contract: `frozen_recorded_session_eval_manifest.v1`
 - manifest id: `extracted-semantic-rich-live-535`
-- git sha: `b12c25fb01166df1e8c1f5923b050202ca0d4b24`
+- git sha: `0cfc8d81ab0dbe2d67e186899190f5a722a4ab29`
 - traces: 403/403
-- scorecard hash: `sha256-991372c399ec753f487abfc8e616a444f94e2b56f9d7bbfa9fdbe7b724e0e3bf`
-- explainable scorecard hash: `sha256-0b6c82fde4585714e16b8d7e0e9ea01bc040640b203831602783bc4a1b543d73`
+- scorecard hash: `sha256-69ed87cbf630ce0ac1020ed7bbada77bfc6bc0ad1152c0f5002db43dac863b17`
+- explainable scorecard hash: `sha256-2406e2fd8d560683e9b0788116420cafe05054d701158eb46407152d6799027a`
 
 ## Explainable Scorecard
 - learned_route was worse than graph_prior_only on 30/403 validated traces.
@@ -25,7 +25,7 @@
 - regressions vs no_brain: 0/403 (0) (critical regressions: 0)
 - required-context recall: learned_route recalled 19/832 required-context phrases vs graph_prior_only 54/832
 - correction absorption: correction absorption is unavailable in comparative eval because no feedback-bearing turns were recorded in the validated set
-- success-adjusted economics: learned_route estimated prompt cost per validated trace = 0.000142 vs graph_prior_only 0.000387
+- success-adjusted economics: learned_route estimated prompt cost per validated trace = 0.000143 vs graph_prior_only 0.000387
 - fail-open: fail-open posture is not modeled in comparative eval replay bundles; use proof-cron health surfaces for degraded-serve reporting
 
 ## Public / Operator Metrics
@@ -506,6 +506,7 @@
 - mode order is no_brain, vector_only, graph_prior_only, learned_route
 - the comparative runner delegates replay execution to writeRecordedSessionReplayProofLane so each trace still runs through the real replay/runtime path
 - learned_route replay override artifact: /Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/candidate-artifact
+- candidate override runs are non-authoritative for served learned-route hotpath truth because replay override keeps usedLearnedRouteFn=false by construction
 - Extracted from /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-250/semantic-rich-live-535.json
 - Internal local-only live-history replay traces.
 - One-turn traces with prior session messages converted into seed cues.
@@ -518,4 +519,5 @@
 - scorecard prompt-cost metrics are cheap deterministic proxies derived from selected context chars
 - learned_route is the candidate mode, graph_prior_only is the baseline mode, and no_brain is the floor anchor for the explicit comparative policy
 - when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state
+- candidate override replay does not bind the candidate as the served learned-route router, so authoritative broad-live verdicts still require a served-pack bridge
 - this scaffold does not finalize the frozen trace set or widen proof-bundle generation scope

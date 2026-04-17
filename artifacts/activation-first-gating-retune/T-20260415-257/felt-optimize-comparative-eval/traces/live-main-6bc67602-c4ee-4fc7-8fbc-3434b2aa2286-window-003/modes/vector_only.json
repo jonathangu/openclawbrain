@@ -1,0 +1,116 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-578d20ac"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-06T15:52:38.789Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-3e641dbde4bb0ba78103e94540244ef8e79f7565f730eb500bc9574f32a1ccc3"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-578d20ac",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-3b3f3b9955261f6e3773971432a329d02c2489c0a981977096d6601c20acdbcc",
+      "selectedContextIds": [
+        "pack-578d20ac:pointer-aware-init",
+        "pack-578d20ac:pointer-passive-expansion",
+        "pack-578d20ac:workspace-init:8e5375dd"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more.",
+        "Top-priority boot input memory/2026-04-06-boot-check.md selected by pointer-aware init (inbound=0, outbound=3). Session: 2026-04-06 09:12:36 UTC - **Session Key**: agent:main:main - **Session ID**: boot-2026-04-06_08-24-11-777-2f4505b0 - **Source**: telegram Conversation Summary user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: BOOT.md 1. Read TASKS.md; files are the source of truth. 2. Claim or…"
+      ],
+      "eventExportDigest": "sha256-76a2dc8edacc245c235816d40f4dddb86000b17f0829eed9a9ea6d866432db63",
+      "expectedContextPhrases": [
+        "attempt failed timed out.",
+        "continue you left off.",
+        "left off. previous model"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "attempt failed timed out.",
+        "continue you left off.",
+        "left off. previous model"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.189,
+        "routeSelectionMs": 5.311,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.875,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-06T15:52:38.789Z"
+      },
+      "warnings": []
+    }
+  ]
+}

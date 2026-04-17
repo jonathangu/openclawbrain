@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-05T15:53:34.978Z",
   "traceHash": "sha256-500bb42a51fe35739e28b1f6be3d9fe7ff92c6a8eeb2f053f3018ae2eba88584",
   "fixtureHash": "sha256-f69dca5c27c722f582ac3debb2e25adae4c35c5bd6a4749aa476e37eee07c7bc",
-  "scoreHash": "sha256-c00c1c7d44ebe0d97d9c8cdd5c5b1ade064acc95eff17d2718fb0609d59ee6d3",
+  "scoreHash": "sha256-4965f5bd6c2cc30455aa24e76a066e84f239fb89658a17425dbe18474238e4df",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.041,
+            "totalMs": 0.033,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.041,
+            "otherMs": 0.033,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-bf917e38"
+          "pack-b56bf5bc"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-ab06199e7ec556d10b8c027284752ddad39fa198a57a491d01d63e735e2d4135"
+        "scoreHash": "sha256-b2b3abe16d3357272fdcfb016017e46e8b63f2febb27a90f14555c0e36770169"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-bf917e38",
+          "activePackId": "pack-b56bf5bc",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-accee6da4119ff5a3e51300e9ae1ee1a0bbba4ee4c6b8a90aa58e5d0a7be1b0d",
+          "selectionDigest": "sha256-7280deb3449a92fed9acb4c9a252f7b517d2ee420edb5052050b814c13881c52",
           "selectedContextIds": [
-            "pack-bf917e38:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-5:feedback",
-            "pack-bf917e38:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback",
-            "pack-bf917e38:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-2:feedback"
+            "pack-b56bf5bc:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-5:feedback",
+            "pack-b56bf5bc:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback",
+            "pack-b56bf5bc:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8583\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:52 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` WIPE PROD DB. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-5:interaction.",
             "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8580\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:44 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Wipe it all in the database. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:interaction.",
             "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8576\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:40 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Can you clear all test artifacts from our database? Clear the hanging lemons and clear the random simulated u.... Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-011eef00ea34223045bb7e286736f10c3185cad5d7bcbf49c70192c783d3f988",
+          "eventExportDigest": "sha256-f09b883bc797d29488009e4a90c798004c77b7937a512488be426806bdefed3a",
           "expectedContextPhrases": [
             "toolcall",
             "browser",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.646,
-            "routeSelectionMs": 4.846,
+            "totalMs": 7.338,
+            "routeSelectionMs": 4.618,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.797,
+            "otherMs": 2.717,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -251,7 +251,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-bf917e38"
+          "pack-b56bf5bc"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-2e9c7f08d3d7218ec9bd7455a8daecc6e9a972b4dd778c91480559459840f1b9"
+        "scoreHash": "sha256-dda28a28f0638b61601e667004a5e04891749d03294534fe2f3df19498baa7e1"
       },
       "turns": [
         {
@@ -289,7 +289,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-bf917e38",
+          "activePackId": "pack-b56bf5bc",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -299,18 +299,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-2297c94c67abf5ad6b0c9122b382c429b836886b09d1fd50fa4b042f582b058e",
+          "selectionDigest": "sha256-94ccd9ace59794ec0212b88d775683e37b6c4c1d2bc1b732616cec5a18e9d66c",
           "selectedContextIds": [
-            "pack-bf917e38:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-5:feedback",
-            "pack-bf917e38:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-5:interaction",
-            "pack-bf917e38:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback"
+            "pack-b56bf5bc:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-5:feedback",
+            "pack-b56bf5bc:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-5:interaction",
+            "pack-b56bf5bc:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8583\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:52 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` WIPE PROD DB. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-5:interaction.",
             "Interaction operator_override on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed. Message: cue-5-seed-message.",
             "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8580\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:44 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Wipe it all in the database. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-b2ac0958752bbc7f0ec7391801987042df11a0601f3fea28185d7e7326f2ce59",
+          "eventExportDigest": "sha256-02032856bffd0bdf217b59e4e0884f4f8495f8bbf3103cbdfdb2073943f134c4",
           "expectedContextPhrases": [
             "toolcall",
             "browser",
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.408,
-            "routeSelectionMs": 4.811,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.594,
+            "totalMs": 7.286,
+            "routeSelectionMs": 4.612,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.671,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -368,12 +368,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-01b35e31"
+          "pack-f78dd5b5"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-01b35e31",
-        "frozenEvalRouterIdentity": "pack-01b35e31:route_fn",
+        "frozenEvalPackId": "pack-f78dd5b5",
+        "frozenEvalRouterIdentity": "pack-f78dd5b5:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-d86caa562dabede78cf191330311b43a91295742fe3ea2ab9fa22e144c04214f"
+        "scoreHash": "sha256-61d0c5066b8bb270729c6dd374cfc07f54c02dae829d3f726a2d159b5a032727"
       },
       "turns": [
         {
@@ -407,7 +407,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-01b35e31",
+          "activePackId": "pack-f78dd5b5",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -417,14 +417,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-c8b095a3756f1076b94f22f60d67edaa6ef53294dd46115b1ae0dee7550b79a6",
+          "selectionDigest": "sha256-7c9707b82865f5df560022d811c6a7f73786fad91bf5f214a3a4431f16a1229c",
           "selectedContextIds": [
-            "pack-01b35e31:pointer-aware-init"
+            "pack-f78dd5b5:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-03-05-1953.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/archive/2026-03-05-1953.md, docs/jon-model.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-9c6be357dc2e53cd0e246dde3ba8f7c4e0148a0d13a81feeac26950c60bf9f5f",
+          "eventExportDigest": "sha256-b467e4a2a770bdf70a06f5be3db1102aec9b4aeaa0e8ff70ed65c89643395596",
           "expectedContextPhrases": [
             "toolcall",
             "browser",
@@ -442,10 +442,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.416,
-            "routeSelectionMs": 5.945,
+            "totalMs": 9.052,
+            "routeSelectionMs": 5.644,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.469,
+            "otherMs": 3.406,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -489,5 +489,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-dc0d8db4604b67f86b197c127ed8e8f82971c4f3bc7dbc662bd29b7e2d00f9a6"
+  "bundleHash": "sha256-d5403423803953095a343f2f769cd44f0ff1041f3be72a6226be8cd78c571baa"
 }

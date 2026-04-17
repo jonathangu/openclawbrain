@@ -1,0 +1,115 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 70,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-c1ea0537"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-06T17:42:13.948Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-e8ba5db9d9f161c399e41cbd8225c8a80eaf6cc6955fc0e037c9850b22a6c807"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-c1ea0537",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-65c43b51b92de7b02c96c8c7cf80948a674b85f767c2784df7ae369d89c96012",
+      "selectedContextIds": [
+        "pack-c1ea0537:event:971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:feedback",
+        "pack-c1ea0537:pointer-aware-init",
+        "pack-c1ea0537:workspace-init:16415817"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 971973d8-2a63-4883-a18f-bfa883f844ea-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260406-161 tool-action online symmetry — Lane A (capability vs instance action representation). Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Read /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/launch-brief.md and /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-160/tool-action-symmetry-plan.md. Goal: implement or tighten .... Related interaction: 971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=100). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 6:14 AM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+      ],
+      "eventExportDigest": "sha256-8a70c1dd18caa7db30d490abd3e21b7768eb75fbd919d84f9138155c6c15eb14",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/openclawbrain/package.json\"}",
+        "/Users/guclaw/.openclaw/workspace/openclawbrain"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [
+        "/Users/guclaw/.openclaw/workspace/openclawbrain"
+      ],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/openclawbrain/package.json\"}"
+      ],
+      "qualityScore": 70,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.678,
+        "routeSelectionMs": 4.867,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.808,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-06T17:42:13.948Z"
+      },
+      "warnings": []
+    }
+  ]
+}

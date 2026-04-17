@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-31aac62b"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-31aac62b",
+    "frozenEvalRouterIdentity": "pack-31aac62b:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-06T21:53:41.286Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-9730b7b423f375e82d00a60d93e28d3e497deb43e523b7012dba57e3aebc8822"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-31aac62b",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": true,
+      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationConfidence": "high",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-33de207d1090f8d5b7d9e8fb613d810c12f9ad22697f81ce40ff01dd5f0063d9",
+      "selectedContextIds": [
+        "pack-31aac62b:pointer-aware-init"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+      ],
+      "eventExportDigest": "sha256-b19b4b81b07055ac8627eb73b679a6681898236d4b52687aeac751b5c69c2014",
+      "expectedContextPhrases": [
+        "attempt failed timed out.",
+        "continue you left off.",
+        "left off. previous model"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "attempt failed timed out.",
+        "continue you left off.",
+        "left off. previous model"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.385,
+        "routeSelectionMs": 5.78,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.603,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-06T21:53:41.286Z"
+      },
+      "warnings": []
+    }
+  ]
+}

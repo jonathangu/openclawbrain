@@ -1,0 +1,71 @@
+{
+  "contract": "comparative_eval_runner_report.v1",
+  "status": "ok",
+  "generatedAt": "2026-04-17T21:25:23.549Z",
+  "repoRoot": "/Users/guclaw/.openclaw/workspace/openclawbrain",
+  "gitSha": "0cfc8d81ab0dbe2d67e186899190f5a722a4ab29",
+  "manifestPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-257/activation-first-retune-harness/felt-resume-eval.manifest.json",
+  "manifestContract": "frozen_recorded_session_eval_manifest.v1",
+  "manifestId": "felt_resume_25-eval",
+  "outputDir": "/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/felt-optimize-comparative-eval",
+  "traceRoot": "/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/felt-optimize-comparative-eval/traces",
+  "requestedTraceCount": 25,
+  "expectedTraceCount": 25,
+  "successfulTraceCount": 25,
+  "failedTraceCount": 0,
+  "notes": [
+    "default manifest path is /Users/guclaw/.openclaw/workspace/openclawbrain/evals/recorded-session-replay/canonical-frozen-20/manifest.json",
+    "mode order is no_brain, vector_only, graph_prior_only, learned_route",
+    "the comparative runner delegates replay execution to writeRecordedSessionReplayProofLane so each trace still runs through the real replay/runtime path",
+    "learned_route replay override artifact: /Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/candidate-artifact",
+    "candidate override runs are non-authoritative for served learned-route hotpath truth because replay override keeps usedLearnedRouteFn=false by construction",
+    "Primary felt optimize lane for session continuity / task resume wins where learned_route should recover recent task state and produce a materially better continuation than graph_prior_only.",
+    "This felt lane is intentionally concrete: it is built from real resume and continuity prompts where the current turn alone is too thin to pick the right next action.",
+    "The tranche is complete at 25 anchors so the next harness / proof loops can treat it as the headline optimize lane instead of a partial placeholder.",
+    "selection rule: Trace must be a real resume, continue, handoff, or boot-recovery turn where the current prompt is materially under-specified without recent task state.",
+    "selection rule: Prefer traces where the right continuation depends on active task, blocker, deliverable, or runtime state rather than wording polish.",
+    "selection rule: Exclude trivial wrappers that are pure boilerplate and do not require recovering a concrete prior workstream.",
+    "selection rule: Include a mix of fresh-session boot resumes, interrupted coding resumes, narrowed-scope continuations, and operator keep-going turns.",
+    "selection rule: Measure success as materially better continuation choice, not tie-heavy restatement."
+  ],
+  "assumptions": [
+    "accepted manifest contracts: canonical_recorded_session_trace_set_manifest.v1, frozen_recorded_session_eval_manifest.v1",
+    "manifest trace paths resolve relative to the manifest file location",
+    "traceHash, when present in the manifest, is checksumJsonPayload(trace-json)",
+    "scorecard prompt-cost metrics are cheap deterministic proxies derived from selected context chars",
+    "learned_route is the candidate mode, graph_prior_only is the baseline mode, and no_brain is the floor anchor for the explicit comparative policy",
+    "when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state",
+    "candidate override replay does not bind the candidate as the served learned-route router, so authoritative broad-live verdicts still require a served-pack bridge",
+    "this scaffold does not finalize the frozen trace set or widen proof-bundle generation scope"
+  ],
+  "issues": [],
+  "pricingTable": {
+    "version": "v1",
+    "path": "scripts/pricing-table.v1.json",
+    "charsPerToken": 4,
+    "promptPriceUsdPer1mTokens": 1.25
+  },
+  "scorecardHash": "sha256-72cf2a3f631c3c3e3615a37a4e19035a385458f9af40946a501cf8b2fb72c42a",
+  "explainableScorecardHash": "sha256-da8e030e59ba059fd683fb3694b31127ba7fa0337e9db87c96203c9e26d3c705",
+  "gateStatus": "fail",
+  "gateDecisive": true,
+  "gateFailedCheckIds": [
+    "candidate_trace_tie_or_better_vs_baseline"
+  ],
+  "files": {
+    "sourceManifest": "source-manifest.json",
+    "report": "report.json",
+    "scorecard": "scorecard.json",
+    "explainableScorecard": "explainable-scorecard.json",
+    "summary": "summary.md",
+    "traceDir": "traces",
+    "laneDir": "traces/_lane",
+    "laneIndex": "traces/_lane/index.json",
+    "laneSummaryTables": "traces/_lane/summary-tables.json",
+    "lanePairwiseDeltas": "traces/_lane/pairwise-deltas.json",
+    "laneWinRateMatrix": "traces/_lane/win-rate-matrix.json",
+    "laneWorkedTraces": "traces/_lane/worked-traces.md",
+    "laneGenerationReport": "traces/_lane/generation-report.json"
+  }
+}
+

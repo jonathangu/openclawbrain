@@ -1,0 +1,483 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-09T14:24:57.461Z",
+  "generatedAt": "2026-04-09T14:28:59.995Z",
+  "traceHash": "sha256-4d327d918fbcc4a369abe7ef4d164f9a5cfa04faf7adb2505c432935e6de9ae6",
+  "fixtureHash": "sha256-6153c43221a8c0bd8b8f42dc9046e70b2d1a03e5bc667d5e9fc62b4aa1f0fcb9",
+  "scoreHash": "sha256-6605c6ff4315f8a734591494649790a17019f1c62388b6cd45c32dcfc56867ba",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/1f25d4e1-770f-4106-a3d1-14910d8fde3d.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-09T14:28:59.995Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-d542a8f0c800204dee4f72d85787e8cb1b923c865594f3befa573eb5cd2d9388"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-22c39dcd0d4dfdfd97a9c877b6385efd83b8f7083b2fba810364ddfe44831e79",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-store/store.ts\"}",
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-worker/worker.ts\"}"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-store/store.ts\"}",
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-worker/worker.ts\"}"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.04,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.04,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-09T14:28:59.995Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-2b53868f"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-09T14:28:59.995Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-340e46e972118a3a8cb6fa4c4ccede34bc4f9dabfe0b1c474875aa094338c32e"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-2b53868f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-c2cf56542d785dd60e286ffd57f58465801d3da8e525588296d3196d677f7316",
+          "selectedContextIds": [
+            "pack-2b53868f:pointer-aware-init",
+            "pack-2b53868f:pointer-passive-expansion",
+            "pack-2b53868f:event:1f25d4e1-770f-4106-a3d1-14910d8fde3d-seed:cue-1:interaction"
+          ],
+          "selectedContextTexts": [
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+            "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more.",
+            "Interaction operator_override on live-session session 1f25d4e1-770f-4106-a3d1-14910d8fde3d-seed. Message: cue-1-seed-message."
+          ],
+          "eventExportDigest": "sha256-30895a386b3b2436c8b2b02b063ab9f1ce907d59b1be87f5cdcf140394efa297",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-store/store.ts\"}",
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-worker/worker.ts\"}"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-store/store.ts\"}",
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-worker/worker.ts\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.598,
+            "routeSelectionMs": 4.771,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.825,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-09T14:28:59.995Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-2b53868f"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-09T14:28:59.995Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-30dde90d4976bb9897e533e672418c20dabab2d5fc7e074df958e0b49b9b1ba7"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-2b53868f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-73dec33b0437c980847bbe78a002ce5bcbc06b7d592c26546aab79f7a510be3d",
+          "selectedContextIds": [
+            "pack-2b53868f:pointer-aware-init",
+            "pack-2b53868f:pointer-passive-expansion",
+            "pack-2b53868f:workspace-init:0d01dda4"
+          ],
+          "selectedContextTexts": [
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+            "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more.",
+            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=3, outbound=1). MEMORY.md — Long-Term Memory People - Patrick — Jon's 50/50 co-founder for Bountiful Garden; managed by @bbountiful_bot - Bihua Chen — Jon set up an OpenClaw starter kit for her Projects - Bountiful Garden — @bbountiful_bot, workspace workspace-bountiful/, group -5151316478 - Pelican — @ppelican_bot, workspace workspa…"
+          ],
+          "eventExportDigest": "sha256-1bb9904720618722d145c14e5aba35b95c4ec56442dc22afc4bb867f63e8c0c7",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-store/store.ts\"}",
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-worker/worker.ts\"}"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-store/store.ts\"}",
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-worker/worker.ts\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.705,
+            "routeSelectionMs": 4.824,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.878,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-09T14:28:59.995Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-62c37340"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-62c37340",
+        "frozenEvalRouterIdentity": "pack-62c37340:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-09T14:28:59.995Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-3ad32f562a981e70abba288424a87168524c0add35a94b3e47d036da0b889d50"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-62c37340",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": true,
+          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationConfidence": "high",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-8347754bb07f7d18186163505a14d9facf7ac594c12333d95424147b008fb44d",
+          "selectedContextIds": [
+            "pack-62c37340:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-3ccdb4a175b78e55b74022a00fda87f88b7f6fad288acfe52e37aa2cd0746f35",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-store/store.ts\"}",
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-worker/worker.ts\"}"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-store/store.ts\"}",
+            "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-worker/worker.ts\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.095,
+            "routeSelectionMs": 5.678,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.414,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-09T14:28:59.995Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-f1970589f5106a21722e1e1ff5ca9de7f85902e91220643fb75b63156d63a2e9"
+}

@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-db6f3c53"
+      "pack-c64e7743"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-5753f118890c23cf8f1da569cb64e7a03e0da6849b85bc27846f28709cbb2841"
+    "scoreHash": "sha256-20fe5ecba20e73b326852c517fdf5a9a54af031b7da5b70bd2b09aec6659ed8d"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-db6f3c53",
+      "activePackId": "pack-c64e7743",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "graph_walk_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-f1b79349aaf550b762fb9dac3cb6018019a065a2e92f153bf13b72acd9e6e185",
+      "selectionDigest": "sha256-8fe7ae8ff5824b5233e5c05990f5a30dbc195844b3f9616559a09fe082f36c3c",
       "selectedContextIds": [
-        "pack-db6f3c53:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
-        "pack-db6f3c53:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction",
-        "pack-db6f3c53:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback"
+        "pack-c64e7743:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
+        "pack-c64e7743:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction",
+        "pack-c64e7743:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the state machine module in place; now I’m wiring it into the off-hotpath alert suite and adding recovery provenance handling without touching the live collector path. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\npath = Path('/Users/guclaw/worktrees/pelican/49/scripts/pel087_core36_alert_suite.py')\\ntext = path.read_text()\\ntext = text.replace('from ticker_universe import TR. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction.",
         "Interaction operator_override on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed. Message: cue-3-seed-message.",
         "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the new state machine, alert-suite wiring, and tests in place. Next I’m running focused pytest on the new slice plus the existing core-36 alert tests to catch any leakage or typing regressions. ToolCall exec {\"command\": \"python3 -m pytest -q tests/test_core_capture_state_machine.py tests/test_pel087_core36_alert_suite.py\", \"timeout\": 120, \"workdir\": \"/Users/guclaw/worktrees/pelican/49\"}. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-e5547d641d5b04de41bc96332c5a082c933db2d6d6c573962facbb6999845151",
+      "eventExportDigest": "sha256-6c68d543e7d8c510dc143854a72e3b5ca57a55d1cf26bf14b479ca35026503fd",
       "expectedContextPhrases": [
         "/pel087_core36_alert_suite.py",
         "/test_core_capture_state_machine.py",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.769,
-        "routeSelectionMs": 5.077,
+        "totalMs": 7.644,
+        "routeSelectionMs": 4.988,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.691,
+        "otherMs": 2.654,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

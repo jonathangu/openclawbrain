@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-b9e2f6e3"
+      "pack-18a083a1"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-b306923ff7d7aceeab3cda43664028a4d0cc5aa810bafea5a03115abe61f95a4"
+    "scoreHash": "sha256-ec882fb3b8f090e4cdbbec0c5ca3770375e038947cad976a61e5ca228f79d73c"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-b9e2f6e3",
+      "activePackId": "pack-18a083a1",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-a784ccb0930fa50914fec1b2e2243f14927f9fc79d807779d6e5be18d388597a",
+      "selectionDigest": "sha256-3fd1facba4fa1b7c43fd2463440918336d575cf7b64301d3b207a8f7ef4121a6",
       "selectedContextIds": [
-        "pack-b9e2f6e3:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
-        "pack-b9e2f6e3:pointer-aware-init",
-        "pack-b9e2f6e3:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-6:feedback"
+        "pack-18a083a1:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
+        "pack-18a083a1:pointer-aware-init",
+        "pack-18a083a1:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-072: fix Pelican retrain architecture for next run in /Users/guclaw/worktrees/quant-research/072a-parallel-retrain. Work only in that worktree. Problem: current AWS retrain is sequential by design (GBM first, TFT second) inside bootstrap-train.sh, with weak observability: GBM/TFT only emit training_started and sparse/empty train logs. Jon explicitly wants GBM a.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction.",
         "Pointer-aware init keeps fast boot first with anchors memory/2026-04-01-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, docs/jon-model.md, docs/checklists.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
         "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: assistant: Done. What changed: - Parallelized the retrain launch path in `retrain_v6_aws.sh`: - GBM and TFT now launch as sibling jobs on the same instance. - GBM feature cols are precomputed up front so TFT no longer waits on GBM completion. - Added periodic role progress checkpoints and live log uploads during the run. - Added `training_progress.json` and `training_completed.json` publication alongside the existing start/fail proofs. - Kept fail-closed publication behavior. - Updated `retrain_v6_monit.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-46fbc49b4573138d247c316c0962fb8200a51f450e78e8ddc333d05692454d2b",
+      "eventExportDigest": "sha256-4cb5200f4d18fa273a56382de44dc5a7e6c0bd46f9f80d78b5175a97703942bc",
       "expectedContextPhrases": [
         "/LATEST.json",
         "/Users/guclaw/worktrees/quant-research/072a-parallel-retrain\"}"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.393,
-        "routeSelectionMs": 4.666,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.725,
+        "totalMs": 7.4,
+        "routeSelectionMs": 4.674,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.724,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -1,0 +1,116 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-8f470d63"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-07T14:16:17.465Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-7a5c7e1b3ec169ef7a375a2aea3263a1dac5142b41c2e0e6e608d917ed33f601"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-8f470d63",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-8fde858e37ad82f2abca1e2f45977d1347c517b1fa500eaeb039756b61bf31f2",
+      "selectedContextIds": [
+        "pack-8f470d63:event:983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed:cue-2:interaction",
+        "pack-8f470d63:event:983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed:cue-1:interaction",
+        "pack-8f470d63:pointer-aware-init"
+      ],
+      "selectedContextTexts": [
+        "Interaction operator_override on live-session session 983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed. Message: cue-2-seed-message.",
+        "Interaction operator_override on live-session session 983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed. Message: cue-1-seed-message.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-07-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+      ],
+      "eventExportDigest": "sha256-e7e6dc2593370bc8df65824765614527b10eb1683f6e24a6933925abaaedd435",
+      "expectedContextPhrases": [
+        "T-20260407-173",
+        "/Users/guclaw/.openclaw/workspace/HEARTBEAT.md\"}",
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/master-plan.md\"}"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "T-20260407-173",
+        "/Users/guclaw/.openclaw/workspace/HEARTBEAT.md\"}",
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/master-plan.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.088,
+        "routeSelectionMs": 5.108,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.977,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-07T14:16:17.465Z"
+      },
+      "warnings": []
+    }
+  ]
+}

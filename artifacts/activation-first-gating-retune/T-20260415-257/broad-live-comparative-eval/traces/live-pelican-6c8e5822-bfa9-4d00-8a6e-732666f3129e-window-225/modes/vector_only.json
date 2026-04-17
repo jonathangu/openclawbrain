@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-1d266e17"
+      "pack-0e022cb9"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-0efb1860e16bf0c89286e9db2d74cb667ff930c2c985cfc6ca8e8747326e6ea1"
+    "scoreHash": "sha256-22aacec36413db638527dc7a522ec997b975bb53a0d2d5722465b22f459c246b"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-1d266e17",
+      "activePackId": "pack-0e022cb9",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-083f76636b81a18b302e42b8e8fa70cc47b31e37fa2f90fae4af3c04b28fca3f",
+      "selectionDigest": "sha256-9b0e45d19c6882f5f8093212a7ce07bfd81eab34ef4279a19cb2fb96c521d1c7",
       "selectedContextIds": [
-        "pack-1d266e17:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
-        "pack-1d266e17:pointer-aware-init",
-        "pack-1d266e17:workspace-init:16415817"
+        "pack-0e022cb9:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
+        "pack-0e022cb9:workspace-init:16415817",
+        "pack-0e022cb9:pointer-aware-init"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: Exec failed (dawn-sea, signal SIGTERM) :: enclaw/pelican/runtime/quant-research/weekly_retrain_tft_status.json [2026-04-13T19:32:02Z] Run ID: v6_20260413_171321_6506b3d_7dc63260 [2026-04-13T19:32:02Z] S3 prefix: s3://poly… An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Monday, .... Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=17). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=20). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…",
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-50159bfffb2c58764166a8bb9fc1dd103a17a775aaaa2dab8f1937227f9b31bf",
+      "eventExportDigest": "sha256-6c9e36dfc98162ef7d41d03308736cabb0fea794c52834d7c7c3ac7d972be8bd",
       "expectedContextPhrases": [
         "actual result visible transcript",
         "can re-run relevant check",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.007,
-        "routeSelectionMs": 5.37,
+        "totalMs": 6.773,
+        "routeSelectionMs": 4.261,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.635,
+        "otherMs": 2.511,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

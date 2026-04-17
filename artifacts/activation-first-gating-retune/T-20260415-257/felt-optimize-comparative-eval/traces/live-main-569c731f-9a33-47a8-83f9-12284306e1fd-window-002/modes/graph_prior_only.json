@@ -1,0 +1,116 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-671c953c"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-08T02:12:23.868Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-54d439cf121f570a48c3f57d15c8ba1bffaa734d187b3509441367209b135733"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-671c953c",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-554a8621686e8c01642ed63cf8b3e8e98da575267dc9281394eab7861d61980f",
+      "selectedContextIds": [
+        "pack-671c953c:pointer-aware-init",
+        "pack-671c953c:pointer-passive-expansion",
+        "pack-671c953c:workspace-init:420a4a5f"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more.",
+        "Top-priority boot input memory/2026-04-08-boot-check.md selected by pointer-aware init (inbound=0, outbound=3). Session: 2026-04-08 03:58:54 UTC - **Session Key**: agent:main:main - **Session ID**: boot-2026-04-08_02-38-26-017-e5720adf - **Source**: telegram Conversation Summary assistant: I’m installing the latest OpenClawBrain on this host, then I’ll verify the runtime and proof surfaces so we know it landed cleanly. assistan…"
+      ],
+      "eventExportDigest": "sha256-554a89ca5d4b6ad26db03784f59b302053611b0d81ba3eaea88eb5d1a42db7b2",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/worktrees/t182-site/index.html')\\nfor",
+        "/index.html','proof/index.html','how-it-works/index.html','upgrade/index.html']:\\n",
+        "/Users/guclaw/.openclaw/workspace/worktrees/t182-si"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/worktrees/t182-site/index.html')\\nfor",
+        "/index.html','proof/index.html','how-it-works/index.html','upgrade/index.html']:\\n",
+        "/Users/guclaw/.openclaw/workspace/worktrees/t182-si"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.736,
+        "routeSelectionMs": 4.882,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.851,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-08T02:12:23.868Z"
+      },
+      "warnings": []
+    }
+  ]
+}

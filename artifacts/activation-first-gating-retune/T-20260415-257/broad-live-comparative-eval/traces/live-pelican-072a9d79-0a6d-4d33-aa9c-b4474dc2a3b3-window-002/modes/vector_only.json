@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-db6f3c53"
+      "pack-c64e7743"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-50bb9fff042b77f0ae8dafb265473361a1cdc92ed41536fa4cb9e25865e612a8"
+    "scoreHash": "sha256-391666dd2ba1ef232d5fe1d6e55fbd23e14e469dbd3d9f9daccb34ff97397363"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-db6f3c53",
+      "activePackId": "pack-c64e7743",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-f6e20dad5729dd0c1e0a144a5d60d2ccd1416e8b132e3c61fe869c75fe9826c5",
+      "selectionDigest": "sha256-a4e02fcca53d640edf8e9d4ae4811e4323fa66b858e3f27efb637283ba7e0415",
       "selectedContextIds": [
-        "pack-db6f3c53:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
-        "pack-db6f3c53:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback",
-        "pack-db6f3c53:pointer-aware-init"
+        "pack-c64e7743:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
+        "pack-c64e7743:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback",
+        "pack-c64e7743:pointer-aware-init"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the state machine module in place; now I’m wiring it into the off-hotpath alert suite and adding recovery provenance handling without touching the live collector path. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\npath = Path('/Users/guclaw/worktrees/pelican/49/scripts/pel087_core36_alert_suite.py')\\ntext = path.read_text()\\ntext = text.replace('from ticker_universe import TR. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction.",
         "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the new state machine, alert-suite wiring, and tests in place. Next I’m running focused pytest on the new slice plus the existing core-36 alert tests to catch any leakage or typing regressions. ToolCall exec {\"command\": \"python3 -m pytest -q tests/test_core_capture_state_machine.py tests/test_pel087_core36_alert_suite.py\", \"timeout\": 120, \"workdir\": \"/Users/guclaw/worktrees/pelican/49\"}. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:interaction.",
         "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-1797061908124d61f508140f5775d091089ec8b9b91b30555d9a47d518acb032",
+      "eventExportDigest": "sha256-75992f7e7359bd51d14313ead342a27c20a00d1c45a56f9c823332c0dc3a0167",
       "expectedContextPhrases": [
         "/pel087_core36_alert_suite.py",
         "/test_core_capture_state_machine.py",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.012,
-        "routeSelectionMs": 5.352,
+        "totalMs": 7.595,
+        "routeSelectionMs": 4.952,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.659,
+        "otherMs": 2.641,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

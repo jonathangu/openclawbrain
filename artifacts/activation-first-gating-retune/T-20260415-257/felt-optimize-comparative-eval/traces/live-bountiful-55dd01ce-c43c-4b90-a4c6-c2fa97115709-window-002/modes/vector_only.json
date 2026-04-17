@@ -1,0 +1,116 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-4a32248d"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/bountiful/session-window:memory_compiled",
+        "live/bountiful/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/bountiful/session-window",
+      "freshestCreatedAt": "2026-03-01T12:29:49.778Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-033110223a450b6a49e86f186b394ec5095d93a835bc4f985793a7c31230287e"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-4a32248d",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-cc91b8bf9114e3874f4649b081b945ed1279ff15b2b6e9d50926fd077a69a9ae",
+      "selectedContextIds": [
+        "pack-4a32248d:pointer-aware-init",
+        "pack-4a32248d:event:55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed:cue-6:feedback",
+        "pack-4a32248d:workspace-init:0d01dda4"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+        "Teaching feedback on live-session session 55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed: assistant: Jon — good. I pulled those two Codex branches together (exchange progress ladder + gratitude prompt), resolved the `TradeThreadRoute.tsx` overlap, and fixed a crash (`thankYouSent is not defined`) that was breaking the web unit tests. All unit tests are green again: - `pnpm --filter @bountiful/web test:unit` - `pnpm --filter @bountiful/api test:unit` Pushed to `origin/main` at `19485a2`. No deploy yet — want me to run `deploy.sh` when you’re ready?. Related interaction: 55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed:cue-6:interaction.",
+        "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…"
+      ],
+      "eventExportDigest": "sha256-c970bd60e47cfeb29c893a520a13609e0da7bc1553cb0a39220c1838915e77c9",
+      "expectedContextPhrases": [
+        "keep going finish job",
+        "feedback keep going finish",
+        "going finish job premature"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "keep going finish job",
+        "feedback keep going finish",
+        "going finish job premature"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.492,
+        "routeSelectionMs": 4.74,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.75,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/bountiful/session-window:memory_compiled",
+          "live/bountiful/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/bountiful/session-window",
+        "freshestCreatedAt": "2026-03-01T12:29:49.778Z"
+      },
+      "warnings": []
+    }
+  ]
+}
