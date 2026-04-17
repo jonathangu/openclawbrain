@@ -17,6 +17,13 @@ import {
 } from "./graph.js";
 import { scoreAction, softmaxPolicy } from "./policy.js";
 import {
+  normalizePolicySupervisionRowsForTrainerV1,
+  POLICY_SUPERVISION_ROW_TYPES,
+  validatePolicySupervisionRowV1,
+  type PolicySupervisionRowType,
+  type PolicySupervisionRowV1,
+} from "./policy-supervision-rows.ts";
+import {
   COLD_START_CONTRACT_VERSION_V1,
   COLD_START_STOP_LABELS_V1,
   summarizeRouterArtifactManifestV1,
@@ -295,6 +302,9 @@ export interface ColdStartRouterTrainingInputV1 {
   compatibleRuntimeVersion: string;
   registryEntries: DataRegistryEntryV1[];
   routeRows: RouteDecisionRowV1[];
+  policySupervisionRows?: PolicySupervisionRowV1[];
+  focusLaneWeights?: Record<string, number>;
+  rowTypeWeights?: Partial<Record<PolicySupervisionRowType, number>>;
   outputDir: string;
   routerIdentity?: string | null;
   createdAt?: string;
@@ -320,6 +330,14 @@ export interface ColdStartRouterTrainingResultV1 {
   sourcePriorsPath: string;
   safetyRulesPath: string;
   model: ColdStartRouterModelV1;
+}
+
+interface ColdStartRouterPolicyGatingExampleV1 {
+  policyRowId: string;
+  routeRowId: string;
+  sourceNodeId: string;
+  stopLabel: ColdStartStopLabelV1;
+  weight: number;
 }
 
 const CANDIDATE_TOKEN_COST_BUCKETS = ["0", "1-8", "9-32", "33-128", "129+"] as const;
@@ -367,6 +385,25 @@ function clampFinite(value: number, lower: number, upper: number): number {
   return Math.min(upper, Math.max(lower, value));
 }
 
+function validateNonNegativeWeightMap(
+  label: string,
+  values: Record<string, number> | Partial<Record<PolicySupervisionRowType, number>> | undefined,
+  allowedKeys?: readonly string[],
+): void {
+  if (!values) {
+    return;
+  }
+  const allowedKeySet = allowedKeys ? new Set(allowedKeys) : null;
+  for (const [key, value] of Object.entries(values)) {
+    if (allowedKeySet && !allowedKeySet.has(key)) {
+      throw new Error(`${label} contains unsupported key ${key}`);
+    }
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+      throw new Error(`${label}.${key} must be a finite number >= 0`);
+    }
+  }
+}
+
 function activationFirstRowBonus(
   row: Pick<RouteDecisionRowV1, "outcome_gain" | "teacher_action" | "stop_label" | "hard_negatives">,
 ): number {
@@ -385,6 +422,21 @@ function toRowWeight(
     return 0.25;
   }
   return clampFinite(magnitude + activationFirstRowBonus(row), 0.25, MAX_TRAINING_ROW_WEIGHT);
+}
+
+function routeRowSourceNodeId(row: Pick<RouteDecisionRowV1, "cursor_path">): string {
+  return normalizeText(row.cursor_path[row.cursor_path.length - 1] ?? "", "__START__");
+}
+
+function stopTrainingBucketsForRouteRow(
+  row: Pick<RouteDecisionRowV1, "candidate_set" | "evidence_spans" | "hard_negatives" | "outcome_gain">,
+): Array<{ field: ColdStartRouterStopBucketFieldV1; bucket: string }> {
+  return [
+    { field: "candidate_count", bucket: bucketCandidateCount(row.candidate_set.length) },
+    { field: "evidence_span_count", bucket: bucketEvidenceSpanCount(row.evidence_spans.length) },
+    { field: "hard_negative_count", bucket: bucketHardNegativeCount(row.hard_negatives.length) },
+    { field: "outcome_gain", bucket: bucketOutcomeGain(row.outcome_gain) },
+  ];
 }
 
 function bucketTokenCost(tokenCost: number | null | undefined): string {
@@ -859,6 +911,9 @@ function validateTrainingInputs(params: ColdStartRouterTrainingInputV1): void {
     throw new Error("priorBaseArtifactId and priorBaseArtifactChecksum must be provided together");
   }
 
+  validateNonNegativeWeightMap("focusLaneWeights", params.focusLaneWeights);
+  validateNonNegativeWeightMap("rowTypeWeights", params.rowTypeWeights, POLICY_SUPERVISION_ROW_TYPES);
+
   for (const entry of params.registryEntries) {
     const validation = validateDataRegistryEntryV1(entry);
     if (!validation.valid) {
@@ -869,6 +924,21 @@ function validateTrainingInputs(params: ColdStartRouterTrainingInputV1): void {
     const validation = validateRouteDecisionRowV1(row);
     if (!validation.valid) {
       throw new Error(`invalid route row ${row.row_id}: ${validation.issues.join("; ")}`);
+    }
+  }
+
+  const routeRowIds = new Set(params.routeRows.map((row) => row.row_id));
+  for (const row of params.policySupervisionRows ?? []) {
+    const validation = validatePolicySupervisionRowV1(row);
+    if (!validation.valid) {
+      throw new Error(`invalid policy supervision row ${row.row_id}: ${validation.issues.join("; ")}`);
+    }
+    const routeRowId = normalizeText(row.trace_slice.route_row_id);
+    if (routeRowId.length === 0) {
+      throw new Error(`policy supervision row ${row.row_id} is missing trace_slice.route_row_id`);
+    }
+    if (!routeRowIds.has(routeRowId)) {
+      throw new Error(`policy supervision row ${row.row_id} references unknown route row ${routeRowId}`);
     }
   }
 }
@@ -1110,6 +1180,64 @@ function seedToolActionSets(
   return sets;
 }
 
+function seedLiveStopCounts(
+  stopLocalWeights: ColdStartRouterLivePolicyInitializerV1["stopLocalWeights"] | undefined,
+): Map<string, { positive: number; negative: number; support: number }> {
+  const counts = new Map<string, { positive: number; negative: number; support: number }>();
+  for (const entry of stopLocalWeights ?? []) {
+    counts.set(entry.sourceNodeId, {
+      positive: entry.positive,
+      negative: entry.negative,
+      support: entry.support,
+    });
+  }
+  return counts;
+}
+
+function applyPolicySupervisionToLivePolicyInitializer(params: {
+  initializer: ColdStartRouterLivePolicyInitializerV1;
+  stopLabelCounts: Record<ColdStartStopLabelV1, number>;
+  policyExamples: readonly ColdStartRouterPolicyGatingExampleV1[];
+}): ColdStartRouterLivePolicyInitializerV1 {
+  if (params.policyExamples.length === 0) {
+    return params.initializer;
+  }
+
+  const stopCounts = seedLiveStopCounts(params.initializer.stopLocalWeights);
+  for (const example of params.policyExamples) {
+    const bucket = stopCounts.get(example.sourceNodeId) ?? { positive: 0, negative: 0, support: 0 };
+    if (example.stopLabel === "CONTINUE") {
+      bucket.negative += example.weight;
+    } else {
+      bucket.positive += example.weight;
+    }
+    bucket.support += example.weight;
+    stopCounts.set(example.sourceNodeId, bucket);
+  }
+
+  const stopPositive = (params.stopLabelCounts.STOP_LOCAL ?? 0) + (params.stopLabelCounts.STOP ?? 0);
+  const stopNegative = params.stopLabelCounts.CONTINUE ?? 0;
+  const stopSupport = stopPositive + stopNegative;
+  const stopBias = calcWeight(stopPositive, stopNegative, stopSupport, 1, 2);
+
+  return {
+    ...params.initializer,
+    policyParams: {
+      ...params.initializer.policyParams,
+      stopBias,
+    },
+    stopLocalWeights: [...stopCounts.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([sourceNodeId, bucket]) => ({
+        sourceNodeId,
+        positive: bucket.positive,
+        negative: bucket.negative,
+        support: bucket.support,
+        weight: calcWeight(bucket.positive, bucket.negative, bucket.support, 1, 2) - stopBias,
+      })),
+  };
+}
+
 function loadWarmStartBundleFromDir(artifactDir: string): ColdStartRouterWarmStartBundleV1 {
   const resolvedArtifactDir = path.resolve(artifactDir);
   return {
@@ -1231,6 +1359,11 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
   const toolActionSets = seedToolActionSets(warmStart?.bundle.model.toolActionSets);
   const stopLabelCounts = cloneStopLabelCounts(warmStart?.bundle.model.stopLabelCounts);
   const stopBucketCounts = cloneStopBucketCounts(warmStart?.bundle.model.stopBucketCounts);
+  const eligibleRouteRowsById = new Map<string, RouteDecisionRowV1>();
+  const normalizedPolicyRows = normalizePolicySupervisionRowsForTrainerV1(params.policySupervisionRows ?? [], {
+    focusLaneWeights: params.focusLaneWeights,
+    rowTypeWeights: params.rowTypeWeights,
+  });
   let eligibleRows = warmStart?.bundle.model.training.eligibleRows ?? 0;
   let usedRows = warmStart?.bundle.model.training.usedRows ?? 0;
   let positiveCandidateCount = warmStart?.bundle.model.training.candidatePositiveCount ?? 0;
@@ -1263,13 +1396,15 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     stats.used += 1;
     usedDatasetIds.add(row.dataset_id);
     usedRouteRows.push(row);
+    eligibleRouteRowsById.set(row.row_id, row);
 
     const rowWeight = toRowWeight(row);
     const positiveIds = resolvePositiveCandidateIds(row);
     const canTrainRanking = positiveIds.size > 0;
     const toolCandidates = row.candidate_set.filter((candidate) => candidate.candidate_type === "tool");
+    const sourceNodeId = routeRowSourceNodeId(row);
     const toolActionSet = toolCandidates.length > 0
-      ? (toolActionSets.get(normalizeText(row.cursor_path[row.cursor_path.length - 1] ?? "", "__START__")) ?? {
+      ? (toolActionSets.get(sourceNodeId) ?? {
           rowIds: new Set<string>(),
           teacherToolNodeIds: new Set<string>(),
           candidateIds: new Set<string>(),
@@ -1279,7 +1414,6 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
       : null;
 
     if (toolActionSet) {
-      const sourceNodeId = normalizeText(row.cursor_path[row.cursor_path.length - 1] ?? "", "__START__");
       toolActionSet.rowIds.add(row.row_id);
       toolActionSet.support += rowWeight;
       for (const candidate of toolCandidates) {
@@ -1303,7 +1437,7 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
         sourceMap.set(candidate.candidate_id, bucket);
         toolActionCounts.set(sourceNodeId, sourceMap);
       }
-      toolActionSets.set(normalizeText(row.cursor_path[row.cursor_path.length - 1] ?? "", "__START__"), toolActionSet);
+      toolActionSets.set(sourceNodeId, toolActionSet);
     }
 
     if (canTrainRanking) {
@@ -1321,14 +1455,36 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     }
 
     stopLabelCounts[row.stop_label] += rowWeight;
-    const rowFeatureBuckets = [
-      { field: "candidate_count" as const, bucket: bucketCandidateCount(row.candidate_set.length) },
-      { field: "evidence_span_count" as const, bucket: bucketEvidenceSpanCount(row.evidence_spans.length) },
-      { field: "hard_negative_count" as const, bucket: bucketHardNegativeCount(row.hard_negatives.length) },
-      { field: "outcome_gain" as const, bucket: bucketOutcomeGain(row.outcome_gain) },
-    ];
+    const rowFeatureBuckets = stopTrainingBucketsForRouteRow(row);
     for (const entry of rowFeatureBuckets) {
       bumpStopBucket(stopBucketCounts, entry.field, entry.bucket, row.stop_label, rowWeight);
+    }
+  }
+
+  const policyGatingExamples: ColdStartRouterPolicyGatingExampleV1[] = [];
+  for (const policyRow of normalizedPolicyRows) {
+    if (!policyRow.routeRowId) {
+      throw new Error(`policy supervision row ${policyRow.policyRowId} is missing trace_slice.route_row_id`);
+    }
+
+    const linkedRouteRow = eligibleRouteRowsById.get(policyRow.routeRowId);
+    if (!linkedRouteRow) {
+      throw new Error(
+        `policy supervision row ${policyRow.policyRowId} references route row ${policyRow.routeRowId}, but that row was not eligible for training`,
+      );
+    }
+
+    const gatingExample: ColdStartRouterPolicyGatingExampleV1 = {
+      policyRowId: policyRow.policyRowId,
+      routeRowId: policyRow.routeRowId,
+      sourceNodeId: routeRowSourceNodeId(linkedRouteRow),
+      stopLabel: policyRow.stopLabel,
+      weight: policyRow.weight,
+    };
+    policyGatingExamples.push(gatingExample);
+    stopLabelCounts[gatingExample.stopLabel] += gatingExample.weight;
+    for (const entry of stopTrainingBucketsForRouteRow(linkedRouteRow)) {
+      bumpStopBucket(stopBucketCounts, entry.field, entry.bucket, gatingExample.stopLabel, gatingExample.weight);
     }
   }
 
@@ -1393,10 +1549,14 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     warmStart?.bundle.model.sourcePriors,
   );
   const safetyRules = warmStart?.bundle.model.safetyRules ?? buildSafetyRules();
-  const livePolicyInitializer = buildColdStartRouterLivePolicyInitializerV1({
-    routeRows: usedRouteRows,
-    warmStartInitializer: warmStart?.bundle.model.livePolicyInitializer,
-    warmStartStopLabelCounts: warmStart?.bundle.model.stopLabelCounts,
+  const livePolicyInitializer = applyPolicySupervisionToLivePolicyInitializer({
+    initializer: buildColdStartRouterLivePolicyInitializerV1({
+      routeRows: usedRouteRows,
+      warmStartInitializer: warmStart?.bundle.model.livePolicyInitializer,
+      warmStartStopLabelCounts: warmStart?.bundle.model.stopLabelCounts,
+    }),
+    stopLabelCounts,
+    policyExamples: policyGatingExamples,
   });
   const model: ColdStartRouterModelV1 = {
     contract: COLD_START_ROUTER_WEIGHTS_CONTRACT_V1,

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { Type, type Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
+import type { ColdStartStopLabelV1 } from "./cold-start-router-contracts.ts";
 import type { RouteDecisionRowV1 } from "./route-rows.js";
 import type { GraphifyRouteObjectiveTraceLabelLikeV1 } from "./graphify-training-bridge.js";
 
@@ -297,6 +298,72 @@ export interface PolicySupervisionSummaryV1 {
   traceProjectedCount: number;
   withNetUtilityDelta: number;
   withHardNegativeClass: number;
+}
+
+export interface PolicySupervisionTrainerNormalizationOptionsV1 {
+  focusLaneWeights?: Record<string, number>;
+  rowTypeWeights?: Partial<Record<PolicySupervisionRowType, number>>;
+}
+
+export interface NormalizedPolicySupervisionTrainerRowV1 {
+  policyRowId: string;
+  routeRowId: string | null;
+  rowType: PolicySupervisionRowType;
+  stopLabel: ColdStartStopLabelV1;
+  weight: number;
+  rowWeight: number;
+  focusLane: string | null;
+  hardNegativeClass: HardNegativeClass | null;
+  oracleBestMode: PolicySupervisionRowV1["oracle_best_mode"];
+}
+
+function trainerStopLabelForRowType(rowType: PolicySupervisionRowType): ColdStartStopLabelV1 | null {
+  switch (rowType) {
+    case "activate":
+    case "continue_expand":
+      return "CONTINUE";
+    case "stop_local":
+      return "STOP_LOCAL";
+    case "abstain":
+      return "STOP";
+    case "select_context":
+      return null;
+  }
+}
+
+export function normalizePolicySupervisionRowsForTrainerV1(
+  rows: PolicySupervisionRowV1[],
+  options: PolicySupervisionTrainerNormalizationOptionsV1 = {},
+): NormalizedPolicySupervisionTrainerRowV1[] {
+  const normalized: NormalizedPolicySupervisionTrainerRowV1[] = [];
+
+  for (const row of rows) {
+    const stopLabel = trainerStopLabelForRowType(row.row_type);
+    if (stopLabel === null) {
+      continue;
+    }
+
+    const focusLaneWeight = row.focus_lane ? options.focusLaneWeights?.[row.focus_lane] ?? 1 : 1;
+    const rowTypeWeight = options.rowTypeWeights?.[row.row_type] ?? 1;
+    const weight = Number((row.row_weight * focusLaneWeight * rowTypeWeight).toFixed(6));
+    if (!Number.isFinite(weight) || weight <= 0) {
+      continue;
+    }
+
+    normalized.push({
+      policyRowId: row.row_id,
+      routeRowId: normalizeString(row.trace_slice.route_row_id),
+      rowType: row.row_type,
+      stopLabel,
+      weight,
+      rowWeight: row.row_weight,
+      focusLane: row.focus_lane,
+      hardNegativeClass: row.hard_negative_class,
+      oracleBestMode: row.oracle_best_mode,
+    });
+  }
+
+  return normalized;
 }
 
 export function summarizePolicySupervisionRowsV1(rows: PolicySupervisionRowV1[]): PolicySupervisionSummaryV1 {

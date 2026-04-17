@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { RouteDecisionRowV1 } from "../../src/brain-core/route-rows.js";
 import {
   buildPolicySupervisionRowV1,
+  normalizePolicySupervisionRowsForTrainerV1,
   summarizePolicySupervisionRowsV1,
   validatePolicySupervisionRowV1,
 } from "../../src/brain-core/policy-supervision-rows.js";
@@ -181,5 +182,68 @@ describe("policy supervision rows", () => {
       hard_negative_class: "wrapper_heavy",
       oracle_best_mode: "tie",
     });
+  });
+
+  it("normalizes trainer-facing gating rows with explicit lane and row-type weights", () => {
+    const activateRow = buildPolicySupervisionRowV1({
+      routeRow: makeRouteRowFixture(),
+      traceLabel: {
+        traceId: "trace_policy_supervision_fixture_01",
+        focusLane: "felt_resume_25",
+        strictHardMemoryEligible: true,
+        oracleBestMode: "learned_route",
+        netUtilityDelta: 0.8,
+        costSensitive: "low",
+      },
+    });
+    const abstainRow = buildPolicySupervisionRowV1({
+      routeRow: makeRouteRowFixture(),
+      traceLabel: {
+        traceId: "trace_policy_supervision_fixture_01",
+        focusLane: "must_not_fire_100",
+        strictHardMemoryEligible: false,
+        oracleBestMode: "tie",
+        costSensitive: "high",
+      },
+    });
+
+    const normalized = normalizePolicySupervisionRowsForTrainerV1(
+      [activateRow, abstainRow],
+      {
+        focusLaneWeights: {
+          felt_resume_25: 3,
+          must_not_fire_100: 2,
+        },
+        rowTypeWeights: {
+          activate: 2,
+          abstain: 1.5,
+        },
+      },
+    );
+
+    expect(normalized).toEqual([
+      expect.objectContaining({
+        policyRowId: activateRow.row_id,
+        routeRowId: "rr_policy_supervision_fixture_01",
+        rowType: "activate",
+        stopLabel: "CONTINUE",
+        rowWeight: 1.8,
+        weight: 10.8,
+        focusLane: "felt_resume_25",
+        hardNegativeClass: null,
+        oracleBestMode: "learned_route",
+      }),
+      expect.objectContaining({
+        policyRowId: abstainRow.row_id,
+        routeRowId: "rr_policy_supervision_fixture_01",
+        rowType: "abstain",
+        stopLabel: "STOP",
+        rowWeight: 2,
+        weight: 6,
+        focusLane: "must_not_fire_100",
+        hardNegativeClass: "tie_with_cost",
+        oracleBestMode: "tie",
+      }),
+    ]);
   });
 });

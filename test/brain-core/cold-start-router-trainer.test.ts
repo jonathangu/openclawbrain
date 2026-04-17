@@ -30,7 +30,12 @@ import {
   scoreColdStartRouteRowV1,
   trainColdStartRouterArtifactV1,
 } from "../../src/brain-core/cold-start-router-trainer.js";
-import type { ColdStartRouterModelV1 } from "../../src/brain-core/cold-start-router-trainer.js";
+import type { ColdStartRouterModelV1, ColdStartRouterTrainingInputV1 } from "../../src/brain-core/cold-start-router-trainer.js";
+import {
+  POLICY_SUPERVISION_ROW_CONTRACT_V1,
+  POLICY_SUPERVISION_ROW_VERSION_V1,
+} from "../../src/brain-core/policy-supervision-rows.js";
+import type { PolicySupervisionRowV1 } from "../../src/brain-core/policy-supervision-rows.js";
 import type { Episode, TraversalAction, TraversalState, TrajectoryExpansion, TrajectoryStep } from "../../src/brain-core/types.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -183,7 +188,48 @@ function makeGreedyThresholdRouteRow(datasetId: string): RouteDecisionRowV1 {
   };
 }
 
-function trainActivationFirstFixture(outputDir: string, datasetId: string) {
+function makePolicySupervisionRowFixture(params: {
+  rowId: string;
+  traceId: string;
+  routeRowId: string;
+  rowType: PolicySupervisionRowV1["row_type"];
+  focusLane: string | null;
+  rowWeight: number;
+  hardNegativeClass?: PolicySupervisionRowV1["hard_negative_class"];
+  oracleBestMode?: PolicySupervisionRowV1["oracle_best_mode"];
+}): PolicySupervisionRowV1 {
+  return {
+    schema_version: POLICY_SUPERVISION_ROW_VERSION_V1,
+    contract: POLICY_SUPERVISION_ROW_CONTRACT_V1,
+    row_id: params.rowId,
+    trace_id: params.traceId,
+    episode_id: null,
+    decision_point_id: null,
+    row_type: params.rowType,
+    focus_lane: params.focusLane,
+    trace_slice: {
+      route_row_id: params.routeRowId,
+      route_fn_version: null,
+      chosen_action_kind: null,
+      stop_label: null,
+      query_text_hash: null,
+    },
+    row_weight: params.rowWeight,
+    confidence_target: null,
+    hard_negative_class: params.hardNegativeClass ?? null,
+    net_utility_delta: null,
+    net_utility_delta_source: null,
+    projection_status: "owner_labeled",
+    oracle_best_mode: params.oracleBestMode ?? null,
+    notes: ["trainer fixture"],
+  };
+}
+
+function trainActivationFirstFixture(
+  outputDir: string,
+  datasetId: string,
+  overrides: Partial<Pick<ColdStartRouterTrainingInputV1, "policySupervisionRows" | "focusLaneWeights" | "rowTypeWeights">> = {},
+) {
   return trainColdStartRouterArtifactV1({
     artifactId: `router-artifact-${datasetId}`,
     artifactVersion: "0.0.1",
@@ -196,6 +242,7 @@ function trainActivationFirstFixture(outputDir: string, datasetId: string) {
     createdAt: "2026-04-10T08:10:00Z",
     trainingDataRefs: [datasetId],
     replayGateRefs: [`replay:${datasetId}`],
+    ...overrides,
   });
 }
 
@@ -336,6 +383,94 @@ describe("cold-start router trainer", () => {
     expect(result.model.stopLabelCounts.CONTINUE).toBeGreaterThan(0.8);
     expect(result.model.stopLabelCounts.STOP_LOCAL).toBeCloseTo(0.8, 6);
     expect(result.model.livePolicyInitializer.policyParams.stopBias).toBeLessThan(0);
+  });
+
+  it("weights felt-lane activation supervision into gating without changing the top-ranked candidate", () => {
+    const datasetId = "dataset_activation_first_policy_activate";
+    const baseline = trainActivationFirstFixture(
+      createTempRoot("cold-start-router-policy-activate-baseline"),
+      datasetId,
+    );
+    const weighted = trainActivationFirstFixture(
+      createTempRoot("cold-start-router-policy-activate-weighted"),
+      datasetId,
+      {
+        policySupervisionRows: [
+          makePolicySupervisionRowFixture({
+            rowId: "ps_activation_first_felt_activate",
+            traceId: "trace_activation_first_felt_activate",
+            routeRowId: "row_activation_first_continue",
+            rowType: "activate",
+            focusLane: "felt_resume_25",
+            rowWeight: 1.8,
+            oracleBestMode: "learned_route",
+          }),
+        ],
+        focusLaneWeights: { felt_resume_25: 4 },
+        rowTypeWeights: { activate: 2 },
+      },
+    );
+
+    const row = makeGreedyThresholdRouteRow(datasetId);
+    const baselineScoring = scoreColdStartRouteRowV1({ model: baseline.model, row });
+    const weightedScoring = scoreColdStartRouteRowV1({ model: weighted.model, row });
+
+    expect(weighted.model.stopLabelCounts.CONTINUE).toBeGreaterThan(baseline.model.stopLabelCounts.CONTINUE);
+    expect(weighted.model.livePolicyInitializer.policyParams.stopBias).toBeLessThan(
+      baseline.model.livePolicyInitializer.policyParams.stopBias,
+    );
+    expect(weightedScoring.rankedCandidates[0]?.candidate.candidate_id).toBe(
+      baselineScoring.rankedCandidates[0]?.candidate.candidate_id,
+    );
+    expect(weightedScoring.policyDistribution.stopAction.probability).toBeLessThan(
+      baselineScoring.policyDistribution.stopAction.probability,
+    );
+    expect(weightedScoring.decisionSummary.activationProbability).toBeGreaterThan(
+      baselineScoring.decisionSummary.activationProbability,
+    );
+  });
+
+  it("lets must-not-fire abstain supervision push the same source lane into abstention", () => {
+    const datasetId = "dataset_activation_first_policy_abstain";
+    const baseline = trainActivationFirstFixture(
+      createTempRoot("cold-start-router-policy-abstain-baseline"),
+      datasetId,
+    );
+    const restrained = trainActivationFirstFixture(
+      createTempRoot("cold-start-router-policy-abstain-restrained"),
+      datasetId,
+      {
+        policySupervisionRows: [
+          makePolicySupervisionRowFixture({
+            rowId: "ps_activation_first_must_not_fire",
+            traceId: "trace_activation_first_must_not_fire",
+            routeRowId: "row_activation_first_continue",
+            rowType: "abstain",
+            focusLane: "must_not_fire_100",
+            rowWeight: 2,
+            hardNegativeClass: "unnecessary_activation",
+            oracleBestMode: "graph_prior_only",
+          }),
+        ],
+        focusLaneWeights: { must_not_fire_100: 8 },
+        rowTypeWeights: { abstain: 2 },
+      },
+    );
+
+    const row = makeGreedyThresholdRouteRow(datasetId);
+    const baselineScoring = scoreColdStartRouteRowV1({ model: baseline.model, row });
+    const restrainedScoring = scoreColdStartRouteRowV1({ model: restrained.model, row });
+
+    expect(baselineScoring.decisionSummary.activated).toBe(true);
+    expect(restrained.model.stopLabelCounts.STOP).toBeGreaterThan(baseline.model.stopLabelCounts.STOP);
+    expect(restrained.model.livePolicyInitializer.policyParams.stopBias).toBeGreaterThan(
+      baseline.model.livePolicyInitializer.policyParams.stopBias,
+    );
+    expect(restrainedScoring.policyDistribution.stopAction.probability).toBeGreaterThan(
+      baselineScoring.policyDistribution.stopAction.probability,
+    );
+    expect(restrainedScoring.decisionSummary.activated).toBe(false);
+    expect(restrainedScoring.decisionSummary.stopReason).toBe("abstention_threshold_met");
   });
 
   it("activates a near-threshold must-fire row once it enters the greedy activation lane", () => {
