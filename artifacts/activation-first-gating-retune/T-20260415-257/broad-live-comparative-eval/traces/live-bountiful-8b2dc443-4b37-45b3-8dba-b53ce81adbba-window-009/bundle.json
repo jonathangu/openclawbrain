@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-01T05:59:05.524Z",
   "traceHash": "sha256-8eced4262f5a642239299c7c899085a7bd53ad7880d03357a10326803fe33aa8",
   "fixtureHash": "sha256-5aa5748a68c006cb4152d6b9766d43523c43872689382d99e9608f0fedb263a8",
-  "scoreHash": "sha256-09b2f2fb74c32ffd8701e9c38efde0b06d2c7ae17bd69c99bf18025e5bc7ceb9",
+  "scoreHash": "sha256-d6e744170190258225666e4ac103c71e6e233cf94d96936a2d5c3de45088a292",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.033,
+            "totalMs": 0.038,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.033,
+            "otherMs": 0.038,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-0a6973b0"
+          "pack-dde26958"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-c36c5aabfc0c64182d99617e043a270b0d41afc5bdb74f7ab8ffc91518259282"
+        "scoreHash": "sha256-79286460c25479a0c6069b4f8e6d6b2d882b0799e631fb40c62d43f1b185ed10"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-0a6973b0",
+          "activePackId": "pack-dde26958",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-a2938591aafcf67485974401cb96c45b1cf638ca7eafbb5dfcf63abb410035c1",
+          "selectionDigest": "sha256-2fc1e4e515bfcb999b5db4e5d5c4bdd91040746f069ef8ffa15738bc80f4827a",
           "selectedContextIds": [
-            "pack-0a6973b0:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback",
-            "pack-0a6973b0:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback",
-            "pack-0a6973b0:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback"
+            "pack-dde26958:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback",
+            "pack-dde26958:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback",
+            "pack-dde26958:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for security. Keep caption in the text body. System: [2026-02-28 21:17:27 PST] Exec completed (kind-sab, code 0) :: Commit - Committed with requested message: - `a0c49cb chore: eliminate remaining listing links` Also updated .... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:interaction.",
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7400\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` Nobody saved listing anywhere. This app isn't launched. No seo yet. Yes do a tidy up or! Use codex! Yes cleanup!. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 21:04:19 PST] Exec completed (warm-fal, code 0) :: `listing-creation.ts` -> `bounty-creation.ts` - Shared package naming cleanup: - MCP client/tool methods and tool IDs updated to bounty naming (`getBounty`, `createBounty`, `myBou… Conversation info (untrusted metadata): ```json { \"message_id\": \"7402\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrus.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-792ee29af82b92cbbc3be86cade306fad5cf1a44b78bcfb933c2c5cbe46fa949",
+          "eventExportDigest": "sha256-397aaee0019413c8558e1e3fdfc33e7655243fa58786b50d3533dcf2b3d43b65",
           "expectedContextPhrases": [
             "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.022,
-            "routeSelectionMs": 6.212,
+            "totalMs": 9.438,
+            "routeSelectionMs": 6.065,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.806,
+            "otherMs": 3.37,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-0a6973b0"
+          "pack-dde26958"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-c922edfad02113926c40bd1459971a924120378e1d9e197fda66114fa7b7cb42"
+        "scoreHash": "sha256-42b22af265c774f8bba749116281abbf583c83073f78c5d5de35d81a361d1077"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-0a6973b0",
+          "activePackId": "pack-dde26958",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-c8f54d37f074f0e64c411ac083f043286858e95a0f2cf2be3ed570e15c5c7024",
+          "selectionDigest": "sha256-7f7ca0be89621d18930f3f61bc83b2343ffeebb0e4e5c640cb5c09601b37da94",
           "selectedContextIds": [
-            "pack-0a6973b0:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback",
-            "pack-0a6973b0:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:interaction",
-            "pack-0a6973b0:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback"
+            "pack-dde26958:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback",
+            "pack-dde26958:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:interaction",
+            "pack-dde26958:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for security. Keep caption in the text body. System: [2026-02-28 21:17:27 PST] Exec completed (kind-sab, code 0) :: Commit - Committed with requested message: - `a0c49cb chore: eliminate remaining listing links` Also updated .... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:interaction.",
             "Interaction operator_override on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed. Message: cue-4-seed-message.",
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7400\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` Nobody saved listing anywhere. This app isn't launched. No seo yet. Yes do a tidy up or! Use codex! Yes cleanup!. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-6b950d784d3c58a464b690e73021cfdfa335c7a4acc2007e1b117c341a34c5c2",
+          "eventExportDigest": "sha256-098231fdc894b1e913285a83ba940fbf2e4ae7dc84c3c75c7d15de67e3ef4f03",
           "expectedContextPhrases": [
             "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.479,
-            "routeSelectionMs": 4.809,
+            "totalMs": 9.357,
+            "routeSelectionMs": 5.994,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.667,
+            "otherMs": 3.36,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-07eab1a1"
+          "pack-db63a749"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-07eab1a1",
-        "frozenEvalRouterIdentity": "pack-07eab1a1:route_fn",
+        "frozenEvalPackId": "pack-db63a749",
+        "frozenEvalRouterIdentity": "pack-db63a749:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-f4c6c2a041428bda66a4cb09686ad66069fc088ce3829e1ab69ea0016e043751"
+        "scoreHash": "sha256-4fb7d859a76aa10710d9a28a0830ca1d4bf18aa041c6e59c260d4830eb51ecf3"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-07eab1a1",
+          "activePackId": "pack-db63a749",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-825d11ee1eedb38d7938bac5f74bb58d07dc91dd3a497901b70c814ffe43db94",
+          "selectionDigest": "sha256-eded0395e0f5aea18b2eed2d23d41e90b4d32dbaaebd3e5072ae59da5f9f6baf",
           "selectedContextIds": [
-            "pack-07eab1a1:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback"
+            "pack-db63a749:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 21:04:19 PST] Exec completed (warm-fal, code 0) :: `listing-creation.ts` -> `bounty-creation.ts` - Shared package naming cleanup: - MCP client/tool methods and tool IDs updated to bounty naming (`getBounty`, `createBounty`, `myBou… Conversation info (untrusted metadata): ```json { \"message_id\": \"7402\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrus.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-a4e196db927c3ee6e3c4ab6697e7cfb88e9e0155bb293fc221a61d1164ebbd02",
+          "eventExportDigest": "sha256-7e53c629e712dccfdb930e635e80801ac07d73cdd837ba287a5c85deacf9f249",
           "expectedContextPhrases": [
             "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.159,
-            "routeSelectionMs": 5.781,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.376,
+            "totalMs": 11.548,
+            "routeSelectionMs": 7.297,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.249,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-7fc869e43b6cb8855c7f36c0f7af331296e7afb06dcf2dc83e38a4f18aeb5d39"
+  "bundleHash": "sha256-3120071236f2244ceda144bb48fdf8e5678bde239cd0e5f2aa15305d5e034299"
 }

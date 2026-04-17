@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-0e022cb9"
+      "pack-f84c265b"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-3f4289dc9f6ee317e3315f5e54d31a332c32571f5a4f003e17fd03bd10658430"
+    "scoreHash": "sha256-0a963ce12b6eb4d2305923870cf3cbf428fa7328fc89993239eeb3fa2094b99b"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-0e022cb9",
+      "activePackId": "pack-f84c265b",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "graph_walk_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-380f72685854328538505b155a3f7a64130b81e5fe0833ee2a01839aece810fb",
+      "selectionDigest": "sha256-4a896139d1ef56bf936eb7c52e9039c1ffd2416b5512c0aa41c3f67bd8d1221d",
       "selectedContextIds": [
-        "pack-0e022cb9:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
-        "pack-0e022cb9:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction",
-        "pack-0e022cb9:workspace-init:16415817"
+        "pack-f84c265b:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
+        "pack-f84c265b:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction",
+        "pack-f84c265b:pointer-aware-init"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: Exec failed (dawn-sea, signal SIGTERM) :: enclaw/pelican/runtime/quant-research/weekly_retrain_tft_status.json [2026-04-13T19:32:02Z] Run ID: v6_20260413_171321_6506b3d_7dc63260 [2026-04-13T19:32:02Z] S3 prefix: s3://poly… An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Monday, .... Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction.",
         "Interaction operator_override on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed. Message: cue-4-seed-message.",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=20). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-f0db14e1314f1d81cc5a5a72c6fd7ea16857ddb1257068d88a0019ff9711f54f",
+      "eventExportDigest": "sha256-cafdfaf7d887ead3565e367b98ce25aabff8fbfbdfa6048091a59ccee7192752",
       "expectedContextPhrases": [
         "actual result visible transcript",
         "can re-run relevant check",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.56,
-        "routeSelectionMs": 5.01,
+        "totalMs": 7.5,
+        "routeSelectionMs": 4.693,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.549,
+        "otherMs": 2.805,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

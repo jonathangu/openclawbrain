@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1,
   classifyBroadLiveProofReadV1,
   coerceRestraintLanePolicyRowV1,
   deriveFinalCandidateStatusV1,
@@ -38,6 +39,15 @@ function basePolicyRow(): PolicySupervisionRowV1 {
 }
 
 describe("activation-first gating retune runner helpers", () => {
+  it("locks the candidate retune to the explicit gating-only intervention head", () => {
+    expect(ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1).toEqual({
+      decisionPolicyMode: "gating_only_v1",
+      freezeCandidateSelection: true,
+      freezeStopLocal: true,
+      featureProfile: "resume_gate_v1",
+    });
+  });
+
   it("uses explicit activation and restraint bucket plans", () => {
     expect(derivePseudoRouteBucketPlanV1({ oracleBestMode: "learned_route" })).toEqual({
       candidateCount: 5,

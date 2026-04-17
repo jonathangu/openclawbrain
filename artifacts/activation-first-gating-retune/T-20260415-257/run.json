@@ -1,6 +1,6 @@
 {
   "taskId": "T-20260415-257",
-  "generatedAt": "2026-04-17T21:25:23.491Z",
+  "generatedAt": "2026-04-17T22:20:07.007Z",
   "includeMustFire": true,
   "harnessPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-257/activation-first-retune-harness/activation-first-retune-harness.json",
   "routeObjectiveInputPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-257/activation-first-retune-harness/activation-first-route-objective-input.json",
@@ -9,7 +9,7 @@
     "outputDir": "/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/candidate-artifact",
     "artifactId": "router-artifact-t-20260415-257-activation-first-gating-only-v1",
     "artifactVersion": "0.0.1",
-    "artifactChecksum": "sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845",
+    "artifactChecksum": "sha256:614627e70827b0f41afe18e3df67add9ff8086d32cc164d7a03899fe57529461",
     "priorBaseArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
     "priorBaseArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
     "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1"
@@ -46,7 +46,7 @@
       "warmStartFromArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
       "warmStartFromArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
       "warmStartSummary": "warm-start continuation from router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3 applied 50 continuation rows on top of 44 prior used rows",
-      "checksum": "sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845",
+      "checksum": "sha256:614627e70827b0f41afe18e3df67add9ff8086d32cc164d7a03899fe57529461",
       "runtimeVersion": "openclawbrain-runtime@0.4.43"
     },
     "passed": true,
@@ -1316,7 +1316,7 @@
       "Candidate-specific felt optimize comparative eval executed for the just-trained gating-only candidate.",
       "felt optimize manifest: ../task-artifacts/T-20260415-257/activation-first-retune-harness/felt-resume-eval.manifest.json",
       "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "candidate artifact checksum: sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845"
+      "candidate artifact checksum: sha256:614627e70827b0f41afe18e3df67add9ff8086d32cc164d7a03899fe57529461"
     ]
   },
   "mustNotFireReplay": {
@@ -1332,31 +1332,31 @@
       "warmStartFromArtifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
       "warmStartFromArtifactChecksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
       "warmStartSummary": "warm-start continuation from router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3 applied 50 continuation rows on top of 44 prior used rows",
-      "checksum": "sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845",
+      "checksum": "sha256:614627e70827b0f41afe18e3df67add9ff8086d32cc164d7a03899fe57529461",
       "runtimeVersion": "openclawbrain-runtime@0.4.43"
     },
-    "passed": true,
-    "verdict": "pass",
-    "summary": "15/15 replay rows passed; policy activation matches 15/15, abstain matches 15/15, stop_local matches 15/15; policy expectations 15/15 passed",
+    "passed": false,
+    "verdict": "fail",
+    "summary": "0/15 replay rows passed; policy activation matches 0/15, abstain matches 0/15, stop_local matches 15/15; policy expectations 0/15 passed",
     "evaluatedRowCount": 15,
-    "passedRowCount": 15,
-    "failedRowCount": 0,
+    "passedRowCount": 0,
+    "failedRowCount": 15,
     "skippedRowCount": 0,
     "policyExpectationCount": 15,
-    "passedPolicyExpectationCount": 15,
-    "failedPolicyExpectationCount": 0,
+    "passedPolicyExpectationCount": 0,
+    "failedPolicyExpectationCount": 15,
     "loadIssues": [],
     "laneSummaries": [
       {
         "lane": "must-not-fire-100",
         "policyExpectationCount": 15,
-        "passedPolicyExpectationCount": 15,
-        "failedPolicyExpectationCount": 0,
+        "passedPolicyExpectationCount": 0,
+        "failedPolicyExpectationCount": 15,
         "totalWeight": 27.25,
         "activationExpectationCount": 15,
-        "activationMatchCount": 15,
+        "activationMatchCount": 0,
         "abstainExpectationCount": 15,
-        "abstainMatchCount": 15,
+        "abstainMatchCount": 0,
         "stopLocalExpectationCount": 15,
         "stopLocalMatchCount": 15
       }
@@ -1366,15 +1366,15 @@
         "rowId": "activation-first:must-not-fire-100:live-pelican-3cb1eac8-82e4-48bf-8898-e9fa5bead77a-window-004",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-186e9414:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1383,10 +1383,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_796314260a2bf7a9",
@@ -1397,31 +1399,37 @@
             "hardNegativeClass": "tie_with_cost",
             "oracleBestMode": "tie",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_796314260a2bf7a9] activation on != expected off",
+          "[ps_796314260a2bf7a9] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-pelican-c848fc28-bf10-4fd5-83a4-31e1b3048349-window-002",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-dded380d:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1430,10 +1438,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_ad24fdd54d75c950",
@@ -1444,31 +1454,37 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_ad24fdd54d75c950] activation on != expected off",
+          "[ps_ad24fdd54d75c950] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-pelican-c1be6f8d-22af-4aac-9f32-234846a9ef57-window-004",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-0098d2a8:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1477,10 +1493,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_bb8e898a0a19d0d6",
@@ -1491,31 +1509,37 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_bb8e898a0a19d0d6] activation on != expected off",
+          "[ps_bb8e898a0a19d0d6] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-002",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-6c6f99b5:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1524,10 +1548,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_917594b6bac8b037",
@@ -1538,31 +1564,37 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_917594b6bac8b037] activation on != expected off",
+          "[ps_917594b6bac8b037] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-003",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-eaa230d3:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1571,10 +1603,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_12543e127215c035",
@@ -1585,31 +1619,37 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_12543e127215c035] activation on != expected off",
+          "[ps_12543e127215c035] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-pelican-8b146779-6fd1-4e35-b861-2d0ad85401e4-window-003",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-b4ac6b8d:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1618,10 +1658,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_3a98e065be0f6914",
@@ -1632,31 +1674,37 @@
             "hardNegativeClass": "tie_with_cost",
             "oracleBestMode": "tie",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_3a98e065be0f6914] activation on != expected off",
+          "[ps_3a98e065be0f6914] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-pelican-4654a9d2-02db-4eaa-a316-86d131e91df8-window-002",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-dc9b71c9:pointer-aware-init",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1665,10 +1713,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_c89cc0ce79e47002",
@@ -1679,31 +1729,37 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_c89cc0ce79e47002] activation on != expected off",
+          "[ps_c89cc0ce79e47002] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-029",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-e2d24086:pointer-aware-init",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1712,10 +1768,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_1fcb034f54d21a1c",
@@ -1726,31 +1784,37 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_1fcb034f54d21a1c] activation on != expected off",
+          "[ps_1fcb034f54d21a1c] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-049",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-a3f2f99f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1759,10 +1823,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_a04d006cd71628ff",
@@ -1773,31 +1839,37 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_a04d006cd71628ff] activation on != expected off",
+          "[ps_a04d006cd71628ff] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-009",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-373cc85c:pointer-aware-init",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1806,10 +1878,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_acc25791787fbc95",
@@ -1820,31 +1894,37 @@
             "hardNegativeClass": "wrapper_heavy",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_acc25791787fbc95] activation on != expected off",
+          "[ps_acc25791787fbc95] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-main-468355da-cd1f-40fe-adc8-e1dc6dfa55ea-window-003",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-830ff8a8:pointer-aware-init",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1853,10 +1933,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_7f920a3a8d394024",
@@ -1867,31 +1949,37 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_7f920a3a8d394024] activation on != expected off",
+          "[ps_7f920a3a8d394024] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-96267af2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1900,10 +1988,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_15da2f87aed2d4cd",
@@ -1914,31 +2004,37 @@
             "hardNegativeClass": "wrapper_heavy",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_15da2f87aed2d4cd] activation on != expected off",
+          "[ps_15da2f87aed2d4cd] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-f6af8d6f:event:971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1947,10 +2043,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_197ed0bae72642a6",
@@ -1961,31 +2059,37 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_197ed0bae72642a6] activation on != expected off",
+          "[ps_197ed0bae72642a6] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-2bf95eb5:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -1994,10 +2098,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_aca88a464523ae17",
@@ -2008,31 +2114,37 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_aca88a464523ae17] activation on != expected off",
+          "[ps_aca88a464523ae17] abstain off != expected on"
+        ]
       },
       {
         "rowId": "activation-first:must-not-fire-100:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003",
         "teacherActionKind": "tool",
         "expectedActivated": false,
-        "actualActivated": false,
-        "actualAbstained": true,
+        "actualActivated": true,
+        "actualAbstained": false,
         "expectedTopCandidateId": null,
         "actualTopCandidateId": "pack-ce00f23f:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:feedback",
         "expectedStopLabel": "STOP_LOCAL",
         "actualStopLabel": "STOP_LOCAL",
-        "actualStopReason": "stop_local",
+        "actualStopReason": null,
         "actualStopLocal": true,
-        "decisionConfidence": 0.9949168490565823,
+        "decisionConfidence": 0.005083150943417705,
         "activationProbability": 0.005083150943417705,
         "abstentionProbability": 0.9949168490565823,
         "predictedUtility": -0.9898336981131646,
@@ -2041,10 +2153,12 @@
         "topCandidateProbability": 0.005083150943417705,
         "stopProbability": 0.9949168490565823,
         "gateEvaluated": true,
-        "routeRowDiagnosticPassed": true,
-        "routeRowDiagnosticIssues": [],
+        "routeRowDiagnosticPassed": false,
+        "routeRowDiagnosticIssues": [
+          "activation on != expected off"
+        ],
         "policyExpectationCount": 1,
-        "policyExpectationPassCount": 1,
+        "policyExpectationPassCount": 0,
         "policyExpectationResults": [
           {
             "policyRowId": "ps_7a6f43d75e2059f0",
@@ -2055,17 +2169,23 @@
             "hardNegativeClass": "graph_prior_preferred",
             "oracleBestMode": "graph_prior_only",
             "expectedActivated": false,
-            "actualActivated": false,
+            "actualActivated": true,
             "expectedAbstained": true,
-            "actualAbstained": true,
+            "actualAbstained": false,
             "expectedStopLocal": true,
             "actualStopLocal": true,
-            "passed": true,
-            "issues": []
+            "passed": false,
+            "issues": [
+              "activation on != expected off",
+              "abstain off != expected on"
+            ]
           }
         ],
-        "passed": true,
-        "issues": []
+        "passed": false,
+        "issues": [
+          "[ps_7a6f43d75e2059f0] activation on != expected off",
+          "[ps_7a6f43d75e2059f0] abstain off != expected on"
+        ]
       }
     ]
   },
@@ -2099,7 +2219,7 @@
       "broad-live candidate run output: artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
       "broad-live guardrail manifest: ../task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
       "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "candidate artifact checksum: sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845",
+      "candidate artifact checksum: sha256:614627e70827b0f41afe18e3df67add9ff8086d32cc164d7a03899fe57529461",
       "candidate router identity: router:T-20260415-257:activation-first-gating-only:v1"
     ]
   },
@@ -2125,7 +2245,7 @@
         "Candidate-specific felt optimize comparative eval executed for the just-trained gating-only candidate.",
         "felt optimize manifest: ../task-artifacts/T-20260415-257/activation-first-retune-harness/felt-resume-eval.manifest.json",
         "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-        "candidate artifact checksum: sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845"
+        "candidate artifact checksum: sha256:614627e70827b0f41afe18e3df67add9ff8086d32cc164d7a03899fe57529461"
       ]
     },
     "feltBroadLiveOverlap": {
@@ -2140,11 +2260,11 @@
       "total": 25
     },
     "unnecessaryActivations": {
-      "count": 0,
+      "count": 15,
       "total": 15
     },
     "mustNotFireFailures": {
-      "count": 0,
+      "count": 15,
       "total": 15
     },
     "broadLive": {
@@ -2173,10 +2293,10 @@
         "broad-live candidate run output: artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
         "broad-live guardrail manifest: ../task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
         "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-        "candidate artifact checksum: sha256:104e31edc0413d7d64c272b0b3133ec7424aede271ebf481d458c4b978901845",
+        "candidate artifact checksum: sha256:614627e70827b0f41afe18e3df67add9ff8086d32cc164d7a03899fe57529461",
         "candidate router identity: router:T-20260415-257:activation-first-gating-only:v1"
       ]
     },
-    "finalCandidateStatus": "architecture_verdict"
+    "finalCandidateStatus": "reject"
   }
 }

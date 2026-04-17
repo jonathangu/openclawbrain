@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-14T14:09:02.755Z",
   "traceHash": "sha256-e8abe8bd791e7d6cf823eab880acb642edafbee61d1547309c32e0509f5a12fd",
   "fixtureHash": "sha256-55ffe1baff231052090ba7af248a8c8c581b0ed9688d4757d7043a08a2fcb4de",
-  "scoreHash": "sha256-0e5b36706d1d31e62274a3b2660e4755b60913890a2010a79f86a3803d3bc8c4",
+  "scoreHash": "sha256-453b62ea089b4e84be217a7c8d4a45b1c4af9bc78e6d8a76bab141395e54bec4",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.023,
+            "totalMs": 0.028,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.023,
+            "otherMs": 0.028,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-ce51f42a"
+          "pack-b89bedcc"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-599449526153878816bdca33ed8995e3117f78d36c96d3418510bab1e79d5da7"
+        "scoreHash": "sha256-99c61826c87804849da286e1a77b93369005db256076ea4542dd12455cdde384"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-ce51f42a",
+          "activePackId": "pack-b89bedcc",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-8b5d236d93e32b4df8c5fa2f3fb75b71cd91d6079bc6ba8d87ac47f9169115ff",
+          "selectionDigest": "sha256-586dd8fa452e56a98a2934295f65f02cacc52fd6cb947903579888ee3a3bc927",
           "selectedContextIds": [
-            "pack-ce51f42a:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:feedback",
-            "pack-ce51f42a:workspace-init:02e33be9",
-            "pack-ce51f42a:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-1:feedback"
+            "pack-b89bedcc:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:feedback",
+            "pack-b89bedcc:workspace-init:02e33be9",
+            "pack-b89bedcc:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Tuesday, April 14th, 2026 - 7:01 AM (America/Los_Angeles) / 2026-04-14 14:01 UTC. Related interaction: 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:interaction.",
             "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…",
             "Teaching feedback on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed: user: Exec completed (good-emb, code 134) :: rkaround you can set the environment variable KMP_DUPLICATE_LIB_OK=TRUE to allow the program to continue to execute, but that may cause crashes or silently produce incorrect resul… System (untrusted): [2026-04-13 07:12:12 PDT] Exec failed (young-da, signal SIGKILL) System (untrusted): [2026-04-13 07:12:29 PDT] Exec completed (faint-su, code 3) :: e trading path. Use --allow-market-hours to override. [2026-04-13T14:12:29Z] Status JSON: /Users/guclaw/.open.... Related interaction: 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-9e6df4a30c8dadbd42ea5ade02416e88146b219b52ea4d661ebef8b4b7d3e609",
+          "eventExportDigest": "sha256-ecceb60980bf5228f463c6a10cc5ec26e32f3adbc6272f7063657b039ac25592",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.867,
-            "routeSelectionMs": 4.344,
+            "totalMs": 8.506,
+            "routeSelectionMs": 5.673,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.521,
+            "otherMs": 2.831,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-ce51f42a"
+          "pack-b89bedcc"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-b55e7ab6c8c92b789a4171b6c68a8976b4d5120a692ce077fe0b0579fce5130a"
+        "scoreHash": "sha256-1b8c21abbe5fbf39ca2bc9b55f15dcd9e328cab3e2874e1958465a4f5b319de9"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-ce51f42a",
+          "activePackId": "pack-b89bedcc",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-601134485748e3f2577bfe8e9b4f77eff83290e96844a755ac74da1dc0b91826",
+          "selectionDigest": "sha256-5a72d86273d368f8fc724f5daeeef5dee3a2b7b280a0212204bb1653518846cb",
           "selectedContextIds": [
-            "pack-ce51f42a:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:feedback",
-            "pack-ce51f42a:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:interaction",
-            "pack-ce51f42a:workspace-init:02e33be9"
+            "pack-b89bedcc:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:feedback",
+            "pack-b89bedcc:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:interaction",
+            "pack-b89bedcc:workspace-init:02e33be9"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Tuesday, April 14th, 2026 - 7:01 AM (America/Los_Angeles) / 2026-04-14 14:01 UTC. Related interaction: 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed. Message: cue-6-seed-message.",
             "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…"
           ],
-          "eventExportDigest": "sha256-eccace69daf16bf7124e21a425c4da62572537b1723324f25ccd50ca6528b873",
+          "eventExportDigest": "sha256-8f3fc988a10d00d70d149f4a6209ac76be5f69e19da38901e2887d82f7cd05cf",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.878,
-            "routeSelectionMs": 4.339,
+            "totalMs": 7.584,
+            "routeSelectionMs": 4.745,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.537,
+            "otherMs": 2.837,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-e139dca1"
+          "pack-cb83d643"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-e139dca1",
-        "frozenEvalRouterIdentity": "pack-e139dca1:route_fn",
+        "frozenEvalPackId": "pack-cb83d643",
+        "frozenEvalRouterIdentity": "pack-cb83d643:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-674a36e4e41ab84200fa77e1640dca1adffa8be45ebbdbcc0951c3946f42f125"
+        "scoreHash": "sha256-03a69dae34ec41db5fb067348a3ff0b53fc8f6478c9396b9a086667b2cc3d051"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e139dca1",
+          "activePackId": "pack-cb83d643",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-cee54fa17578d9f96589fa879bfcc1a31e76620e84e31d6d2f552421c8caba39",
+          "selectionDigest": "sha256-dc07d8239fd5ff8a71527661290353f620f4025e77daec8d100e777cf54970b7",
           "selectedContextIds": [
-            "pack-e139dca1:workspace-init:02e33be9"
+            "pack-cb83d643:workspace-init:02e33be9"
           ],
           "selectedContextTexts": [
             "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…"
           ],
-          "eventExportDigest": "sha256-d01238473f2849c57380e740d5d891ac3c170bee9bdfd5d1b2925a9135ffdd89",
+          "eventExportDigest": "sha256-3075ceb43d46bf103cb8a22c8c60ce7cfd7a96504694f40cc52471a78baa1607",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.353,
-            "routeSelectionMs": 5.153,
+            "totalMs": 9.76,
+            "routeSelectionMs": 6.171,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.198,
+            "otherMs": 3.588,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-936d11602fb35656e0ffc060b930ad07e769bd1bd55a55d3627691d6e5bd9ee0"
+  "bundleHash": "sha256-653ffaebf27b846d96a1eb7d957ba012992e52ea8bb3a6fda5299282b8698f75"
 }

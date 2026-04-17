@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-28T06:04:02.061Z",
   "traceHash": "sha256-f6e0cde3a25a3b093a3328111ec29f970fc82068378dbcdb19446f77be2e4c1e",
   "fixtureHash": "sha256-a657cfcc3c13a64972df27ba9b34b582252db2226ee691420ef45e3b6a2bad38",
-  "scoreHash": "sha256-b42b92144a2e00ab87dd965ba64ccb949f88998d61bfda13a0d2aea63652fa72",
+  "scoreHash": "sha256-ba8b7e85ffeac6b0e0fb16534f4de2e44b7321e0eb2d851604c7c8d03e30cf92",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.039,
+            "totalMs": 0.041,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.039,
+            "otherMs": 0.041,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-bc3da235"
+          "pack-40812076"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-aa68fd11d29deffd175ae7d260867413d7e2d98b3a2a82bac39ba68fd0efb118"
+        "scoreHash": "sha256-5eae6352419d8db211d3cb8091ff3757df824d2580e46f0386934a42ce6379c7"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-bc3da235",
+          "activePackId": "pack-40812076",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-4a56905bac5c1ca0c0d8e9a452f12f86bf0ce6abea86ba32ef2b4eb1de3757a3",
+          "selectionDigest": "sha256-f62c628989c2cfd1c6d75faa1e9df29907da6d90ccffe698f3c10aaeb9bca7a6",
           "selectedContextIds": [
-            "pack-bc3da235:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
-            "pack-bc3da235:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-            "pack-bc3da235:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
+            "pack-40812076:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
+            "pack-40812076:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+            "pack-40812076:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 6b291565-3e5a-42bf-a999-00f4d9862b45] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the harvester pipeline and classified Jon's substantive messages from the last 2 hours. Findings below (plain list: classification → extracted rule/pattern/scope → tag). I updated docs/jon-model.md (Layer 3) and docs/quant-lessons.md with the new relaunch-gate (paths at bottom). No regression-level alert to Jon (nothing new that requires immediate escalation). .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 843fbf03-ac7e-4872-8641-fea100aa31ce] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the extraction pipeline (last 2h). Findings — substantive messages from Jon (sender:8518484672): 1) DIRECTIVE → Feature parity & days_to_exp handling [REF] - Extracted scope + conditions: Enforce feature parity between training and inference. For time-varying features (eg. days_to_exp): only include at inference if it was used during training; if used, require .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 0db80b90-5eeb-46c9-9eee-40efce5153b2] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the extraction pipeline and classified Jon's substantive messages from the last 2 hours. I also checked memory (today + yesterday) for context. Memory check - memory/2026-02-27.md and memory/2026-02-26.md inspected (no contradictory policy found). No prior memory snippet prevented making these gates. What I ran - Command executed: python3 /Users/guclaw/.opencla.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-a4f4edfd4e31ac02b574393d4724f7bcf40765af31f3c103d94eec247169c639",
+          "eventExportDigest": "sha256-e571406a81a0bb86736aa2c8df22242946e385dc65899654cf48b00ebd4f346a",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.851,
-            "routeSelectionMs": 5.99,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.859,
+            "totalMs": 13.624,
+            "routeSelectionMs": 9.378,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.243,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-bc3da235"
+          "pack-40812076"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-d7c17ae950086d0aaa3dd6ebb06e6271d9cb7d80d176a448811e86aed0d882a3"
+        "scoreHash": "sha256-288722283cfe9071fbfcdb615605a45df851a208238441ada03361ae0075aca5"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-bc3da235",
+          "activePackId": "pack-40812076",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-ee3631f3dad1befa7fa0e4c63576d9b01299e660b25873e0ece24acd4f4b7c78",
+          "selectionDigest": "sha256-f9b43a543b9b6fb7a352d8b005017c3967f1fa3fdf88f37f903bad46cc8fe728",
           "selectedContextIds": [
-            "pack-bc3da235:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
-            "pack-bc3da235:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction",
-            "pack-bc3da235:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction"
+            "pack-40812076:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
+            "pack-40812076:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction",
+            "pack-40812076:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 6b291565-3e5a-42bf-a999-00f4d9862b45] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the harvester pipeline and classified Jon's substantive messages from the last 2 hours. Findings below (plain list: classification → extracted rule/pattern/scope → tag). I updated docs/jon-model.md (Layer 3) and docs/quant-lessons.md with the new relaunch-gate (paths at bottom). No regression-level alert to Jon (nothing new that requires immediate escalation). .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
             "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message.",
             "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-ae6e5bd84a69e04ad9ad13b928b51ee1d2233ccfe0fc0330a127f201095e2c4d",
+          "eventExportDigest": "sha256-5732da6f47efd6f20660bb6051ed983cfc4534de9d6d5c7bf466aab777b0575d",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.008,
-            "routeSelectionMs": 6.089,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.917,
+            "totalMs": 13.254,
+            "routeSelectionMs": 8.857,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.394,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-392e9f98"
+          "pack-bd721dd9"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-392e9f98",
-        "frozenEvalRouterIdentity": "pack-392e9f98:route_fn",
+        "frozenEvalPackId": "pack-bd721dd9",
+        "frozenEvalRouterIdentity": "pack-bd721dd9:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-ae6eddf1a0f94cd97213a6d6f2c7ae1390ad872d445e611acb5b376e1651b238"
+        "scoreHash": "sha256-1b8142441a33cc994f42e27f5a3730ab03b631575b42dfc97a9ad8ecbc4fc5d7"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-392e9f98",
+          "activePackId": "pack-bd721dd9",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-68f1eec690eca61f613ab58fb62b33913d7373cde72945f0ef0e32385e8a5c8b",
+          "selectionDigest": "sha256-d4b3b32d2ff438867fc1b37da36abe46051cbd73cb1bf02cd3973018147eda85",
           "selectedContextIds": [
-            "pack-392e9f98:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
+            "pack-bd721dd9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 6b291565-3e5a-42bf-a999-00f4d9862b45] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the harvester pipeline and classified Jon's substantive messages from the last 2 hours. Findings below (plain list: classification → extracted rule/pattern/scope → tag). I updated docs/jon-model.md (Layer 3) and docs/quant-lessons.md with the new relaunch-gate (paths at bottom). No regression-level alert to Jon (nothing new that requires immediate escalation). .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-409e1eafeb7f87d2c888630cd9a61a7f959a4411eaa5a2d94fb9d63c1b5c5376",
+          "eventExportDigest": "sha256-575e77c47edbe6198652dc454faa75050c0edc9cf77103225225152dbe1ca02a",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 11.922,
-            "routeSelectionMs": 8.249,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.67,
+            "totalMs": 17.155,
+            "routeSelectionMs": 11.74,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 5.413,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-99ced4b2fbd57ee9c8b95ba7fdd4ff389ee3b28679542b0303556e853f42abfc"
+  "bundleHash": "sha256-027b7b1623dbf08d3b7994654cf0b00ab89d8be51c5d2c56985d4ad90b345e4e"
 }

@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-12T15:13:05.959Z",
   "traceHash": "sha256-f2aad77541ac9575f5e5ca17b331150d26a5ffdab9f43024542cda1cc603e5be",
   "fixtureHash": "sha256-bd1f8b0e0683d35bf0b6cddabbcb17bfbeff749dd6d56a3da4fa75988fc68560",
-  "scoreHash": "sha256-dd57b8427ddc9b27b16a8fd58f4a1b411ebc057b48486c724a0b4188585622f3",
+  "scoreHash": "sha256-f70e8ec1997dfc1957d60ac22f0b8691302cb234b472da1f1e9593225dccf20f",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.026,
+            "totalMs": 0.033,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.026,
+            "otherMs": 0.033,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-119910fc"
+          "pack-fbe30a9e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-e9e915218cec6a9bc384777d1718b6ee439ed7feb012426633ba9d6fcea3d63b"
+        "scoreHash": "sha256-e2e97ac89656e81dfab5ba8ebe0cbd4a481a6ebe3161965313ad611f313d2e6c"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-119910fc",
+          "activePackId": "pack-fbe30a9e",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-14fd6821fa496f5782c8d746b2f99f057262122b15d5727077001b60e7948a23",
+          "selectionDigest": "sha256-9004b895d112e3b232851a2bc90fd601eaf2b4b79810ff8f756001e575b7afac",
           "selectedContextIds": [
-            "pack-119910fc:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback",
-            "pack-119910fc:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-3:feedback",
-            "pack-119910fc:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-5:feedback"
+            "pack-fbe30a9e:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback",
+            "pack-fbe30a9e:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-3:feedback",
+            "pack-fbe30a9e:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 6:26 AM (America/Los_Angeles) / 2026-04-12 13:26 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:interaction.",
             "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 6:26 AM (America/Los_Angeles) / 2026-04-12 13:26 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-3:interaction.",
             "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 7:11 AM (America/Los_Angeles) / 2026-04-12 14:11 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-33695c06981af414f1128b1561b8456d1a800121c534ff3a844a31e31164c7f7",
+          "eventExportDigest": "sha256-8966691d6e6964fedc277d7bffb4569bced5f757687eac3de6708cfb2409ba09",
           "expectedContextPhrases": [
             "can relay output cleanly.",
             "record can relay output",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.861,
-            "routeSelectionMs": 4.331,
+            "totalMs": 8.338,
+            "routeSelectionMs": 5.253,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.529,
+            "otherMs": 3.083,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-119910fc"
+          "pack-fbe30a9e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-6aaaedac8b2431a4f85fbbaefdc8514328fb9455f26b65560ef0e410515d56d6"
+        "scoreHash": "sha256-a8f3e0dfb7020175d81955d99937044117de361f40a3e543bb694052e0ec5195"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-119910fc",
+          "activePackId": "pack-fbe30a9e",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-dded661e4b7db006bf180df2f6b592962a988ff1add05f26fa14b3c1c86dc767",
+          "selectionDigest": "sha256-41cb93b267e2df45a1d63390fbb64f1d79948cf55e7fa00dff784b53c53c0cd6",
           "selectedContextIds": [
-            "pack-119910fc:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback",
-            "pack-119910fc:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:interaction",
-            "pack-119910fc:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:interaction"
+            "pack-fbe30a9e:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback",
+            "pack-fbe30a9e:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:interaction",
+            "pack-fbe30a9e:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 6:26 AM (America/Los_Angeles) / 2026-04-12 13:26 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:interaction.",
             "Interaction operator_override on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed. Message: cue-2-seed-message.",
             "Interaction operator_override on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed. Message: cue-1-seed-message."
           ],
-          "eventExportDigest": "sha256-9806a792d968077eef59d14c9d2f9ffce1f8927b7a81940b053f5eb76d7543b5",
+          "eventExportDigest": "sha256-f3a7cfc8b9b84b89dcdde6a1e1aac467902c989999bd6cfa9702c57d27e87ec1",
           "expectedContextPhrases": [
             "can relay output cleanly.",
             "record can relay output",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.845,
-            "routeSelectionMs": 4.316,
+            "totalMs": 9.341,
+            "routeSelectionMs": 6.241,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.527,
+            "otherMs": 3.098,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -366,12 +366,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-b8e250d9"
+          "pack-a32c4a7b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-b8e250d9",
-        "frozenEvalRouterIdentity": "pack-b8e250d9:route_fn",
+        "frozenEvalPackId": "pack-a32c4a7b",
+        "frozenEvalRouterIdentity": "pack-a32c4a7b:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-22d0d52683b4ea583b825f751f43da3498e2e14fd544e034f8a1b88aca5a259e"
+        "scoreHash": "sha256-70d05d4a0f7684b4f5c6c46315499d7680067467fd407b2f4010f9d3144590b5"
       },
       "turns": [
         {
@@ -405,7 +405,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b8e250d9",
+          "activePackId": "pack-a32c4a7b",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -415,14 +415,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-9c08825fbef107496052a7f4b34583da457ab354a235f21f242f5c9181a18e81",
+          "selectionDigest": "sha256-90ee5d081523cd1a616e16b5bb369591b509ee6303453fdeb3fb01825172ba72",
           "selectedContextIds": [
-            "pack-b8e250d9:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback"
+            "pack-a32c4a7b:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 6:26 AM (America/Los_Angeles) / 2026-04-12 13:26 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-89f79504bf29a3c51e267eb4320608319faf03b9a0b0d0b0e1f348a579ed1ad9",
+          "eventExportDigest": "sha256-fcb5f7c24939cf1f73be47176782c86a72dec1f6da20572fe86340cd5a83d1fa",
           "expectedContextPhrases": [
             "can relay output cleanly.",
             "record can relay output",
@@ -440,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.281,
-            "routeSelectionMs": 5.132,
+            "totalMs": 10.174,
+            "routeSelectionMs": 6.217,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.147,
+            "otherMs": 3.956,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-724eec5618b03907dcf7e3c08839e288676e91d940e2cf3ce564bfd8c2cdcb60"
+  "bundleHash": "sha256-3feecb5a37858e979198cb33924868ea611089db1f0845660335a5ebccf808c2"
 }

@@ -19,7 +19,7 @@
 - correction absorption: correction absorption is unavailable in replay-lane outputs because no feedback-bearing turns were recorded here
 - activation precision: explicit learned-route activation precision is 1/403 across 403 observed candidate turns
 - activation precision proxy: selection-divergence proxy activation precision is 1/403 against graph_prior_only
-- success-adjusted economics: learned_route used 169 estimated prompt tokens, 0.000211 estimated prompt USD, and 10 ms serve-path latency per incremental win vs graph_prior_only 293, 0.000366, and 5
+- success-adjusted economics: learned_route used 169 estimated prompt tokens, 0.000211 estimated prompt USD, and 10 ms serve-path latency per incremental win vs graph_prior_only 293, 0.000366, and 10
 - fail-open: observed 0/403 degraded learned_route turns in this replay lane
 
 ## Diagnostic Mode Summary

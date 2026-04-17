@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-15T03:19:30.093Z",
   "traceHash": "sha256-1eeac1e61d3b2146227988d62e1fe6c84e0b77c1468137fa8c6d382736c2c4ff",
   "fixtureHash": "sha256-1569517b028e54a6250341eadd5d277f396164c98c963a62234840e80af05420",
-  "scoreHash": "sha256-9291f05ae4fd0b153e0d3d9c87a6aab07011350890919064de6aa18e898a6142",
+  "scoreHash": "sha256-1bf97dcb5f81e5140d564bf6519317ce18bd2841a962b52150dc735dd058e440",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.026,
+            "totalMs": 0.03,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.026,
+            "otherMs": 0.03,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-9b14ec51"
+          "pack-138a456b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-9f9c2cda00f69f271539f73d1199042ddf0b5deafd10dc5b6f5c335b4828960b"
+        "scoreHash": "sha256-1483a6086db89cfc72e911d6336682a7221e43138c6715a8c1fbd6b5b9c232bc"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-9b14ec51",
+          "activePackId": "pack-138a456b",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-f48b440fb06cb2bbb48d6895664a886bc59ef90aef72685581868673425242b3",
+          "selectionDigest": "sha256-8059ac38fe3dd0917015c003afe33d20fab3de6d3859b767dbabf877b11a3092",
           "selectedContextIds": [
-            "pack-9b14ec51:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:feedback",
-            "pack-9b14ec51:pointer-aware-init",
-            "pack-9b14ec51:workspace-init:16415817"
+            "pack-138a456b:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:feedback",
+            "pack-138a456b:pointer-aware-init",
+            "pack-138a456b:workspace-init:16415817"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23573\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:36 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Pelican is down again. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=100). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 6:14 AM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=106). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:30 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
           ],
-          "eventExportDigest": "sha256-dd6cff76fc39fa0aefdd748a96411073fda22b2147d3c4de1cc0bea8ce909ce4",
+          "eventExportDigest": "sha256-8ddf7e3e3a9711898cd29fa507cb3e384451ad4f65ddd061eb1dce310316b8bd",
           "expectedContextPhrases": [
             "glad",
             "caught",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.047,
-            "routeSelectionMs": 4.467,
+            "totalMs": 7.717,
+            "routeSelectionMs": 4.885,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.578,
+            "otherMs": 2.83,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -251,7 +251,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-9b14ec51"
+          "pack-138a456b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-2e3e62a16c9633cf78d0d4f5b697ef806ab3dffb0fbdaefb1b564dc768b0da4f"
+        "scoreHash": "sha256-f35bb267542f6460d61bfd2341a9fcff7ad21bc29045f86b2f763ce53cad4616"
       },
       "turns": [
         {
@@ -289,7 +289,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-9b14ec51",
+          "activePackId": "pack-138a456b",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -299,18 +299,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-eb9ea7043d5b102cddc9f2dd6f1991406a9f4492dfa8926b017e459713b0a923",
+          "selectionDigest": "sha256-0aeff89bad00ed81c0362748ef23c49984fd86baccab6f4af9cca6aa242c6800",
           "selectedContextIds": [
-            "pack-9b14ec51:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:feedback",
-            "pack-9b14ec51:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction",
-            "pack-9b14ec51:pointer-aware-init"
+            "pack-138a456b:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:feedback",
+            "pack-138a456b:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction",
+            "pack-138a456b:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23573\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:36 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Pelican is down again. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction.",
             "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-2-seed-message.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-23cc0e7b2b96acda2f3eac1ecef9d0990cfe0e77ec2db764e7d501dafca5bb14",
+          "eventExportDigest": "sha256-0a829486385cdc0b8b06b527b31e513e79db16b50a99d5cc74423518c4594589",
           "expectedContextPhrases": [
             "glad",
             "caught",
@@ -328,10 +328,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.687,
-            "routeSelectionMs": 4.277,
+            "totalMs": 9.025,
+            "routeSelectionMs": 6.193,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.408,
+            "otherMs": 2.83,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -367,12 +367,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-0db0253e"
+          "pack-86257e58"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-0db0253e",
-        "frozenEvalRouterIdentity": "pack-0db0253e:route_fn",
+        "frozenEvalPackId": "pack-86257e58",
+        "frozenEvalRouterIdentity": "pack-86257e58:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -396,7 +396,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-c1f2de0fcd0f0885ad62b41c94d990ee1c8afb7c6e6110e0d24fb93a0403ae89"
+        "scoreHash": "sha256-07516f5c6c027ad76cf925c8d490010ecc888638c3ca8b633b57291cc9f0dbf6"
       },
       "turns": [
         {
@@ -406,7 +406,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-0db0253e",
+          "activePackId": "pack-86257e58",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -416,14 +416,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-924c3c7ab042347da8fd660dd7c3cec2707f6aa0a0ff63606f81e61046490cc7",
+          "selectionDigest": "sha256-c2b462ec5c1b8e5e51ff2111a19e2be75166baed2253baf0a229539f4fea2e31",
           "selectedContextIds": [
-            "pack-0db0253e:pointer-aware-init"
+            "pack-86257e58:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-f1399ef601e6a1a9644cadfba7e0a04ab640af1b2a5e669702ca4e17da75f04e",
+          "eventExportDigest": "sha256-1076c0480927771c882c982f5f270cf4f9790991495262ad8c9efb07ec9062e8",
           "expectedContextPhrases": [
             "glad",
             "caught",
@@ -441,10 +441,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.769,
-            "routeSelectionMs": 5.491,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.277,
+            "totalMs": 9.494,
+            "routeSelectionMs": 5.87,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.622,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -488,5 +488,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-4ec9b9f13b527a92628ba88b2e602b3fde570dc74b09520eb2210c5888134b32"
+  "bundleHash": "sha256-a8c751827af7fc6317f26895d70fea16ed277dd30a987ce834713d9dbb90348e"
 }

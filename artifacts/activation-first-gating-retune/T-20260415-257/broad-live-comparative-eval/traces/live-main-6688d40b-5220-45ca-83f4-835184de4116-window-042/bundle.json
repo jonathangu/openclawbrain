@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-15T12:14:48.593Z",
   "traceHash": "sha256-7d50a8bfbe12d6ec52d00a65d5c5309711fc92d4bd65677275533c95c1fbb9f9",
   "fixtureHash": "sha256-486866769a6220eac0c25d8477d823ddd1d78a29159bb789869bb12cfb7c0a16",
-  "scoreHash": "sha256-a25d3b97f2d6fd96dd77f7b240c31be4184b6f2fcc342050039e2dc0d1b9505d",
+  "scoreHash": "sha256-05da8306920b81560fc0fb7ed31740d2b39088adb4c7cc83f69d65aec56762df",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.026,
+            "totalMs": 0.035,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.026,
+            "otherMs": 0.035,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-675a0b34"
+          "pack-dfcf644e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-c59e682959e47c3df105ac18edfb4962a98d3847befb2fd471b916f0d382df31"
+        "scoreHash": "sha256-07b72772110bd8e82e295623a7ba2f434e6797356d6b8d6a6fff91ad13a5757a"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-675a0b34",
+          "activePackId": "pack-dfcf644e",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-cf0929d24261ac9b7065aea8fecdc4b1de287879fb1abf455c59ba6ad1904cbc",
+          "selectionDigest": "sha256-9602627c4d50e892a7550bb30e218652c2883ff85c78d065d9cbbb1ebb665d1a",
           "selectedContextIds": [
-            "pack-675a0b34:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:feedback",
-            "pack-675a0b34:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback",
-            "pack-675a0b34:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-3:feedback"
+            "pack-dfcf644e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:feedback",
+            "pack-dfcf644e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback",
+            "pack-dfcf644e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-3:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23638\", \"reply_to_id\": \"23637\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 05:13 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Short version, learned_route is worse mostly because it is more expensive.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23635\", \"reply_to_id\": \"23634\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 04:32 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Yep. In plain English:\\n\\n• I fixed the OpenClawBrain replay reporting so.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:interaction.",
             "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23633\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 04:31 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Summarize the results in understanding English. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-3:interaction."
           ],
-          "eventExportDigest": "sha256-0f3eb69430d2064eb9ecf44f2dbe67c59f8ff2eab8781064b53a172c92b9d217",
+          "eventExportDigest": "sha256-1bd144b136593595f0a968421921e3537daaaaa8bd37acfac41e2c8a398eafc7",
           "expectedContextPhrases": [
             "canonical-frozen-20 rolling real traces",
             "real traces eval manifest",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.461,
-            "routeSelectionMs": 4.934,
+            "totalMs": 9.405,
+            "routeSelectionMs": 6.164,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.525,
+            "otherMs": 3.238,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-675a0b34"
+          "pack-dfcf644e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-d84cc6539900ac0a3a549c60da718fbc0d1f9d1415e66d9185f9d9fa268461fa"
+        "scoreHash": "sha256-3f8ae75d2254cbf2cd9769085ad514610f3ee88135fe98fb9eefadc0cf9c3dcf"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-675a0b34",
+          "activePackId": "pack-dfcf644e",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-16d970abf38214861d3666c36283088207c66363aeaf5693fabeefa266a6ee55",
+          "selectionDigest": "sha256-f19c51a5bd24284813975b19dfdee3fb55ec37a1b1ed6bb79a0f8dcfe707efc5",
           "selectedContextIds": [
-            "pack-675a0b34:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:feedback",
-            "pack-675a0b34:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:interaction",
-            "pack-675a0b34:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback"
+            "pack-dfcf644e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:feedback",
+            "pack-dfcf644e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:interaction",
+            "pack-dfcf644e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23638\", \"reply_to_id\": \"23637\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 05:13 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Short version, learned_route is worse mostly because it is more expensive.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23635\", \"reply_to_id\": \"23634\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 04:32 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Yep. In plain English:\\n\\n• I fixed the OpenClawBrain replay reporting so.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-eae18a763a410af5806fb368238f2ee471e9fccb9d26d02e664454c080affe1d",
+          "eventExportDigest": "sha256-678f20f83a8d299a7009b31dd48d7d768568353cfd5be178741ee6b65d5b20cb",
           "expectedContextPhrases": [
             "canonical-frozen-20 rolling real traces",
             "real traces eval manifest",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.713,
-            "routeSelectionMs": 5.067,
+            "totalMs": 9.191,
+            "routeSelectionMs": 6.017,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.644,
+            "otherMs": 3.172,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -366,12 +366,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-cfc67b85"
+          "pack-483bd49f"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-cfc67b85",
-        "frozenEvalRouterIdentity": "pack-cfc67b85:route_fn",
+        "frozenEvalPackId": "pack-483bd49f",
+        "frozenEvalRouterIdentity": "pack-483bd49f:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-e617fb140eee5b4519c9ea197bd715ba65d064ae0136020d65746f1eb60da8fd"
+        "scoreHash": "sha256-827489825f033ae887ca9d0c17e6810e7a55eac83509bcb5602815ba883c16bd"
       },
       "turns": [
         {
@@ -405,7 +405,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-cfc67b85",
+          "activePackId": "pack-483bd49f",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -415,14 +415,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-beb4b800236c6be09179364cb225c22c05ce91866cb309b365ea6c57152dde13",
+          "selectionDigest": "sha256-b59f26211d6540b2a93e3ac9d16f4df08077a0a4424f9c81aa36e4d9cb465b7b",
           "selectedContextIds": [
-            "pack-cfc67b85:pointer-aware-init"
+            "pack-483bd49f:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-be962d46e736b94c4c87a67e6c4b0ae0e31a588c5b596a89bdc776bd9ecd030e",
+          "eventExportDigest": "sha256-5b7a756c7e629258e15fe8c319359c7cfcda1a474ce955511b15699710cb6e74",
           "expectedContextPhrases": [
             "canonical-frozen-20 rolling real traces",
             "real traces eval manifest",
@@ -440,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.41,
-            "routeSelectionMs": 6.118,
+            "totalMs": 11.537,
+            "routeSelectionMs": 7.489,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.29,
+            "otherMs": 4.047,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-df6d529c259838ca8ee74bf471881963dd4e969f88d4f368f48af3fe221ff8c8"
+  "bundleHash": "sha256-682ed8f84f3e58edc28461f04b0bb00d7f38fec71d7b7a540a48e246cc408572"
 }

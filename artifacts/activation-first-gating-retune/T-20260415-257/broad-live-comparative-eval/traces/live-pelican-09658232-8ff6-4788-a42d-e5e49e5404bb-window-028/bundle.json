@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-28T00:31:13.782Z",
   "traceHash": "sha256-3b96b2a97bdbabf2a2491696460b8da77dc242a25c47533759e1ca69d544c781",
   "fixtureHash": "sha256-32449d86eb6b142eb11e1d76d43e4c37d62e87233bae5b870977e6a064fa97e1",
-  "scoreHash": "sha256-8c0eceba1a6bb18b68813eb14b42de26fc87fa449f2da0e58e5b887450722a95",
+  "scoreHash": "sha256-0770816edaa0603a08a5e864aa12b22fbe0a912e504f42a4b591b52ce6a9110b",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.026,
+            "totalMs": 0.028,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.026,
+            "otherMs": 0.028,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-e0d0c437"
+          "pack-65144278"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-982007fd9e88e515fd0de73d6a7bb6914b55ea09da66744c86f1ef8b1b857e82"
+        "scoreHash": "sha256-1e86cfc6b589414ec688be869907f5faed1663f26acc659cb29b7d6b9ba07774"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e0d0c437",
+          "activePackId": "pack-65144278",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-70aaf5dd0c8b0f2b0c0f7ab58d472a2d977eb6219e7a09d33841220c56ea110c",
+          "selectionDigest": "sha256-b85d25c981a9569200361d57bf086ca0aba80f1de035313ed543cf1ba1e5ba33",
           "selectedContextIds": [
-            "pack-e0d0c437:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-            "pack-e0d0c437:pointer-aware-init",
-            "pack-e0d0c437:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback"
+            "pack-65144278:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+            "pack-65144278:pointer-aware-init",
+            "pack-65144278:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: b5826161-a9ca-4bec-a643-5be754afd2df] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Cron disabled. Everything is already complete — a previous session handled the full download/validate/terminate/update workflow. Let me confirm no message to Jon is needed since he was already notified. Stats: runtime 1m0s • tokens 2.2k (in 11 / out 2.2k) • prompt/cache 24.0k A completed cron job is ready for user delivery. Convert the result above into your normal assis.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"OK, models are fine. Structure is just member → {models: {q: booster}, corrections: {q: ...}} — all 23 quantiles present in each member.\\n\\nBoth models are valid and intact despite the download hiccups:\\n\\n| Model | Members | Quantiles | Features | Rows | train_end |\\n| ------ | ------- | --------- | -------- | ------ | -----.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-5ed5ad2ba481fac1c09d681c429080c3d6c6e298b6d9a34dd883581bf78b29d5",
+          "eventExportDigest": "sha256-028a1efffa64966e1e87b5fdf32e3747c45bb2c7f3bf80eb861a71b13227faa0",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.962,
-            "routeSelectionMs": 5.321,
+            "totalMs": 9.76,
+            "routeSelectionMs": 6.476,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.639,
+            "otherMs": 3.282,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-e0d0c437"
+          "pack-65144278"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-7e447eaa2986a0d8cc7151268f669a7db938882b7ca6582c7e6b96d0e3a0a462"
+        "scoreHash": "sha256-a3f6991ba05e5311c58543add8c622b934089c31de6ea6278e7e9b854ae611f6"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e0d0c437",
+          "activePackId": "pack-65144278",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-3067e316495821616dfc8a5beee56b740ffd465589bbb906c5d89a1bd0f081bf",
+          "selectionDigest": "sha256-7be9da56e63c4e7677b9c3b50e534deba8545602e4998f6a9479eea0ec1485a4",
           "selectedContextIds": [
-            "pack-e0d0c437:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-            "pack-e0d0c437:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction",
-            "pack-e0d0c437:pointer-aware-init"
+            "pack-65144278:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+            "pack-65144278:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction",
+            "pack-65144278:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: b5826161-a9ca-4bec-a643-5be754afd2df] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Cron disabled. Everything is already complete — a previous session handled the full download/validate/terminate/update workflow. Let me confirm no message to Jon is needed since he was already notified. Stats: runtime 1m0s • tokens 2.2k (in 11 / out 2.2k) • prompt/cache 24.0k A completed cron job is ready for user delivery. Convert the result above into your normal assis.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
             "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-2-seed-message.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-d100b5086a1055f831601613773c46d952520216913b227a7397d6593db4f5f7",
+          "eventExportDigest": "sha256-2e2afafc081ae344bba30b830e03339c49ccbcb1c43c4c6e9425ed12aa13abdc",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.275,
-            "routeSelectionMs": 4.647,
+            "totalMs": 8.345,
+            "routeSelectionMs": 5.319,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.626,
+            "otherMs": 3.024,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-81bb159c"
+          "pack-05fe93dd"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-81bb159c",
-        "frozenEvalRouterIdentity": "pack-81bb159c:route_fn",
+        "frozenEvalPackId": "pack-05fe93dd",
+        "frozenEvalRouterIdentity": "pack-05fe93dd:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-2f41f7111688b5f3d5554a8c2e8e6c025286d5c2d79b67aeb580a737dcde3566"
+        "scoreHash": "sha256-0f3731a97e9d94eff5492ef2ee899b74ec753b0f2a5d00c1c4063a9c8e333039"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-81bb159c",
+          "activePackId": "pack-05fe93dd",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-eecd670b4d078777220bead37ecb7e32047a82cd6da2ad47ace5f53b3b148881",
+          "selectionDigest": "sha256-ded68c0ef90f01c5783a91f28644949a03bb69b489994cd35752c74f3e4f6604",
           "selectedContextIds": [
-            "pack-81bb159c:pointer-aware-init"
+            "pack-05fe93dd:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-79aaad4e56475ec00fa4e1de396305038833dfc31fc021f516afca3afef30e72",
+          "eventExportDigest": "sha256-dd64ccaec8b0b0a4671b9241f805d7b1df94503b3fc5c4c27f4a1ebed5da61f3",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.832,
-            "routeSelectionMs": 5.541,
+            "totalMs": 9.966,
+            "routeSelectionMs": 6.21,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.29,
+            "otherMs": 3.755,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-e6994316d1b5506c5070c1e6eb2789853a4d38b5355632b8f37f6dcd3416eb9f"
+  "bundleHash": "sha256-2b49449536921f95f10630058a5d6dc567ac36b3a0e8e809d89ab001d0ce95a6"
 }

@@ -6,10 +6,10 @@
 - manifest path: `/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-257/activation-first-retune-harness/felt-resume-eval.manifest.json`
 - manifest contract: `frozen_recorded_session_eval_manifest.v1`
 - manifest id: `felt_resume_25-eval`
-- git sha: `0cfc8d81ab0dbe2d67e186899190f5a722a4ab29`
+- git sha: `13431ef43a4b41ac24a32c43ef92cd41ffff422a`
 - traces: 25/25
 - scorecard hash: `sha256-72cf2a3f631c3c3e3615a37a4e19035a385458f9af40946a501cf8b2fb72c42a`
-- explainable scorecard hash: `sha256-da8e030e59ba059fd683fb3694b31127ba7fa0337e9db87c96203c9e26d3c705`
+- explainable scorecard hash: `sha256-b74ccbcd7e99880784b4afdc2e2f17fc5df150539746d779eb39b17a81a14754`
 
 ## Explainable Scorecard
 - learned_route was worse than graph_prior_only on 4/25 validated traces.

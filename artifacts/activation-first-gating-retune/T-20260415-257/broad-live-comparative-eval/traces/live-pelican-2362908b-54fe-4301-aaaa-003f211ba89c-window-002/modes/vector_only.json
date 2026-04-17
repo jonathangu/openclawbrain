@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-05a07367"
+      "pack-30a025fb"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-aa60618b94f564b00722cf219a6caff0e3b1d3ffdd03c2cb5f123e4b682554aa"
+    "scoreHash": "sha256-702b2f082b07267770c571f7bd172b17033495442d3a7ed83e564177fb162099"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-05a07367",
+      "activePackId": "pack-30a025fb",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-cd8c34e6178f9e951b962026dd567a65d7e4a507f200457309f1bbae017e17c8",
+      "selectionDigest": "sha256-ce75872a564e9b2db947181e1fac47530f1155b839b80636cc0f20459ac76799",
       "selectedContextIds": [
-        "pack-05a07367:event:2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-2:feedback",
-        "pack-05a07367:pointer-aware-init",
-        "pack-05a07367:workspace-init:16415817"
+        "pack-30a025fb:event:2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-2:feedback",
+        "pack-30a025fb:pointer-aware-init",
+        "pack-30a025fb:pointer-passive-expansion"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 2362908b-54fe-4301-aaaa-003f211ba89c-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"12078\", \"reply_to_id\": \"12075\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-31 14:10 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Also: lets check in again on the s3 files we are downloading. Recall th.... Related interaction: 2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-2:interaction.",
         "Pointer-aware init keeps fast boot first with anchors memory/2026-03-31-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=100). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 6:14 AM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more."
       ],
-      "eventExportDigest": "sha256-e36cbf53b0f25cdfe60552deef8003b27a028f883c83fc8baadae4d89cbe7c5f",
+      "eventExportDigest": "sha256-30e1e36d4680bcd51d3e4538ac464c7bfec4a80797a9b4d5804b17e0f1c1f59a",
       "expectedContextPhrases": [
         "/Users/guclaw/repos/quant-research"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.606,
-        "routeSelectionMs": 5.193,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.41,
+        "totalMs": 7.222,
+        "routeSelectionMs": 4.524,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.697,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

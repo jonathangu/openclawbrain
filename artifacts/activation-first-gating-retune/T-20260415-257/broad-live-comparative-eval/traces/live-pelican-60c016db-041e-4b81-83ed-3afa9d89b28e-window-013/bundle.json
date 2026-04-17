@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T10:12:39.924Z",
   "traceHash": "sha256-7e2a057c58ceb7779d689dcd4238dfbc3207e352fc341de03ac7a06d504301da",
   "fixtureHash": "sha256-737f6561e785d3bc05d3981f983d5cf16785ca63d2f46199fbc1baaeee1f2b69",
-  "scoreHash": "sha256-04ca7aebd9b4fb2117794feccac60796a45e7712f701d46148db40d37256c2b8",
+  "scoreHash": "sha256-ca02fc8ee0e330519edc646edd41cfd50f6b399d9f35f0b6971ce0e47eedb768",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.036,
+            "totalMs": 0.04,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.036,
+            "otherMs": 0.04,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-d5da88c6"
+          "pack-5092eb30"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-bdaa96eca600d4c11a73b6fe9df8ec48da29b6d703b864c84ec803aa55c78837"
+        "scoreHash": "sha256-6c45f35e8234a76ae97cc2b6ffa4630925e36e31f920698483c54a6bea903805"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-d5da88c6",
+          "activePackId": "pack-5092eb30",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-b1f70124f45b83e78d32f4d0de7ef12d63202a3d7788857b9a69332897989337",
+          "selectionDigest": "sha256-c06bc3b5f92b1d6498ba520463e4639ef3ce99194a47c3bbc60ea375356b16ea",
           "selectedContextIds": [
-            "pack-d5da88c6:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback",
-            "pack-d5da88c6:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback",
-            "pack-d5da88c6:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:feedback"
+            "pack-5092eb30:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback",
+            "pack-5092eb30:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback",
+            "pack-5092eb30:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:38 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes start the wave! Merge it! Ship it!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:08 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Do all improvements! Use codex. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:interaction."
           ],
-          "eventExportDigest": "sha256-152c2a66b7c043a11420997d7fbd88eda9c59c6a2dfdef6214dd3a384e1d02ac",
+          "eventExportDigest": "sha256-794dedbbc26553198416e4965ce79cd15e20257112917b501ed2ea9555854381",
           "expectedContextPhrases": [
             "/Users/guclaw/worktrees/pelican/3"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.292,
-            "routeSelectionMs": 4.493,
+            "totalMs": 10.845,
+            "routeSelectionMs": 5.898,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.798,
+            "otherMs": 4.946,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-d5da88c6"
+          "pack-5092eb30"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-f1615ac8cd9c909a2f721d4ae71144e931bb796296a72c8bfd1c2b3508257ce1"
+        "scoreHash": "sha256-7476e8f74507d9b34507030649f8f383f73c2473f16b026e619403e904bf0733"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-d5da88c6",
+          "activePackId": "pack-5092eb30",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-b9e502a389eef8673f620ee98e6bdf501563393c0c9036e50a251f424592de18",
+          "selectionDigest": "sha256-6bde9ed71e98c03d5f0f1fa79609216052a902c2016a60def68b54f709df9737",
           "selectedContextIds": [
-            "pack-d5da88c6:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback",
-            "pack-d5da88c6:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction",
-            "pack-d5da88c6:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
+            "pack-5092eb30:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback",
+            "pack-5092eb30:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction",
+            "pack-5092eb30:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:38 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes start the wave! Merge it! Ship it!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction.",
             "Interaction operator_override on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed. Message: cue-5-seed-message.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-8a258a2db863423f02128a54017aca435191d6a8511713407cc35d86a7b24fa5",
+          "eventExportDigest": "sha256-7b4dded5c62982aecc686341f5e9fcd8952864537536c740d1bb7447b969132e",
           "expectedContextPhrases": [
             "/Users/guclaw/worktrees/pelican/3"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.205,
-            "routeSelectionMs": 4.512,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.692,
+            "totalMs": 8.246,
+            "routeSelectionMs": 5.173,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.071,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-f748b899"
+          "pack-72011b03"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-f748b899",
-        "frozenEvalRouterIdentity": "pack-f748b899:route_fn",
+        "frozenEvalPackId": "pack-72011b03",
+        "frozenEvalRouterIdentity": "pack-72011b03:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-8c6b072cb4a619b5c09fb110f5b74447b688d95bf2632adf22a959ccf9fbf570"
+        "scoreHash": "sha256-ef1f54bdbfa95b3b8736f6c9d03768c45fdf41d9ca8164f2a304d01a0a8eeed0"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-f748b899",
+          "activePackId": "pack-72011b03",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-17abc365a53b43fc8037192ff724352357a7969d983547002e7787c16a2dca83",
+          "selectionDigest": "sha256-ad78b1f8d4c278af6298c82ce554db17efdc96ff27dc5b233c88250adbe219c6",
           "selectedContextIds": [
-            "pack-f748b899:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback"
+            "pack-72011b03:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:38 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes start the wave! Merge it! Ship it!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-34d93d86a0d325cb59b7b70fdcb45942324b5d4ec3c6b0846704f6f98acebb4b",
+          "eventExportDigest": "sha256-f6a2a9819202f532948aa3afbd63fa22c2ad02b8b392c1494179542be351572b",
           "expectedContextPhrases": [
             "/Users/guclaw/worktrees/pelican/3"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.005,
-            "routeSelectionMs": 5.558,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.445,
+            "totalMs": 9.921,
+            "routeSelectionMs": 6.059,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.861,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-509b60ca0383424204ce1ac5aacf49cb2ceb2618920fb6f6fea373b6a0a96f13"
+  "bundleHash": "sha256-4f4af7365e979692efe2093d0bccd428ef9b2577553d450a227a9f4d04f86dab"
 }

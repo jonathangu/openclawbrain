@@ -5,7 +5,7 @@
   "packType": "base",
   "compatibleRuntimeVersion": "openclawbrain-runtime@0.4.43",
   "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-  "createdAt": "2026-04-17T21:25:23.491Z",
+  "createdAt": "2026-04-17T22:20:07.007Z",
   "training": {
     "totalRows": 94,
     "eligibleRows": 94,
@@ -152,7 +152,13 @@
       "CONTINUE",
       "STOP_LOCAL",
       "STOP"
-    ]
+    ],
+    "interventionHead": {
+      "decisionPolicyMode": "gating_only_v1",
+      "freezeCandidateSelection": true,
+      "freezeStopLocal": true,
+      "featureProfile": "resume_gate_v1"
+    }
   },
   "featureNormalizers": {
     "contract": "cold_start_router_feature_normalizers.v1",

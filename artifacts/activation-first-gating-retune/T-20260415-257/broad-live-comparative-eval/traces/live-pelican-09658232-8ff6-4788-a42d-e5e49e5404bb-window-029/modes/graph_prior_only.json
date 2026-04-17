@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-cfd389c4"
+      "pack-54170805"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-d3c8b364b5f22b3899e08d95e0236fa4183a7aa27feab8ac23103b1f28f95137"
+    "scoreHash": "sha256-44bc48c22a4530c79c8286c87b80231be7e1f6449bea15f26a8f7a6d65a0bb10"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-cfd389c4",
+      "activePackId": "pack-54170805",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "graph_walk_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-06ff7d4428d5c0225ec6aafaa555eff3b2b421a4cb709e4505e2791cec35a47c",
+      "selectionDigest": "sha256-27eeeaec6a8cbe89707427ba87419796288eaceb3ff7f95b1a5135817ae364d2",
       "selectedContextIds": [
-        "pack-cfd389c4:pointer-aware-init",
-        "pack-cfd389c4:workspace-init:02e33be9",
-        "pack-cfd389c4:workspace-init:16415817"
+        "pack-54170805:pointer-aware-init",
+        "pack-54170805:workspace-init:02e33be9",
+        "pack-54170805:workspace-init:16415817"
       ],
       "selectedContextTexts": [
         "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
         "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=4, outbound=100). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 6:14 AM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=4, outbound=106). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:30 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
       ],
-      "eventExportDigest": "sha256-2b97e4f4f90c1db57b58f7a069be64ee84dc80298d2a13fc62ec06cf756f6b12",
+      "eventExportDigest": "sha256-13d2b7e2bf44a8df15c831e025444da3567ae528bd52161572ad65992f9bfc72",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research/weekly_retrain.sh\"}",
         "weekly_retrain.sh"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.189,
-        "routeSelectionMs": 4.551,
+        "totalMs": 8.325,
+        "routeSelectionMs": 5.169,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.636,
+        "otherMs": 3.154,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

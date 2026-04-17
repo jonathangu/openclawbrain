@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-87beaffe"
+      "pack-4f4ac5d8"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-1a2ba857bbfef01b3addc7361b3f6f1fe7b70ac125642e20adc1c5c39e50d5d8"
+    "scoreHash": "sha256-70dafd491081b6a97a930dd23e9fde3730ce9ba419bd3190b57c190d183ffbcc"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-87beaffe",
+      "activePackId": "pack-4f4ac5d8",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-1471b806a859fb2d776b9e0dfdace93d671667ebea9cce84d091cf29c92f306c",
+      "selectionDigest": "sha256-4023127b0c17acd6cfdb7bf76f11a55c3d1625100e2f4b596a781e539c10a419",
       "selectedContextIds": [
-        "pack-87beaffe:pointer-aware-init",
-        "pack-87beaffe:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
-        "pack-87beaffe:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-2:feedback"
+        "pack-4f4ac5d8:pointer-aware-init",
+        "pack-4f4ac5d8:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
+        "pack-4f4ac5d8:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
         "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
         "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Hardened. What I changed - Kept the earlier fix: core ticker rows are no longer dropped just because options chain is partial. - Added a **fail-closed guardrail** for the core-36 slice: - if the latest core-36 snapshot has any ticker with - `options_collection_partial_flag > 0`, or - `options_collection_failed_ticker_count > 0`, or - `options_collection_incomplete_ticker_count > 0` - the proof lane now **returns non-zero** and surfaces the exact tickers instead of quietly publishing a degrade.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
         "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Status: **fixed/proof-green** Commit: **181808d938c5a7e1376b34c289323aeaffbe0886** Message: `pelican: guard latest feature slice coverage` Exact proof: - Freshest slice in `full_feature_matrix_v4_refresh.parquet` is **2026-04-07 19:30:21** - That slice has **35 tickers**, not 36 - Missing core ticker: **TSM** - The immediately previous slice at **2026-04-07 19:30:20** has **36 tickers** - Big-date / earnings features in the latest 35-row slice are fully populated: - `days_to_earnings`: **35/3.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-629c69ce1068de852c29004bcedb8e53348b0dd837791d590f1329da87c8d1c4",
+      "eventExportDigest": "sha256-380d6405c3a9363429ab5e0d540fc850222ee5dfeb4c129468fb41ca2d86c572",
       "expectedContextPhrases": [
         "/36",
         "/test_rebuild_feature_matrix_coverage.py",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.268,
-        "routeSelectionMs": 5.554,
+        "totalMs": 9.485,
+        "routeSelectionMs": 6.498,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.712,
+        "otherMs": 2.985,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

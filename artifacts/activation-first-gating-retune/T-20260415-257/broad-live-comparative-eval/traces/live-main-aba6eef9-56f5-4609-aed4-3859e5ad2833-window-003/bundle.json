@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-06T09:13:26.473Z",
   "traceHash": "sha256-7206817fbe9864fa741e2aac4263783623734861273e6c92294a7e71e4bda31f",
   "fixtureHash": "sha256-3fcf85ac262f6dca9a6b48603643e7ca5bbe3663229b7fc7238b9b7fb3303591",
-  "scoreHash": "sha256-1509784bccec8483d51d4ffe51542ad4f56d74d1e7b71b0e0f3e409cc85aa268",
+  "scoreHash": "sha256-ad23073f0bd03830f361a707a522b2e928eb7098006849fcf5c1b07264664065",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.022,
+            "totalMs": 0.034,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.022,
+            "otherMs": 0.034,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-cfa763c4"
+          "pack-f9dd2db9"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-5887ff9e0b2f898cf0bd11970832996dc8f1c493af520ba2e46560bc4e19425b"
+        "scoreHash": "sha256-acd4e59ae27b513e5e302eee5729cda42c487b16d076be8aee4a189a7af4c79f"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-cfa763c4",
+          "activePackId": "pack-f9dd2db9",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-00a391468ea1b4c1410b5670f9a176cbf7bb9372579ab6174fa059bfd80ba24c",
+          "selectionDigest": "sha256-ea898d1d661e2fc46b959f87063d5879049a54ffa44f678509229b22b0ab2122",
           "selectedContextIds": [
-            "pack-cfa763c4:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:feedback",
-            "pack-cfa763c4:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:feedback",
-            "pack-cfa763c4:pointer-aware-init"
+            "pack-f9dd2db9:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:feedback",
+            "pack-f9dd2db9:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:feedback",
+            "pack-f9dd2db9:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session aba6eef9-56f5-4609-aed4-3859e5ad2833-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"22357\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-04-06 02:10 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Are we able to install the latest openclawbrain? Is the cold start prior working? Are we able to \"rebase\"?. Related interaction: aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:interaction.",
             "Teaching feedback on live-session session aba6eef9-56f5-4609-aed4-3859e5ad2833-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"22355\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-04-06 02:07 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Harvest all good stuff. Clean up. Related interaction: aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-5f8e7827e4735c7a9721aa50904934edf52d6581426fa778869ac4d7fe603272",
+          "eventExportDigest": "sha256-1f6034ec41d55a46cca372e3414bc4d88bcbe575c31e568f990014a17b635cda",
           "expectedContextPhrases": [
             "T-20260406-150",
             "T-20260406-153",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.677,
-            "routeSelectionMs": 4.215,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.46,
+            "totalMs": 7.372,
+            "routeSelectionMs": 4.649,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.722,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-cfa763c4"
+          "pack-f9dd2db9"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-59b5cad539cf6c4c16b752b95af308b1584fc68abc36b420e86df2d5c52bb142"
+        "scoreHash": "sha256-d158b23e411b4238a4a12f58fe8fd804f7cd6ad6de13333766cfb031fd6b0837"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-cfa763c4",
+          "activePackId": "pack-f9dd2db9",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-ad811a14a8ed19a7f0ddce2de5febc21539ddd52568f83ef98215517a38936ca",
+          "selectionDigest": "sha256-2ef8d637e327cf7c48614c016e288f6cfc43920ef04054216da950cee44ce7ed",
           "selectedContextIds": [
-            "pack-cfa763c4:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:feedback",
-            "pack-cfa763c4:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:interaction",
-            "pack-cfa763c4:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:feedback"
+            "pack-f9dd2db9:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:feedback",
+            "pack-f9dd2db9:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:interaction",
+            "pack-f9dd2db9:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session aba6eef9-56f5-4609-aed4-3859e5ad2833-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"22357\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-04-06 02:10 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Are we able to install the latest openclawbrain? Is the cold start prior working? Are we able to \"rebase\"?. Related interaction: aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:interaction.",
             "Interaction operator_override on live-session session aba6eef9-56f5-4609-aed4-3859e5ad2833-seed. Message: cue-4-seed-message.",
             "Teaching feedback on live-session session aba6eef9-56f5-4609-aed4-3859e5ad2833-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"22355\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-04-06 02:07 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Harvest all good stuff. Clean up. Related interaction: aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-8e907c72c9df3776f4bf5dce27daeaa83400689384a21dab37fe184d641ceafb",
+          "eventExportDigest": "sha256-a1e1bb223db797f9588da3c64b6a88e6179387c8677733f8bfdd294492dd67e5",
           "expectedContextPhrases": [
             "T-20260406-150",
             "T-20260406-153",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.735,
-            "routeSelectionMs": 4.238,
+            "totalMs": 7.363,
+            "routeSelectionMs": 4.594,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.496,
+            "otherMs": 2.767,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -366,12 +366,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-f43c6e3d"
+          "pack-1e723832"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-f43c6e3d",
-        "frozenEvalRouterIdentity": "pack-f43c6e3d:route_fn",
+        "frozenEvalPackId": "pack-1e723832",
+        "frozenEvalRouterIdentity": "pack-1e723832:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-10200ba29ec3e5b085b1c345401b7449bc1561c88eaa47fb5c5300bfac689275"
+        "scoreHash": "sha256-bc18f4fbddffa0254beb93dd95181b569b87746dc111b7ab914e820810a402d4"
       },
       "turns": [
         {
@@ -405,7 +405,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-f43c6e3d",
+          "activePackId": "pack-1e723832",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -415,14 +415,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-7c380d9b520d91d2bf4ac8abdf1d3e48cff6c5cce42eb27e625e698da2be784f",
+          "selectionDigest": "sha256-27a65edf9e753f08ffcbb6bd288edce78a92f79b69e2810d62582f593f1de3de",
           "selectedContextIds": [
-            "pack-f43c6e3d:pointer-aware-init"
+            "pack-1e723832:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-d1fe7ea513bc02de6d29f2cf7d96462f0df2d93619468e336097e7df05b99411",
+          "eventExportDigest": "sha256-25a80f45a4d8823945debbdfcc5f9ba55e9ab5e8cae8a90ae08e43293519aec9",
           "expectedContextPhrases": [
             "T-20260406-150",
             "T-20260406-153",
@@ -440,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.374,
-            "routeSelectionMs": 5.377,
+            "totalMs": 8.62,
+            "routeSelectionMs": 5.385,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.996,
+            "otherMs": 3.233,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-130cf15f9cdeba5ccf97ea27cc3288fc16e377069d74bfe39b5baa0df10c849f"
+  "bundleHash": "sha256-7e6ad5828ea4b1f8a0c33a32699b22f2239c7be8fe6bddcbee860f7edb0e54aa"
 }

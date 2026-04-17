@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-14T20:20:24.036Z",
   "traceHash": "sha256-9a8a2e6a63cc5912fb58030e76267c771c6d07671775935e13384022cf8e7c59",
   "fixtureHash": "sha256-d3b9199b3d1fba06ec6d727611496f93d92d13e1e28ef25defc3314d0f80c421",
-  "scoreHash": "sha256-636763ddcb191e78fb9e744c9498cc7b1c6da63f5c5e728fa6db36b526cd9273",
+  "scoreHash": "sha256-b6a0852c84ade6262a943675bc5afb2abcce0021b9e692a9888a3a9035b5607d",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.025,
+            "totalMs": 0.029,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.025,
+            "otherMs": 0.029,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -132,7 +132,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-7e575b6f"
+          "pack-540d6fcc"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-0710534667364396ad151a0ec49a5f092b5d4290101df8f8f516da762c6913b2"
+        "scoreHash": "sha256-0aba9f16014adac1303d3ee1d285bc1dc77fce2d304abe053ccc1378b970ddea"
       },
       "turns": [
         {
@@ -170,7 +170,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-7e575b6f",
+          "activePackId": "pack-540d6fcc",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -180,18 +180,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-231b7667990fc69e8435ede325fd76e2690336a5c6a6df7c297edd7798a9fbfa",
+          "selectionDigest": "sha256-52ccef2fcb35fe01baa5d4c72677eb63c275cbcc6086d1f5c0afd813c56ddaff",
           "selectedContextIds": [
-            "pack-7e575b6f:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:feedback",
-            "pack-7e575b6f:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback",
-            "pack-7e575b6f:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:feedback"
+            "pack-540d6fcc:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:feedback",
+            "pack-540d6fcc:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback",
+            "pack-540d6fcc:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 1:18 PM (America/Los_Angeles) / 2026-04-13 20:18 UTC. Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:interaction.",
             "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:interaction.",
             "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-c95e4fc5ed9b4354cc35535fb1b0a901567298d89dde4e7e5b7c5a04ee4460c8",
+          "eventExportDigest": "sha256-89272cdc87d5da96c55c7f2a9d7d775aae2dbf7fa2958453872d8c498c9f3495",
           "expectedContextPhrases": [
             "handled",
             "internally."
@@ -208,10 +208,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.037,
-            "routeSelectionMs": 4.44,
+            "totalMs": 7.748,
+            "routeSelectionMs": 4.865,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.596,
+            "otherMs": 2.882,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,7 +247,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-7e575b6f"
+          "pack-540d6fcc"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -275,7 +275,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-52daad826d09ff6b5bf44bb360d4f58dd28d3efb33e385e94e7d01413620a9b9"
+        "scoreHash": "sha256-b132e07d8a9d6584a95193cbcdacb979681853e04701646406e06c6626172b05"
       },
       "turns": [
         {
@@ -285,7 +285,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-7e575b6f",
+          "activePackId": "pack-540d6fcc",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -295,18 +295,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-fe4632bc9a6b0659abf5f2e8e42fa4e1705688d725c4f6542d2c5b170343ff9d",
+          "selectionDigest": "sha256-05422e149fe9584751ed15d4704a40846e19c83975dd9455ec9faf06af430848",
           "selectedContextIds": [
-            "pack-7e575b6f:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:feedback",
-            "pack-7e575b6f:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:interaction",
-            "pack-7e575b6f:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback"
+            "pack-540d6fcc:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:feedback",
+            "pack-540d6fcc:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:interaction",
+            "pack-540d6fcc:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 1:18 PM (America/Los_Angeles) / 2026-04-13 20:18 UTC. Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-82fbc0f952fc9dd2959b880dcc8b52f6944f99fb155e8c4f6a9b67a3f0f592b3",
+          "eventExportDigest": "sha256-b01c640ea06778847514948864ce8d8a766ca51c2f21a4cb52a9db0842cdca44",
           "expectedContextPhrases": [
             "handled",
             "internally."
@@ -323,10 +323,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.969,
-            "routeSelectionMs": 4.375,
+            "totalMs": 7.715,
+            "routeSelectionMs": 4.849,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.593,
+            "otherMs": 2.865,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -362,12 +362,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-647a717c"
+          "pack-3a3085d9"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-647a717c",
-        "frozenEvalRouterIdentity": "pack-647a717c:route_fn",
+        "frozenEvalPackId": "pack-3a3085d9",
+        "frozenEvalRouterIdentity": "pack-3a3085d9:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -391,7 +391,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-5a1dc306cd9825bca223e0d863ab00dc2da457a815bbea7656cc72d1146efda7"
+        "scoreHash": "sha256-f95a670db3238f562d45d109bed62a800aad2934cc2699644dc675b14d3bbae4"
       },
       "turns": [
         {
@@ -401,7 +401,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-647a717c",
+          "activePackId": "pack-3a3085d9",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -411,14 +411,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-75a54f08bc39954a682187419c95fc0e4652eac699591675f29aafaa7d5c98cf",
+          "selectionDigest": "sha256-0a7b93909688e8dcd57157aaee6dadbd9d84b404e8bb1d6506ae2c3cae900610",
           "selectedContextIds": [
-            "pack-647a717c:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback"
+            "pack-3a3085d9:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-b77bfc5aa416bd054d9a90153dbc5d37242123b93bde2d1fdb834f1cc58702ec",
+          "eventExportDigest": "sha256-fadd3c3050d4c21d9b8e9e793f608eebc608eac4a7196d85f65c5778499a690d",
           "expectedContextPhrases": [
             "handled",
             "internally."
@@ -434,10 +434,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.478,
-            "routeSelectionMs": 5.248,
+            "totalMs": 9.264,
+            "routeSelectionMs": 5.702,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.229,
+            "otherMs": 3.562,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -481,5 +481,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-da0ef73a2b114b081203e238715b20b809590cb0a18c224bd5e018a292715583"
+  "bundleHash": "sha256-b917fb89ca9edd78d6accd7b5beb3117f9ed1beeb1d7d3aff5c5a4c2f552625f"
 }

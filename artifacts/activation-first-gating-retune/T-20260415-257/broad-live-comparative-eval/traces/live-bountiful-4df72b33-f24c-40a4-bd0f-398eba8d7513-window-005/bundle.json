@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T03:29:45.582Z",
   "traceHash": "sha256-3abef879206da47064eddd47e25da3ed69b90db7cd3c4a8ad4966415b7f00bfc",
   "fixtureHash": "sha256-9918ac1f02e6942937a0c165ef4e1221b4c237d331f00ffb8e89f19fa2868433",
-  "scoreHash": "sha256-85f291112f20473deb150800813886debe3181291d8b373a20140738d4061451",
+  "scoreHash": "sha256-bb132b58610bfdc976829ee85e0c6544b2f09114c198f3d7f67510f345ab4d7a",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.046,
+            "totalMs": 0.028,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.046,
+            "otherMs": 0.028,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-1e7eca63"
+          "pack-99372ccd"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-683c632b5611023f2da9a40b2bfce45656718bafb4f722ec23353470792904bd"
+        "scoreHash": "sha256-2c6ec23700306c5917e296cd74bceb6865d048c19f86ce49412922f7620790df"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-1e7eca63",
+          "activePackId": "pack-99372ccd",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-18b0b5078b0cae6d61ce3f992d7f6af6ff72b9905eb446615bd900108338ede5",
+          "selectionDigest": "sha256-5fa33c0012e9d258f4fd2f09441947e7a71fb69af3e4b9673955c979fc335ff1",
           "selectedContextIds": [
-            "pack-1e7eca63:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
-            "pack-1e7eca63:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
-            "pack-1e7eca63:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback"
+            "pack-99372ccd:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
+            "pack-99372ccd:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
+            "pack-99372ccd:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: assistant: Got it, Jon — I’m updating the target: **zero “fruit” anywhere in the repo**, including **Drizzle table/type names and migration SQL** (no `fruits`, no `fruit_*`, nothing). Codex is already running on the /api/trades 500; after it lands I’ll do a hard `rg \"(?i)\\\\bfruit\\\\b|fruits\"` sweep (and if anything remains, I’ll run a Claude Code `--dangerously-skip-permissions` cleanup pass) until it’s truly gone.. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8098\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Get rid of the term fruit in code I do not want to see any fruit mentioned as function names or db .... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction.",
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:interaction."
           ],
-          "eventExportDigest": "sha256-d53c84c69c2f74a2c6b05c94305e56d9174b743b9e3a9daa28da81b939f49527",
+          "eventExportDigest": "sha256-c97e821fbd580495da58ba11dff56c5b6ff8b667bbbc08e539f46955a05b91af",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.918,
-            "routeSelectionMs": 5.175,
+            "totalMs": 7.91,
+            "routeSelectionMs": 5.066,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.74,
+            "otherMs": 2.841,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -251,7 +251,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-1e7eca63"
+          "pack-99372ccd"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-3b78eb8c39ccead68427064b8b1cf24e154a81cde3cad848885e0724e4d1c0a9"
+        "scoreHash": "sha256-2b132d971ec49c52d51cc5dc7ecaa6cc6acfe1de9e5a69e5f4454e33391a25ad"
       },
       "turns": [
         {
@@ -289,7 +289,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-1e7eca63",
+          "activePackId": "pack-99372ccd",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -299,18 +299,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-f80202a76f8cddf6d4252c1144a7b3805a310ec490c739aa093486d7160620f9",
+          "selectionDigest": "sha256-34b796ff8f2928b1e4cdd1904ddbc975c2cebf978860cf87df54dd888fa730ed",
           "selectedContextIds": [
-            "pack-1e7eca63:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
-            "pack-1e7eca63:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction",
-            "pack-1e7eca63:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback"
+            "pack-99372ccd:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
+            "pack-99372ccd:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction",
+            "pack-99372ccd:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: assistant: Got it, Jon — I’m updating the target: **zero “fruit” anywhere in the repo**, including **Drizzle table/type names and migration SQL** (no `fruits`, no `fruit_*`, nothing). Codex is already running on the /api/trades 500; after it lands I’ll do a hard `rg \"(?i)\\\\bfruit\\\\b|fruits\"` sweep (and if anything remains, I’ll run a Claude Code `--dangerously-skip-permissions` cleanup pass) until it’s truly gone.. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8098\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Get rid of the term fruit in code I do not want to see any fruit mentioned as function names or db .... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-984ab2d5ed4361e193be683b107ac3c14fa145e8a3c68ed38e3196347cfdca9a",
+          "eventExportDigest": "sha256-0727a36c619490fd26d48fadee2695683da68cda39e5653210c0fa26d4699b35",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.725,
-            "routeSelectionMs": 4.994,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.728,
+            "totalMs": 7.898,
+            "routeSelectionMs": 5.062,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.833,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -368,12 +368,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-022ce516"
+          "pack-7ce54780"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-022ce516",
-        "frozenEvalRouterIdentity": "pack-022ce516:route_fn",
+        "frozenEvalPackId": "pack-7ce54780",
+        "frozenEvalRouterIdentity": "pack-7ce54780:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-721150d7950ef7fc31f2e0135ab02764687558a9a1b19b35062fdae964a0f74b"
+        "scoreHash": "sha256-db38de7b8450c793b4065e15c323455bfaa98d6e373a66d632f638e0cd60be51"
       },
       "turns": [
         {
@@ -407,7 +407,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-022ce516",
+          "activePackId": "pack-7ce54780",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -417,14 +417,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-3fa77c805a5c6e3a11d7f1a400cf460ac01a29cabd2395f17da6c0b2ae121e3b",
+          "selectionDigest": "sha256-07afe105c896717e17748afca94b549ded435d040204de673eafbf43a21289ff",
           "selectedContextIds": [
-            "pack-022ce516:pointer-aware-init"
+            "pack-7ce54780:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-558d8253af11ad452874d39f8d1a41782efd29cbac2dd4042c03ed4fc8079c7c",
+          "eventExportDigest": "sha256-b29d7ac9695e0d905a35e17384f4665152565b1e5c0a3d1fd952396c5290ea25",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -442,10 +442,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.074,
-            "routeSelectionMs": 5.797,
+            "totalMs": 9.913,
+            "routeSelectionMs": 6.25,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.275,
+            "otherMs": 3.661,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -489,5 +489,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-d38468ce17eb29cbd74cbef90361404455460d15058d3975374f1d8886de261c"
+  "bundleHash": "sha256-4ccb85c9c81237ccd171a6461d5d67018b72e1bc37f6b9fb0748b38051f4b5a7"
 }

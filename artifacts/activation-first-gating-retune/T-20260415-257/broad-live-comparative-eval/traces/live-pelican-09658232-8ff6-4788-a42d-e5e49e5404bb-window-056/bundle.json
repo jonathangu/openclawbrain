@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-28T02:08:43.264Z",
   "traceHash": "sha256-3b194659082568a82c511a7152ca31a2b1b95a8940775e0d8501ad2641699262",
   "fixtureHash": "sha256-818172b532c3157150cdaf4f843fa921402c9f435a9b49f1a0bba05b616c0656",
-  "scoreHash": "sha256-162070798301dbb4ab6ca97fffd9298fc2779d2897df4418d34e2f18733890cf",
+  "scoreHash": "sha256-3db7663c64dc532e20685dad230c04a08a73ceee5b8949eb44602d9fe17cd2a3",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.031,
+            "totalMs": 0.037,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.031,
+            "otherMs": 0.037,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -132,7 +132,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-b5106df8"
+          "pack-3953ec39"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-6e4cd21fa07cbc1bb0cbadaf8668b6bde76eacf75e69469cd3329593f58bb398"
+        "scoreHash": "sha256-7467d734baa9ed1baa6e0f937ae8f0e6de64781c7124f9cfd4333ee757ba5e52"
       },
       "turns": [
         {
@@ -170,7 +170,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b5106df8",
+          "activePackId": "pack-3953ec39",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -180,18 +180,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-8167842979cf3e163cfd4c9a8bafc4a5a45453fd4202d7b12923d2ba25cb85f8",
+          "selectionDigest": "sha256-28a842fe9a03d02a9d0fea34a27e29aec2f9963cb4478d878caa3bab7d96e6d5",
           "selectedContextIds": [
-            "pack-b5106df8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
-            "pack-b5106df8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
-            "pack-b5106df8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
+            "pack-3953ec39:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
+            "pack-3953ec39:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
+            "pack-3953ec39:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:52:08 PST] Exec failed (kind-ott, signal SIGTERM) :: === Chunked uploads === full_feature_matrix_v4.parquet: 12 chunks 5/12 10/12 ✓ full_feature_matrix_v4.parquet (0 failures) embeddings_contextual.parquet: 16 chunks System: [2026-02-27 17:52:14 PST] Exec completed (swift-ca, code 1) :: failed for full_feature_matrix_v4.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for full_feature_matrix_v4.parquet (attempt 3/5), retrying... ⚠ Upload verify failed fo… Use o.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:38:10 PST] Exec completed (swift-cr, code 1) :: erify failed for embeddings_contextual.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for embeddings_contextual.parquet (attempt 3/5), retrying... ⚠ Upload verify faile… System: [2026-02-27 17:39:30 PST] Exec completed (quick-ba, code 0) :: ation is currently not supported. Please check the documentation for supported configurations. Instance: (us-west-1) Waiter InstanceRunning failed: An error occurred (Missing.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:47:45 PST] Exec failed (amber-ot, signal SIGTERM) :: === quant-research (non-archive, non-.git) === System: [2026-02-27 17:47:59 PST] Exec failed (tide-sum, signal SIGTERM) Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Good — instance is running in us-west-2. Let me check if the small files uploaded and then push the large files:\" } ``` Stop this. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-6c79728d4aff731c32ae09808b3d36b2b0e6a78c409e51cfcc8826ead834cc40",
+          "eventExportDigest": "sha256-a8c31704cca02c27c5d9d5e5dced8b6c910235ad50d790554d848d32a3ea7866",
           "expectedContextPhrases": [
             "//polygon-data-collection/",
             "//polygon-data-collection/pelican/"
@@ -207,10 +207,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.386,
-            "routeSelectionMs": 4.695,
+            "totalMs": 9.091,
+            "routeSelectionMs": 5.743,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.689,
+            "otherMs": 3.346,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -246,7 +246,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-b5106df8"
+          "pack-3953ec39"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -274,7 +274,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-06a4967f9db7a55741baaba9f8e36d00daefdb8ecb28c115da89fd272730c99e"
+        "scoreHash": "sha256-f66a50f99fea7fbde54154bd1ba498d89c933b18944d18aaef3e1db68f0d61f9"
       },
       "turns": [
         {
@@ -284,7 +284,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b5106df8",
+          "activePackId": "pack-3953ec39",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -294,18 +294,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-8fe4300e159dd86cbc167fbb31043e7e997898c22730b4bb753849de07cca874",
+          "selectionDigest": "sha256-473a7d8f5f147e194f9a3ed63fdfbb6d5468bbaa0cb4081ae1170536a2f333c3",
           "selectedContextIds": [
-            "pack-b5106df8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
-            "pack-b5106df8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction",
-            "pack-b5106df8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
+            "pack-3953ec39:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
+            "pack-3953ec39:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction",
+            "pack-3953ec39:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:52:08 PST] Exec failed (kind-ott, signal SIGTERM) :: === Chunked uploads === full_feature_matrix_v4.parquet: 12 chunks 5/12 10/12 ✓ full_feature_matrix_v4.parquet (0 failures) embeddings_contextual.parquet: 16 chunks System: [2026-02-27 17:52:14 PST] Exec completed (swift-ca, code 1) :: failed for full_feature_matrix_v4.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for full_feature_matrix_v4.parquet (attempt 3/5), retrying... ⚠ Upload verify failed fo… Use o.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:38:10 PST] Exec completed (swift-cr, code 1) :: erify failed for embeddings_contextual.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for embeddings_contextual.parquet (attempt 3/5), retrying... ⚠ Upload verify faile… System: [2026-02-27 17:39:30 PST] Exec completed (quick-ba, code 0) :: ation is currently not supported. Please check the documentation for supported configurations. Instance: (us-west-1) Waiter InstanceRunning failed: An error occurred (Missing.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-f1ed9def238c49e175bb77077a51e1b2ea74c90c799646f778f70f9731cf4ab7",
+          "eventExportDigest": "sha256-2a574ab4b3814618387b7edc909acf68e308186d8f449b1852fcfc283198a53f",
           "expectedContextPhrases": [
             "//polygon-data-collection/",
             "//polygon-data-collection/pelican/"
@@ -321,10 +321,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.291,
-            "routeSelectionMs": 4.649,
+            "totalMs": 9.157,
+            "routeSelectionMs": 5.797,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.64,
+            "otherMs": 3.357,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -360,12 +360,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-0040cc81"
+          "pack-84844ac2"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-0040cc81",
-        "frozenEvalRouterIdentity": "pack-0040cc81:route_fn",
+        "frozenEvalPackId": "pack-84844ac2",
+        "frozenEvalRouterIdentity": "pack-84844ac2:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -389,7 +389,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-8b38d11f588e31366b196ed6e07b92e9dce1cfdf2f800f5e9082bb914fc45a27"
+        "scoreHash": "sha256-bb917287cf74e8e74328562b0d6075d0436d6c36a8e716ed44a74af7f893ec7c"
       },
       "turns": [
         {
@@ -399,7 +399,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-0040cc81",
+          "activePackId": "pack-84844ac2",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -409,14 +409,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-442ea26cc907889366593ab4cb2aa4122a0203ce3136e7f025166309a15ec4da",
+          "selectionDigest": "sha256-bbf4eb67952bbf357695f051004264bcbe81995686876bcb751ffac6bf89e84a",
           "selectedContextIds": [
-            "pack-0040cc81:pointer-aware-init"
+            "pack-84844ac2:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-d0f2bc44cd7e89399665bdc3b8970548b8700090da4261685d3c15096bd4c563",
+          "eventExportDigest": "sha256-cde95abae2085480a84b6be6d766bdabfac6e7aa8596b64c2b7742d7dfd78990",
           "expectedContextPhrases": [
             "//polygon-data-collection/",
             "//polygon-data-collection/pelican/"
@@ -432,10 +432,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.882,
-            "routeSelectionMs": 5.533,
+            "totalMs": 11.104,
+            "routeSelectionMs": 6.889,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.348,
+            "otherMs": 4.214,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -479,5 +479,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-5b50748b81b16bd8942f38d61a13213f470bde16f0d438644aa961a908e4a665"
+  "bundleHash": "sha256-45fc90ac4e7a034accc16bec27134955b1ef9775e0a2f0ce9d813058866c819c"
 }

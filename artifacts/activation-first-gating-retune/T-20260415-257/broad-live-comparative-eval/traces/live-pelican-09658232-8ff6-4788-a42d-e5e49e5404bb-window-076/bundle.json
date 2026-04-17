@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-28T04:23:40.094Z",
   "traceHash": "sha256-e90ba91fa2d821b34e7d50d49031d2ca2e725469eba7413ed1eefcf887d0f975",
   "fixtureHash": "sha256-b66c57ad146f945a1113822081ae1bceec873a0abb858cfb6bafe580d07b22c8",
-  "scoreHash": "sha256-235bdacf642d88febfdaffde8f8559c55bfc5e5c87549821c64ca3b230bbfd31",
+  "scoreHash": "sha256-55840b90788bd2415dd037809e87cdd6212b495fb08456d44d6aafee8eafae85",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.031,
+            "totalMs": 0.044,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.031,
+            "otherMs": 0.044,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -132,7 +132,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-72202536"
+          "pack-f663a377"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-6b864141b2ea5361ce2df508a19aad79389dffd24d7385565de41ca65cc4a9eb"
+        "scoreHash": "sha256-f182e852513242e0cf4beba9ad30af83e3112cf6c8d21e7559f558f24f414c43"
       },
       "turns": [
         {
@@ -170,7 +170,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-72202536",
+          "activePackId": "pack-f663a377",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -180,18 +180,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-d99002fb981cab83a636ca5b5a1039275f4ff9726da14974906c395531f4010f",
+          "selectionDigest": "sha256-4f57c90e172f5bee1118368c3d24a6396243b43c6cd761ff5f4fb1f448d281f6",
           "selectedContextIds": [
-            "pack-72202536:pointer-aware-init",
-            "pack-72202536:workspace-init:f4134aaa",
-            "pack-72202536:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback"
+            "pack-f663a377:pointer-aware-init",
+            "pack-f663a377:workspace-init:f4134aaa",
+            "pack-f663a377:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
             "Top-priority boot input TOOLS.md selected by pointer-aware init (inbound=1, outbound=0). TOOLS.md — Local Notes Preferred lanes - Codex for code-heavy work - Claude Code for writing-heavy work - Review rendered public writing, not just diffs CLI rules - Codex binary: /opt/homebrew/bin/codex - Headless Codex: use codex exec, not bare codex - Default Codex lane: codex exec --full-auto -C /path/to/project \"p…",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: ab7888f2-c4e0-42fd-a395-e144d6e23634] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 1m22s • tokens 22.1k (in 16.3k / out 5.9k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim..... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-9cdd06974c425b3dfc629d88648d6de59bb65e53b0522bb3ee0ffec7abc7f2b4",
+          "eventExportDigest": "sha256-66ba4955941224643b802ae92e832994cab5e6470f17d7d87656e1e386fa846a",
           "expectedContextPhrases": [
             "/10",
             "torch"
@@ -207,10 +207,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.604,
-            "routeSelectionMs": 5.744,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.859,
+            "totalMs": 9.263,
+            "routeSelectionMs": 5.89,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 3.371,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -246,7 +246,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-72202536"
+          "pack-f663a377"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -274,7 +274,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-455145d982003048099e1edcd04e87b08f256c5b661f30905cdca22f980e6edd"
+        "scoreHash": "sha256-7228e110a8fec9e188d9878e7fe9d0327c22bb21502f65c8f6fcef2f02133abc"
       },
       "turns": [
         {
@@ -284,7 +284,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-72202536",
+          "activePackId": "pack-f663a377",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -294,18 +294,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-c825236c3c37aea6d44e3cb2622f2ba412143111f3ec47f75bed3cd2a3e71da3",
+          "selectionDigest": "sha256-90ce8e3f93f33a577b4ba3e6df2a07f38c38baf9ab714bc13ec855b6ecbd0d20",
           "selectedContextIds": [
-            "pack-72202536:pointer-aware-init",
-            "pack-72202536:workspace-init:f4134aaa",
-            "pack-72202536:workspace-init:0d01dda4"
+            "pack-f663a377:pointer-aware-init",
+            "pack-f663a377:workspace-init:f4134aaa",
+            "pack-f663a377:workspace-init:0d01dda4"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
             "Top-priority boot input TOOLS.md selected by pointer-aware init (inbound=1, outbound=0). TOOLS.md — Local Notes Preferred lanes - Codex for code-heavy work - Claude Code for writing-heavy work - Review rendered public writing, not just diffs CLI rules - Codex binary: /opt/homebrew/bin/codex - Headless Codex: use codex exec, not bare codex - Default Codex lane: codex exec --full-auto -C /path/to/project \"p…",
             "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=3, outbound=1). MEMORY.md — Long-Term Memory People - Patrick — Jon's 50/50 co-founder for Bountiful Garden; managed by @bbountiful_bot - Bihua Chen — Jon set up an OpenClaw starter kit for her Projects - Bountiful Garden — @bbountiful_bot, workspace workspace-bountiful/, group -5151316478 - Pelican — @ppelican_bot, workspace workspa…"
           ],
-          "eventExportDigest": "sha256-4f0f4241ba2e1184337bda64e661532d3dceb9007d3568bbd66b7fda4e28a50d",
+          "eventExportDigest": "sha256-a041e2af19e354b1a952b095b099da1e294247cd20e16f71c2b9928d53b5989b",
           "expectedContextPhrases": [
             "/10",
             "torch"
@@ -321,10 +321,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.885,
-            "routeSelectionMs": 4.98,
+            "totalMs": 8.838,
+            "routeSelectionMs": 5.592,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.903,
+            "otherMs": 3.243,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -360,12 +360,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-965f0ceb"
+          "pack-1aa28b2c"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-965f0ceb",
-        "frozenEvalRouterIdentity": "pack-965f0ceb:route_fn",
+        "frozenEvalPackId": "pack-1aa28b2c",
+        "frozenEvalRouterIdentity": "pack-1aa28b2c:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -389,7 +389,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-e3a4186060fd4035339519f4757fb1738fd31deae40ef05c99a29e2f480ef835"
+        "scoreHash": "sha256-978ff3b66dc53b690113c570e752295e63a3bfd4d42b5f67080891b605128539"
       },
       "turns": [
         {
@@ -399,7 +399,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-965f0ceb",
+          "activePackId": "pack-1aa28b2c",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -409,14 +409,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-e5e512543833e1a320840776a533864203bcf11e99b87d341b6d8b5e59af89a5",
+          "selectionDigest": "sha256-f37a98fa51b46d93918492602669258060763885b1c958e122341d76d0b6a44a",
           "selectedContextIds": [
-            "pack-965f0ceb:pointer-aware-init"
+            "pack-1aa28b2c:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-8aba42af0b4aa784ab5ce5a72f469dc1fe42a2d64b7152bdc0854669795eb168",
+          "eventExportDigest": "sha256-29a8422fd5e6f52f97133c9c1d3b2ca468785df36363e17dae035020bf58518a",
           "expectedContextPhrases": [
             "/10",
             "torch"
@@ -432,10 +432,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.33,
-            "routeSelectionMs": 5.748,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.581,
+            "totalMs": 10.918,
+            "routeSelectionMs": 6.794,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 4.122,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -479,5 +479,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-2b69b3d24eb6bc12aa5483362d18d91c4a76307460283028bd193f006cfd2156"
+  "bundleHash": "sha256-820b6e78f99e9fbad7e4220e17f0395b45731dd57389403b315aafbb64aba831"
 }

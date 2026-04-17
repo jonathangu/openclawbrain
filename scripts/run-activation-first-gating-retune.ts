@@ -18,7 +18,10 @@ import {
   type ColdStartRouterReplayGateLaneSummaryV1,
   type ColdStartRouterReplayGateVerdictV1,
 } from "../src/brain-core/cold-start-router-replay-gate.ts";
-import { trainColdStartRouterArtifactV1 } from "../src/brain-core/cold-start-router-trainer.ts";
+import {
+  trainColdStartRouterArtifactV1,
+  type ColdStartRouterInterventionHeadConfigV1,
+} from "../src/brain-core/cold-start-router-trainer.ts";
 import type { GraphifyRouteObjectiveTraceLabelLikeV1 } from "../src/brain-core/graphify-training-bridge.ts";
 import {
   buildPolicySupervisionRowV1,
@@ -56,6 +59,12 @@ const DEFAULT_WARM_START_ARTIFACT_DIR = path.join(
 );
 const CANDIDATE_SPECIFIC_BROAD_LIVE_RUN_NOTE =
   "Candidate-specific broad-live comparative eval executed for the just-trained gating-only candidate.";
+export const ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1: ColdStartRouterInterventionHeadConfigV1 = {
+  decisionPolicyMode: "gating_only_v1",
+  freezeCandidateSelection: true,
+  freezeStopLocal: true,
+  featureProfile: "resume_gate_v1",
+};
 
 export type ActivationFirstLaneKeyV1 = "feltResume" | "mustFire" | "mustNotFire";
 export type ActivationFirstCandidateStatusV1 = "pass" | "reject" | "architecture_verdict";
@@ -1547,6 +1556,7 @@ async function main(): Promise<void> {
     policySupervisionRows: policyRows,
     focusLaneWeights: harness.suggestedTrainingConfig.focusLaneWeights,
     rowTypeWeights: harness.suggestedTrainingConfig.rowTypeWeights,
+    interventionHead: ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1,
     outputDir: artifacts.candidateArtifactDir,
     routerIdentity: candidateRouterIdentity,
     createdAt: args.generatedAt,

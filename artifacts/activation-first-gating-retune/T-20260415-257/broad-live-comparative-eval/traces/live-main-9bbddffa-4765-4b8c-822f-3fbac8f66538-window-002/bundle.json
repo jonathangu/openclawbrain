@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-04T05:21:56.190Z",
   "traceHash": "sha256-d82a353da8dcdcb26be266a0d33a583d117e1f2075d582930b7ead32e3d715fb",
   "fixtureHash": "sha256-3e1329cac030395635745dbbbafec0f460454aaccbb63b26f155aed0ae65e7c6",
-  "scoreHash": "sha256-684b0331dbf85468cf386146a2301ec4ddb18c7e353666ff9165577a82591a5e",
+  "scoreHash": "sha256-d2ac74d40fa3c11430a020d53f8154cbc6ac5ff997492d1705cd904b0669ec12",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.026,
+            "totalMs": 0.029,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.026,
+            "otherMs": 0.029,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-e17f0814"
+          "pack-9cd863c1"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-23456c4ccd0ae705d725c74a88ce18368e750c5cc43b467f60480233ce9f3abd"
+        "scoreHash": "sha256-bee90d6e6df31c4fb9192a1d3d63f44ce6382abf02ebfea62f8b9c0e8e2fadd9"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e17f0814",
+          "activePackId": "pack-9cd863c1",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-d3cf9c1d7c1f389104b7c14ef8c88b8df85a82bd7b0dd00f72d65c6c8b2ad964",
+          "selectionDigest": "sha256-70e8cfc69c03bf33d14394ec675c75948ac28909e04809f2002a69e95500dde5",
           "selectedContextIds": [
-            "pack-e17f0814:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:feedback",
-            "pack-e17f0814:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:feedback",
-            "pack-e17f0814:pointer-aware-init"
+            "pack-9cd863c1:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:feedback",
+            "pack-9cd863c1:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:feedback",
+            "pack-9cd863c1:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed: assistant: Implemented Gate 4B canary guardrails. What changed: - Added a real canary activation guard in `src/brain-core/teacher-v3-contracts.ts` - canary rollout stays target-state and off by default - activation now requires replay summary, proof bundle, and rollback binding - guard state is operator-visible via proof-bundle summaries - Enforced the guard in `src/brain-store/store.ts` - insert/update paths now reject canary activation requests that lack the required bindings - Exposed canary rollout .... Related interaction: 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane B for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4b on branch t129-gate4b-canary-guards. Mission: implement the hard activation guardrails for Teacher v3 canary plumbing. Build the narrowest real guard path that blocks any canary activation unless replay, proof, and rollback binding are present. Keep canary operator.... Related interaction: 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-95d44100b593ee65abdbb5ea427b964aea33743b95d9b44585d7e9023a350f38",
+          "eventExportDigest": "sha256-097533df3bf92aa061634341ab6a8398c7de1f454f5b8dbde931b9d05dd894b7",
           "expectedContextPhrases": [
             "T-20260403-129",
             "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4b-canary-guards.md",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.378,
-            "routeSelectionMs": 4.828,
+            "totalMs": 8.277,
+            "routeSelectionMs": 5.396,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.548,
+            "otherMs": 2.88,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -251,7 +251,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-e17f0814"
+          "pack-9cd863c1"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-47aa2ed773c061a1b06c2b123fc82b4e6b60e0a3ede7e5c9904a78d3d0ec88cb"
+        "scoreHash": "sha256-159350d1dfbc5d0c3c255dcdfc06f0fd527dac5d97ab833f49ba7f2a28b0d9f6"
       },
       "turns": [
         {
@@ -289,7 +289,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e17f0814",
+          "activePackId": "pack-9cd863c1",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -299,18 +299,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-eb44cd06811a71cd2e5ba025baafcdc51a107395562fc61929ef42200d590304",
+          "selectionDigest": "sha256-53ec0e81c8aec9fdd39e934b9d63f28dcf78f5da0f50b4468a73a4ba86a9de22",
           "selectedContextIds": [
-            "pack-e17f0814:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:feedback",
-            "pack-e17f0814:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:interaction",
-            "pack-e17f0814:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:feedback"
+            "pack-9cd863c1:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:feedback",
+            "pack-9cd863c1:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:interaction",
+            "pack-9cd863c1:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed: assistant: Implemented Gate 4B canary guardrails. What changed: - Added a real canary activation guard in `src/brain-core/teacher-v3-contracts.ts` - canary rollout stays target-state and off by default - activation now requires replay summary, proof bundle, and rollback binding - guard state is operator-visible via proof-bundle summaries - Enforced the guard in `src/brain-store/store.ts` - insert/update paths now reject canary activation requests that lack the required bindings - Exposed canary rollout .... Related interaction: 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane B for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4b on branch t129-gate4b-canary-guards. Mission: implement the hard activation guardrails for Teacher v3 canary plumbing. Build the narrowest real guard path that blocks any canary activation unless replay, proof, and rollback binding are present. Keep canary operator.... Related interaction: 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-84aa6853f7b676259eb4d70bd7113d945eebdee3c52b810f43468277452c2c7b",
+          "eventExportDigest": "sha256-912a2f39579c882633062a94006791e85fb27dbb01e8130570cc44252aadc66b",
           "expectedContextPhrases": [
             "T-20260403-129",
             "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4b-canary-guards.md",
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.131,
-            "routeSelectionMs": 4.77,
+            "totalMs": 8.307,
+            "routeSelectionMs": 5.432,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.36,
+            "otherMs": 2.874,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -368,12 +368,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-8eadbcbf"
+          "pack-4a07186c"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-8eadbcbf",
-        "frozenEvalRouterIdentity": "pack-8eadbcbf:route_fn",
+        "frozenEvalPackId": "pack-4a07186c",
+        "frozenEvalRouterIdentity": "pack-4a07186c:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-0326283e36e93d9e74c97618539321a929c9098cf62d3d1169aa8cf5d2fd5ee6"
+        "scoreHash": "sha256-a18065e159e93f4ddd8327449a55ef790838a8bc3601e14a998ab521eef22a57"
       },
       "turns": [
         {
@@ -407,7 +407,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-8eadbcbf",
+          "activePackId": "pack-4a07186c",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -417,14 +417,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-4a7355a0b271b612c49b072c03cd8ee66710538160fc19c39859b8b68fcae18c",
+          "selectionDigest": "sha256-2fa782f56e29bd16b11b96b9356392d022fd073df59a5b4476f6e6d9e5cdd3f7",
           "selectedContextIds": [
-            "pack-8eadbcbf:pointer-aware-init"
+            "pack-4a07186c:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-6713c3699632cdc7d1ae03f93e2ba0437b85ba423ce4846bce6dc97ce5596af5",
+          "eventExportDigest": "sha256-4270725d796ccf2e58231e8a35c396f74ffb2eb459df8e6ffe578513c6cd43ac",
           "expectedContextPhrases": [
             "T-20260403-129",
             "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4b-canary-guards.md",
@@ -442,10 +442,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.095,
-            "routeSelectionMs": 5.91,
+            "totalMs": 10.466,
+            "routeSelectionMs": 6.569,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.184,
+            "otherMs": 3.896,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -489,5 +489,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-9fb0ddce2570a6bdc6c2785f541e7de0a9ec66c16dc9f025fe821b40bb10ff70"
+  "bundleHash": "sha256-e51b45e5679c4a5efc726cbc764a1d2cacea404c32c04728af52b1f1cf96a557"
 }

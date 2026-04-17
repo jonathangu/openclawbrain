@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-e17f0814"
+      "pack-9cd863c1"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-47aa2ed773c061a1b06c2b123fc82b4e6b60e0a3ede7e5c9904a78d3d0ec88cb"
+    "scoreHash": "sha256-159350d1dfbc5d0c3c255dcdfc06f0fd527dac5d97ab833f49ba7f2a28b0d9f6"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-e17f0814",
+      "activePackId": "pack-9cd863c1",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "graph_walk_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-eb44cd06811a71cd2e5ba025baafcdc51a107395562fc61929ef42200d590304",
+      "selectionDigest": "sha256-53ec0e81c8aec9fdd39e934b9d63f28dcf78f5da0f50b4468a73a4ba86a9de22",
       "selectedContextIds": [
-        "pack-e17f0814:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:feedback",
-        "pack-e17f0814:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:interaction",
-        "pack-e17f0814:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:feedback"
+        "pack-9cd863c1:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:feedback",
+        "pack-9cd863c1:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:interaction",
+        "pack-9cd863c1:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed: assistant: Implemented Gate 4B canary guardrails. What changed: - Added a real canary activation guard in `src/brain-core/teacher-v3-contracts.ts` - canary rollout stays target-state and off by default - activation now requires replay summary, proof bundle, and rollback binding - guard state is operator-visible via proof-bundle summaries - Enforced the guard in `src/brain-store/store.ts` - insert/update paths now reject canary activation requests that lack the required bindings - Exposed canary rollout .... Related interaction: 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:interaction.",
         "Interaction operator_override on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed. Message: cue-6-seed-message.",
         "Teaching feedback on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane B for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4b on branch t129-gate4b-canary-guards. Mission: implement the hard activation guardrails for Teacher v3 canary plumbing. Build the narrowest real guard path that blocks any canary activation unless replay, proof, and rollback binding are present. Keep canary operator.... Related interaction: 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-84aa6853f7b676259eb4d70bd7113d945eebdee3c52b810f43468277452c2c7b",
+      "eventExportDigest": "sha256-912a2f39579c882633062a94006791e85fb27dbb01e8130570cc44252aadc66b",
       "expectedContextPhrases": [
         "T-20260403-129",
         "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4b-canary-guards.md",
@@ -90,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.131,
-        "routeSelectionMs": 4.77,
+        "totalMs": 8.307,
+        "routeSelectionMs": 5.432,
         "promptAssemblyMs": 0.001,
-        "otherMs": 3.36,
+        "otherMs": 2.874,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },
