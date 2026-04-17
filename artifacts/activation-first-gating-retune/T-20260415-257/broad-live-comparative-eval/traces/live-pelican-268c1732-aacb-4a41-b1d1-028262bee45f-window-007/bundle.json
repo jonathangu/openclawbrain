@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-15T10:37:49.960Z",
   "traceHash": "sha256-f65f7ec4c1006917225f6f3df2297434078972719c9016d9a4a28c343601c090",
   "fixtureHash": "sha256-0846d04b26eef0a1a7c06190a5a1fd4f54e0a1ec3fcf3231ae0df203565132b6",
-  "scoreHash": "sha256-efd4590009fb9f0e9844160bdac4aab0f9e3825ce7a18973a239a8e945461363",
+  "scoreHash": "sha256-dc06b2c2ac9842c33a0bfc0d1e2598b3dcb6f662ed472d7e78ea47f72db099ff",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.027,
+            "totalMs": 0.038,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.027,
+            "otherMs": 0.038,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-5b301fc4"
+          "pack-c2fa456b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-879ca95c7a4910a780d6975e1b04042450a502bac0844e52e77ec085e9357fb1"
+        "scoreHash": "sha256-bc40f4432407a93fe6a37c4b65e6d3d21ab6b7633f140aa85ed284ef5cceaf5b"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-5b301fc4",
+          "activePackId": "pack-c2fa456b",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-09a0800db9576c83278b9b263265b0d166270d519650d8122f9742090170975a",
+          "selectionDigest": "sha256-632972a6ce93d6b41004dc2262d22a07b3e47615f9f6fe90b0213b0a4f29bdee",
           "selectedContextIds": [
-            "pack-5b301fc4:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-            "pack-5b301fc4:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback",
-            "pack-5b301fc4:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback"
+            "pack-c2fa456b:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
+            "pack-c2fa456b:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback",
+            "pack-c2fa456b:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19098\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:28 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Why not all four? Is there something structurally blocking us. Some calculation? Can you check logs. Is something broken. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:interaction.",
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19099\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:29 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Also why are we making all these small beans tiny trades. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-8235f7723f208c164e0e5151a6d87b4f1ff3f2b4b1fd1fc727229dc1b190a050",
+          "eventExportDigest": "sha256-a2a45a8fb6184244e5817341f75d53f8c8e32c2aab6f29d0431264f181689098",
           "expectedContextPhrases": [
             "/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.571,
-            "routeSelectionMs": 4.903,
+            "totalMs": 8.53,
+            "routeSelectionMs": 5.91,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.667,
+            "otherMs": 2.619,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-5b301fc4"
+          "pack-c2fa456b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-2cba9202be399d1b998c4843a70086a26d2e719df2060e493ba8e210bfb60b0a"
+        "scoreHash": "sha256-5c5d1d9c90751e0d695beaea35f0fc58834f7bea7ebfaabacaa1961ec9e1cacf"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-5b301fc4",
+          "activePackId": "pack-c2fa456b",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-cfe0bbde93a981b7614baa90f833aa5f9b77eafe4dac514e85f5e221e2b9c1e2",
+          "selectionDigest": "sha256-0b8c51ad9d8f97fc2ac7e480efce119111f505a47287daafc83ac42c08e85e32",
           "selectedContextIds": [
-            "pack-5b301fc4:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-            "pack-5b301fc4:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction",
-            "pack-5b301fc4:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback"
+            "pack-c2fa456b:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
+            "pack-c2fa456b:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction",
+            "pack-c2fa456b:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19098\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:28 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Why not all four? Is there something structurally blocking us. Some calculation? Can you check logs. Is something broken. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
             "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-4-seed-message.",
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:interaction."
           ],
-          "eventExportDigest": "sha256-9c3514b8da4a9fb2fc0ff3e9ff5ff393529d54e24f9de64376dee03f1014cb17",
+          "eventExportDigest": "sha256-2d2a5433af2ef1ecf4eb79ae3ace086b09d3ccfb81830e89db82e50bd5748a71",
           "expectedContextPhrases": [
             "/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.626,
-            "routeSelectionMs": 4.965,
+            "totalMs": 7.443,
+            "routeSelectionMs": 4.812,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.66,
+            "otherMs": 2.63,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-1384da29"
+          "pack-7b4effd0"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-1384da29",
-        "frozenEvalRouterIdentity": "pack-1384da29:route_fn",
+        "frozenEvalPackId": "pack-7b4effd0",
+        "frozenEvalRouterIdentity": "pack-7b4effd0:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-67bf2ae9e9e47933bef2b2693a0508ec2a68d9906e981479a039bac267877744"
+        "scoreHash": "sha256-7dd58a175d516788042e0b1a85c95a2e4001dd29509531883f8752c05fd4d7d6"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-1384da29",
+          "activePackId": "pack-7b4effd0",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-030e16aa1e0692e0c657a3fcdeb0304a002d1c04d911c42b2b69c3aa5fc5b109",
+          "selectionDigest": "sha256-529a490ac02fb56a8d7a7d4bb34934b1fe86d18f3c9805f5b2c7839ea9c09128",
           "selectedContextIds": [
-            "pack-1384da29:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback"
+            "pack-7b4effd0:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:interaction."
           ],
-          "eventExportDigest": "sha256-ed1a959ac301b44ce0348e69c1b7086512839c6453cc0c6f55000a18b4642bee",
+          "eventExportDigest": "sha256-07f1db7519df90b6a19420da846cea76f8451fb3f603aec60ff33f16b79d98fa",
           "expectedContextPhrases": [
             "/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.329,
-            "routeSelectionMs": 5.946,
+            "totalMs": 9.912,
+            "routeSelectionMs": 6.607,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.382,
+            "otherMs": 3.304,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-530fc286789910be0fa78b3425a5e58e7f17dfcaa22b44ca3d613070f7134ab7"
+  "bundleHash": "sha256-c49f958c1904d4868d90f3ba30ea0909f3af22de3e9dbcbbcbea7616b1e8a3b6"
 }

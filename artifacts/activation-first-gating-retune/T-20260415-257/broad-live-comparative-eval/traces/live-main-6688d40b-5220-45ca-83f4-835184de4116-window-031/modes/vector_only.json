@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-e84ba757"
+      "pack-5214551e"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-65de2ff1b8e0d70ca9ad6be827cc10254729c4a9f5cccc871bf214a15525855b"
+    "scoreHash": "sha256-e1034bfa15bee06be7800b2029f910648f36ddeb2e8af28ac92a152438fb32b5"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-e84ba757",
+      "activePackId": "pack-5214551e",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-f75e7b27bfb53521c9d29be4bf01af38610c5bc91f832e1882003c898fcb9720",
+      "selectionDigest": "sha256-0779ea54e677d2676c35a948d55d851c2b6c15430d0af5f438e6d6d43b31907f",
       "selectedContextIds": [
-        "pack-e84ba757:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
-        "pack-e84ba757:pointer-aware-init",
-        "pack-e84ba757:workspace-init:16415817"
+        "pack-5214551e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
+        "pack-5214551e:pointer-aware-init",
+        "pack-5214551e:workspace-init:02e33be9"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Run the following periodic tasks (only those due based on their intervals): - task-ledger-review: Reread TASKS.md. If an active unblocked principal task exists, reread MEMORY.md plus only the needed project files, then execute the best next ready step. Only report a real milestone, blocker, or completion; otherwise reply HEARTBEAT_OK. After completing all due tasks, reply HEARTBEAT_OK. Current time: Wednesday, April 15th, 2026 - 2:00 AM (America/Los_Angeles) / 2026-04-15 09:00 UTC. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction.",
         "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=106). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:30 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…"
       ],
-      "eventExportDigest": "sha256-b49a100e16c74ec17f83d18f5f6cd8bef8a05fb24459e32941409d6d8992a3fe",
+      "eventExportDigest": "sha256-6e32f92c45c868b6d9c6797399a1f072c8f5772f1fb43f46b124e3ad80aa6d21",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/memory/2026-04-15.md\"}"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.766,
-        "routeSelectionMs": 5.576,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 3.188,
+        "totalMs": 7.63,
+        "routeSelectionMs": 4.835,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.793,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

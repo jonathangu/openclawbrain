@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-27T21:00:00.252Z",
   "traceHash": "sha256-871a8d0a2f1d4e43acf8de9d8e6956ae4d1ca9dd0a419c5265c96970bba52722",
   "fixtureHash": "sha256-219199343b7c6d3ad1312b7304ed4e0c3741109cf5c94240ae657c56e05e2f48",
-  "scoreHash": "sha256-ef911039a7af036530d41e9bbf9d3f88dec71c6a069b0ca1dadff8da48b2e285",
+  "scoreHash": "sha256-0ca16841ae77965038d6d59bb0ae7a86ab79b11517721b1281df05b291374459",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.03,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.03,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -132,7 +132,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-a537706d"
+          "pack-ae10a1b5"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-5a650142eb67a28c37ab3e4c46d77fde6f94399d4cce29ec8ad3ec1e7ae59171"
+        "scoreHash": "sha256-066d1affdd0030a848f59f453c656ccfcf025bb6252afca5401f48d787840a94"
       },
       "turns": [
         {
@@ -170,7 +170,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-a537706d",
+          "activePackId": "pack-ae10a1b5",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -180,18 +180,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-135ac2861279f010f995d306c3da3bad0c55bd88909673992aba65bfeb20339e",
+          "selectionDigest": "sha256-75710054b6c046815b2f15c0df87902b3ed7fa63f4029627f040170cbef02e2a",
           "selectedContextIds": [
-            "pack-a537706d:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:feedback",
-            "pack-a537706d:pointer-aware-init",
-            "pack-a537706d:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-2:feedback"
+            "pack-ae10a1b5:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:feedback",
+            "pack-ae10a1b5:pointer-aware-init",
+            "pack-ae10a1b5:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed: assistant: Good — neither feature is in the current production GBM model. They were already filtered out during the v4 embeddings-only training. This is a clean removal — no model retrain needed, just code cleanup. Spawning Codex to strip `has_news` and `news_missing` from all files. ToolCall read {\"limit\": 10, \"offset\": 1, \"path\": \"/Users/guclaw/.openclaw/workspace-pelican/TOOLS.md\"}. Related interaction: 4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-aws-training.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
             "Teaching feedback on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed: assistant: Got the full picture. ~13 files, ~70+ references. This is a solid Codex job — scoped removal across the codebase. Let me also check the config and feature matrix to understand if these are in the trained models. ToolCall exec {\"command\": \"grep -n \\\"has_news\\\\|news_missing\\\" /Users/guclaw/.openclaw/workspace/quant-research/.trigger_config.json 2>/dev/null; echo \\\"---\\\"; grep -n \\\"has_news\\\\|news_missing\\\" /Users/guclaw/.openclaw/workspace/quan. Related interaction: 4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-b4bfc109a26e9919f6717f4bf468bb4ee6d054298abc4966aa642ff76a4ffa32",
+          "eventExportDigest": "sha256-71d420a87f77130bb8728b502fe8160f9811a310cf132e9709a7bad0ed5267f0",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace/quant-research",
             "/dev/null\","
@@ -208,10 +208,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.162,
-            "routeSelectionMs": 6.936,
+            "totalMs": 7.448,
+            "routeSelectionMs": 4.758,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.223,
+            "otherMs": 2.688,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,7 +247,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-a537706d"
+          "pack-ae10a1b5"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -275,7 +275,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-c4d04889e19966ef7afdf118d1015357787f890ce9b0fc6da283fe467b5de38d"
+        "scoreHash": "sha256-c103b8d08c639b872d2dcfc5fef1e6dd20ae58b22170a5a0f1e5d03570dcccda"
       },
       "turns": [
         {
@@ -285,7 +285,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-a537706d",
+          "activePackId": "pack-ae10a1b5",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -295,18 +295,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-66f1e0b47594ec772323390d00c8d3f8f684412732e6d2a1b3b51b21c876ddc9",
+          "selectionDigest": "sha256-bcc3f539465d51383d80a42dcc4924918c8905ad3d692eb9883b3d0ab314cac8",
           "selectedContextIds": [
-            "pack-a537706d:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:feedback",
-            "pack-a537706d:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:interaction",
-            "pack-a537706d:pointer-aware-init"
+            "pack-ae10a1b5:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:feedback",
+            "pack-ae10a1b5:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:interaction",
+            "pack-ae10a1b5:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed: assistant: Good — neither feature is in the current production GBM model. They were already filtered out during the v4 embeddings-only training. This is a clean removal — no model retrain needed, just code cleanup. Spawning Codex to strip `has_news` and `news_missing` from all files. ToolCall read {\"limit\": 10, \"offset\": 1, \"path\": \"/Users/guclaw/.openclaw/workspace-pelican/TOOLS.md\"}. Related interaction: 4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:interaction.",
             "Interaction operator_override on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed. Message: cue-3-seed-message.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-aws-training.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-2f62cf7afce27bd7d264397579da05da209e2ac4633b091a0d11d5a3f733403d",
+          "eventExportDigest": "sha256-ce2dd56e9b11a0033f977cc7237ad85fe335e156415b30c573edc727001d5ccd",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace/quant-research",
             "/dev/null\","
@@ -322,10 +322,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.015,
-            "routeSelectionMs": 5.79,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.223,
+            "totalMs": 7.529,
+            "routeSelectionMs": 4.824,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.704,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -361,12 +361,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-9a0469e2"
+          "pack-a2dd9b2a"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-9a0469e2",
-        "frozenEvalRouterIdentity": "pack-9a0469e2:route_fn",
+        "frozenEvalPackId": "pack-a2dd9b2a",
+        "frozenEvalRouterIdentity": "pack-a2dd9b2a:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -390,7 +390,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-f76faea7ca986f15970795fad889dcaa22734cde27fadfe990d6614ebfa37aba"
+        "scoreHash": "sha256-2a2d13e2b83ac0b263e7bf3fad98ea635d00f748623e34c830498a4a9b8643dc"
       },
       "turns": [
         {
@@ -400,7 +400,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-9a0469e2",
+          "activePackId": "pack-a2dd9b2a",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -410,14 +410,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-0e8dea44d726e273e231ad36d6f7c955bc928816d1210336d19a7a66a4501ba3",
+          "selectionDigest": "sha256-2614bbfa38c12e654786e1d93e82fad61a0f8dd505c304d589109c6313d68ea1",
           "selectedContextIds": [
-            "pack-9a0469e2:pointer-aware-init"
+            "pack-a2dd9b2a:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-aws-training.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-df502d75b56a2b803e22fd027b9d00291465a053b26f33a25e9459b7cd871fcd",
+          "eventExportDigest": "sha256-aeb797331207dcb72ba8d8b9e520f5f2ba00161190df39ecd8143d0a90e56e75",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace/quant-research",
             "/dev/null\","
@@ -433,10 +433,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 11.812,
-            "routeSelectionMs": 7.718,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 4.093,
+            "totalMs": 9.249,
+            "routeSelectionMs": 5.877,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.371,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -480,5 +480,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-e74e33f8f7255b074903d5bef45856cd650ab1d61c336c84a78708630ca492e3"
+  "bundleHash": "sha256-9b05b36e5de4270ba15210f582cb5e7df6643aaec2c67ab3565f50b8899992c1"
 }

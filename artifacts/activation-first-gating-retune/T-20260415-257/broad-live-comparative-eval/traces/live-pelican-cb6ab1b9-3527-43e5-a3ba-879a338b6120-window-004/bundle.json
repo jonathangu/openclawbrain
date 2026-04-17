@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-09T06:47:07.388Z",
   "traceHash": "sha256-f94a31a75f6f674deb4ed72bb4e73c45b90c17561480d33d8d146b93540cfdaf",
   "fixtureHash": "sha256-55ad28e1e1c0e357b90d71c5a61455a338c2e0a4ef3a7f6c092d3616039ed272",
-  "scoreHash": "sha256-d7eef573ed9578e9955a2495f14c81da867575b38425f45cb0da36c8cdc72e59",
+  "scoreHash": "sha256-50b4f68b82c87251145ac3f1efd33a1b71b30c64dfca7e966a23450da8a083f9",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.043,
+            "totalMs": 0.024,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.043,
+            "otherMs": 0.024,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-4f4ac5d8"
+          "pack-5244cfbd"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-70dafd491081b6a97a930dd23e9fde3730ce9ba419bd3190b57c190d183ffbcc"
+        "scoreHash": "sha256-385c6d6d1f46ab368fbee800fd6ab1ce513e15e603ff64693e10ee4334d6c264"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-4f4ac5d8",
+          "activePackId": "pack-5244cfbd",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-4023127b0c17acd6cfdb7bf76f11a55c3d1625100e2f4b596a781e539c10a419",
+          "selectionDigest": "sha256-fe39b738fb22bef4469e62f7d27c9f88288b99ef3f1b76de8c582ccb0cb23772",
           "selectedContextIds": [
-            "pack-4f4ac5d8:pointer-aware-init",
-            "pack-4f4ac5d8:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
-            "pack-4f4ac5d8:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-2:feedback"
+            "pack-5244cfbd:pointer-aware-init",
+            "pack-5244cfbd:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
+            "pack-5244cfbd:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Hardened. What I changed - Kept the earlier fix: core ticker rows are no longer dropped just because options chain is partial. - Added a **fail-closed guardrail** for the core-36 slice: - if the latest core-36 snapshot has any ticker with - `options_collection_partial_flag > 0`, or - `options_collection_failed_ticker_count > 0`, or - `options_collection_incomplete_ticker_count > 0` - the proof lane now **returns non-zero** and surfaces the exact tickers instead of quietly publishing a degrade.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Status: **fixed/proof-green** Commit: **181808d938c5a7e1376b34c289323aeaffbe0886** Message: `pelican: guard latest feature slice coverage` Exact proof: - Freshest slice in `full_feature_matrix_v4_refresh.parquet` is **2026-04-07 19:30:21** - That slice has **35 tickers**, not 36 - Missing core ticker: **TSM** - The immediately previous slice at **2026-04-07 19:30:20** has **36 tickers** - Big-date / earnings features in the latest 35-row slice are fully populated: - `days_to_earnings`: **35/3.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-380d6405c3a9363429ab5e0d540fc850222ee5dfeb4c129468fb41ca2d86c572",
+          "eventExportDigest": "sha256-28be7e8191f2be28588f50018cc80c862217f1d084be0c254c8c1a2b02874abc",
           "expectedContextPhrases": [
             "/36",
             "/test_rebuild_feature_matrix_coverage.py",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.485,
-            "routeSelectionMs": 6.498,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.985,
+            "totalMs": 7.729,
+            "routeSelectionMs": 5.063,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.665,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-4f4ac5d8"
+          "pack-5244cfbd"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-942f6dd60518d9c0b39607ea5266cbc6b5cf37d8683cfd151f248356a23c5c42"
+        "scoreHash": "sha256-e13aca932a9587930dc4ebeedeeccff4ad48cef05b79916ed373164627c7ffac"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-4f4ac5d8",
+          "activePackId": "pack-5244cfbd",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-bf0ae4d6e385b81b66bbd33543718a3588f4ad75690d12a873f4bd0799fe5792",
+          "selectionDigest": "sha256-9286e00a0cad1e44f5d7704aa8251aacc5c4215e6f6927725b594db3bce57f36",
           "selectedContextIds": [
-            "pack-4f4ac5d8:pointer-aware-init",
-            "pack-4f4ac5d8:workspace-init:f4134aaa",
-            "pack-4f4ac5d8:pointer-passive-expansion"
+            "pack-5244cfbd:pointer-aware-init",
+            "pack-5244cfbd:workspace-init:f4134aaa",
+            "pack-5244cfbd:pointer-passive-expansion"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
             "Top-priority boot input TOOLS.md selected by pointer-aware init (inbound=0, outbound=2). TOOLS.md — Pelican execution cheatsheet Defaults - If Jon says to edit files, use the local read / edit / write tools directly in the current Pelican session. - For approval-gated exec, prefer direct file-path commands the approver can inspect quickly. Write the script/file first, then run python3 path.py, bash path.s…",
             "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, docs/openclawbrain-upgrade-path.md, docs/quant-lessons.md, +6 more."
           ],
-          "eventExportDigest": "sha256-8ccb7b92f60b342fd9a9097c56a31c9481b1bbaf57e87e731f3a1477dbb297a7",
+          "eventExportDigest": "sha256-4f962abed636b1ac8d7967e09ebad7ce26ebb86a064803c2b1be26ec1c602917",
           "expectedContextPhrases": [
             "/36",
             "/test_rebuild_feature_matrix_coverage.py",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.716,
-            "routeSelectionMs": 5.695,
+            "totalMs": 7.742,
+            "routeSelectionMs": 5.081,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.019,
+            "otherMs": 2.659,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -366,12 +366,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-2aeb329d"
+          "pack-2de53c82"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-2aeb329d",
-        "frozenEvalRouterIdentity": "pack-2aeb329d:route_fn",
+        "frozenEvalPackId": "pack-2de53c82",
+        "frozenEvalRouterIdentity": "pack-2de53c82:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-b4813a9ea4e0458f0cdc3236429f9c7473746ad006a0c1732aba155ff0661b01"
+        "scoreHash": "sha256-97287761e969e72614923295e1c49797d77766c04d490b37d93b8fc8eeee9e20"
       },
       "turns": [
         {
@@ -405,7 +405,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-2aeb329d",
+          "activePackId": "pack-2de53c82",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -415,14 +415,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-88f038a7287b28d50d79488434bdebc53ebf354b73392dba163736edbd810612",
+          "selectionDigest": "sha256-b6720149ff9ab40caa7fb3d41de43c2887ec736c785637a01799e7774dac6914",
           "selectedContextIds": [
-            "pack-2aeb329d:pointer-aware-init"
+            "pack-2de53c82:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-a689d4f44c3cc293095137ef336432f56b57f27f328292108c19012b4d612aef",
+          "eventExportDigest": "sha256-1cc1b3cd09c5cd60ba46c549157fc9f5cc206c1ec1f70dd1cf44176667cbe604",
           "expectedContextPhrases": [
             "/36",
             "/test_rebuild_feature_matrix_coverage.py",
@@ -440,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 11.424,
-            "routeSelectionMs": 7.597,
+            "totalMs": 9.655,
+            "routeSelectionMs": 6.295,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.826,
+            "otherMs": 3.359,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-3f0546a09a23d0f1adc95a38652d14d7c540cb209c88a1b6fb311365b1d27da6"
+  "bundleHash": "sha256-82441119b2b535979ec501190d50821079d26ffdcbbaad8882cfb7b9454b2c2b"
 }

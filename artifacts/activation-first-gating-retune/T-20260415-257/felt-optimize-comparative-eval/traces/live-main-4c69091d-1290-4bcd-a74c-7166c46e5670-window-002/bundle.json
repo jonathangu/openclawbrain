@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-06T17:46:42.937Z",
   "traceHash": "sha256-44fbcb6576f6f004911009e236161c3fb072626b9bf71fadcefa3c9dfc1347dc",
   "fixtureHash": "sha256-178059882cfa4f40ce27919272b11654587c109af203796638882d20de0899c6",
-  "scoreHash": "sha256-30392c983f4fa9e0a395a0775dfc5dcb506be991d4f4751b43c2d0ef9cf87524",
+  "scoreHash": "sha256-721b2af3de7f18326933dccb357fe3cab540e9bad1d62ca0fabcfb7a61eec5bb",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.039,
+            "totalMs": 0.031,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.039,
+            "otherMs": 0.031,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-3f54a9a6"
+          "pack-b41efd45"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-349994b2b220203a828f5c6541249d609d2f394a2c52b1cca834d6f2997261e5"
+        "scoreHash": "sha256-9654c56ab1a195138e5b93fb272503df006166ea9c1626e722c9bd4530e0024f"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-3f54a9a6",
+          "activePackId": "pack-b41efd45",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-48538b14f9476f5bfc1fee8a9dc8869967edd79f3e3310ddfebb365ae8e674b4",
+          "selectionDigest": "sha256-13b55d16c8d98e4f14c3af72693381e575ba3d6ed5c990ebc2918180b8eb0e82",
           "selectedContextIds": [
-            "pack-3f54a9a6:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback",
-            "pack-3f54a9a6:pointer-aware-init",
-            "pack-3f54a9a6:workspace-init:02e33be9"
+            "pack-b41efd45:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback",
+            "pack-b41efd45:pointer-aware-init",
+            "pack-b41efd45:workspace-init:02e33be9"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260406-161 tool-action online symmetry — Lane B (online PG / tool-action priors). Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Read /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/launch-brief.md and /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-160/tool-action-symmetry-plan.md. Goal: make online updates for tool-action.... Related interaction: 4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
             "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=2, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…"
           ],
-          "eventExportDigest": "sha256-402631d38971dd5e9373686d0b687914fc7e0158a3ab566f054a1c82d1df1bcd",
+          "eventExportDigest": "sha256-dd78f080f2284358c4151605acb05b01127c6349c7e4b4097f78e5e162b15f21",
           "expectedContextPhrases": [
             "T-20260406-161",
             "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-b-online-pg.md",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.566,
-            "routeSelectionMs": 6.152,
+            "totalMs": 7.868,
+            "routeSelectionMs": 5.057,
             "promptAssemblyMs": 0.003,
-            "otherMs": 3.411,
+            "otherMs": 2.808,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -251,7 +251,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-3f54a9a6"
+          "pack-b41efd45"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-d87a7b71fcea298d4385b1cc02b39cbaa33508e267b9974276dfd171a66456ab"
+        "scoreHash": "sha256-ae7327afb2a149f4346afb3234cca525f067ed2f8184f1b21c17f0ab703ac007"
       },
       "turns": [
         {
@@ -289,7 +289,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-3f54a9a6",
+          "activePackId": "pack-b41efd45",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -299,18 +299,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-12e6a730264f96d84bc9c01152dbd2c4a1eba145c86b617f826ca33f41d6a622",
+          "selectionDigest": "sha256-dfc45faf47ba4dc3a8da68859f370ecf12e9f7f88a2077dd19e4637fd48c95c6",
           "selectedContextIds": [
-            "pack-3f54a9a6:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback",
-            "pack-3f54a9a6:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:interaction",
-            "pack-3f54a9a6:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-2:interaction"
+            "pack-b41efd45:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback",
+            "pack-b41efd45:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:interaction",
+            "pack-b41efd45:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260406-161 tool-action online symmetry — Lane B (online PG / tool-action priors). Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Read /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/launch-brief.md and /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-160/tool-action-symmetry-plan.md. Goal: make online updates for tool-action.... Related interaction: 4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:interaction.",
             "Interaction operator_override on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed. Message: cue-1-seed-message.",
             "Interaction operator_override on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-3688c7977253d49188414d13c0eb12f2778a33930e2e376f586a17c4cf9f971d",
+          "eventExportDigest": "sha256-90c498c7897c1b0f56b9d32e25d7a11fc25ebb17d6345d038c453b444b5c6e7c",
           "expectedContextPhrases": [
             "T-20260406-161",
             "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-b-online-pg.md",
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.775,
-            "routeSelectionMs": 6.322,
+            "totalMs": 7.816,
+            "routeSelectionMs": 4.966,
             "promptAssemblyMs": 0.003,
-            "otherMs": 3.45,
+            "otherMs": 2.847,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -368,12 +368,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-34fe604d"
+          "pack-a9c8b3ec"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-34fe604d",
-        "frozenEvalRouterIdentity": "pack-34fe604d:route_fn",
+        "frozenEvalPackId": "pack-a9c8b3ec",
+        "frozenEvalRouterIdentity": "pack-a9c8b3ec:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-644b7970efab667ec0c7fad9ede0ab992776d1b326f50e409429d42d7f3aae7a"
+        "scoreHash": "sha256-20cd2ee6187643596bce238b7ed0e49b3da95feb99eb8708a950a72bac12a0da"
       },
       "turns": [
         {
@@ -407,7 +407,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-34fe604d",
+          "activePackId": "pack-a9c8b3ec",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -417,14 +417,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-c0b6ef13bc380136f4947a5737cd399069fe9a0b05d40240cb0551900177260d",
+          "selectionDigest": "sha256-51dab051c15b86558896ed89e017a006a0c9eca3c37a03477f3770c1699e9793",
           "selectedContextIds": [
-            "pack-34fe604d:pointer-aware-init"
+            "pack-a9c8b3ec:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-05c2fc59c0608d0025382f6a08a03fa57df1eda936caa0c7f7ff899ca8d08f65",
+          "eventExportDigest": "sha256-7614490b2e6de2c4e7426935b1b0440956801e38284bf3313a94e1ef46e4dbcb",
           "expectedContextPhrases": [
             "T-20260406-161",
             "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-b-online-pg.md",
@@ -442,10 +442,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 12.301,
-            "routeSelectionMs": 8.088,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 4.211,
+            "totalMs": 10.12,
+            "routeSelectionMs": 6.71,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.408,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -489,5 +489,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-8db19db504e2db9be874ee77da87c6a20693aa765da47d8d9b2a05519398dbaf"
+  "bundleHash": "sha256-80605b0b36607229e56f4c2b006bcc0e85b46f19982664b69be92fb4854664b6"
 }

@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-28T06:31:30.849Z",
   "traceHash": "sha256-7a2236f637704fe149867dcf144d671dc7a13fa94e04f98252bb7a94efde6a70",
   "fixtureHash": "sha256-3dd95fcccf0fb105acb53dbd74c41b44d30300251f8ca1b0c6b6f7ee328de982",
-  "scoreHash": "sha256-2df5a9f45480b37e671b670a0426bfafe3fac9bf3c430cc0f125fbb870a6195f",
+  "scoreHash": "sha256-88ad2465fc4fd52947f185632742709e188417e3e285342564824c915248ef7b",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.044,
+            "totalMs": 0.033,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.044,
+            "otherMs": 0.033,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-9fec957c"
+          "pack-bc4bb4f0"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-0849e8dd85c129d0083d98b6caf6f6eca783a4747dd69ecca8bceed2e83e452e"
+        "scoreHash": "sha256-8bf02b850f28545355606b1a5afb51a9a661e5857f067c40860fd6a8811fd9ef"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-9fec957c",
+          "activePackId": "pack-bc4bb4f0",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-244dfb8721fd72d899105f70831e8252011097bd253e0da4e98cbad1a7ab43b5",
+          "selectionDigest": "sha256-35bbef275bd319687e01d330540718345b33930b29611afd725ae10222ef6496",
           "selectedContextIds": [
-            "pack-9fec957c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-            "pack-9fec957c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-            "pack-9fec957c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
+            "pack-bc4bb4f0:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+            "pack-bc4bb4f0:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+            "pack-bc4bb4f0:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: e44f8983-c431-41b9-b220-e56702ccc914] A cron job \"tft-bulletproof-check\" just completed successfully. Result: Interesting — no `model.tar.gz` yet, but there's a 120MB `.pkl` file uploaded at 8:17 PM PT (about an hour ago). No cloud-init log, which means training is likely still in progress — the pkl is probably an intermediate checkpoint or one of the ensemble members. Let me check if there's any more recent activity. Stats: runtime 24s • tokens 870 (in 7 / out 863) • prompt/cache.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 843fbf03-ac7e-4872-8641-fea100aa31ce] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the extraction pipeline (last 2h). Findings — substantive messages from Jon (sender:8518484672): 1) DIRECTIVE → Feature parity & days_to_exp handling [REF] - Extracted scope + conditions: Enforce feature parity between training and inference. For time-varying features (eg. days_to_exp): only include at inference if it was used during training; if used, require .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 8e1afba8-ea54-47d4-a7ec-40323667551a] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Harvest summary — pelican-interaction-harvester (2026-02-27) I ran the extraction pipeline and classified Jon's substantive messages from this harvest. Most items were already captured in pending/docs; I added three small but actionable Gate items (script error-handling, monitor behavior, sequential-run pattern) and appended matching lessons to quant-lessons.md. Me.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-cac69a8f0290939c4f40d4b81c82e9cbf3cd55fef7bf8c871c5bcc3f43c81a3a",
+          "eventExportDigest": "sha256-5be53e6b3076099115c30729b51ade45bf7d217a64e455dd330efcd86e76fb40",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 11.692,
-            "routeSelectionMs": 7.473,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 4.216,
+            "totalMs": 7.52,
+            "routeSelectionMs": 4.792,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.726,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-9fec957c"
+          "pack-bc4bb4f0"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-eadb2e4598268bf841681d4250e9ccf01d56012b24aaf0475eddc202ee4326be"
+        "scoreHash": "sha256-d80a888fbeb0c4f76f2f487c7f1334c749d499dfe2bd1d0f53a86ac81e263da5"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-9fec957c",
+          "activePackId": "pack-bc4bb4f0",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-db4bd2829b4481809fdd955c02d9c7f4fb20192e2ec00f2fb2d8244bd20df397",
+          "selectionDigest": "sha256-121ea72cd126144210d9aea739a643c99163fdf46329ece5e23970f9f06845a3",
           "selectedContextIds": [
-            "pack-9fec957c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-            "pack-9fec957c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction",
-            "pack-9fec957c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
+            "pack-bc4bb4f0:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+            "pack-bc4bb4f0:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction",
+            "pack-bc4bb4f0:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: e44f8983-c431-41b9-b220-e56702ccc914] A cron job \"tft-bulletproof-check\" just completed successfully. Result: Interesting — no `model.tar.gz` yet, but there's a 120MB `.pkl` file uploaded at 8:17 PM PT (about an hour ago). No cloud-init log, which means training is likely still in progress — the pkl is probably an intermediate checkpoint or one of the ensemble members. Let me check if there's any more recent activity. Stats: runtime 24s • tokens 870 (in 7 / out 863) • prompt/cache.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
             "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-3-seed-message.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 843fbf03-ac7e-4872-8641-fea100aa31ce] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the extraction pipeline (last 2h). Findings — substantive messages from Jon (sender:8518484672): 1) DIRECTIVE → Feature parity & days_to_exp handling [REF] - Extracted scope + conditions: Enforce feature parity between training and inference. For time-varying features (eg. days_to_exp): only include at inference if it was used during training; if used, require .... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-2c26b388e4dd4b7b49393a965f9283aad10808194f926e094b4d337a772274e1",
+          "eventExportDigest": "sha256-8350f52ccc5d8e09169334b84cf80a8de59566fe4b2d33c2799c070f4d7ae4a1",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 11.607,
-            "routeSelectionMs": 7.39,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 4.214,
+            "totalMs": 8.041,
+            "routeSelectionMs": 5.223,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.816,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-3d2492e7"
+          "pack-5983b25b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-3d2492e7",
-        "frozenEvalRouterIdentity": "pack-3d2492e7:route_fn",
+        "frozenEvalPackId": "pack-5983b25b",
+        "frozenEvalRouterIdentity": "pack-5983b25b:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-bcf1647b7a621ba01c52c78ddabdd2007ffc609792f271066d5435d7ffc7f646"
+        "scoreHash": "sha256-c085dc72a74944eb66ffa2b8c0a1813e870aaced55cc161425a2a46a39d245a4"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-3d2492e7",
+          "activePackId": "pack-5983b25b",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-4479ad87fd203c0e31acf7b0720ea28007204d5a349b55b54ebd69945f3effca",
+          "selectionDigest": "sha256-44c38cced40098e68d73b4cad604c82692872461f785138c05e43a1b8e311c66",
           "selectedContextIds": [
-            "pack-3d2492e7:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback"
+            "pack-5983b25b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: e44f8983-c431-41b9-b220-e56702ccc914] A cron job \"tft-bulletproof-check\" just completed successfully. Result: Interesting — no `model.tar.gz` yet, but there's a 120MB `.pkl` file uploaded at 8:17 PM PT (about an hour ago). No cloud-init log, which means training is likely still in progress — the pkl is probably an intermediate checkpoint or one of the ensemble members. Let me check if there's any more recent activity. Stats: runtime 24s • tokens 870 (in 7 / out 863) • prompt/cache.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction."
           ],
-          "eventExportDigest": "sha256-17b53706d720da340b25a5e17260f6a3aee703c8dd24695665565f92e41d4617",
+          "eventExportDigest": "sha256-50ef69a5d2c491a3de2deb16f5ad9b7e8bf35c3671213e0b8b80e756de9a7c8d",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 13.867,
-            "routeSelectionMs": 8.928,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 4.938,
+            "totalMs": 9.434,
+            "routeSelectionMs": 5.91,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.523,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-8f87f425b630df5a7b1373ab5d32e0b16ac9683e95bb430d129dd1e970b44f8a"
+  "bundleHash": "sha256-59b3023b5223219073f22e218794b9014aa1dab56f22321e368f7a52a5e124ff"
 }

@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-a537706d"
+      "pack-ae10a1b5"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-5a650142eb67a28c37ab3e4c46d77fde6f94399d4cce29ec8ad3ec1e7ae59171"
+    "scoreHash": "sha256-066d1affdd0030a848f59f453c656ccfcf025bb6252afca5401f48d787840a94"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-a537706d",
+      "activePackId": "pack-ae10a1b5",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-135ac2861279f010f995d306c3da3bad0c55bd88909673992aba65bfeb20339e",
+      "selectionDigest": "sha256-75710054b6c046815b2f15c0df87902b3ed7fa63f4029627f040170cbef02e2a",
       "selectedContextIds": [
-        "pack-a537706d:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:feedback",
-        "pack-a537706d:pointer-aware-init",
-        "pack-a537706d:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-2:feedback"
+        "pack-ae10a1b5:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:feedback",
+        "pack-ae10a1b5:pointer-aware-init",
+        "pack-ae10a1b5:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed: assistant: Good — neither feature is in the current production GBM model. They were already filtered out during the v4 embeddings-only training. This is a clean removal — no model retrain needed, just code cleanup. Spawning Codex to strip `has_news` and `news_missing` from all files. ToolCall read {\"limit\": 10, \"offset\": 1, \"path\": \"/Users/guclaw/.openclaw/workspace-pelican/TOOLS.md\"}. Related interaction: 4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:interaction.",
         "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-aws-training.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
         "Teaching feedback on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed: assistant: Got the full picture. ~13 files, ~70+ references. This is a solid Codex job — scoped removal across the codebase. Let me also check the config and feature matrix to understand if these are in the trained models. ToolCall exec {\"command\": \"grep -n \\\"has_news\\\\|news_missing\\\" /Users/guclaw/.openclaw/workspace/quant-research/.trigger_config.json 2>/dev/null; echo \\\"---\\\"; grep -n \\\"has_news\\\\|news_missing\\\" /Users/guclaw/.openclaw/workspace/quan. Related interaction: 4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-b4bfc109a26e9919f6717f4bf468bb4ee6d054298abc4966aa642ff76a4ffa32",
+      "eventExportDigest": "sha256-71d420a87f77130bb8728b502fe8160f9811a310cf132e9709a7bad0ed5267f0",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research",
         "/dev/null\","
@@ -88,10 +88,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 10.162,
-        "routeSelectionMs": 6.936,
+        "totalMs": 7.448,
+        "routeSelectionMs": 4.758,
         "promptAssemblyMs": 0.002,
-        "otherMs": 3.223,
+        "otherMs": 2.688,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

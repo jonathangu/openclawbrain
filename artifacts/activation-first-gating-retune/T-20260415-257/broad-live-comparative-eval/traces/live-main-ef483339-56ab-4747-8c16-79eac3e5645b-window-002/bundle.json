@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-04T05:23:16.710Z",
   "traceHash": "sha256-5348a011d171022e0b0662292622dd790b7dccb6110063ebe79c7f32c96cfe4b",
   "fixtureHash": "sha256-076839ee1f2768f5fb0e1a395f80dc28e7868b4aab96a489d4fbcd347a8fc395",
-  "scoreHash": "sha256-da349d29ea2da5805fff27c5affbc127d75bc229dd5e9645320bb140db3effa0",
+  "scoreHash": "sha256-235ac30766fcde76643acef2cf625ccd21fae6d2c86f28f41ecbe00c9969b536",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.027,
+            "totalMs": 0.035,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.027,
+            "otherMs": 0.035,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-23cb6019"
+          "pack-38ee0926"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-8afda1f3ed4180831be089e0ac2075364c22e78c926c92edb57efcb8d59f0f11"
+        "scoreHash": "sha256-8d207bab3298d02dcf6f83cc7e350fc402fd2bd3ccb0be4007c5dd5690c820d4"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-23cb6019",
+          "activePackId": "pack-38ee0926",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-4e27982e4699092800524535aeb0a663f6ef1a32a292c1601a3e2cca1097024c",
+          "selectionDigest": "sha256-c6fc44566738accb849a57b79e6779aa47103d46f95df9fd887ac16553703483",
           "selectedContextIds": [
-            "pack-23cb6019:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:feedback",
-            "pack-23cb6019:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:feedback",
-            "pack-23cb6019:pointer-aware-init"
+            "pack-38ee0926:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:feedback",
+            "pack-38ee0926:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:feedback",
+            "pack-38ee0926:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: assistant: Done. - Implemented the Teacher v3 canary contract as an explicit, bounded, rollback-bound target-state object. - Canary plans now require an explicit `rollbackKey`, stay `surfaceState: \"target\"`, `rolloutMode: \"off\"`, and `enabled: false`. - Added proposal-summary and diff surfacing for `canaryRollout` so the plan is inspectable in higher-level contract summaries. - Updated focused tests for the new shape and rollback-bound behavior. - Refreshed related docs to reflect the explicit rollback-.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction.",
             "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane A for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4a on branch t129-gate4a-canary-contracts. Mission: implement the explicit bounded canary plan objects for Teacher v3. Land the narrowest real contract/config surface for canary plans that is inspectable, off by default, and rollback-bound. This lane should own the ca.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:interaction.",
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-95555ead2aae31e693d350e3ad7090049ddd12430d713f762141e9c472bdee8e",
+          "eventExportDigest": "sha256-c5bad2bd4f8b8da575774633ba750083e4064819ea7f1da983462f2b5c17345c",
           "expectedContextPhrases": [
             "T-20260403-129",
             "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.251,
-            "routeSelectionMs": 5.368,
+            "totalMs": 7.719,
+            "routeSelectionMs": 5.025,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.881,
+            "otherMs": 2.692,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -251,7 +251,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-23cb6019"
+          "pack-38ee0926"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-bf9aef0a51ccd651c7fca2116c77c0f73de1372c5546b35b3a34e95b8edbee0d"
+        "scoreHash": "sha256-4587edc7859ee7419b45a17cfab31b99cc361508eb0991d569738105d4413396"
       },
       "turns": [
         {
@@ -289,7 +289,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-23cb6019",
+          "activePackId": "pack-38ee0926",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -299,18 +299,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-f81997517b42052e183c16053007e007f55a6f734fd95456f331bdebf59018ab",
+          "selectionDigest": "sha256-72817ecb7925d6f06e6af64f1cad9218d939dc148f51495150a5db17a193790d",
           "selectedContextIds": [
-            "pack-23cb6019:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:feedback",
-            "pack-23cb6019:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction",
-            "pack-23cb6019:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:feedback"
+            "pack-38ee0926:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:feedback",
+            "pack-38ee0926:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction",
+            "pack-38ee0926:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: assistant: Done. - Implemented the Teacher v3 canary contract as an explicit, bounded, rollback-bound target-state object. - Canary plans now require an explicit `rollbackKey`, stay `surfaceState: \"target\"`, `rolloutMode: \"off\"`, and `enabled: false`. - Added proposal-summary and diff surfacing for `canaryRollout` so the plan is inspectable in higher-level contract summaries. - Updated focused tests for the new shape and rollback-bound behavior. - Refreshed related docs to reflect the explicit rollback-.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane A for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4a on branch t129-gate4a-canary-contracts. Mission: implement the explicit bounded canary plan objects for Teacher v3. Land the narrowest real contract/config surface for canary plans that is inspectable, off by default, and rollback-bound. This lane should own the ca.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-1c732b42b2753ea8a35882e992ce025d555b6018660582cfcf3cd19b7b6135ef",
+          "eventExportDigest": "sha256-2190c5e74905d9f405875bdf06aed9162fa3ecee1aa96aa8d8b8c1555e58afc9",
           "expectedContextPhrases": [
             "T-20260403-129",
             "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.23,
-            "routeSelectionMs": 5.349,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.88,
+            "totalMs": 7.758,
+            "routeSelectionMs": 5.054,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.702,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -368,12 +368,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-628becba"
+          "pack-77ae95c7"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-628becba",
-        "frozenEvalRouterIdentity": "pack-628becba:route_fn",
+        "frozenEvalPackId": "pack-77ae95c7",
+        "frozenEvalRouterIdentity": "pack-77ae95c7:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-1aa0863193d992b9850fdd94a2478152bae4af289d8fcfd7973ba0dd7036d821"
+        "scoreHash": "sha256-faf08c18046fe2e79e382586f2396e2c606643fd91703ae55d53ee652ca43274"
       },
       "turns": [
         {
@@ -407,7 +407,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-628becba",
+          "activePackId": "pack-77ae95c7",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -417,14 +417,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-ec18ef04851854213fdf66cc0b571f7d91b9f5a1b002aeb66589d0b5a35a2e71",
+          "selectionDigest": "sha256-3900bff63e0f6c355f2b85ed6cac30e4a87535493b5a370149cf2c6f9210ca7f",
           "selectedContextIds": [
-            "pack-628becba:pointer-aware-init"
+            "pack-77ae95c7:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-b76af2e4792f71f4bb4556af75010a3d5f360dbdee950561713227a798ef6d38",
+          "eventExportDigest": "sha256-8969564121cf79e1578c4c3bba755ab9ce9a6c41d42ba79369666dcc6e80940b",
           "expectedContextPhrases": [
             "T-20260403-129",
             "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
@@ -442,10 +442,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.816,
-            "routeSelectionMs": 6.343,
+            "totalMs": 9.366,
+            "routeSelectionMs": 6.045,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.473,
+            "otherMs": 3.32,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -489,5 +489,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-f4ac893a2362af3b13154ea6c197bd7d8984b83cbcd79ea64e4c24f217fea7cd"
+  "bundleHash": "sha256-d4e6645065f8431ebbaf2409b49203d62c2500ec8241264051b1d435e166884b"
 }

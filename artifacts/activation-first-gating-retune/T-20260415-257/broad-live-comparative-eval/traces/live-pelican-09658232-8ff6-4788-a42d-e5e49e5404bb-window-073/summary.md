@@ -4,8 +4,8 @@
 - winner mode: `graph_prior_only`
 - trace hash: `sha256-4344938604e067860a8ae5cde1fca1ccd4f50c2742543e1ed5dbbab203e23d74`
 - fixture hash: `sha256-835a3394dac9a8b8023e71ca801b0ad86f7853cc9e826a2ddbfdbf3c56dd351e`
-- score hash: `sha256-24f38802f0fe6e5f76d52d9fc557219e48e5b36709274f89f5cbf5ab8abb086f`
-- bundle hash: `sha256-01c2053d18ece23f45a5df5fb31fb90c012ad65f0d76eeef454be78ef64e2b55`
+- score hash: `sha256-7717fcc322d3fb3f7e568b70417724a17522bc91c054179df853b4e92b5da16e`
+- bundle hash: `sha256-353261f72332d1400f084e3ebf63b35ebe44b264d15bf813546bd5f512e25453`
 
 ## Ranking
 | rank | mode | quality score |
@@ -45,14 +45,14 @@
 | mode | turns | compile ok | phrase hits | learned route turns | promotions | export turns | human labels | warnings | score hash |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | no_brain | 1 | 0 | 0/1 | 0 | 0 | 1 | 0 | 1 | sha256-95f6b633b00bd779574dbd24baa772f0fb4eebc8350ac2c13ddc54230525a7fa |
-| vector_only | 1 | 1 | 0/1 | 0 | 0 | 1 | 0 | 1 | sha256-37f88751b6dfdf39817dcd3e3d86f468675098565097198edb57de7542a7c4a9 |
-| graph_prior_only | 1 | 1 | 0/1 | 0 | 0 | 1 | 0 | 1 | sha256-9b879134fb835290d5a32ceae0c677759d423d157593dfc102d242933531ef23 |
-| learned_route | 1 | 1 | 0/1 | 0 | 0 | 1 | 0 | 2 | sha256-ce22b2049314da7188f976d43d8e97d8ca7b383cec60a65e18b5d194b8c4c357 |
+| vector_only | 1 | 1 | 0/1 | 0 | 0 | 1 | 0 | 1 | sha256-4d01f9ad004b1a732391e3e0057ed7e6684c290611ce04fd730eff9eb5365fd6 |
+| graph_prior_only | 1 | 1 | 0/1 | 0 | 0 | 1 | 0 | 1 | sha256-61546099146eb24350dfa8406d00a5080efa6129ff43bc29f84684f345f5146c |
+| learned_route | 1 | 1 | 0/1 | 0 | 0 | 1 | 0 | 2 | sha256-58d01e2deb87a244f6c7379b66cd180449c49cc22db35104803fa37b5475a48c |
 
 ## Turn Table
 | mode | turn | quality | compile ok | phrase hits | learned route | promoted | active pack | selection digest |
 | --- | --- | ---: | --- | ---: | --- | --- | --- | --- |
 | no_brain | turn-1 | 0 | no | 0/1 | no | no | none | none |
-| vector_only | turn-1 | 40 | yes | 0/1 | no | no | pack-8bebd067 | sha256-6f745f6ff6292e295f4cd68815d3385598f209c485df8602846bab65745e9a34 |
-| graph_prior_only | turn-1 | 40 | yes | 0/1 | no | no | pack-8bebd067 | sha256-5dc1853451b0eeef9a3439c26ec1b72034269317ec70db92588483f0c50c6c17 |
-| learned_route | turn-1 | 40 | yes | 0/1 | no | no | pack-d4c7cc26 | sha256-49ba5dc640db575ec4a42ca95ba7210f57ad130a56fe6f00d3368a6784f71075 |
+| vector_only | turn-1 | 40 | yes | 0/1 | no | no | pack-a84aefdb | sha256-8cd74a1db2b20e5012ae8b1823c862b283843c3871540fc25b843d519feeb145 |
+| graph_prior_only | turn-1 | 40 | yes | 0/1 | no | no | pack-a84aefdb | sha256-01b5599e74ce133840bb236a68a598d65cdf5c79428658a8c00c91cfb062064c |
+| learned_route | turn-1 | 40 | yes | 0/1 | no | no | pack-f126eb9a | sha256-c501d2d3d46003e782ad5b17250d0d3412b51bfed59ef262eb20447644ce0110 |

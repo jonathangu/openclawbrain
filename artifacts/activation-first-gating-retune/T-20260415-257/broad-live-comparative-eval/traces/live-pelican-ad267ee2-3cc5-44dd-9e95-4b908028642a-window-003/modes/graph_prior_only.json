@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-493bf919"
+      "pack-cf42e2f2"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-6c1c20e49ae4c065fc31028c6952eb305e2e5c942134f677910d04b887a927c3"
+    "scoreHash": "sha256-7236ad1bbfd4d124f8c25c8dd460bb5510911ccb349a2c53c71518f4af71881f"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-493bf919",
+      "activePackId": "pack-cf42e2f2",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "graph_walk_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-17a3b0740c63c88906bc56621ad535554ebad0cd23bee81a2426920e06c20b25",
+      "selectionDigest": "sha256-b70e453f78ef7fa0bd64e63b43bde04a5cd52fa0c885dc725a1913a5561072c7",
       "selectedContextIds": [
-        "pack-493bf919:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
-        "pack-493bf919:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction",
-        "pack-493bf919:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback"
+        "pack-cf42e2f2:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
+        "pack-cf42e2f2:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction",
+        "pack-cf42e2f2:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: Update: Jon explicitly approved the aggressive path and explicitly said you are welcome to kill existing training jobs. Treat this as permission to optimize for immediate relaunch, not next-run-only. Adjust PEL-072 implementation accordingly: support killing/replacing the current sequential retrain with the new parallel GBM+TFT architecture as soon as the code path is ready. Prioritize a concrete relaunchable implementation and operator runbook/proof path.. Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction.",
         "Interaction operator_override on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed. Message: cue-3-seed-message.",
         "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-072: fix Pelican retrain architecture for next run in /Users/guclaw/worktrees/quant-research/072a-parallel-retrain. Work only in that worktree. Problem: current AWS retrain is sequential by design (GBM first, TFT second) inside bootstrap-train.sh, with weak observability: GBM/TFT only emit training_started and sparse/empty train logs. Jon explicitly wants GBM a.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-60a263754b13e08da01b341c5fed7df227f323ca805f3476f75cc84cb6310001",
+      "eventExportDigest": "sha256-8cf6240bf4beb93c652101fe5da9cc415229a82b12501b37fa6adf37938850e7",
       "expectedContextPhrases": [
         "/retrain_v6_monitor.sh",
         "/weekly_retrain.sh",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.123,
-        "routeSelectionMs": 5.198,
+        "totalMs": 7.26,
+        "routeSelectionMs": 4.555,
         "promptAssemblyMs": 0.001,
-        "otherMs": 3.924,
+        "otherMs": 2.703,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

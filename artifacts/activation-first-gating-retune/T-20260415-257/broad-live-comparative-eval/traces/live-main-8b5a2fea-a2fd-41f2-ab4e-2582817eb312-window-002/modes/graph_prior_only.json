@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-e959e665"
+      "pack-fe7c8f72"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-c0c6a2e0f2da0d96b02600cb47e2698fcc14bc1fa1bab42ce0a1ad6514601b71"
+    "scoreHash": "sha256-fb061b4f2dd9092402b84c1bd8c754a311244c8c1432639712b4cce69e1f7361"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-e959e665",
+      "activePackId": "pack-fe7c8f72",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "graph_walk_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-3870b8cb4afbaecab67443217eafbc5e1e68bc569301e5d233cbce4c4c1baf0d",
+      "selectionDigest": "sha256-cceb7b3f264790d6eb830e9488ac1eb92a83e495a73057e5e7b87eda6bde3514",
       "selectedContextIds": [
-        "pack-e959e665:pointer-aware-init",
-        "pack-e959e665:workspace-init:48025857",
-        "pack-e959e665:pointer-passive-expansion"
+        "pack-fe7c8f72:pointer-aware-init",
+        "pack-fe7c8f72:workspace-init:48025857",
+        "pack-fe7c8f72:pointer-passive-expansion"
       ],
       "selectedContextTexts": [
         "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
         "Working-set input scripts/openclawbrain_replay_aggregate.py selected by pointer-aware init (inbound=5, outbound=0). #!/usr/bin/env python3 \"\"\"Aggregate recorded-session replay proof bundles already on disk. This is intentionally tiny and dependency-free: - scans the live replay-bundle roots for recorded_session_replay_proof_manifest.v1 bundles - groups them by trace id - computes bundle-level and pairwise mode stats - writes a JSON…",
         "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more."
       ],
-      "eventExportDigest": "sha256-373e679ee932e745f4e461ca4219d4caa4b564fc2a9d38511ca595a68257ee41",
+      "eventExportDigest": "sha256-7945f56314b92644a05ac225f53ab2fa51f555bffd7f4099c194bc24f29a5fae",
       "expectedContextPhrases": [
         "T-20260403-129",
         "/T-20260403-129/lane-gate3b-replay-shadow.md",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.245,
-        "routeSelectionMs": 5.372,
+        "totalMs": 7.712,
+        "routeSelectionMs": 5.016,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.871,
+        "otherMs": 2.694,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

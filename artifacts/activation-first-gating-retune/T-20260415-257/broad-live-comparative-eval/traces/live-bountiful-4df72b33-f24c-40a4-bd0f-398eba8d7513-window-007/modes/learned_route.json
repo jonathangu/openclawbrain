@@ -5,19 +5,19 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 60,
+    "qualityScore": 40,
     "compileOkCount": 1,
-    "phraseHitCount": 1,
+    "phraseHitCount": 0,
     "phraseCount": 3,
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-dd6b9421"
+      "pack-612e22eb"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-dd6b9421",
-    "frozenEvalRouterIdentity": "pack-dd6b9421:route_fn",
+    "frozenEvalPackId": "pack-612e22eb",
+    "frozenEvalRouterIdentity": "pack-612e22eb:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-94a7193f90f5304c3fa78b0eb073894bb438f7bf7f3a2dd1d0f8841d4ee4cfd5"
+    "scoreHash": "sha256-8fcf5bfa285f0e2028ddae132cf69765bebadd19bf6c2c4b10805d2725481aea"
   },
   "turns": [
     {
@@ -51,7 +51,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-dd6b9421",
+      "activePackId": "pack-612e22eb",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
@@ -61,36 +61,31 @@
       "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-4e7fd96cc7e1ea90b35017bc76c44a09541e9de864aacb802e7396a2a1c84058",
-      "selectedContextIds": [
-        "pack-dd6b9421:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback"
-      ],
-      "selectedContextTexts": [
-        "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8101\", \"reply_to_id\": \"8100\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true, \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction."
-      ],
-      "eventExportDigest": "sha256-76bcaf7c17cfecd466ba064382217d50d2e25a2a89837d353c3359daab46af46",
+      "selectionDigest": "sha256-100d80794fd8ae6edc93603406ff18eac607452d8ba65053963453413b846c0f",
+      "selectedContextIds": [],
+      "selectedContextTexts": [],
+      "eventExportDigest": "sha256-58a8fd027fdf1bfb3b01309bdcc995e2e587c989dc31a3c7530a560ebc70a369",
       "expectedContextPhrases": [
         "toolcall",
         "process",
         "action"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [
-        "action"
-      ],
+      "phraseHits": [],
       "missedPhrases": [
         "toolcall",
-        "process"
+        "process",
+        "action"
       ],
-      "qualityScore": 60,
+      "qualityScore": 40,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.507,
-        "routeSelectionMs": 5.883,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.622,
+        "totalMs": 9.556,
+        "routeSelectionMs": 6.162,
+        "promptAssemblyMs": 0.004,
+        "otherMs": 3.39,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

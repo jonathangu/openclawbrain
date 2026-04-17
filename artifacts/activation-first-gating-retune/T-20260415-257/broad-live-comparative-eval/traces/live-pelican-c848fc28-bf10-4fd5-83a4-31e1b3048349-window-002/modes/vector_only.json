@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-c1daae36"
+      "pack-ef645ab3"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-83308cefc1ff4fa61e3595041336a38122b073191b89c7c25fcfd693b61bc567"
+    "scoreHash": "sha256-4065a0e311a9a1384e6369bcd8601d101e6f8bdf0f04da7f7284e2ccd5903b60"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-c1daae36",
+      "activePackId": "pack-ef645ab3",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-8c10fe3ee38485defc7bec2f898acc5a984b2c6d662054b078c757b9755d5316",
+      "selectionDigest": "sha256-ab25fa8c1a57db7d868cde19eaafe75198c200e08122e21ac2b39c824c7adbbb",
       "selectedContextIds": [
-        "pack-c1daae36:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
-        "pack-c1daae36:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
-        "pack-c1daae36:pointer-aware-init"
+        "pack-ef645ab3:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
+        "pack-ef645ab3:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
+        "pack-ef645ab3:pointer-aware-init"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-B training-contract multi-horizon lane in /Users/guclaw/worktrees/quant-research/202-mh1b-training. Goal: - make GBM/TFT consume multi-horizon rows explicitly - ensure target_dte is active in training/panel paths and artifact/reporting surfaces - keep actual_exp_dte and dte_gap_abs out of model feature inputs - run focused tests for retrai.... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction.",
         "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: assistant: I found one contract gap worth fixing, the GBM/TFT feature selectors would still admit a couple of expiry metadata columns if they showed up. I’m tightening that now, then rerunning the focused tests. ToolCall exec {\"command\": \"python3 -m pytest tests/test_train_join_utils.py tests/test_retrain_pipeline_embeddings.py tests/test_tft_v11_bootstrap_panel.py tests/test_tft_v11_bootstrap_embedding_contract.py tests/test_retrain_honest_c. Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction.",
         "Pointer-aware init keeps fast boot first with anchors memory/2026-04-11-cron-removal.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, memory/2026-04-11.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-ad19c260892c8f014dc4126d422c189ed65adba841872c48283f6cfc41848c76",
+      "eventExportDigest": "sha256-5d971b58637601c1770382c50ecc46bbe6584abaeb8dbbaa71d516a8d3532341",
       "expectedContextPhrases": [
         "/Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py",
         "/Users/guclaw/worktrees/quant-research/202-mh1b-train"
@@ -88,10 +88,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.035,
-        "routeSelectionMs": 5.079,
+        "totalMs": 7.422,
+        "routeSelectionMs": 4.7,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.954,
+        "otherMs": 2.72,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

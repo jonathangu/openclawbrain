@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-28T03:30:53.032Z",
   "traceHash": "sha256-6ea52ae43f846ec5905bcf93ba8cbe911779b358315c7c925dfcb3bb8d88c42d",
   "fixtureHash": "sha256-5ca126c8a28da22685d19c74b8dc7e5cb0bac37c0b916d2162c68f83275f6394",
-  "scoreHash": "sha256-6509403fdfa852292ef002cedc8e61efdbe6cd2567515c74dbeb8595af3b4790",
+  "scoreHash": "sha256-44488f95a8325f07907e970c84a6589972352f961c5fde17aee8b14965f45ad6",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.026,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.026,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-d5ad7c69"
+          "pack-f20c9bdd"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-94e6254e5a61c2abe8ae3bca92abcc07768b95cf09aead5f86b5089acc86d393"
+        "scoreHash": "sha256-32dfe11511714afb83c6c13e4e5b43750d0be5a88cdfb0ef0f3c949568b609e7"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-d5ad7c69",
+          "activePackId": "pack-f20c9bdd",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-9045576c7ef119194adef32d7a20ffbc4960b577d105092d5c80adf90866f4e3",
+          "selectionDigest": "sha256-bd747933592f84ccc27369163e826d65f25703f09adfa655d237dbbb1c5cb698",
           "selectedContextIds": [
-            "pack-d5ad7c69:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
-            "pack-d5ad7c69:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
-            "pack-d5ad7c69:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
+            "pack-f20c9bdd:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
+            "pack-f20c9bdd:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
+            "pack-f20c9bdd:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 0458af2a-3e31-4127-b87c-907e264302b4] A cron job \"v6-slim-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 59s • tokens 2.0k (in 10 / out 2.0k) • prompt/cache 18.9k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system mess.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: bc2eaeed-c559-4bb6-9413-19dbce5693d4] A cron job \"v6-slim-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 1m42s • tokens 3.7k (in 17 / out 3.7k) • prompt/cache 26.4k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system me.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: e36799be-585c-4f29-a86a-2e84e09fee99] A cron job \"v6-slim-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 1m57s • tokens 4.3k (in 19 / out 4.3k) • prompt/cache 26.8k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system me.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-b35f8728a13168aad8a51139ae3d73fa83c760b4d1d75e316abfe7d090eee787",
+          "eventExportDigest": "sha256-e77d530aa8118d63e21b57b1be52c9889490c175c68b35aec08085c2f1922121",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.278,
-            "routeSelectionMs": 7.066,
+            "totalMs": 7.578,
+            "routeSelectionMs": 4.888,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.21,
+            "otherMs": 2.689,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-d5ad7c69"
+          "pack-f20c9bdd"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-06b2c9397a1552f6c4281fd1684db5d74f51173186c4546c5c44fb118b46cb48"
+        "scoreHash": "sha256-d9f01e93107ccc7318760799db2eb5e934bdb0f8fa786bfc2cee1a611e211e11"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-d5ad7c69",
+          "activePackId": "pack-f20c9bdd",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-3597d425df4296b95aa3f79fe84c918ea224d134c8848481bfef51229fcf2e11",
+          "selectionDigest": "sha256-6b4060c545bb9367c6badb55c27ddd2fc63a7e5ad8f9e13e9738629fcb96a8a4",
           "selectedContextIds": [
-            "pack-d5ad7c69:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
-            "pack-d5ad7c69:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction",
-            "pack-d5ad7c69:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
+            "pack-f20c9bdd:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
+            "pack-f20c9bdd:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction",
+            "pack-f20c9bdd:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 0458af2a-3e31-4127-b87c-907e264302b4] A cron job \"v6-slim-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 59s • tokens 2.0k (in 10 / out 2.0k) • prompt/cache 18.9k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system mess.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
             "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-5-seed-message.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: bc2eaeed-c559-4bb6-9413-19dbce5693d4] A cron job \"v6-slim-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 1m42s • tokens 3.7k (in 17 / out 3.7k) • prompt/cache 26.4k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system me.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-17b213c31e368564f7b0688ee18c05fefe66ab5889513b7a9b476bf679e6e830",
+          "eventExportDigest": "sha256-76d2596e30e08235abf5d5d5ce0a00def07af3e047c64f479652abab42569cf0",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.469,
-            "routeSelectionMs": 6.102,
+            "totalMs": 7.582,
+            "routeSelectionMs": 4.893,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.365,
+            "otherMs": 2.688,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-057db03e"
+          "pack-21dccfb2"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-057db03e",
-        "frozenEvalRouterIdentity": "pack-057db03e:route_fn",
+        "frozenEvalPackId": "pack-21dccfb2",
+        "frozenEvalRouterIdentity": "pack-21dccfb2:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-f9a0e359d0b1ee4f08549fb2e60e4dc9e686e2812e7c9e6e2d8cb29ee9ae4072"
+        "scoreHash": "sha256-113ddec467de8307aab8863949239e240bd5d91179cbbd5d06716b83dd0f1ddd"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-057db03e",
+          "activePackId": "pack-21dccfb2",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-e85d05d7bbe24dd5a1c2bafbf8b2b6bcc9d25c27aa3b7731d53b5e7a56a8fb92",
+          "selectionDigest": "sha256-cc00aafcb1b1e2c8c701c151425060e66a610c06931f2198d2ff71f59597a4c8",
           "selectedContextIds": [
-            "pack-057db03e:pointer-aware-init"
+            "pack-21dccfb2:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-2aeda69658cc523290e530752fdc91ace24de89bade86e9e67fe3cc51277a226",
+          "eventExportDigest": "sha256-75bcaf47c053f69ebd94ee77da4a343b8443874d6b8ef9156c368ac3af84cf0f",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 11.836,
-            "routeSelectionMs": 7.477,
+            "totalMs": 9.423,
+            "routeSelectionMs": 5.933,
             "promptAssemblyMs": 0.001,
-            "otherMs": 4.358,
+            "otherMs": 3.489,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-2243f812029a528abce982dad1b2ad718aa94155bbb62a24fbd8dd5e3017a059"
+  "bundleHash": "sha256-175b5970503d617703f29a4f87ec306333fd2abf5966d469e8b32b025826281d"
 }

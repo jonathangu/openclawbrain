@@ -462,6 +462,59 @@ describe("cold-start router trainer", () => {
     );
   });
 
+  it("backfills missing calibration thresholds when warm-starting a gating-only retrain", () => {
+    const outputDir = createTempRoot("cold-start-router-gating-only-warm-start-thresholds");
+    const result = trainColdStartRouterArtifactV1({
+      artifactId: "router-artifact-gating-only-warm-start-thresholds",
+      artifactVersion: "0.0.1",
+      packType: "base",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+      registryEntries: [makeActivationFirstRegistryEntry("dataset_activation_first_warm_start")],
+      routeRows: makeActivationFirstTrainingRows("dataset_activation_first_warm_start"),
+      outputDir,
+      routerIdentity: "router:dataset_activation_first_warm_start",
+      createdAt: "2026-04-17T22:50:00Z",
+      trainingDataRefs: ["dataset_activation_first_warm_start"],
+      replayGateRefs: ["replay:dataset_activation_first_warm_start"],
+      warmStartArtifactDir: approvedTrainV2Dir,
+      interventionHead: {
+        decisionPolicyMode: "gating_only_v1",
+        freezeCandidateSelection: true,
+        freezeStopLocal: true,
+        featureProfile: "resume_gate_v1",
+      },
+    });
+
+    expect(result.model.calibration).toMatchObject({
+      activationThreshold: 0.45,
+      abstentionThreshold: 0.55,
+      expectedUtilityThreshold: 0,
+      stopLocalThreshold: 0.5,
+      interventionHead: {
+        decisionPolicyMode: "gating_only_v1",
+        freezeCandidateSelection: true,
+        freezeStopLocal: true,
+        featureProfile: "resume_gate_v1",
+      },
+    });
+
+    const runtimeBundle = loadColdStartRouterArtifactBundleV1(outputDir);
+    const scoring = scoreColdStartRouteRowFromArtifactBundleV1({
+      artifactBundle: runtimeBundle,
+      row: makeGreedyThresholdRouteRow("dataset_activation_first_greedy_lane"),
+    });
+
+    expect(scoring.decisionSummary).toMatchObject({
+      activationThreshold: 0.45,
+      abstentionThreshold: 0.55,
+      expectedUtilityThreshold: 0,
+      stopLocalThreshold: 0.5,
+      decisionPolicyMode: "gating_only_v1",
+      freezeCandidateSelection: true,
+      freezeStopLocal: true,
+    });
+  });
+
   it("weights felt-lane activation supervision into gating without changing the top-ranked candidate", () => {
     const datasetId = "dataset_activation_first_policy_activate";
     const baseline = trainActivationFirstFixture(

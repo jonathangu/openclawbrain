@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-08T13:58:42.832Z",
   "traceHash": "sha256-4e6bcca0889e112786ccd30d6dc08d693afeab2955ee3e21db9f09dfe3094e0f",
   "fixtureHash": "sha256-14ff100a8ccae36fc1c57494dcba2b6e1338cfd708e5c890121212b4f7b539d1",
-  "scoreHash": "sha256-0b4be03bfab237108c6205627eddf74119a9cd99640e6ef7d1cbe4d271a90306",
+  "scoreHash": "sha256-b17c07fbd3dfa8663b9e6d3faeee0c81b35c4b6f2363b501ad2f153bd122cb7c",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.027,
+            "totalMs": 0.024,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.027,
+            "otherMs": 0.024,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-4e895c88"
+          "pack-81c2d9e7"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-8fd6d7ab55a6d108e67aef2ef8b9887b9f8ccee6cf9ff11e4c7d5c7632978606"
+        "scoreHash": "sha256-ea9842cb31c2dffd0f6420bc822052c878aac25c2d67c15ace4766d2edd36432"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-4e895c88",
+          "activePackId": "pack-81c2d9e7",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-70610bafcdbbcec5fedd53a9db94238a05ea661f81ec4d4bd7b5554185b89e0a",
+          "selectionDigest": "sha256-f4b4be444c6599524e96d9717bacbdcaa51f889fb01895828f7ddc40834f7c6f",
           "selectedContextIds": [
-            "pack-4e895c88:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback",
-            "pack-4e895c88:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-5:feedback",
-            "pack-4e895c88:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-6:feedback"
+            "pack-81c2d9e7:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback",
+            "pack-81c2d9e7:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-5:feedback",
+            "pack-81c2d9e7:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Resolve the active cherry-pick conflict for PEL-087 in /Users/guclaw/worktrees/pelican/18. Context: branch pel-087-112x-113x-harvest has already integrated 112a (occupancy) and 112b (overlap penalties). Cherry-picking 112c (replacement optimizer, commit bc4b392 from /Users/guclaw/worktrees/pelican/13) is in progress and conflicts mainly in run_once.py plus BUGFIX_R.... Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:interaction.",
             "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: assistant: The current cherry-pick is resolved and staged. I’m continuing this commit now, then I’ll stop at 112c and report the exact result. ToolCall exec {\"command\": \"git cherry-pick --continue\", \"timeout\": 60, \"workdir\": \"/Users/guclaw/worktrees/pelican/18\", \"yieldMs\": 1000}. Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-5:interaction.",
             "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: assistant: Resolved the 112c cherry-pick and completed it cleanly. What I changed: - Merged `run_once.py` so it preserves: - 112a occupancy handling - 112b overlap-penalty logging/surfaces - 112c incumbent replacement logic - Kept `BUGFIX_REPORT.md` non-blocking with the current branch version. - Added the replacement test coverage in `tests/test_run_once_incumbent_replacement.py`. - Wrote `MERGE_NOTE_112c.md` with the result. Proof run: - `pytest -q tests/test_run_once_concentration.py::test_late_portf.... Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-7766a87fcb16f4aa7190b072d7cae6d8d2d81b35037c09deec939dd88a13379c",
+          "eventExportDigest": "sha256-951578463216e656b8823f5b31370f5ed2e160958f3aacc908fdeb05c70bca7d",
           "expectedContextPhrases": [
             "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.913,
-            "routeSelectionMs": 4.964,
+            "totalMs": 7.29,
+            "routeSelectionMs": 4.579,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.947,
+            "otherMs": 2.709,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-4e895c88"
+          "pack-81c2d9e7"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-30277bdba71d3daf9056e51601887e5c8c8dcdd911416602f2fada3bf8064958"
+        "scoreHash": "sha256-786e3f1063808cca40d6b21e968d88a7ca9b1206c94273d8c5fbf00a31ccf790"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-4e895c88",
+          "activePackId": "pack-81c2d9e7",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-1f41f3e0051000c75f872b2b992d6fc596cecc3cdea8b92f08fb34d828410cb3",
+          "selectionDigest": "sha256-78fe56e0082d7f4b4d451ab977f64d2c61a6101fee82efb3bebc6b0d9ea72254",
           "selectedContextIds": [
-            "pack-4e895c88:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback",
-            "pack-4e895c88:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:interaction",
-            "pack-4e895c88:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-2:interaction"
+            "pack-81c2d9e7:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback",
+            "pack-81c2d9e7:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:interaction",
+            "pack-81c2d9e7:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Resolve the active cherry-pick conflict for PEL-087 in /Users/guclaw/worktrees/pelican/18. Context: branch pel-087-112x-113x-harvest has already integrated 112a (occupancy) and 112b (overlap penalties). Cherry-picking 112c (replacement optimizer, commit bc4b392 from /Users/guclaw/worktrees/pelican/13) is in progress and conflicts mainly in run_once.py plus BUGFIX_R.... Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:interaction.",
             "Interaction operator_override on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed. Message: cue-1-seed-message.",
             "Interaction operator_override on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-f855f56b5ff72d7951cabe3fa8a560571a873902e9a2b9b7d17e6c4db563e7f9",
+          "eventExportDigest": "sha256-24025e1a2ae3f97b32b89a6943510ce9c8ee49b0445ce7dd199d00497252a2d2",
           "expectedContextPhrases": [
             "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.88,
-            "routeSelectionMs": 4.973,
+            "totalMs": 7.2,
+            "routeSelectionMs": 4.557,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.906,
+            "otherMs": 2.642,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-dab5b1fd"
+          "pack-0def2f5c"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-dab5b1fd",
-        "frozenEvalRouterIdentity": "pack-dab5b1fd:route_fn",
+        "frozenEvalPackId": "pack-0def2f5c",
+        "frozenEvalRouterIdentity": "pack-0def2f5c:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-a1d886b15599afc0e473565a5f499e5c39ad1870ee28036a57bcb5cc8bd49a19"
+        "scoreHash": "sha256-d6a904fa1bb9f166db9392f1d7e67b9c6e0d2aa09ae4041897f563d354cf7b08"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-dab5b1fd",
+          "activePackId": "pack-0def2f5c",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-2ae392bbdb300f86175a582e4eee42575dad589f302a07e229517cff41681671",
+          "selectionDigest": "sha256-53b50d49302a4a695b1befb7e0cc1808e65e92a24140e6d072e13ca6240c9c7f",
           "selectedContextIds": [
-            "pack-dab5b1fd:workspace-init:16415817"
+            "pack-0def2f5c:workspace-init:16415817"
           ],
           "selectedContextTexts": [
             "Working-set input TASKS.md selected by pointer-aware init (inbound=10, outbound=24). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
           ],
-          "eventExportDigest": "sha256-38a6ab7ad8eec7622b0fa2143dfbde61d1a10aa5b3d8f8cd7a97ef4ea67af837",
+          "eventExportDigest": "sha256-323fbec8840fa950d1dd176cd955ba6515f370479bb0fc70ba706647ae950aa5",
           "expectedContextPhrases": [
             "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.34,
-            "routeSelectionMs": 6.664,
+            "totalMs": 8.965,
+            "routeSelectionMs": 5.57,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.674,
+            "otherMs": 3.394,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-fe5cf29cf052b7d68e9b242fb86f81b20dbed3e5e34e43c25dc6506d2d8b5aab"
+  "bundleHash": "sha256-8f44b1987d8eb0ca6a0a7d5cf9d6673fcc3f7f4976906054281180d919492c93"
 }

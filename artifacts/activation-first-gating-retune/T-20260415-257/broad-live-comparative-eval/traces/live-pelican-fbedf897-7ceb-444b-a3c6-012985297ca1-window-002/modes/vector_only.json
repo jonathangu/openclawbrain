@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-4e895c88"
+      "pack-81c2d9e7"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-8fd6d7ab55a6d108e67aef2ef8b9887b9f8ccee6cf9ff11e4c7d5c7632978606"
+    "scoreHash": "sha256-ea9842cb31c2dffd0f6420bc822052c878aac25c2d67c15ace4766d2edd36432"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-4e895c88",
+      "activePackId": "pack-81c2d9e7",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-70610bafcdbbcec5fedd53a9db94238a05ea661f81ec4d4bd7b5554185b89e0a",
+      "selectionDigest": "sha256-f4b4be444c6599524e96d9717bacbdcaa51f889fb01895828f7ddc40834f7c6f",
       "selectedContextIds": [
-        "pack-4e895c88:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback",
-        "pack-4e895c88:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-5:feedback",
-        "pack-4e895c88:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-6:feedback"
+        "pack-81c2d9e7:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback",
+        "pack-81c2d9e7:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-5:feedback",
+        "pack-81c2d9e7:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Resolve the active cherry-pick conflict for PEL-087 in /Users/guclaw/worktrees/pelican/18. Context: branch pel-087-112x-113x-harvest has already integrated 112a (occupancy) and 112b (overlap penalties). Cherry-picking 112c (replacement optimizer, commit bc4b392 from /Users/guclaw/worktrees/pelican/13) is in progress and conflicts mainly in run_once.py plus BUGFIX_R.... Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:interaction.",
         "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: assistant: The current cherry-pick is resolved and staged. I’m continuing this commit now, then I’ll stop at 112c and report the exact result. ToolCall exec {\"command\": \"git cherry-pick --continue\", \"timeout\": 60, \"workdir\": \"/Users/guclaw/worktrees/pelican/18\", \"yieldMs\": 1000}. Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-5:interaction.",
         "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: assistant: Resolved the 112c cherry-pick and completed it cleanly. What I changed: - Merged `run_once.py` so it preserves: - 112a occupancy handling - 112b overlap-penalty logging/surfaces - 112c incumbent replacement logic - Kept `BUGFIX_REPORT.md` non-blocking with the current branch version. - Added the replacement test coverage in `tests/test_run_once_incumbent_replacement.py`. - Wrote `MERGE_NOTE_112c.md` with the result. Proof run: - `pytest -q tests/test_run_once_concentration.py::test_late_portf.... Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-7766a87fcb16f4aa7190b072d7cae6d8d2d81b35037c09deec939dd88a13379c",
+      "eventExportDigest": "sha256-951578463216e656b8823f5b31370f5ed2e160958f3aacc908fdeb05c70bca7d",
       "expectedContextPhrases": [
         "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.913,
-        "routeSelectionMs": 4.964,
+        "totalMs": 7.29,
+        "routeSelectionMs": 4.579,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.947,
+        "otherMs": 2.709,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

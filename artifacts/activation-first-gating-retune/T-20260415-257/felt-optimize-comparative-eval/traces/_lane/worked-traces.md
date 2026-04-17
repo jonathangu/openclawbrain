@@ -32,9 +32,9 @@
 
 | mode | phase | diagnostic quality | compile | required-context recall | activation | source | latency ms | promoted | selection | context preview |
 | --- | --- | ---: | --- | ---: | --- | --- | ---: | --- | --- | --- |
-| graph_prior_only | eval | 70 | yes | 1/2 | n/a | none | 10 | no | be417c92c79e | Teaching feedback on live-session session 971973d8-2a63-4883-a18f-bfa883f844ea-seed: user: You are running as a subagent (depth 1/1). Res... |
-| vector_only | eval | 70 | yes | 1/2 | n/a | none | 10 | no | 142e00b1561a | Teaching feedback on live-session session 971973d8-2a63-4883-a18f-bfa883f844ea-seed: user: You are running as a subagent (depth 1/1). Res... |
-| learned_route | eval | 40 | yes | 0/2 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | fc8b1ded2438 | Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working se... |
+| graph_prior_only | eval | 70 | yes | 1/2 | n/a | none | 10 | no | 7d04a97729d1 | Teaching feedback on live-session session 971973d8-2a63-4883-a18f-bfa883f844ea-seed: user: You are running as a subagent (depth 1/1). Res... |
+| vector_only | eval | 70 | yes | 1/2 | n/a | none | 10 | no | 5848cf0e94b5 | Teaching feedback on live-session session 971973d8-2a63-4883-a18f-bfa883f844ea-seed: user: You are running as a subagent (depth 1/1). Res... |
+| learned_route | eval | 40 | yes | 0/2 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | 1f26d4cce7d4 | Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working se... |
 | no_brain | eval | 0 | no | 0/2 | n/a | none | 0 | no | none | none |
 
 ## live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002
@@ -63,9 +63,9 @@
 
 | mode | phase | diagnostic quality | compile | required-context recall | activation | source | latency ms | promoted | selection | context preview |
 | --- | --- | ---: | --- | ---: | --- | --- | ---: | --- | --- | --- |
-| graph_prior_only | eval | 60 | yes | 1/3 | n/a | none | 10 | no | 12e6a730264f | Teaching feedback on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed: user: You are running as a subagent (depth 1/1). Res... |
-| vector_only | eval | 60 | yes | 1/3 | n/a | none | 10 | no | 48538b14f947 | Teaching feedback on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed: user: You are running as a subagent (depth 1/1). Res... |
-| learned_route | eval | 40 | yes | 0/3 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | c0b6ef13bc38 | Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working se... |
+| graph_prior_only | eval | 60 | yes | 1/3 | n/a | none | 10 | no | dfc45faf47ba | Teaching feedback on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed: user: You are running as a subagent (depth 1/1). Res... |
+| vector_only | eval | 60 | yes | 1/3 | n/a | none | 10 | no | 13b55d16c8d9 | Teaching feedback on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed: user: You are running as a subagent (depth 1/1). Res... |
+| learned_route | eval | 40 | yes | 0/3 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | 51dab051c15b | Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working se... |
 | no_brain | eval | 0 | no | 0/3 | n/a | none | 0 | no | none | none |
 
 ## live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002
@@ -94,9 +94,9 @@
 
 | mode | phase | diagnostic quality | compile | required-context recall | activation | source | latency ms | promoted | selection | context preview |
 | --- | --- | ---: | --- | ---: | --- | --- | ---: | --- | --- | --- |
-| graph_prior_only | eval | 60 | yes | 1/3 | n/a | none | 10 | no | 0d4c7b0f3298 | Teaching feedback on live-session session 685b2c1a-b082-4f5a-a284-ff9623440da6-seed: user: You are running as a subagent (depth 1/1). Res... |
-| vector_only | eval | 60 | yes | 1/3 | n/a | none | 10 | no | bd157876ec02 | Teaching feedback on live-session session 685b2c1a-b082-4f5a-a284-ff9623440da6-seed: user: You are running as a subagent (depth 1/1). Res... |
-| learned_route | eval | 40 | yes | 0/3 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | dec439adfedb | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIV... |
+| graph_prior_only | eval | 60 | yes | 1/3 | n/a | none | 5 | no | 1634cdeb3518 | Teaching feedback on live-session session 685b2c1a-b082-4f5a-a284-ff9623440da6-seed: user: You are running as a subagent (depth 1/1). Res... |
+| vector_only | eval | 60 | yes | 1/3 | n/a | none | 5 | no | 921682d3923a | Teaching feedback on live-session session 685b2c1a-b082-4f5a-a284-ff9623440da6-seed: user: You are running as a subagent (depth 1/1). Res... |
+| learned_route | eval | 40 | yes | 0/3 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | 30b138960068 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIV... |
 | no_brain | eval | 0 | no | 0/3 | n/a | none | 0 | no | none | none |
 
 ## live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007
@@ -125,9 +125,9 @@
 
 | mode | phase | diagnostic quality | compile | required-context recall | activation | source | latency ms | promoted | selection | context preview |
 | --- | --- | ---: | --- | ---: | --- | --- | ---: | --- | --- | --- |
-| graph_prior_only | eval | 60 | yes | 1/3 | n/a | none | 10 | no | 29a7f2eeb5d6 | Interaction operator_override on live-session session 983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed. Message: cue-2-seed-message. || Interact... |
-| learned_route | eval | 40 | yes | 0/3 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | 628b41627c86 | Pointer-aware init keeps fast boot first with anchors memory/2026-04-07-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working se... |
-| vector_only | eval | 40 | yes | 0/3 | n/a | none | 10 | no | 9b8ebeb1e50f | Interaction operator_override on live-session session 983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed. Message: cue-2-seed-message. || Interact... |
+| graph_prior_only | eval | 60 | yes | 1/3 | n/a | none | 10 | no | 18d6dff36bc1 | Interaction operator_override on live-session session 983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed. Message: cue-2-seed-message. || Interact... |
+| learned_route | eval | 40 | yes | 0/3 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | d8799e8148dd | Pointer-aware init keeps fast boot first with anchors memory/2026-04-07-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working se... |
+| vector_only | eval | 40 | yes | 0/3 | n/a | none | 10 | no | 1aa48299887b | Interaction operator_override on live-session session 983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed. Message: cue-2-seed-message. || Interact... |
 | no_brain | eval | 0 | no | 0/3 | n/a | none | 0 | no | none | none |
 
 ## live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002
@@ -156,7 +156,7 @@
 
 | mode | phase | diagnostic quality | compile | required-context recall | activation | source | latency ms | promoted | selection | context preview |
 | --- | --- | ---: | --- | ---: | --- | --- | ---: | --- | --- | --- |
-| graph_prior_only | eval | 40 | yes | 0/3 | n/a | none | 10 | no | 7f7dc36bb35e | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifac... |
+| graph_prior_only | eval | 40 | yes | 0/3 | n/a | none | 5 | no | 7f7dc36bb35e | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifac... |
 | learned_route | eval | 40 | yes | 0/3 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | 5d4ec2162352 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifac... |
 | vector_only | eval | 40 | yes | 0/3 | n/a | none | 10 | no | cc91b8bf9114 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifac... |
 | no_brain | eval | 0 | no | 0/3 | n/a | none | 0 | no | none | none |
@@ -218,9 +218,9 @@
 
 | mode | phase | diagnostic quality | compile | required-context recall | activation | source | latency ms | promoted | selection | context preview |
 | --- | --- | ---: | --- | ---: | --- | --- | ---: | --- | --- | --- |
-| graph_prior_only | eval | 40 | yes | 0/2 | n/a | none | 10 | no | 79427a3e6077 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIV... |
-| learned_route | eval | 40 | yes | 0/2 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | 6fe6754860a9 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIV... |
-| vector_only | eval | 40 | yes | 0/2 | n/a | none | 10 | no | 4b233d7b56a5 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIV... |
+| graph_prior_only | eval | 40 | yes | 0/2 | n/a | none | 5 | no | 0fc32dc0a358 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIV... |
+| learned_route | eval | 40 | yes | 0/2 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | 0ebbe242c371 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIV... |
+| vector_only | eval | 40 | yes | 0/2 | n/a | none | 5 | no | 2a0325eba2d8 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIV... |
 | no_brain | eval | 0 | no | 0/2 | n/a | none | 0 | no | none | none |
 
 ## live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002
@@ -249,7 +249,7 @@
 
 | mode | phase | diagnostic quality | compile | required-context recall | activation | source | latency ms | promoted | selection | context preview |
 | --- | --- | ---: | --- | ---: | --- | --- | ---: | --- | --- | --- |
-| graph_prior_only | eval | 40 | yes | 0/2 | n/a | none | 10 | no | 11c671b4a6a1 | Teaching feedback on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed: user: You are running as a subagent (depth 1/1). Res... |
-| learned_route | eval | 40 | yes | 0/2 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | 780aab512e87 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIV... |
-| vector_only | eval | 40 | yes | 0/2 | n/a | none | 10 | no | 7b2341d5a003 | Teaching feedback on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed: user: You are running as a subagent (depth 1/1). Res... |
+| graph_prior_only | eval | 40 | yes | 0/2 | n/a | none | 10 | no | 0cf034632b10 | Teaching feedback on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed: user: You are running as a subagent (depth 1/1). Res... |
+| learned_route | eval | 40 | yes | 0/2 | yes | learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1 | 10 | no | e1d4f7191866 | Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIV... |
+| vector_only | eval | 40 | yes | 0/2 | n/a | none | 5 | no | c1de8efcc557 | Teaching feedback on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed: user: You are running as a subagent (depth 1/1). Res... |
 | no_brain | eval | 0 | no | 0/2 | n/a | none | 0 | no | none | none |

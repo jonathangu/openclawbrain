@@ -906,8 +906,8 @@ function buildDecisionSummary(params: {
   const stopLocalProbability = stopLabelProbabilities.find((entry) => entry.label === "STOP_LOCAL")?.probability ?? 0;
   const predictedUtility = activationProbability - abstentionProbability;
   const predictedRegretOfAbstaining = Math.max(0, predictedUtility);
-  const thresholds = params.model.calibration;
-  const interventionHead = interventionHeadFromCalibration(thresholds);
+  const thresholds = normalizeCalibration(params.model.calibration);
+  const interventionHead = thresholds.interventionHead;
   const stopLocalEnabled = !interventionHead.freezeStopLocal
     && interventionHead.decisionPolicyMode === "router_blended";
 
@@ -1100,16 +1100,27 @@ function buildCalibration(): ColdStartRouterCalibrationV1 {
   };
 }
 
+function normalizeCalibration(
+  calibration: Partial<ColdStartRouterCalibrationV1> | null | undefined,
+): ColdStartRouterCalibrationV1 {
+  const defaults = buildCalibration();
+  return {
+    ...defaults,
+    ...(calibration ?? {}),
+    labelOrder: [...(calibration?.labelOrder?.length ? calibration.labelOrder : defaults.labelOrder)],
+    interventionHead: normalizeInterventionHeadConfig(calibration?.interventionHead),
+  };
+}
+
 function mergeCalibration(params: {
   priorCalibration?: ColdStartRouterCalibrationV1 | null;
   interventionHead?: Partial<ColdStartRouterInterventionHeadConfigV1>;
 }): ColdStartRouterCalibrationV1 {
-  const prior = params.priorCalibration;
-  const base = prior ?? buildCalibration();
+  const base = normalizeCalibration(params.priorCalibration);
   return {
     ...base,
     interventionHead: normalizeInterventionHeadConfig({
-      ...interventionHeadFromCalibration(prior),
+      ...base.interventionHead,
       ...(params.interventionHead ?? {}),
     }),
   };

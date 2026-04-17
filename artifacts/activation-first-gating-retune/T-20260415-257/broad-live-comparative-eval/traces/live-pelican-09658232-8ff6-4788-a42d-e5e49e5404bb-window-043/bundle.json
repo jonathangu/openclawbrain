@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-28T01:32:55.388Z",
   "traceHash": "sha256-5dd6be200875e55287b6b027aec6adb1211d2b987b83c6a37b985516f7118529",
   "fixtureHash": "sha256-eec602e66445ff4dd47c7240e799fd3d8564ee87f3fa97f5e6b5673abf356c14",
-  "scoreHash": "sha256-a02e814dba00d54639e7b86ef64ac13d52185740c1de69502be3b9dcaeb8545c",
+  "scoreHash": "sha256-eceebc35546c0d9efb1972ffa9754de46bb1c1b1da44d2e187e2feabadf5ea88",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.037,
+            "totalMs": 0.032,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.037,
+            "otherMs": 0.032,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-089ae5ae"
+          "pack-24fa0522"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-c3d3072f6bb6b074d564eb4c94b95a7f40da9199533e8135249f43faa3ee9013"
+        "scoreHash": "sha256-d96620753410722741f8ae88aac1f79dbe3cd15881cd722b26d1f5f73301c2cd"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-089ae5ae",
+          "activePackId": "pack-24fa0522",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-27cb34b8f4d507047b6d28dfefd93041dd095c8716e62cf627fa0237f0870fcd",
+          "selectionDigest": "sha256-5162e1745e502c9abe7ecf61f93e538039defcc813ae4bee47bab3deca64a692",
           "selectedContextIds": [
-            "pack-089ae5ae:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-            "pack-089ae5ae:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
-            "pack-089ae5ae:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
+            "pack-24fa0522:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+            "pack-24fa0522:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
+            "pack-24fa0522:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 0e119e26-3caf-4e48-94e1-a46f7c3f45c1] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Found substantive Jon messages/new learnings (window: last ~2 hrs). Classified each item, extracted what to capture, and produced suggested gates + doc patches (do NOT auto-write; paste these into the files listed). Summary (items → classification → tag): 1) [2026-02-27 15:12 PST] \"What's the root cause? So our new improved training script didn't work?! All these s.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A cron job \"earnings-calendar-daily\" just completed successfully. Result: Earnings calendar daily update — summary (Perplexity) Run: python3 earnings_calendar_updater.py --update When: 2026-02-27 16:31:28 PT (2026-02-28T00:31:28Z) Dir: /Users/guclaw/.openclaw/workspace/quant-research Overview - Tickers checked: 18 - Matches: 10 - Updates applied: 6 - Issues / no date found: 2 - No Perplexity API errors recorded Details - Matches (10): AMD, AMZN, COST, CRM, GOOGL, META, QQQ, SFM, TGT, UBER - U.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 9956864c-4cdf-4f4f-be4a-d00c2a8eb70a] A cron job \"pipeline-health-evening\" just completed successfully. Result: CRITICAL — immediate attention required (3 checks): - infra: Trigger config — Trigger config timed out after 5s - model: Model feature drift — Model features missing from matrix: 2 (sample: ['has_news', 'news_missing']) - model: Model-feature parity — 2 model features missing from feature matrix: ['has_news', 'news_missing'] — backtest/retrain will zero-fill these column.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-fce520699cd794c075a1e681a5cd41e2a9c68759956011f52d90f2dd586b305f",
+          "eventExportDigest": "sha256-fc09844a84a3dfdb5300f40506fed31bd35b690a6254c5901e13a5244e3a437d",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.105,
-            "routeSelectionMs": 6.925,
+            "totalMs": 9.453,
+            "routeSelectionMs": 6.698,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.179,
+            "otherMs": 2.753,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-089ae5ae"
+          "pack-24fa0522"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-7fc606f4478f02c218f82168da9d67f610ba34f183e446cd18d5d7e538a9483d"
+        "scoreHash": "sha256-08c3c71f0eefeadc8b002c40f1e31ead31d2aee52ca2a10e8e22d5e1f8af6d37"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-089ae5ae",
+          "activePackId": "pack-24fa0522",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-3f971d99de4ce0ce2fdabeedec9e83e51d273a597999ff84e4ca661f85f374b7",
+          "selectionDigest": "sha256-361e38318518a7b36849ce30e67fb84b4adb3fed26488b59d83d9ea72fa0b768",
           "selectedContextIds": [
-            "pack-089ae5ae:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-            "pack-089ae5ae:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction",
-            "pack-089ae5ae:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
+            "pack-24fa0522:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+            "pack-24fa0522:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction",
+            "pack-24fa0522:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 0e119e26-3caf-4e48-94e1-a46f7c3f45c1] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Found substantive Jon messages/new learnings (window: last ~2 hrs). Classified each item, extracted what to capture, and produced suggested gates + doc patches (do NOT auto-write; paste these into the files listed). Summary (items → classification → tag): 1) [2026-02-27 15:12 PST] \"What's the root cause? So our new improved training script didn't work?! All these s.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
             "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-3-seed-message.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A cron job \"earnings-calendar-daily\" just completed successfully. Result: Earnings calendar daily update — summary (Perplexity) Run: python3 earnings_calendar_updater.py --update When: 2026-02-27 16:31:28 PT (2026-02-28T00:31:28Z) Dir: /Users/guclaw/.openclaw/workspace/quant-research Overview - Tickers checked: 18 - Matches: 10 - Updates applied: 6 - Issues / no date found: 2 - No Perplexity API errors recorded Details - Matches (10): AMD, AMZN, COST, CRM, GOOGL, META, QQQ, SFM, TGT, UBER - U.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-fe6d42c3cf95bedcb7856184442a709fdb436479190d2eb856303af0e6523521",
+          "eventExportDigest": "sha256-a3013656528922c2360e2a118c320045a516c631eb86d196e5232e5b4b156580",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 12.991,
-            "routeSelectionMs": 9.592,
-            "promptAssemblyMs": 0.004,
-            "otherMs": 3.396,
+            "totalMs": 9.155,
+            "routeSelectionMs": 6.406,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.748,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-0dc156cf"
+          "pack-2a207643"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-0dc156cf",
-        "frozenEvalRouterIdentity": "pack-0dc156cf:route_fn",
+        "frozenEvalPackId": "pack-2a207643",
+        "frozenEvalRouterIdentity": "pack-2a207643:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-3586cb2ba9782ac6925f1e8f8a7e679ba925f1dbbd35abc1c89592dd4c2b994e"
+        "scoreHash": "sha256-3d0fbd6264de76ba29dd4372fc226d5876d43cbd390431c233d7c8861af63766"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-0dc156cf",
+          "activePackId": "pack-2a207643",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-050b00bfd788a6a8c618afccc6545659de9b64de81acdd3dddd5e569dafe0090",
+          "selectionDigest": "sha256-b765faa01845d359b9f9f1cef9efc2ed07eed91df3ac9fd80d6c3c9fb73dad5a",
           "selectedContextIds": [
-            "pack-0dc156cf:pointer-aware-init"
+            "pack-2a207643:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-d8bafa9e6274683ac796240d0ba0410d3282911cd3e471f8d3fa693f0365827c",
+          "eventExportDigest": "sha256-89b8f95fa4f77f6bd9e475fd8e20bccea25d9ed09255a4e8a6559a186f1a21b6",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 13.072,
-            "routeSelectionMs": 9.034,
+            "totalMs": 11.15,
+            "routeSelectionMs": 7.712,
             "promptAssemblyMs": 0.002,
-            "otherMs": 4.036,
+            "otherMs": 3.437,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-d075ce5ccccc3a216fdca418f677532d6a9b0fab4dd7d61bba9f9c0bd34163ec"
+  "bundleHash": "sha256-c3ff4c0c35bcef5c648eebfc19d5be4fccd5a8f8c0805acd7972f4d2d9ed937d"
 }

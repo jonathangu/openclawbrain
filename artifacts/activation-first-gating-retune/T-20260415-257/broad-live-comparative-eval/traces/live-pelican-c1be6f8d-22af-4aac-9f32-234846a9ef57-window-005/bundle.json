@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-11T22:42:24.461Z",
   "traceHash": "sha256-4b29852ddcae763768818b925bfa513423dbca5c8ad934450c78f0838b90cfab",
   "fixtureHash": "sha256-f828a5ef63881667b78ea5f5530e5417bb5590176f57bdcf8c4590150136788a",
-  "scoreHash": "sha256-3064f14fdd8c30e71b20cc9d1fee78ed122e6867058c69a79b78076738150b1c",
+  "scoreHash": "sha256-3c8ed76116de62847b16fb5ff2976506a017eafb7eae33cfdb3ef0ce616c8656",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.026,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.026,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-80699c53"
+          "pack-adf348d0"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-8bf023472edd1825896f985d8b334ad788d2007193b5ad06c7ec6ab9029d9916"
+        "scoreHash": "sha256-26aaddaf94ab6814611c18765703b1385129c6aeb78f0064613e404f27fa119a"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-80699c53",
+          "activePackId": "pack-adf348d0",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-4467fe4d5eec93e303a442d0c09d28258bf620fc2b060c0ad4d6d0578e2f4958",
+          "selectionDigest": "sha256-4a6390467c4d2916c3854daf259d316e666b90caf226740724f9d291614d3f72",
           "selectedContextIds": [
-            "pack-80699c53:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:feedback",
-            "pack-80699c53:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback",
-            "pack-80699c53:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-2:feedback"
+            "pack-adf348d0:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:feedback",
+            "pack-adf348d0:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback",
+            "pack-adf348d0:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: Jon clarified the implementation rule further: For ambiguous horizon-dependent fields, the right fix is to prune them out of the shared snapshot-feature class and re-add them only as explicit horizon-attached known-future fields keyed on (ticker, snapshot_ts, target_dte). So please implement/prove against this split: 1. snapshot-known features stay on the base snapshot row 2. realized future outcomes stay as labels 3. horizon-dependent known-future semantics become their own explicit class at.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:interaction.",
             "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:interaction.",
             "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-218d788a7f8fa2ab7ed49760b4dc2415f60dbe7865088775fd998c56c4ee524a",
+          "eventExportDigest": "sha256-0028a3fe7d4ead86e436bd5e96f2b37b71691a885ce86b42df50e883e32922c7",
           "expectedContextPhrases": [
             "/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.207,
-            "routeSelectionMs": 5.214,
+            "totalMs": 7.154,
+            "routeSelectionMs": 4.547,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.992,
+            "otherMs": 2.605,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-80699c53"
+          "pack-adf348d0"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-ffe02e2915bfc82b27a449e1506ffebe987c2873c5256fd8a616f866303242f5"
+        "scoreHash": "sha256-f1695db2a454332d0c19215eeb4aa5386be9922eb557db74a6ffdcf402efef8c"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-80699c53",
+          "activePackId": "pack-adf348d0",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-66b58d6852ffc3e4a12495aa7eb4ebd42ffc17e33de40ce9b3cfc0fb0b77e064",
+          "selectionDigest": "sha256-b8e0735c893a228957c1979ee98f5a86d146e33caf0b2e1072f1b261028fc4da",
           "selectedContextIds": [
-            "pack-80699c53:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:feedback",
-            "pack-80699c53:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:interaction",
-            "pack-80699c53:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback"
+            "pack-adf348d0:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:feedback",
+            "pack-adf348d0:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:interaction",
+            "pack-adf348d0:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: Jon clarified the implementation rule further: For ambiguous horizon-dependent fields, the right fix is to prune them out of the shared snapshot-feature class and re-add them only as explicit horizon-attached known-future fields keyed on (ticker, snapshot_ts, target_dte). So please implement/prove against this split: 1. snapshot-known features stay on the base snapshot row 2. realized future outcomes stay as labels 3. horizon-dependent known-future semantics become their own explicit class at.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:interaction.",
             "Interaction operator_override on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed. Message: cue-5-seed-message.",
             "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-a299dffdd2d3822a955365a0038f09e1800a1bb9e22df485afde8942a0f4c19c",
+          "eventExportDigest": "sha256-1e3047e9c9f0e82ce13320aef824fdb26238d21a5e78804f3b38dc1c9598219c",
           "expectedContextPhrases": [
             "/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.13,
-            "routeSelectionMs": 5.136,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.993,
+            "totalMs": 7.273,
+            "routeSelectionMs": 4.59,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.682,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-406cfe94"
+          "pack-6df6ab11"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-406cfe94",
-        "frozenEvalRouterIdentity": "pack-406cfe94:route_fn",
+        "frozenEvalPackId": "pack-6df6ab11",
+        "frozenEvalRouterIdentity": "pack-6df6ab11:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-6d922ed00b758728d8aa4843d29bc9152553128441e2a63de4217f85e30c76bc"
+        "scoreHash": "sha256-3a3e07cab3bf19790fabe4a2693cb89774c68c1ea5ad90d8fc2f51e49ecd1945"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-406cfe94",
+          "activePackId": "pack-6df6ab11",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-5200752b1d4a3197629fc776052301cdd21ceb555400292c875796d936a78a5f",
+          "selectionDigest": "sha256-46632c011d9f7e8230c9bd19d5ed4674be9a5646434ecece8b8ea0491a92f502",
           "selectedContextIds": [
-            "pack-406cfe94:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback"
+            "pack-6df6ab11:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-24cdb113c6e79a9eff565367d8ee69bcfdf7e2793ab829d686f13d031a24565a",
+          "eventExportDigest": "sha256-de8b2a6116659963a00ff4b470560331592b111e70720410fe31939f789fde93",
           "expectedContextPhrases": [
             "/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.074,
-            "routeSelectionMs": 6.242,
+            "totalMs": 9.148,
+            "routeSelectionMs": 5.644,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.831,
+            "otherMs": 3.503,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-51d2415c88dab53e4db7696646daf4d426296f25fb7deaea7b2395a62e594783"
+  "bundleHash": "sha256-22682fc4fc5a31ae7b810bdf6330f68b89c46904233d4e9bc9bc754a36f2bc8e"
 }

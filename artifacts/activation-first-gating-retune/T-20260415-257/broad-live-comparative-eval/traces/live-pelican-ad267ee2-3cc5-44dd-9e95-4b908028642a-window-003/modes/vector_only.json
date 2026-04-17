@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-493bf919"
+      "pack-cf42e2f2"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-1deffc3dd689644323c22427f0ea949335aa7cc655ed217ea001a5e0f596fe8c"
+    "scoreHash": "sha256-57339d884ad4328c10d08640a9cc6aebb3fe5f6ad7b127999933b1298e7ad681"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-493bf919",
+      "activePackId": "pack-cf42e2f2",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-1abb63498706e199b05232a848ac588c389d594e28e50b7451fefcbb5558b1c5",
+      "selectionDigest": "sha256-773920a8c433a01c62b426f62f9dfe81f70de06fca8287a2474468ee7157979f",
       "selectedContextIds": [
-        "pack-493bf919:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
-        "pack-493bf919:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
-        "pack-493bf919:pointer-aware-init"
+        "pack-cf42e2f2:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
+        "pack-cf42e2f2:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
+        "pack-cf42e2f2:pointer-aware-init"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: Update: Jon explicitly approved the aggressive path and explicitly said you are welcome to kill existing training jobs. Treat this as permission to optimize for immediate relaunch, not next-run-only. Adjust PEL-072 implementation accordingly: support killing/replacing the current sequential retrain with the new parallel GBM+TFT architecture as soon as the code path is ready. Prioritize a concrete relaunchable implementation and operator runbook/proof path.. Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction.",
         "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-072: fix Pelican retrain architecture for next run in /Users/guclaw/worktrees/quant-research/072a-parallel-retrain. Work only in that worktree. Problem: current AWS retrain is sequential by design (GBM first, TFT second) inside bootstrap-train.sh, with weak observability: GBM/TFT only emit training_started and sparse/empty train logs. Jon explicitly wants GBM a.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction.",
         "Pointer-aware init keeps fast boot first with anchors memory/2026-04-01-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, docs/jon-model.md, docs/checklists.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-de35f031affce05e3ef62f076b10006460db7265b8920030abc43efa17041dcc",
+      "eventExportDigest": "sha256-29393cefec425c6c7584d26848900740945363546115e859d0460a13e2add936",
       "expectedContextPhrases": [
         "/retrain_v6_monitor.sh",
         "/weekly_retrain.sh",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.889,
-        "routeSelectionMs": 4.973,
+        "totalMs": 7.999,
+        "routeSelectionMs": 5.309,
         "promptAssemblyMs": 0.001,
-        "otherMs": 2.915,
+        "otherMs": 2.689,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

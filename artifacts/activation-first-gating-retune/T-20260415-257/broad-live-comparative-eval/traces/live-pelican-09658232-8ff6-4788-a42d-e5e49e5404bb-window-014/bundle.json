@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-27T23:31:43.809Z",
   "traceHash": "sha256-a2e597e92fe22d4f55c094b8ed54b6a9af6fa4591283d89702e798da892600a7",
   "fixtureHash": "sha256-622fac4fb2f464038d17b973948a3daa701456585a35960e995213dcda72d3b1",
-  "scoreHash": "sha256-74b7aae9faf3fdcac0792e4c08eca66f154b618760d35a0bc7d70f4504bd6298",
+  "scoreHash": "sha256-6a14bdc1aff8ec87a52bff5b818dc6040019fbb88467945762af1a81b72e65f6",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.034,
+            "totalMs": 0.025,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.034,
+            "otherMs": 0.025,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -130,7 +130,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-b1f88096"
+          "pack-a11770c4"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-3991355536126e936e899e488dd2180e528ed0efd510a9241079bfc8b1f75b95"
+        "scoreHash": "sha256-d61a22c331fc8e5f84543df0f47847e9e291d87c1cef0f7bfc1d52693fec5ce5"
       },
       "turns": [
         {
@@ -168,7 +168,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b1f88096",
+          "activePackId": "pack-a11770c4",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -178,18 +178,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-0bb09f0dfd27413a9770c91898b72190272e94fb90ebb324f712a7f6178f7adc",
+          "selectionDigest": "sha256-6db31ec7dc1ccb1898d1482adeaf0c400ff0ce5c5ba9ef2fd89fc8b82e7d5a0e",
           "selectedContextIds": [
-            "pack-b1f88096:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-            "pack-b1f88096:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
-            "pack-b1f88096:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback"
+            "pack-a11770c4:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+            "pack-a11770c4:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
+            "pack-a11770c4:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: ffc1b986-38d1-494c-b5a2-3cac96543fa0] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 34s • tokens 14.1k (in 12.5k / out 1.6k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim. R.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: eeb5903a-1991-4471-87ba-565408d3db83] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Good context. Training is at member 5/15, ~28 min left. Let me update the heartbeat with current progress: Stats: runtime 22s • tokens 787 (in 7 / out 780) • prompt/cache 20.8k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention s.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 14:52:27 PST] Exec completed (cool-wha, code 255) :: ssh: connect to host 44.247.209.229 port 22: Operation timed out Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. Current time: Friday, February 27th, 2026 — 3:00 PM (America/Los_Angeles). Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction."
           ],
-          "eventExportDigest": "sha256-0a5a9d8790f97182091cc9608c1b6c721035267648ed4ff60d420db5856fd0e6",
+          "eventExportDigest": "sha256-2ca02d70e5c45e518f6fc668b861bb4a3ece5de4cb7d3438d7e0aadfca6b55fc",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.777,
-            "routeSelectionMs": 5.604,
+            "totalMs": 8.217,
+            "routeSelectionMs": 5.479,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.171,
+            "otherMs": 2.737,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -242,7 +242,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-b1f88096"
+          "pack-a11770c4"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-59ed82b39813abd685e9b8427f201c37a50a4191eb841db6f1434849a73aeca9"
+        "scoreHash": "sha256-8b8848419dd145dbffcfe04695fa598e7ccf5ed0614946595cd46c5e3822d0ff"
       },
       "turns": [
         {
@@ -280,7 +280,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b1f88096",
+          "activePackId": "pack-a11770c4",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -290,18 +290,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-3a8c6edf1210668732d3c435865874e8409892e27ab6422065dee0d5af7f4cd6",
+          "selectionDigest": "sha256-48fe8e32a51472b76ab858be5a29d2592dee032751f4b1552c0d6b6d16f1b563",
           "selectedContextIds": [
-            "pack-b1f88096:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-            "pack-b1f88096:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction",
-            "pack-b1f88096:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction"
+            "pack-a11770c4:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+            "pack-a11770c4:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction",
+            "pack-a11770c4:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: ffc1b986-38d1-494c-b5a2-3cac96543fa0] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 34s • tokens 14.1k (in 12.5k / out 1.6k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim. R.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
             "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-2-seed-message.",
             "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message."
           ],
-          "eventExportDigest": "sha256-2069f09223e25c12208c616a74733606fcb3d1dbc3db9d8040165adf7f0c580a",
+          "eventExportDigest": "sha256-21d0f392e4592b55fc847e120217c8e7e128d160d6f7c3bc308b48464268a1ef",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.558,
-            "routeSelectionMs": 5.906,
+            "totalMs": 7.506,
+            "routeSelectionMs": 4.791,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.65,
+            "otherMs": 2.713,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-7614625f"
+          "pack-6533528d"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-7614625f",
-        "frozenEvalRouterIdentity": "pack-7614625f:route_fn",
+        "frozenEvalPackId": "pack-6533528d",
+        "frozenEvalRouterIdentity": "pack-6533528d:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-9a50db60d4213b07ac1f04cab3c4d17fb4f7c9e92db57e842837e876b82b69da"
+        "scoreHash": "sha256-f936d3f6381620dbb8db419d12ff18948572621f184caf6e826d931b873726da"
       },
       "turns": [
         {
@@ -393,7 +393,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-7614625f",
+          "activePackId": "pack-6533528d",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -403,14 +403,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-1b344702c185d9ae3bff0dca68e65fe9e6194bb664132f7f371045144c62a704",
+          "selectionDigest": "sha256-77835e0834eaafab0391c60c4cf25618e34a7ff95931d507d203adac72167843",
           "selectedContextIds": [
-            "pack-7614625f:pointer-aware-init"
+            "pack-6533528d:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-547d77ca3898e0ce304622dbbbc1eb2f79550e1fa2a78affbce1520dcc5f0598",
+          "eventExportDigest": "sha256-9fc67e14e60b5c6b8cadbbf918eec842d16ec666d71ff95e5b095acf03e5e9e0",
           "expectedContextPhrases": [
             "no_reply"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.833,
-            "routeSelectionMs": 6.811,
+            "totalMs": 9.12,
+            "routeSelectionMs": 5.728,
             "promptAssemblyMs": 0.001,
-            "otherMs": 4.021,
+            "otherMs": 3.391,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-0437fb68428761fdc5be1e50aa538e399222403d0c200fc332cb1f067e89b845"
+  "bundleHash": "sha256-d949bd35ae003295f6e8422c7e01032c545266021b908093ed0e687226f8cda1"
 }

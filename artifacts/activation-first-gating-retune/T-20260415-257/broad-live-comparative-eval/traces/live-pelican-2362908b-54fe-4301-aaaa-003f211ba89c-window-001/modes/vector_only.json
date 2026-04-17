@@ -12,7 +12,7 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-232672d0"
+      "pack-ab276ce8"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-68f9f4383e50e5d63c470b638565d7cfcb2940014a26088d83d5f6c99043612b"
+    "scoreHash": "sha256-b6c4652183271047936d279c45af4c08287bc209f5947add85c7a13b16d225f1"
   },
   "turns": [
     {
@@ -50,7 +50,7 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-232672d0",
+      "activePackId": "pack-ab276ce8",
       "modeRequested": "heuristic",
       "modeEffective": "heuristic",
       "selectionEngine": "flat_rank_v1",
@@ -60,18 +60,18 @@
       "activationReason": null,
       "activationConfidence": null,
       "routerIdentity": null,
-      "selectionDigest": "sha256-98137dfa5f1f708318c541e80185cc28faa2f000f28de084c9148265b8b3c807",
+      "selectionDigest": "sha256-1293dbc3d785bfc649c8910fc3d35f1e3f2aa87f56b811d71e9b776d38834030",
       "selectedContextIds": [
-        "pack-232672d0:pointer-aware-init",
-        "pack-232672d0:workspace-init:16415817",
-        "pack-232672d0:workspace-init:02e33be9"
+        "pack-ab276ce8:pointer-aware-init",
+        "pack-ab276ce8:workspace-init:16415817",
+        "pack-ab276ce8:workspace-init:02e33be9"
       ],
       "selectedContextTexts": [
         "Pointer-aware init keeps fast boot first with anchors memory/2026-03-31-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=106). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:30 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…",
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=107). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:35 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…",
         "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=2, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…"
       ],
-      "eventExportDigest": "sha256-e589800c7383762abdef0198ce1ad0622aabe213aeac7b68eae7799f35820bcd",
+      "eventExportDigest": "sha256-5a0f03d74ae914e1ec55bfa1c8593db369ff78c8c0a3fcd4bed383b0fdace856",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.008,
-        "routeSelectionMs": 4.486,
+        "totalMs": 6.264,
+        "routeSelectionMs": 4.037,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.52,
+        "otherMs": 2.225,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

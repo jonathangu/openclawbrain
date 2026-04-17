@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-15T01:14:24.171Z",
   "traceHash": "sha256-2ed84d12aa80219c71f67ac4b4dc49c9c31220d644ee2203f557cfbb2718f653",
   "fixtureHash": "sha256-a5d98f20c022a45dcdc79196fa677af12fe3ae7a1d81ee01512e8a79553eb0a0",
-  "scoreHash": "sha256-932f285af25efce0f53fbf34df81c6825f24fd090f21516443fa936d6065e199",
+  "scoreHash": "sha256-74514ba9b1dbf87694fc1e341836b4d0e28a38ff82704e7b0a42273845a0ee99",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.253,
+            "totalMs": 0.207,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.253,
+            "otherMs": 0.207,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-7d3fadd0"
+          "pack-e7085b97"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-82d0e3de6e6bcbd6be7062e6c7eebe2719773ae5c5fa8f7d8752ff0ff333acd3"
+        "scoreHash": "sha256-31210116fe667ef9c70491c061fbcc1fe1a2cded61f2550f7d26dd21175e4099"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-7d3fadd0",
+          "activePackId": "pack-e7085b97",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-1e2204bf00655fe6b74e379c816102d6a7026d0d14cb218c1832e10be5f2fdc2",
+          "selectionDigest": "sha256-5ba03bc5cafcdec4e17ecba4c9e8c000a9b6a3fc6d3f36ccf1698997021a4f8b",
           "selectedContextIds": [
-            "pack-7d3fadd0:workspace-init:2eaa4a13",
-            "pack-7d3fadd0:workspace-init:02e33be9",
-            "pack-7d3fadd0:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback"
+            "pack-e7085b97:workspace-init:2eaa4a13",
+            "pack-e7085b97:workspace-init:02e33be9",
+            "pack-e7085b97:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Working-set input BOOT.md selected by pointer-aware init (inbound=2, outbound=1). BOOT.md 1. Read TASKS.md. 2. Confirm the principal orchestrator role; TASKS.md is single-writer. 3. Resume the highest-priority unfinished unblocked principal task. 4. Restore task state from TASKS.md, artifacts, status files, and repo/worktree state. 5. If retry is safe, relaunch stale work; otherwise record the bloc…",
             "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…",
             "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: assistant: I’m here. I dug into the silence. The issue was not Telegram delivery. Pelican got wedged in a long tool/error loop this morning, with context-overflow compaction plus repeated exec-preflight failures, so it kept working internally and never surfaced a clean reply. Current truth is narrower now: label single-truth is fixed, stale status-writer truth is fixed, and the remaining blocker is the embeddings coverage gap for canonical training-input readiness. I’m continuing on that exact seam.. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-478ee1268e77af0a1e742931ad3b54ff5a1daf94579142c8814d82ea80d9ec40",
+          "eventExportDigest": "sha256-00274edce719eb2fc8f7af49767cf98ad6990c64765f4372635fb6002be2f2d2",
           "expectedContextPhrases": [
             "T-20260414-244",
             "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 16.408,
-            "routeSelectionMs": 12.223,
-            "promptAssemblyMs": 0.032,
-            "otherMs": 4.153,
+            "totalMs": 13.718,
+            "routeSelectionMs": 10.243,
+            "promptAssemblyMs": 0.025,
+            "otherMs": 3.45,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-7d3fadd0"
+          "pack-e7085b97"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-54344208e7465a26782287e320ebc9d9fe3fbcdbdea9da6fe527fcc9deba1bb2"
+        "scoreHash": "sha256-14cc46fc5b75d4d42059623cf1c8fcb5eb21dc83356b3de16ae82580fa5d5723"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-7d3fadd0",
+          "activePackId": "pack-e7085b97",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-cad68bb265a74ac72c2af1e30915c9358e6e2f2be75bc81d7dd047b0e20b6bcc",
+          "selectionDigest": "sha256-1b777a0e9819b9ffb2daa1c88728978023bde8adb63127014b5effbe418cf265",
           "selectedContextIds": [
-            "pack-7d3fadd0:workspace-init:2eaa4a13",
-            "pack-7d3fadd0:workspace-init:16415817",
-            "pack-7d3fadd0:workspace-init:02e33be9"
+            "pack-e7085b97:workspace-init:2eaa4a13",
+            "pack-e7085b97:workspace-init:16415817",
+            "pack-e7085b97:workspace-init:02e33be9"
           ],
           "selectedContextTexts": [
             "Working-set input BOOT.md selected by pointer-aware init (inbound=2, outbound=1). BOOT.md 1. Read TASKS.md. 2. Confirm the principal orchestrator role; TASKS.md is single-writer. 3. Resume the highest-priority unfinished unblocked principal task. 4. Restore task state from TASKS.md, artifacts, status files, and repo/worktree state. 5. If retry is safe, relaunch stale work; otherwise record the bloc…",
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=106). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:30 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…",
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=107). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:35 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…",
             "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…"
           ],
-          "eventExportDigest": "sha256-e26b5f43ffbfed0f76a0178d4273e1c6e42c2d64c1deb1f65b58ce8ca6fecddc",
+          "eventExportDigest": "sha256-97818c2ec8e754e38e064ed25db52f04c2c0969d971d42ff33227ee178fc4be6",
           "expectedContextPhrases": [
             "T-20260414-244",
             "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.76,
-            "routeSelectionMs": 6.861,
-            "promptAssemblyMs": 0.005,
-            "otherMs": 3.895,
+            "totalMs": 9.335,
+            "routeSelectionMs": 5.794,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 3.536,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -366,12 +366,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-91b42237"
+          "pack-fb7ccffe"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-91b42237",
-        "frozenEvalRouterIdentity": "pack-91b42237:route_fn",
+        "frozenEvalPackId": "pack-fb7ccffe",
+        "frozenEvalRouterIdentity": "pack-fb7ccffe:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-735b209a44f3416f550b59525c94c4a8c815c6b59b7383b799d2e04d7b443727"
+        "scoreHash": "sha256-c6e0c4ae6c02143e35c2432558db5223b1be02d5ee4bcae34c2b4b100e7cddc5"
       },
       "turns": [
         {
@@ -405,7 +405,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-91b42237",
+          "activePackId": "pack-fb7ccffe",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -415,14 +415,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-7766982452317bdc087c40905ba4294f358c6e68ccc398ea3a31c7c07cde3d75",
+          "selectionDigest": "sha256-75bcf61b789bbacd2248bfb7948329b52362bfa41191021e721ae48e8afdb2ce",
           "selectedContextIds": [
-            "pack-91b42237:workspace-init:16415817"
+            "pack-fb7ccffe:workspace-init:16415817"
           ],
           "selectedContextTexts": [
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=106). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:30 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=107). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:35 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
           ],
-          "eventExportDigest": "sha256-17bc632cd89d7bf1ee42bbcfe59aadace8068f04b64db9055843f2df3cab42fd",
+          "eventExportDigest": "sha256-26279445a80198e69b7028f0ce63dcf518385cd6b8525dfc79e82d887d44614a",
           "expectedContextPhrases": [
             "T-20260414-244",
             "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
@@ -440,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 12.904,
-            "routeSelectionMs": 8.402,
+            "totalMs": 11.433,
+            "routeSelectionMs": 7.186,
             "promptAssemblyMs": 0.004,
-            "otherMs": 4.498,
+            "otherMs": 4.243,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-866b2df0f2f4d9f58135eb28360fb4f362eefc4313e781233e16fcb5ca29d363"
+  "bundleHash": "sha256-19e7e4e703e27e4c07878f63432c1b1395d66855e58a07c42c5db7dce863a997"
 }

@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-12T14:00:10.969Z",
   "traceHash": "sha256-9ec605c7758b471d35c95979aeb2cdfe7a4674e948b05ffbdd6046eabf723431",
   "fixtureHash": "sha256-076f85a33a3de7d14b01739ce6654a252ec79b49aa247d0b8cb77da6c5a8a9ec",
-  "scoreHash": "sha256-53550cd34dabf8c636e02fbafa897ef6eb500883aaf3317167c32bcfe79dafbb",
+  "scoreHash": "sha256-b6f4df99c0561483c56be4b88fb48d000b2917ef64f8a3c6da4cd06646b30a45",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.036,
+            "totalMs": 0.031,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.036,
+            "otherMs": 0.031,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -132,7 +132,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-4314edc8"
+          "pack-764e6b27"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-366abc21b7e2145b9d5a9f8a016c4b166c185e4b997021e78e96e023581bc5d8"
+        "scoreHash": "sha256-1c8aaae2b5080b733599a3856431d8cd0a955a4096588e6a1d8b52d9fe59641a"
       },
       "turns": [
         {
@@ -170,7 +170,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-4314edc8",
+          "activePackId": "pack-764e6b27",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -180,18 +180,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-01cebc722dea6026bd64cfd707a3991d8dbfe151676f30eda274b1273fdac50d",
+          "selectionDigest": "sha256-20bf307e4ea815e131b7d32d517b7897760772e1bc2f48513c6c13253920af32",
           "selectedContextIds": [
-            "pack-4314edc8:pointer-aware-init",
-            "pack-4314edc8:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-1:feedback",
-            "pack-4314edc8:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-2:feedback"
+            "pack-764e6b27:pointer-aware-init",
+            "pack-764e6b27:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-1:feedback",
+            "pack-764e6b27:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-options-entry.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, memory/2026-04-07.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph.",
             "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Wednesday, April .... Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Thursday, April 9.... Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-968fc218747f2e4e385c503a2918b4fb9a74aed73baff13987bc068e2ead2d8d",
+          "eventExportDigest": "sha256-f5c0b54e2743bd32fe576d9332ca2e39b2365ee0e74cb1c956d6d3c29f32476e",
           "expectedContextPhrases": [
             "/callers",
             "/Users/guclaw/.openclaw/pelican/runtime/quant-research/tests/test_training_input_freshness.py\"}"
@@ -207,10 +207,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.796,
-            "routeSelectionMs": 6.606,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.188,
+            "totalMs": 8.274,
+            "routeSelectionMs": 4.773,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.5,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -246,7 +246,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-4314edc8"
+          "pack-764e6b27"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -274,7 +274,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-b50aab1b80f5c507f039e0ba4d2fa42d670abd650e37244c5f0dab5d64c4adde"
+        "scoreHash": "sha256-370c913e45006d1a0c39fadc59aa18b00578cc9c859c8f0a032add926ab6d290"
       },
       "turns": [
         {
@@ -284,7 +284,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-4314edc8",
+          "activePackId": "pack-764e6b27",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -294,18 +294,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-a65062ccc1ea1770095ca55638b1cc6b2b578279d47da5e5a4c4c79a1a360adb",
+          "selectionDigest": "sha256-fa5c4b7b0bda68f35b54bc81b0c1f60b46b29848cbe7042209905290ae0d7025",
           "selectedContextIds": [
-            "pack-4314edc8:pointer-aware-init",
-            "pack-4314edc8:workspace-init:0ee2a5b2",
-            "pack-4314edc8:workspace-init:02e33be9"
+            "pack-764e6b27:pointer-aware-init",
+            "pack-764e6b27:workspace-init:0ee2a5b2",
+            "pack-764e6b27:workspace-init:02e33be9"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-options-entry.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, memory/2026-04-07.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph.",
             "Working-set input memory/2026-04-07.md selected by pointer-aware init (inbound=1, outbound=5). 2026-04-07 - Jon explicit late-2026-04-06 directive: solve split truth going forward as a standing engineering rule, not a one-off cleanup burst. He explicitly ordered: do the refactor plan now, launch the total single-truth swarm now, heavily prioritize it now, and remember/circle back to the original execution issue…",
             "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=5, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…"
           ],
-          "eventExportDigest": "sha256-dfeec7a6b6a355129e8a1c0a82299f892858cf5261c97e4faa3de77e44596d5b",
+          "eventExportDigest": "sha256-cf80e9b4ca4b018c60a87aa94bb7f6278f873e8d17796d025130921d412472e9",
           "expectedContextPhrases": [
             "/callers",
             "/Users/guclaw/.openclaw/pelican/runtime/quant-research/tests/test_training_input_freshness.py\"}"
@@ -321,10 +321,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.566,
-            "routeSelectionMs": 5.366,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 3.196,
+            "totalMs": 7.415,
+            "routeSelectionMs": 4.657,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.756,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -360,12 +360,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-93ea2777"
+          "pack-c723a4d6"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-93ea2777",
-        "frozenEvalRouterIdentity": "pack-93ea2777:route_fn",
+        "frozenEvalPackId": "pack-c723a4d6",
+        "frozenEvalRouterIdentity": "pack-c723a4d6:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -389,7 +389,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-d30acd1267b980377df6de922874d60648dec192672eeca0e691bbdd79dbed2a"
+        "scoreHash": "sha256-d070721491404c765c95b7b19f09cce962678ba60102b8de4835b23e88e3a1ba"
       },
       "turns": [
         {
@@ -399,7 +399,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-93ea2777",
+          "activePackId": "pack-c723a4d6",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -409,14 +409,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-7457af5e1c94fb4faf536ac40c5a7a8797100ccf8de64856dfb6ab0bf5607086",
+          "selectionDigest": "sha256-18c7b3b5db5fe5e48bf23435e07ad8628dfe520e1ea94cac69975adab3ae5e2c",
           "selectedContextIds": [
-            "pack-93ea2777:pointer-aware-init"
+            "pack-c723a4d6:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-options-entry.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, memory/2026-04-07.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-1061fa5e1ff55f8662d544327201b9415ac13dff4a2b66eb1f8b3f27f53d35bf",
+          "eventExportDigest": "sha256-098525ab4b9f62aa761582eb3e8927ff166f4e687498b6d799760cbc8a178bfa",
           "expectedContextPhrases": [
             "/callers",
             "/Users/guclaw/.openclaw/pelican/runtime/quant-research/tests/test_training_input_freshness.py\"}"
@@ -432,10 +432,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.955,
-            "routeSelectionMs": 6.535,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 4.418,
+            "totalMs": 9.232,
+            "routeSelectionMs": 5.685,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.546,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -479,5 +479,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-6bb0e3e81740e7bebdba2569f58f204983fd730f857e932170ce23510913726d"
+  "bundleHash": "sha256-94464249fd3fe9d6aa5e749cd56bbf545d477de0f846b21e1a396ad91d262186"
 }

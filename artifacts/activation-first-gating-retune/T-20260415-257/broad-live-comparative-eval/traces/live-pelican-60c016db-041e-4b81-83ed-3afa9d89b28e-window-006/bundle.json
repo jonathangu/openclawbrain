@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T09:00:29.603Z",
   "traceHash": "sha256-15f74481afa0ad3c49942a752d93fa21610759dcd0f5184c05ee667b747607b5",
   "fixtureHash": "sha256-27569dfe07b6cf66e357fc072347afe0c073b0dd225ff6f7f6dbd4f6b53bd5c5",
-  "scoreHash": "sha256-62f4a765857e5d77925843883bacc0e7893263bbd7efc5a933504c9262f78f07",
+  "scoreHash": "sha256-af466f70bb8f0c1fa7041d267c15bf5aad473248e4bf21a34906f8f80b05dc54",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.03,
+            "totalMs": 0.034,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.03,
+            "otherMs": 0.034,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -132,7 +132,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-8de48aeb"
+          "pack-11a719b5"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-2037fc052f31abcaf69d0dffd0b94dc301ca3ff2a5f46497fcb3b6018164c828"
+        "scoreHash": "sha256-d8244e5aea6f9ac8537d62c64e042c7fbc5a8c633899935ca66b443e5824a37f"
       },
       "turns": [
         {
@@ -170,7 +170,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-8de48aeb",
+          "activePackId": "pack-11a719b5",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -180,18 +180,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-dede55b3970c70d047275b4e72671af142425a281f776efd0cca81040686b06a",
+          "selectionDigest": "sha256-c45cf5b664fe9c2c470d7238213d07e5a0f4de12e8902e9607b30e560507734a",
           "selectedContextIds": [
-            "pack-8de48aeb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback",
-            "pack-8de48aeb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback",
-            "pack-8de48aeb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback"
+            "pack-11a719b5:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback",
+            "pack-11a719b5:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback",
+            "pack-11a719b5:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: assistant: Operational excellence for Pelican = **(1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery**. Biggest remaining wins: 1) **Execution quality SLOs + guardrails (slippage is still the boss)** - Track: fill-rate, cancel-rate, slippage by *ticker/structure/time/quote-age/spread-width*. - Hard gate: *don’t place/keep repricing* if quote is stale, spread too wide, or expected edge < expected slippage. - Auto-mitigation modes: “slippage-critical ⇒ cancel new entries for .... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:56 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Operational excellence for Pelican = (1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery. Biggest remaining wins:\\n\\n1. Execution quality S.... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-40eacae7fa7bfd09040c03d42ec410f34990c89ce6fd6a28b167cdcc6dbbbdb2",
+          "eventExportDigest": "sha256-dc69b1e5735df5292ae33f4364696e38b7748053538aa238c954507119e0a390",
           "expectedContextPhrases": [
             "50d7e3fe",
             "27719eb876e4"
@@ -207,10 +207,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.994,
-            "routeSelectionMs": 5.905,
+            "totalMs": 7.648,
+            "routeSelectionMs": 5.034,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.087,
+            "otherMs": 2.613,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -246,7 +246,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-8de48aeb"
+          "pack-11a719b5"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -274,7 +274,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-2a9b8f27dafdeeb2af6ea2831b2efd2a65bc8d009b3eaa5371a5da01a7f588b4"
+        "scoreHash": "sha256-d12fb56b3f15ea19aa9481a168d81e38474c39e33b25e88e5d3cf3b1d13b0227"
       },
       "turns": [
         {
@@ -284,7 +284,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-8de48aeb",
+          "activePackId": "pack-11a719b5",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -294,18 +294,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-c402d27250b8e9041cdb32e563ce09e3275844c4353b73c20070a14c8beff248",
+          "selectionDigest": "sha256-e69835657c20e3e545d1cb1bab68360068d9a1f8b2a0758efd13ec1c15b41476",
           "selectedContextIds": [
-            "pack-8de48aeb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback",
-            "pack-8de48aeb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction",
-            "pack-8de48aeb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback"
+            "pack-11a719b5:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback",
+            "pack-11a719b5:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction",
+            "pack-11a719b5:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: assistant: Operational excellence for Pelican = **(1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery**. Biggest remaining wins: 1) **Execution quality SLOs + guardrails (slippage is still the boss)** - Track: fill-rate, cancel-rate, slippage by *ticker/structure/time/quote-age/spread-width*. - Hard gate: *don’t place/keep repricing* if quote is stale, spread too wide, or expected edge < expected slippage. - Auto-mitigation modes: “slippage-critical ⇒ cancel new entries for .... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction.",
             "Interaction operator_override on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed. Message: cue-4-seed-message.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-dacba58c96d460df70152f6674943aa6123402abeab55251b8be30a37c7e62d2",
+          "eventExportDigest": "sha256-3e71f580260a36b0dd46177c7dc557495883effe33e780a5be6c60d85c609733",
           "expectedContextPhrases": [
             "50d7e3fe",
             "27719eb876e4"
@@ -321,10 +321,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.012,
-            "routeSelectionMs": 5.93,
+            "totalMs": 7.682,
+            "routeSelectionMs": 5.059,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.08,
+            "otherMs": 2.621,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -360,12 +360,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-a18b074a"
+          "pack-254d9614"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-a18b074a",
-        "frozenEvalRouterIdentity": "pack-a18b074a:route_fn",
+        "frozenEvalPackId": "pack-254d9614",
+        "frozenEvalRouterIdentity": "pack-254d9614:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -389,7 +389,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-c944deb2fa1651a0d7bad7c6d46567d65c0278f9d5789b036c0630ef975c2fc3"
+        "scoreHash": "sha256-39c293845a470c46b76b5274db6442b9243b5cfb0863d198b4bd766880432498"
       },
       "turns": [
         {
@@ -399,7 +399,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-a18b074a",
+          "activePackId": "pack-254d9614",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -409,14 +409,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-02fa3b0f5fa034df110e8a6a0114f8a0657bb72cf9e77ad3ae3fca4373c5d390",
+          "selectionDigest": "sha256-3165688d7ede04cd85b9bc31d8dfe6789251616526496e5b089be936e2692d04",
           "selectedContextIds": [
-            "pack-a18b074a:pointer-aware-init"
+            "pack-254d9614:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-c9d4ffca46635f69590a9728ac8c2124426b394817f67c1d878c42059ecee381",
+          "eventExportDigest": "sha256-b0913c3a4e0b47155fc61ded7a5c800801aeb0260420543de78e5e9db0128463",
           "expectedContextPhrases": [
             "50d7e3fe",
             "27719eb876e4"
@@ -432,10 +432,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 11.292,
-            "routeSelectionMs": 7.399,
+            "totalMs": 10.466,
+            "routeSelectionMs": 6.425,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.892,
+            "otherMs": 4.04,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -479,5 +479,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-552fc6a5d44386e2ff47972f7ef16931da58935b9e9569ebd6b30e46eced8886"
+  "bundleHash": "sha256-94fa598f816bd19002a40a71bcb7646ae9c24dce81e4a00e3c10c42121d31974"
 }

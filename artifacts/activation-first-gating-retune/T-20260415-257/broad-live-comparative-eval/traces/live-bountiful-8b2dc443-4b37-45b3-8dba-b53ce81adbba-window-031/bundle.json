@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-01T07:53:22.139Z",
   "traceHash": "sha256-c591f5c65a17f8b728581b0a64e58f54d550808c4d6d87e9681919456c4e7956",
   "fixtureHash": "sha256-7d10d338cf842d955d253c17c711f61a919941b05a2192e292201851e3214a2a",
-  "scoreHash": "sha256-4c810c9a186b9f632310edb830079e528f751073eba3213c4cfd1be33930bc74",
+  "scoreHash": "sha256-1d13581d20f1f7b5e6c3291a7640d4e72223d74f37787b5c890de203290f2d7e",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.041,
+            "totalMs": 0.026,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.041,
+            "otherMs": 0.026,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -134,7 +134,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-1b3a5e23"
+          "pack-32c0cf04"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-bc7caba96fd3ddfc37f06bd885a1fbac9d753f9b1f9ed7f8de2dbb09a02a3842"
+        "scoreHash": "sha256-879a0553d641997df661e0a5462935a9ceb2e22b9397e7884deb496a8e81f79d"
       },
       "turns": [
         {
@@ -172,7 +172,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-1b3a5e23",
+          "activePackId": "pack-32c0cf04",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "flat_rank_v1",
@@ -182,18 +182,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-33cb5ec3c0bf75b1505238ff46770e38ab1d835cc37f0c00177c88742243714a",
+          "selectionDigest": "sha256-595875f6682d9f9143e93d4c0e85f29fb77643e36e665ecfb200553951f7f102",
           "selectedContextIds": [
-            "pack-1b3a5e23:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback",
-            "pack-1b3a5e23:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback",
-            "pack-1b3a5e23:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback"
+            "pack-32c0cf04:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback",
+            "pack-32c0cf04:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback",
+            "pack-32c0cf04:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7486\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` you can keep going. you can deploy to prod. I want this to be done. take your time. Do all of it. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction.",
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 23:05:38 PST] Exec completed (glow-rid, code 0) :: s/trades/components/OwnerActionBar.tsx) - [TradeHeader.tsx](/Users/guclaw/worktrees/bountiful/3/apps/web/src/features/trades/components/TradeHeader.tsx) Verification: - Ran `pnpm … Conversation info (untrusted metadata): ```json { \"message_id\": \"7478\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrus.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 23:19:49 PST] Exec completed (rapid-bi, code 0) :: Starting API server on :3001 (with auto-restart)... Watchdog PID: 40809 ⏳ Waiting for servers... ✅ API healthy ✅ Frontend healthy (served by Express) 🔧 Starting Cloudflare Tunnel… Conversation info (untrusted metadata): ```json { \"message_id\": \"7484\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrust.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-221a433da138c15da1c993398a4c1bd4ffc3a7f188ee3b44024b034c11527b2b",
+          "eventExportDigest": "sha256-7b04e5027a4d52f277ddc49dc0b06ddd5ec7b22855db38eaab462265985b7979",
           "expectedContextPhrases": [
             "/thinks",
             "/thinks,",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.175,
-            "routeSelectionMs": 5.793,
+            "totalMs": 7.376,
+            "routeSelectionMs": 4.665,
             "promptAssemblyMs": 0.003,
-            "otherMs": 3.378,
+            "otherMs": 2.708,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -250,7 +250,7 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-1b3a5e23"
+          "pack-32c0cf04"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-b3e69eac232c937fec276b493d34ce8b7f0833026326202bf40ee55c4620b8de"
+        "scoreHash": "sha256-785cab51fb08447257099d375557a1ad702fb14916f3d0419ab92f02768df581"
       },
       "turns": [
         {
@@ -288,7 +288,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-1b3a5e23",
+          "activePackId": "pack-32c0cf04",
           "modeRequested": "heuristic",
           "modeEffective": "heuristic",
           "selectionEngine": "graph_walk_v1",
@@ -298,18 +298,18 @@
           "activationReason": null,
           "activationConfidence": null,
           "routerIdentity": null,
-          "selectionDigest": "sha256-4017395f3c7a23bfd9658518a7d6d58e79bf85b347e73bd7c0cc4a19f7096bbf",
+          "selectionDigest": "sha256-3c7bbcc99ae30cadb54e89198cb20f2377986a7f52688cd7ec83ec7164f78e94",
           "selectedContextIds": [
-            "pack-1b3a5e23:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback",
-            "pack-1b3a5e23:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction",
-            "pack-1b3a5e23:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback"
+            "pack-32c0cf04:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback",
+            "pack-32c0cf04:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction",
+            "pack-32c0cf04:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7486\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` you can keep going. you can deploy to prod. I want this to be done. take your time. Do all of it. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction.",
             "Interaction operator_override on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed. Message: cue-3-seed-message.",
             "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 23:05:38 PST] Exec completed (glow-rid, code 0) :: s/trades/components/OwnerActionBar.tsx) - [TradeHeader.tsx](/Users/guclaw/worktrees/bountiful/3/apps/web/src/features/trades/components/TradeHeader.tsx) Verification: - Ran `pnpm … Conversation info (untrusted metadata): ```json { \"message_id\": \"7478\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrus.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-f934cf5ad1c9243d6639435f805ac38a141903605b0f84dd42af576a4d268765",
+          "eventExportDigest": "sha256-0d421792865e39eccb78d6ff1c177b66332fb7257a0fc08fbc8dcb1b9aa3f3c3",
           "expectedContextPhrases": [
             "/thinks",
             "/thinks,",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.995,
-            "routeSelectionMs": 5.637,
+            "totalMs": 7.412,
+            "routeSelectionMs": 4.673,
             "promptAssemblyMs": 0.003,
-            "otherMs": 3.354,
+            "otherMs": 2.736,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -366,12 +366,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-848ff0e2"
+          "pack-9c1661c3"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-848ff0e2",
-        "frozenEvalRouterIdentity": "pack-848ff0e2:route_fn",
+        "frozenEvalPackId": "pack-9c1661c3",
+        "frozenEvalRouterIdentity": "pack-9c1661c3:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-9505b8c621aad47fb91001ea92ba3e69081ee4834d91cb00ce762330484d8a1b"
+        "scoreHash": "sha256-3c10bff59bb81b0804512b634b28eddc1153047f95fc293bc05e750af3a22656"
       },
       "turns": [
         {
@@ -405,7 +405,7 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-848ff0e2",
+          "activePackId": "pack-9c1661c3",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
@@ -415,14 +415,14 @@
           "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-5feee5c67a75f0dd64f9b07682d9b52ce1717615c5bc1178d2c187f0994e0406",
+          "selectionDigest": "sha256-b57c539794d2a916dc254b618d3ce2eed023b82189f740f243f7a7af9683db43",
           "selectedContextIds": [
-            "pack-848ff0e2:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction"
+            "pack-9c1661c3:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction"
           ],
           "selectedContextTexts": [
             "Interaction operator_override on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed. Message: cue-3-seed-message."
           ],
-          "eventExportDigest": "sha256-708cf80a7bad6d2d97211a11d812bab90050d46db91ae312cd8de2fb0eba0e15",
+          "eventExportDigest": "sha256-7146c9260a1c14debe8af879c4a9088a59b718bd3e18b2fe261ceb5d4d71a48e",
           "expectedContextPhrases": [
             "/thinks",
             "/thinks,",
@@ -440,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 11.481,
-            "routeSelectionMs": 7.33,
+            "totalMs": 9.355,
+            "routeSelectionMs": 5.937,
             "promptAssemblyMs": 0.002,
-            "otherMs": 4.149,
+            "otherMs": 3.416,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-e100249f99883f9748c72e1d4c0ce39413467878c52099ab6c4f4e9eb05e614f"
+  "bundleHash": "sha256-4a97c9db0a3c1accf02604800615ef34c1574573e6ec302f01ec14ed38ca8c44"
 }

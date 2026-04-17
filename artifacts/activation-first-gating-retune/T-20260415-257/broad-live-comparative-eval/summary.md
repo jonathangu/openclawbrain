@@ -6,42 +6,42 @@
 - manifest path: `/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json`
 - manifest contract: `frozen_recorded_session_eval_manifest.v1`
 - manifest id: `extracted-semantic-rich-live-535`
-- git sha: `13431ef43a4b41ac24a32c43ef92cd41ffff422a`
+- git sha: `b783ac8ae5006b124821d85963455b2fea0fc307`
 - traces: 403/403
-- scorecard hash: `sha256-3a3719f2fc53555d68cdf5612a5426addcdb64bcc7f454fbfed3358dd17668fb`
-- explainable scorecard hash: `sha256-aed3ba53bbc1f1301db29c8236da25d507e886d2f632a1b3b2b07a973afc52a9`
+- scorecard hash: `sha256-f26c30c4b06da02e18f5f341e70c1f8bb5800c062ee64c6c0a55683c2d6e7339`
+- explainable scorecard hash: `sha256-f214b2f7dedabf47ca624ad0a69cc1923f8ff3b2b6ca96729dd700091f070419`
 
 ## Explainable Scorecard
-- learned_route was worse than graph_prior_only on 30/403 validated traces.
-- learned_route tied or beat graph_prior_only on 373/403 validated traces (better 1, tied 372, worse 30).
-- learned_route retrieved required replay phrases at 0.022837 recall versus 0.064904 for graph_prior_only.
+- learned_route was worse than graph_prior_only on 31/403 validated traces.
+- learned_route tied or beat graph_prior_only on 372/403 validated traces (better 1, tied 371, worse 31).
+- learned_route retrieved required replay phrases at 0.021635 recall versus 0.064904 for graph_prior_only.
 - learned_route used not available (estimated prompt cost per replay-successful trace) versus graph_prior_only.
 - Summary-routing telemetry for expand-before-assert is not available in this bundle.
-- learned_route tie-or-better vs graph_prior_only (traces): 373/403 (0.925558)
-- learned_route vs graph_prior_only (traces): 1 better, 372 tied, 30 worse
-- learned_route tie-or-better vs graph_prior_only (turns): 373/403 (0.925558)
-- learned_route vs graph_prior_only (turns): 1 better, 372 tied, 30 worse
-- regressions vs graph_prior_only: 30/403 (0.074442)
+- learned_route tie-or-better vs graph_prior_only (traces): 372/403 (0.923077)
+- learned_route vs graph_prior_only (traces): 1 better, 371 tied, 31 worse
+- learned_route tie-or-better vs graph_prior_only (turns): 372/403 (0.923077)
+- learned_route vs graph_prior_only (turns): 1 better, 371 tied, 31 worse
+- regressions vs graph_prior_only: 31/403 (0.076923)
 - regressions vs no_brain: 0/403 (0) (critical regressions: 0)
-- required-context recall: learned_route recalled 19/832 required-context phrases vs graph_prior_only 54/832
+- required-context recall: learned_route recalled 18/832 required-context phrases vs graph_prior_only 54/832
 - correction absorption: correction absorption is unavailable in comparative eval because no feedback-bearing turns were recorded in the validated set
-- success-adjusted economics: learned_route estimated prompt cost per validated trace = 0.000142 vs graph_prior_only 0.000387
+- success-adjusted economics: learned_route estimated prompt cost per validated trace = 0.000138 vs graph_prior_only 0.000387
 - fail-open: fail-open posture is not modeled in comparative eval replay bundles; use proof-cron health surfaces for degraded-serve reporting
 
 ## Public / Operator Metrics
-- learned_route was worse than graph_prior_only on 30/403 validated traces.
-- learned_route tied or beat graph_prior_only on 373/403 validated traces (better 1, tied 372, worse 30).
-- learned_route retrieved required replay phrases at 0.022837 recall versus 0.064904 for graph_prior_only.
+- learned_route was worse than graph_prior_only on 31/403 validated traces.
+- learned_route tied or beat graph_prior_only on 372/403 validated traces (better 1, tied 371, worse 31).
+- learned_route retrieved required replay phrases at 0.021635 recall versus 0.064904 for graph_prior_only.
 - learned_route used not available (estimated prompt cost per replay-successful trace) versus graph_prior_only.
 - Summary-routing telemetry for expand-before-assert is not available in this bundle.
 | metric | availability | value | formula | language |
 | --- | --- | ---: | --- | --- |
-| brain_on_regression_rate_vs_prior | proxy | 0.074442 | worseThanPriorCount / comparableTraceCount | learned_route was worse than graph_prior_only on 30/403 validated traces. |
+| brain_on_regression_rate_vs_prior | proxy | 0.076923 | worseThanPriorCount / comparableTraceCount | learned_route was worse than graph_prior_only on 31/403 validated traces. |
 | brain_on_regression_rate_vs_no_brain | proxy | 0 | worseThanNoBrainCount / comparableTraceCount | learned_route was worse than no_brain on 0/403 validated traces. |
-| critical_regression_rate_vs_prior | proxy | 0.074442 | criticalRegressionCount / comparableTraceCount | critical regressions were observed on 30/403 validated traces when compile coverage or required-context hits worsened versus graph_prior_only. |
-| tie_or_better_rate_vs_prior | proxy | 0.925558 | (betterThanPriorCount + tiedWithPriorCount) / comparableTraceCount | learned_route tied or beat graph_prior_only on 373/403 validated traces (better 1, tied 372, worse 30). |
-| required_context_recall | measured | 0.022837 | retrievedRequiredEvidenceCount / totalRequiredEvidenceCount | learned_route retrieved required replay phrases at 0.022837 recall versus 0.064904 for graph_prior_only. |
-| missing_required_context_rate | measured | 0.977163 | missingRequiredEvidenceCount / totalRequiredEvidenceCount | learned_route missed 813/832 required replay phrases. |
+| critical_regression_rate_vs_prior | proxy | 0.076923 | criticalRegressionCount / comparableTraceCount | critical regressions were observed on 31/403 validated traces when compile coverage or required-context hits worsened versus graph_prior_only. |
+| tie_or_better_rate_vs_prior | proxy | 0.923077 | (betterThanPriorCount + tiedWithPriorCount) / comparableTraceCount | learned_route tied or beat graph_prior_only on 372/403 validated traces (better 1, tied 371, worse 31). |
+| required_context_recall | measured | 0.021635 | retrievedRequiredEvidenceCount / totalRequiredEvidenceCount | learned_route retrieved required replay phrases at 0.021635 recall versus 0.064904 for graph_prior_only. |
+| missing_required_context_rate | measured | 0.978365 | missingRequiredEvidenceCount / totalRequiredEvidenceCount | learned_route missed 814/832 required replay phrases. |
 | estimated_prompt_tokens_per_successful_trace_delta_vs_prior | proxy | null | (candidatePromptTokens / candidateSuccessfulTraceProxyCount) - (priorPromptTokens / priorSuccessfulTraceProxyCount) | learned_route used not available (estimated prompt tokens per replay-successful trace) versus graph_prior_only. |
 | estimated_prompt_cost_per_successful_trace_delta_vs_prior | proxy | null | (candidatePromptCostUsd / candidateSuccessfulTraceProxyCount) - (priorPromptCostUsd / priorSuccessfulTraceProxyCount) | learned_route used not available (estimated prompt cost per replay-successful trace) versus graph_prior_only. |
 | estimated_prompt_tokens_per_successful_trace_delta_vs_no_brain | proxy | null | (candidatePromptTokens / candidateSuccessfulTraceProxyCount) - (noBrainPromptTokens / noBrainSuccessfulTraceProxyCount) | learned_route used not available (estimated prompt tokens per replay-successful trace) versus no_brain. |
@@ -68,28 +68,28 @@
 | check | status | observed | threshold |
 | --- | --- | --- | --- |
 | trace_coverage_complete | pass | requestedTraceCount=403, successfulTraceCount=403, failedTraceCount=0 | maxFailedTraceCount=0 |
-| candidate_trace_tie_or_better_vs_baseline | fail | candidateMode=learned_route, baselineMode=graph_prior_only, comparableTraceCount=403, candidateTraceTieOrBetterCountVsBaseline=373, candidateTraceTieOrBetterRateVsBaseline=0.925558 | minCandidateTraceTieOrBetterRateVsBaseline=1 |
-| candidate_tie_promotion_delta_vs_baseline | pass | candidateMode=learned_route, baselineMode=graph_prior_only, candidateTieTraceCountVsBaseline=372, candidateTiePromotionDeltaVsBaseline=0 | maxCandidateTiePromotionDeltaVsBaseline=0 |
-| candidate_mean_quality_regression_vs_baseline | pass | baselineMeanQualityScore=43.424318, candidateMeanQualityScore=40.992556, candidateMeanQualityRegressionVsBaseline=2.431762 | maxCandidateMeanQualityRegressionVsBaseline=5 |
+| candidate_trace_tie_or_better_vs_baseline | fail | candidateMode=learned_route, baselineMode=graph_prior_only, comparableTraceCount=403, candidateTraceTieOrBetterCountVsBaseline=372, candidateTraceTieOrBetterRateVsBaseline=0.923077 | minCandidateTraceTieOrBetterRateVsBaseline=1 |
+| candidate_tie_promotion_delta_vs_baseline | pass | candidateMode=learned_route, baselineMode=graph_prior_only, candidateTieTraceCountVsBaseline=371, candidateTiePromotionDeltaVsBaseline=0 | maxCandidateTiePromotionDeltaVsBaseline=0 |
+| candidate_mean_quality_regression_vs_baseline | pass | baselineMeanQualityScore=43.424318, candidateMeanQualityScore=40.942928, candidateMeanQualityRegressionVsBaseline=2.48139 | maxCandidateMeanQualityRegressionVsBaseline=5 |
 | baseline_mean_quality_gain_vs_floor | pass | baselineMeanQualityScore=43.424318, floorMeanQualityScore=0, baselineMeanQualityGainVsFloor=43.424318 | minBaselineMeanQualityGainVsFloor=5 |
 
 ## Internal Diagnostics
 - qualityScore and winnerMode are preserved only as internal deterministic replay diagnostics; they are not the public/operator definition of success.
 | metric | value | language |
 | --- | ---: | --- |
-| diagnostic_quality_score_mean_by_mode | 40.992556 | qualityScore remains an internal deterministic replay composite for smoke comparisons and tuning only. |
+| diagnostic_quality_score_mean_by_mode | 40.942928 | qualityScore remains an internal deterministic replay composite for smoke comparisons and tuning only. |
 | diagnostic_ranked_winner_count_by_mode | 1 | winnerMode is retained only as an internal tie-break and ranking surface. |
-| diagnostic_shared_top_score_trace_count_by_mode | 366 | Shared-top counts remain an internal replay diagnostic for tie analysis. |
+| diagnostic_shared_top_score_trace_count_by_mode | 365 | Shared-top counts remain an internal replay diagnostic for tie analysis. |
 
 ## Diagnostic Pairwise
 | pair | traces | left/right/tied | left tie-or-better rate | right tie-or-better rate | mean quality delta |
 | --- | ---: | --- | ---: | ---: | ---: |
 | no_brain vs vector_only | 403 | 0-403-0 | 0 | 1 | -44.119107 |
 | no_brain vs graph_prior_only | 403 | 0-403-0 | 0 | 1 | -43.424318 |
-| no_brain vs learned_route | 403 | 0-403-0 | 0 | 1 | -40.992556 |
+| no_brain vs learned_route | 403 | 0-403-0 | 0 | 1 | -40.942928 |
 | vector_only vs graph_prior_only | 403 | 8-0-395 | 1 | 0.980149 | 0.694789 |
-| vector_only vs learned_route | 403 | 37-0-366 | 1 | 0.908189 | 3.126551 |
-| graph_prior_only vs learned_route | 403 | 30-1-372 | 0.997519 | 0.925558 | 2.431762 |
+| vector_only vs learned_route | 403 | 38-0-365 | 1 | 0.905707 | 3.176179 |
+| graph_prior_only vs learned_route | 403 | 31-1-371 | 0.997519 | 0.923077 | 2.48139 |
 
 ## Trace Coverage
 | trace | status | validation ok | candidate vs prior | candidate vs floor | diagnostic top mode | score spread | error |
@@ -102,7 +102,7 @@
 | live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-004 | ok | true | tied | better | graph_prior_only | 60 | none |
 | live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-005 | ok | true | worse | better | graph_prior_only | 60 | none |
 | live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-006 | ok | true | worse | better | graph_prior_only | 60 | none |
-| live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-007 | ok | true | tied | better | graph_prior_only | 60 | none |
+| live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-007 | ok | true | worse | better | graph_prior_only | 60 | none |
 | live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-008 | ok | true | tied | better | graph_prior_only | 40 | none |
 | live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-009 | ok | true | tied | better | graph_prior_only | 60 | none |
 | live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-010 | ok | true | tied | better | graph_prior_only | 40 | none |
