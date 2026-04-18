@@ -634,6 +634,70 @@ function buildCandidateIds(params: {
   return candidateIds.slice(0, params.targetCount);
 }
 
+function candidateOrigin(candidateId: string): "event" | "init" | "phrase" | "cue" | "synthetic" | "other" {
+  if (candidateId.includes(":event:")) {
+    return "event";
+  }
+  if (
+    candidateId.includes(":pointer-aware-init")
+    || candidateId.includes(":pointer-passive-expansion")
+    || candidateId.includes(":workspace-init:")
+  ) {
+    return "init";
+  }
+  if (candidateId.startsWith("phrase-context:")) {
+    return "phrase";
+  }
+  if (candidateId.startsWith("cue-context:")) {
+    return "cue";
+  }
+  if (candidateId.startsWith("synthetic-context:")) {
+    return "synthetic";
+  }
+  return "other";
+}
+
+export function buildSyntheticRouteCandidatesV1(candidateIds: string[]): RouteCandidateV1[] {
+  return candidateIds.map((candidateId, index) => {
+    const origin = candidateOrigin(candidateId);
+    const scoreHint = origin === "event"
+      ? 0.95
+      : origin === "init"
+        ? 0.35
+        : origin === "phrase"
+          ? 0.75
+          : origin === "cue"
+            ? 0.55
+            : origin === "synthetic"
+              ? 0.05
+              : Math.max(0.1, 0.5 - (index * 0.05));
+    const authority = origin === "event"
+      ? "snapshot_supporting_fact"
+      : "snapshot_context";
+    return {
+      candidate_id: candidateId,
+      candidate_type: "graph_node",
+      authority,
+      freshness: "eval_only",
+      score_hint: Number(scoreHint.toFixed(2)),
+      token_cost: origin === "event"
+        ? 24
+        : origin === "init"
+          ? 48
+          : 16,
+    };
+  });
+}
+
+export function chooseTraverseTargetCandidateIdV1(candidateIds: string[]): string | null {
+  for (const candidateId of candidateIds) {
+    if (candidateOrigin(candidateId) === "event") {
+      return candidateId;
+    }
+  }
+  return candidateIds[0] ?? null;
+}
+
 function buildEvidenceSpans(params: {
   trace: RecordedSessionTraceV1;
   bundleSurfaces: ReplayBundleSurfaceV1[];
@@ -680,8 +744,9 @@ function firstUserMessage(trace: RecordedSessionTraceV1): string {
   return userMessage.length > 0 ? userMessage : `Activation-first gating trace ${trace.traceId}`;
 }
 
-function buildColdStartRouteRow(params: {
+export function buildColdStartRouteRow(params: {
   taskId: string;
+  laneKey: ActivationFirstLaneKeyV1;
   laneName: string;
   datasetId: string;
   trace: RecordedSessionTraceV1;
@@ -696,15 +761,15 @@ function buildColdStartRouteRow(params: {
     bundleSurfaces: params.bundleSurfaces,
     targetCount: bucketPlan.candidateCount,
   });
-  const candidates: RouteCandidateV1[] = candidateIds.map((candidateId) => ({
-    candidate_id: candidateId,
-    candidate_type: "graph_node",
-  }));
+  const candidates = buildSyntheticRouteCandidatesV1(candidateIds);
   const evidenceSpans = buildEvidenceSpans({
     trace: params.trace,
     bundleSurfaces: params.bundleSurfaces,
     targetCount: bucketPlan.evidenceSpanCount,
   });
+  const traverseTargetCandidateId = params.laneKey === "feltResume" && bucketPlan.chosenActionKind === "traverse"
+    ? chooseTraverseTargetCandidateIdV1(candidateIds)
+    : null;
 
   return {
     row_id: `activation-first:${params.laneName}:${params.trace.traceId}`,
@@ -712,10 +777,15 @@ function buildColdStartRouteRow(params: {
     query: firstUserMessage(params.trace),
     cursor_path: [params.laneName],
     candidate_set: candidates,
-    teacher_action: {
-      kind: "tool",
-      tool_name: `__gating_only__:${params.laneName}`,
-    },
+    teacher_action: traverseTargetCandidateId === null
+      ? {
+          kind: "tool",
+          tool_name: `__gating_only__:${params.laneName}`,
+        }
+      : {
+          kind: "traverse",
+          target_ids: [traverseTargetCandidateId],
+        },
     stop_label: bucketPlan.stopLabel,
     evidence_spans: evidenceSpans,
     hard_negatives: buildHardNegatives(
@@ -982,6 +1052,7 @@ function materializeLaneRows(params: {
     const bundleSurfaces = params.replaySurfaceIndex.get(loadedTrace.traceId) ?? [];
     const coldStartRouteRow = buildColdStartRouteRow({
       taskId: params.taskId,
+      laneKey: params.laneKey,
       laneName: params.lane.trancheId,
       datasetId,
       trace: loadedTrace.trace,

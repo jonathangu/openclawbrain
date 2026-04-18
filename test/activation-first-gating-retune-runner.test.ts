@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1,
+  buildColdStartRouteRow,
+  buildSyntheticRouteCandidatesV1,
+  chooseTraverseTargetCandidateIdV1,
   classifyBroadLiveProofReadV1,
   coerceRestraintLanePolicyRowV1,
   deriveFinalCandidateStatusV1,
@@ -66,6 +69,110 @@ describe("activation-first gating retune runner helpers", () => {
       stopLabel: "STOP_LOCAL",
       chosenActionKind: "stop_local",
     });
+  });
+
+  it("builds felt synthetic candidates with ranking-distinguishing features", () => {
+    expect(buildSyntheticRouteCandidatesV1([
+      "pack:event:alpha",
+      "pack:pointer-aware-init",
+      "phrase-context:trace:1",
+      "cue-context:trace:1",
+      "synthetic-context:trace:1",
+    ])).toEqual([
+      {
+        candidate_id: "pack:event:alpha",
+        candidate_type: "graph_node",
+        authority: "snapshot_supporting_fact",
+        freshness: "eval_only",
+        score_hint: 0.95,
+        token_cost: 24,
+      },
+      {
+        candidate_id: "pack:pointer-aware-init",
+        candidate_type: "graph_node",
+        authority: "snapshot_context",
+        freshness: "eval_only",
+        score_hint: 0.35,
+        token_cost: 48,
+      },
+      {
+        candidate_id: "phrase-context:trace:1",
+        candidate_type: "graph_node",
+        authority: "snapshot_context",
+        freshness: "eval_only",
+        score_hint: 0.75,
+        token_cost: 16,
+      },
+      {
+        candidate_id: "cue-context:trace:1",
+        candidate_type: "graph_node",
+        authority: "snapshot_context",
+        freshness: "eval_only",
+        score_hint: 0.55,
+        token_cost: 16,
+      },
+      {
+        candidate_id: "synthetic-context:trace:1",
+        candidate_type: "graph_node",
+        authority: "snapshot_context",
+        freshness: "eval_only",
+        score_hint: 0.05,
+        token_cost: 16,
+      },
+    ]);
+    expect(chooseTraverseTargetCandidateIdV1([
+      "pack:pointer-aware-init",
+      "pack:event:alpha",
+      "phrase-context:trace:1",
+    ])).toBe("pack:event:alpha");
+  });
+
+  it("makes felt route rows traversal-supervised while keeping restraint lanes gating-only", () => {
+    const trace = {
+      traceId: "trace-1",
+      seedCues: [],
+      turns: [{ userMessage: "Need lane B result", expectedContextPhrases: ["T-20260406-161"] }],
+    } as never;
+    const traceLabel = { oracleBestMode: "learned_route" };
+    const bundleSurfaces = [{
+      traceId: "trace-1",
+      bundleDir: "bundle",
+      selectedContextIds: ["pack:event:alpha", "pack:pointer-aware-init"],
+      selectedContextTexts: ["event alpha", "init"],
+      expectedContextPhrases: ["T-20260406-161"],
+      usedLearnedRouteTurnCount: 0,
+      activatedTurnCount: 1,
+      boundTurnCount: 1,
+    }];
+
+    const feltRow = buildColdStartRouteRow({
+      taskId: "T-1",
+      laneKey: "feltResume",
+      laneName: "felt_resume_25",
+      datasetId: "dataset-felt",
+      trace,
+      traceLabel,
+      bundleSurfaces,
+      generatedAt: "2026-04-18T01:30:00Z",
+    });
+    expect(feltRow.teacher_action).toEqual({ kind: "traverse", target_ids: ["pack:event:alpha"] });
+    expect(feltRow.candidate_set[0]).toMatchObject({
+      candidate_id: "pack:event:alpha",
+      authority: "snapshot_supporting_fact",
+      score_hint: 0.95,
+    });
+
+    const restraintRow = buildColdStartRouteRow({
+      taskId: "T-1",
+      laneKey: "mustNotFire",
+      laneName: "must-not-fire-100",
+      datasetId: "dataset-restraint",
+      trace,
+      traceLabel,
+      bundleSurfaces,
+      generatedAt: "2026-04-18T01:30:00Z",
+    });
+    expect(restraintRow.teacher_action).toEqual({ kind: "tool", tool_name: "__gating_only__:must-not-fire-100" });
   });
 
   it("coerces must-not-fire rows to stop_local without changing other lanes", () => {
