@@ -120,6 +120,54 @@ describe("activation-first gating retune runner helpers", () => {
         token_cost: 16,
       },
     ]);
+    expect(buildSyntheticRouteCandidatesV1([
+      "pack:event:alpha",
+      "pack:pointer-aware-init",
+      "phrase-context:trace:1",
+      "cue-context:trace:1",
+      "synthetic-context:trace:1",
+    ], "runtime_like_replay")).toEqual([
+      {
+        candidate_id: "pack:event:alpha",
+        candidate_type: "graph_node",
+        authority: "recorded_session_replay",
+        freshness: "replay_eval",
+        score_hint: 0.9,
+        token_cost: 72,
+      },
+      {
+        candidate_id: "pack:pointer-aware-init",
+        candidate_type: "graph_node",
+        authority: "recorded_session_replay",
+        freshness: "replay_eval",
+        score_hint: 0.2,
+        token_cost: 96,
+      },
+      {
+        candidate_id: "phrase-context:trace:1",
+        candidate_type: "graph_node",
+        authority: "recorded_session_replay",
+        freshness: "replay_eval",
+        score_hint: 0.65,
+        token_cost: 64,
+      },
+      {
+        candidate_id: "cue-context:trace:1",
+        candidate_type: "graph_node",
+        authority: "recorded_session_replay",
+        freshness: "replay_eval",
+        score_hint: 0.45,
+        token_cost: 48,
+      },
+      {
+        candidate_id: "synthetic-context:trace:1",
+        candidate_type: "graph_node",
+        authority: "recorded_session_replay",
+        freshness: "replay_eval",
+        score_hint: 0.1,
+        token_cost: 32,
+      },
+    ]);
     expect(chooseTraverseTargetCandidateIdV1([
       "pack:pointer-aware-init",
       "pack:event:alpha",
@@ -158,8 +206,9 @@ describe("activation-first gating retune runner helpers", () => {
     expect(feltRow.teacher_action).toEqual({ kind: "traverse", target_ids: ["pack:event:alpha"] });
     expect(feltRow.candidate_set[0]).toMatchObject({
       candidate_id: "pack:event:alpha",
-      authority: "snapshot_supporting_fact",
-      score_hint: 0.95,
+      authority: "recorded_session_replay",
+      freshness: "replay_eval",
+      score_hint: 0.9,
     });
 
     const restraintRow = buildColdStartRouteRow({
@@ -173,6 +222,10 @@ describe("activation-first gating retune runner helpers", () => {
       generatedAt: "2026-04-18T01:30:00Z",
     });
     expect(restraintRow.teacher_action).toEqual({ kind: "tool", tool_name: "__gating_only__:must-not-fire-100" });
+    expect(restraintRow.candidate_set[0]).toMatchObject({
+      authority: "snapshot_supporting_fact",
+      freshness: "eval_only",
+    });
   });
 
   it("coerces must-not-fire rows to stop_local without changing other lanes", () => {

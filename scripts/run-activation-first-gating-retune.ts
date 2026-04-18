@@ -222,6 +222,8 @@ interface MaterializedLaneRowsV1 {
   policyRows: PolicySupervisionRowV1[];
 }
 
+type SyntheticCandidateMetadataProfileV1 = "synthetic_eval" | "runtime_like_replay";
+
 interface FeltOverlapSummaryV1 {
   availableTraceCount: number;
   totalTraceCount: number;
@@ -657,34 +659,65 @@ function candidateOrigin(candidateId: string): "event" | "init" | "phrase" | "cu
   return "other";
 }
 
-export function buildSyntheticRouteCandidatesV1(candidateIds: string[]): RouteCandidateV1[] {
+export function buildSyntheticRouteCandidatesV1(
+  candidateIds: string[],
+  profile: SyntheticCandidateMetadataProfileV1 = "synthetic_eval",
+): RouteCandidateV1[] {
   return candidateIds.map((candidateId, index) => {
     const origin = candidateOrigin(candidateId);
-    const scoreHint = origin === "event"
-      ? 0.95
-      : origin === "init"
-        ? 0.35
-        : origin === "phrase"
-          ? 0.75
-          : origin === "cue"
-            ? 0.55
-            : origin === "synthetic"
-              ? 0.05
-              : Math.max(0.1, 0.5 - (index * 0.05));
-    const authority = origin === "event"
-      ? "snapshot_supporting_fact"
-      : "snapshot_context";
+    const scoreHint = profile === "runtime_like_replay"
+      ? origin === "event"
+        ? 0.9
+        : origin === "init"
+          ? 0.2
+          : origin === "phrase"
+            ? 0.65
+            : origin === "cue"
+              ? 0.45
+              : origin === "synthetic"
+                ? 0.1
+                : Math.max(0.15, 0.45 - (index * 0.05))
+      : origin === "event"
+        ? 0.95
+        : origin === "init"
+          ? 0.35
+          : origin === "phrase"
+            ? 0.75
+            : origin === "cue"
+              ? 0.55
+              : origin === "synthetic"
+                ? 0.05
+                : Math.max(0.1, 0.5 - (index * 0.05));
+    const authority = profile === "runtime_like_replay"
+      ? "recorded_session_replay"
+      : origin === "event"
+        ? "snapshot_supporting_fact"
+        : "snapshot_context";
+    const freshness = profile === "runtime_like_replay" ? "replay_eval" : "eval_only";
+    const tokenCost = profile === "runtime_like_replay"
+      ? origin === "event"
+        ? 72
+        : origin === "init"
+          ? 96
+          : origin === "phrase"
+            ? 64
+            : origin === "cue"
+              ? 48
+              : origin === "synthetic"
+                ? 32
+                : 48
+      : origin === "event"
+        ? 24
+        : origin === "init"
+          ? 48
+          : 16;
     return {
       candidate_id: candidateId,
       candidate_type: "graph_node",
       authority,
-      freshness: "eval_only",
+      freshness,
       score_hint: Number(scoreHint.toFixed(2)),
-      token_cost: origin === "event"
-        ? 24
-        : origin === "init"
-          ? 48
-          : 16,
+      token_cost: tokenCost,
     };
   });
 }
@@ -761,7 +794,10 @@ export function buildColdStartRouteRow(params: {
     bundleSurfaces: params.bundleSurfaces,
     targetCount: bucketPlan.candidateCount,
   });
-  const candidates = buildSyntheticRouteCandidatesV1(candidateIds);
+  const candidates = buildSyntheticRouteCandidatesV1(
+    candidateIds,
+    params.laneKey === "feltResume" ? "runtime_like_replay" : "synthetic_eval",
+  );
   const evidenceSpans = buildEvidenceSpans({
     trace: params.trace,
     bundleSurfaces: params.bundleSurfaces,
