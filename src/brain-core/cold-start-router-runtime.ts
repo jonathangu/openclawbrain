@@ -356,5 +356,7 @@ export function materializeColdStartRouterLivePolicyFromArtifactBundleV1(params:
   return materializeColdStartRouterLivePolicyGraphV1({
     initializer: params.artifactBundle.model.livePolicyInitializer,
     row: params.row,
+    applyResumeGateReplaySemanticFallbackBoost:
+      params.artifactBundle.model.calibration.interventionHead?.featureProfile === "resume_gate_v1",
   });
 }

@@ -1929,6 +1929,8 @@ export function scoreColdStartRouteRowV1(params: {
   const liveFamily = materializeColdStartRouterLivePolicyGraphV1({
     initializer: params.model.livePolicyInitializer,
     row: params.row,
+    applyResumeGateReplaySemanticFallbackBoost:
+      params.model.calibration.interventionHead?.featureProfile === "resume_gate_v1",
   });
   const state = buildTraversalStateForRow(params.row, liveFamily.sourceNodeId);
   const actions = [

@@ -724,7 +724,7 @@ function replayCandidateSemanticClass(blockId: string): string {
   return "other_context";
 }
 
-function buildReplayLearnedRouteDecisionRow(params: {
+export function buildReplayLearnedRouteDecisionRowV1(params: {
   artifactDatasetId: string;
   input: LearnedRouteSelectionOverrideInput;
 }): ColdStartRouteDecisionRowV1 | null {
@@ -736,6 +736,9 @@ function buildReplayLearnedRouteDecisionRow(params: {
     Math.max(params.input.maxBlocks, REPLAY_LEARNED_ROUTE_OVERRIDE_CANDIDATE_LIMIT),
   );
   const replayCandidates = params.input.ranked.slice(0, candidateLimit);
+  // Do not copy raw replay compile scores into score_hint here. Those magnitudes come from the
+  // existing runtime ranking surface and can overwhelm the candidate artifact's transferable
+  // semantic/live-prior signals, which defeats the point of the replay override experiment.
   const candidateSet: RouteCandidateV1[] = replayCandidates.map((entry) => ({
     candidate_id: entry.blockId,
     candidate_type: "graph_node",
@@ -745,7 +748,6 @@ function buildReplayLearnedRouteDecisionRow(params: {
     ...(typeof entry.tokenCount === "number" && Number.isFinite(entry.tokenCount)
       ? { token_cost: Math.max(0, Math.round(entry.tokenCount)) }
       : {}),
-    ...(Number.isFinite(entry.score) ? { score_hint: entry.score } : {}),
   }));
   if (candidateSet.length === 0) {
     return null;
@@ -810,7 +812,7 @@ function createLearnedRouteSelectionOverride(
 
   return {
     select(selectionInput) {
-      const row = buildReplayLearnedRouteDecisionRow({
+      const row = buildReplayLearnedRouteDecisionRowV1({
         artifactDatasetId,
         input: selectionInput,
       });

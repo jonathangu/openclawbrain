@@ -31,6 +31,7 @@ import {
   trainColdStartRouterArtifactV1,
 } from "../../src/brain-core/cold-start-router-trainer.js";
 import type { ColdStartRouterModelV1, ColdStartRouterTrainingInputV1 } from "../../src/brain-core/cold-start-router-trainer.js";
+import { materializeColdStartRouterLivePolicyGraphV1 } from "../../src/brain-core/graph.js";
 import {
   POLICY_SUPERVISION_ROW_CONTRACT_V1,
   POLICY_SUPERVISION_ROW_VERSION_V1,
@@ -772,6 +773,256 @@ describe("cold-start router trainer", () => {
     expect(scoring.decisionSummary.activated).toBe(true);
     expect(scoring.rankedCandidates[0]?.candidate.candidate_id).toBe("pack-runtime:event:alpha");
     expect(scoring.rankedCandidates[0]?.score).toBeGreaterThan(scoring.rankedCandidates[1]?.score ?? Number.NEGATIVE_INFINITY);
+  });
+
+  it("applies the resume-gate fallback floor only to felt/replay event_context semantic edges", () => {
+    const outputDir = createTempRoot("cold-start-router-replay-fallback-floor-materialization");
+    const trained = trainActivationFirstFixture(outputDir, "dataset_activation_first_replay_fallback_floor_materialization");
+    const initializer = {
+      ...trained.model.livePolicyInitializer,
+      seedWeights: [],
+      semanticClassSeedWeights: [],
+      edgeWeights: [],
+      semanticClassEdgeWeights: [
+        {
+          sourceBindingKey: "resume_replay_context",
+          targetSemanticClass: "event_context",
+          positive: 0,
+          negative: 0,
+          support: 0,
+          prior: 1,
+          weight: 0,
+        },
+        {
+          sourceBindingKey: "resume_replay_context",
+          targetSemanticClass: "init_context",
+          positive: 3,
+          negative: 1,
+          support: 4,
+          prior: 1,
+          weight: 0.18,
+        },
+      ],
+      toolActionPriors: [],
+      toolActionSets: [],
+    };
+    const feltReplayRow: RouteDecisionRowV1 = {
+      row_id: "row_felt_replay_fallback_floor",
+      dataset_id: "dataset_activation_first_replay_fallback_floor_materialization",
+      query: "Recover the felt replay event instead of pointer-aware init",
+      cursor_path: ["felt_resume_25"],
+      candidate_set: [
+        {
+          candidate_id: "pack-runtime:event:alpha",
+          candidate_type: "graph_node",
+          semantic_class: "event_context",
+          authority: "recorded_session_replay",
+          freshness: "replay_eval",
+          token_cost: 48,
+          score_hint: 0.28,
+        },
+        {
+          candidate_id: "pack-runtime:pointer-aware-init",
+          candidate_type: "graph_node",
+          semantic_class: "init_context",
+          authority: "recorded_session_replay",
+          freshness: "replay_eval",
+          token_cost: 48,
+          score_hint: 0.45,
+        },
+      ],
+      teacher_action: { kind: "traverse", target_ids: ["pack-runtime:event:alpha"] },
+      stop_label: "CONTINUE",
+      evidence_spans: [
+        { source_ref: "replay:evidence:0", start: 0, end: 30, excerpt: "Need the replay event." },
+      ],
+      hard_negatives: ["pack-runtime:pointer-aware-init"],
+      outcome_gain: 1,
+      provenance: {
+        dataset: "dataset_activation_first_replay_fallback_floor_materialization",
+        source_license: "internal_local_only",
+        source_family: "agent_traces",
+        source_snapshot_ref: "snapshot:replay-fallback-floor-materialization",
+        recorded_by: "test",
+        recorded_at: "2026-04-18T05:20:00Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-18T05:20:00Z",
+    };
+    const nonReplayRow: RouteDecisionRowV1 = {
+      ...feltReplayRow,
+      row_id: "row_non_replay_fallback_floor",
+      candidate_set: feltReplayRow.candidate_set.map((candidate) => ({
+        ...candidate,
+        authority: "snapshot_context",
+        freshness: "eval_only",
+      })),
+    };
+
+    const baseline = materializeColdStartRouterLivePolicyGraphV1({
+      initializer,
+      row: feltReplayRow,
+      applyResumeGateReplaySemanticFallbackBoost: false,
+    });
+    const boosted = materializeColdStartRouterLivePolicyGraphV1({
+      initializer,
+      row: feltReplayRow,
+      applyResumeGateReplaySemanticFallbackBoost: true,
+    });
+    const contained = materializeColdStartRouterLivePolicyGraphV1({
+      initializer,
+      row: nonReplayRow,
+      applyResumeGateReplaySemanticFallbackBoost: true,
+    });
+
+    expect(baseline.graph.getEdge("felt_resume_25", "pack-runtime:event:alpha")?.weight).toBe(0);
+    expect(boosted.graph.getEdge("felt_resume_25", "pack-runtime:event:alpha")?.weight).toBe(0.4);
+    expect(boosted.graph.getEdge("felt_resume_25", "pack-runtime:event:alpha")?.metadata).toMatchObject({
+      fallbackExperiment: "resume_gate_replay_event_context_fallback_edge_floor.v1",
+      fallbackBaseWeight: 0,
+      fallbackAdjustedWeight: 0.4,
+      fallbackAppliedBoost: 0.4,
+    });
+    expect(boosted.graph.getEdge("felt_resume_25", "pack-runtime:pointer-aware-init")?.weight).toBe(0.18);
+    expect(contained.graph.getEdge("felt_resume_25", "pack-runtime:event:alpha")?.weight).toBe(0);
+  });
+
+  it("uses the resume-gate fallback floor to flip replay ranking without touching non-replay rows", () => {
+    const outputDir = createTempRoot("cold-start-router-replay-fallback-floor-scoring");
+    const trained = trainActivationFirstFixture(outputDir, "dataset_activation_first_replay_fallback_floor_scoring");
+    const baseModel: ColdStartRouterModelV1 = {
+      ...trained.model,
+      calibration: {
+        ...trained.model.calibration,
+        interventionHead: {
+          decisionPolicyMode: "gating_only_v1",
+          freezeCandidateSelection: true,
+          freezeStopLocal: true,
+          featureProfile: "default_router",
+        },
+      },
+      livePolicyInitializer: {
+        ...trained.model.livePolicyInitializer,
+        seedWeights: [],
+        semanticClassSeedWeights: [],
+        stopLocalWeights: [
+          {
+            sourceNodeId: "recorded_session_replay",
+            positive: 1,
+            negative: 4,
+            support: 5,
+            weight: 0,
+          },
+        ],
+        edgeWeights: [],
+        semanticClassEdgeWeights: [
+          {
+            sourceBindingKey: "resume_replay_context",
+            targetSemanticClass: "event_context",
+            positive: 0,
+            negative: 0,
+            support: 0,
+            prior: 1,
+            weight: 0,
+          },
+          {
+            sourceBindingKey: "resume_replay_context",
+            targetSemanticClass: "init_context",
+            positive: 3,
+            negative: 1,
+            support: 4,
+            prior: 1,
+            weight: 0.18,
+          },
+        ],
+        toolActionPriors: [],
+        toolActionSets: [],
+      },
+    };
+    const replayRow: RouteDecisionRowV1 = {
+      row_id: "row_replay_fallback_floor_scoring",
+      dataset_id: "dataset_activation_first_replay_fallback_floor_scoring",
+      query: "Use the replay event, not the init fallback.",
+      cursor_path: ["recorded_session_replay"],
+      candidate_set: [
+        {
+          candidate_id: "pack-runtime:event:alpha",
+          candidate_type: "graph_node",
+          semantic_class: "event_context",
+          authority: "recorded_session_replay",
+          freshness: "replay_eval",
+          token_cost: 48,
+          score_hint: 0.28,
+        },
+        {
+          candidate_id: "pack-runtime:pointer-aware-init",
+          candidate_type: "graph_node",
+          semantic_class: "init_context",
+          authority: "recorded_session_replay",
+          freshness: "replay_eval",
+          token_cost: 48,
+          score_hint: 0.45,
+        },
+      ],
+      teacher_action: { kind: "traverse", target_ids: ["pack-runtime:event:alpha"] },
+      stop_label: "CONTINUE",
+      evidence_spans: [
+        { source_ref: "replay:evidence:0", start: 0, end: 30, excerpt: "Need the replay event." },
+      ],
+      hard_negatives: ["pack-runtime:pointer-aware-init"],
+      outcome_gain: 1,
+      provenance: {
+        dataset: "dataset_activation_first_replay_fallback_floor_scoring",
+        source_license: "internal_local_only",
+        source_family: "agent_traces",
+        source_snapshot_ref: "snapshot:replay-fallback-floor-scoring",
+        recorded_by: "test",
+        recorded_at: "2026-04-18T05:25:00Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-18T05:25:00Z",
+    };
+    const baselineScoring = scoreColdStartRouteRowV1({ model: baseModel, row: replayRow });
+    const boostedScoring = scoreColdStartRouteRowV1({
+      model: {
+        ...baseModel,
+        calibration: {
+          ...baseModel.calibration,
+          interventionHead: {
+            ...baseModel.calibration.interventionHead,
+            featureProfile: "resume_gate_v1",
+          },
+        },
+      },
+      row: replayRow,
+    });
+    const nonReplayScoring = scoreColdStartRouteRowV1({
+      model: {
+        ...baseModel,
+        calibration: {
+          ...baseModel.calibration,
+          interventionHead: {
+            ...baseModel.calibration.interventionHead,
+            featureProfile: "resume_gate_v1",
+          },
+        },
+      },
+      row: {
+        ...replayRow,
+        row_id: "row_non_replay_fallback_floor_scoring",
+        candidate_set: replayRow.candidate_set.map((candidate) => ({
+          ...candidate,
+          authority: "snapshot_context",
+          freshness: "eval_only",
+        })),
+      },
+    });
+
+    expect(baselineScoring.rankedCandidates[0]?.candidate.candidate_id).toBe("pack-runtime:pointer-aware-init");
+    expect(boostedScoring.rankedCandidates[0]?.candidate.candidate_id).toBe("pack-runtime:event:alpha");
+    expect(nonReplayScoring.rankedCandidates[0]?.candidate.candidate_id).toBe("pack-runtime:pointer-aware-init");
   });
 
   it("predicts STOP_LOCAL for the two MuSiQue replay rows that only have a single evidence span", () => {

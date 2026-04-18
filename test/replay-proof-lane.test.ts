@@ -9,6 +9,7 @@ import {
 import type { DataRegistryEntryV1, RouteDecisionRowV1 } from "../src/brain-core/cold-start-router-contracts.js";
 import { trainColdStartRouterArtifactV1 } from "../src/brain-core/cold-start-router-trainer.js";
 import {
+  buildReplayLearnedRouteDecisionRowV1,
   RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT,
   writeRecordedSessionReplayProofLane,
 } from "../src/replay-proof-lane.js";
@@ -368,6 +369,60 @@ function readNormalizedReplayLaneArtifact(root: string, relativePath: string): s
 }
 
 describe("recorded session replay proof lane", () => {
+  it("drops raw replay ranking score hints from override rows", () => {
+    const input = {
+      request: {
+        userMessage: "continue the interrupted task",
+      },
+      ranked: [
+        {
+          blockId: "pack:event:alpha",
+          source: "graph",
+          text: "event alpha",
+          score: 88.4,
+          channelScores: { graph: 1, shortTerm: 0, vector: 0 },
+          routingChannels: ["graph"],
+          priority: 1,
+          matchedTokens: ["task"],
+          tokenCount: 48,
+          packOrder: 0,
+          candidateSemanticClass: "answer_bearing",
+          candidateSemanticEvidence: [],
+        },
+        {
+          blockId: "pack:pointer-aware-init",
+          source: "graph",
+          text: "pointer aware init",
+          score: 288.7,
+          channelScores: { graph: 1, shortTerm: 0, vector: 0 },
+          routingChannels: ["graph"],
+          priority: 2,
+          matchedTokens: ["task"],
+          tokenCount: 48,
+          packOrder: 0,
+          candidateSemanticClass: "answer_bearing",
+          candidateSemanticEvidence: [],
+        },
+      ],
+      maxBlocks: 1,
+    } as Parameters<typeof buildReplayLearnedRouteDecisionRowV1>[0]["input"];
+
+    const row = buildReplayLearnedRouteDecisionRowV1({
+      artifactDatasetId: "dataset:test-replay-override-row",
+      input,
+    });
+
+    expect(row).not.toBeNull();
+    expect(row?.candidate_set).toHaveLength(2);
+    expect(row?.candidate_set[0]).toMatchObject({
+      candidate_id: "pack:event:alpha",
+      semantic_class: "event_context",
+      token_cost: 48,
+    });
+    expect("score_hint" in (row?.candidate_set[0] ?? {})).toBe(false);
+    expect("score_hint" in (row?.candidate_set[1] ?? {})).toBe(false);
+  });
+
   it("writes stable aggregate artifacts under _lane with pairwise deltas and win-rate matrices", () => {
     const artifactRoot = makeTempDir("replay-proof-lane-");
     const descriptor = writeRecordedSessionReplayProofLane({

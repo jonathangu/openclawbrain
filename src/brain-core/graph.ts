@@ -539,6 +539,9 @@ interface CountBucket {
 const ACTIVATION_FIRST_CONTINUE_ROW_BONUS = 0.25;
 const ACTIVATION_FIRST_HARD_NEGATIVE_BONUS = 0.15;
 const MAX_TRAINING_ROW_WEIGHT = 2.5;
+const RESUME_GATE_REPLAY_EVENT_CONTEXT_FALLBACK_EDGE_FLOOR = 0.4;
+const RESUME_GATE_REPLAY_EVENT_CONTEXT_FALLBACK_EDGE_EXPERIMENT_V1 =
+  "resume_gate_replay_event_context_fallback_edge_floor.v1";
 
 function createCountBucket(): CountBucket {
   return { positive: 0, negative: 0, support: 0 };
@@ -850,6 +853,52 @@ function cloneRouteCandidate(candidate: RouteCandidateV1): RouteCandidateV1 {
   };
 }
 
+function isReplayLikeLivePriorFallbackCandidate(candidate: RouteCandidateV1): boolean {
+  const authority = normalizeText(candidate.authority, "").toLowerCase();
+  const freshness = normalizeText(candidate.freshness, "").toLowerCase();
+  return authority === "recorded_session_replay" || freshness === "replay_eval";
+}
+
+function resolveSemanticFallbackEdgeMaterialization(params: {
+  candidate: RouteCandidateV1;
+  entry: ColdStartRouterLivePolicySemanticClassEdgeWeightV1;
+  sourceBindingKey: string;
+  applyResumeGateReplaySemanticFallbackBoost: boolean;
+}): { weight: number; metadata: Record<string, unknown> } {
+  if (
+    !params.applyResumeGateReplaySemanticFallbackBoost
+    || params.sourceBindingKey !== "resume_replay_context"
+    || normalizeText(params.candidate.semantic_class, "") !== "event_context"
+    || !isReplayLikeLivePriorFallbackCandidate(params.candidate)
+  ) {
+    return {
+      weight: params.entry.weight,
+      metadata: {},
+    };
+  }
+
+  const adjustedWeight = Math.max(
+    params.entry.weight,
+    RESUME_GATE_REPLAY_EVENT_CONTEXT_FALLBACK_EDGE_FLOOR,
+  );
+  if (Math.abs(adjustedWeight - params.entry.weight) < 1e-12) {
+    return {
+      weight: params.entry.weight,
+      metadata: {},
+    };
+  }
+
+  return {
+    weight: adjustedWeight,
+    metadata: {
+      fallbackExperiment: RESUME_GATE_REPLAY_EVENT_CONTEXT_FALLBACK_EDGE_EXPERIMENT_V1,
+      fallbackBaseWeight: params.entry.weight,
+      fallbackAdjustedWeight: adjustedWeight,
+      fallbackAppliedBoost: adjustedWeight - params.entry.weight,
+    },
+  };
+}
+
 export function buildColdStartRouterLivePolicyInitializerV1(params: {
   routeRows: RouteDecisionRowV1[];
   warmStartInitializer?: ColdStartRouterLivePolicyInitializerV1;
@@ -1056,6 +1105,7 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
 export function materializeColdStartRouterLivePolicyGraphV1(params: {
   initializer: ColdStartRouterLivePolicyInitializerV1;
   row: RouteDecisionRowV1;
+  applyResumeGateReplaySemanticFallbackBoost?: boolean;
 }): ColdStartRouterLivePolicyMaterializationV1 {
   const graph = new BrainGraph();
   const sourceNodeIdRaw = normalizeCursorSourceNodeId(params.row.cursor_path);
@@ -1138,11 +1188,17 @@ export function materializeColdStartRouterLivePolicyGraphV1(params: {
       if (!entry) {
         continue;
       }
+      const semanticFallbackEdge = resolveSemanticFallbackEdgeMaterialization({
+        candidate,
+        entry,
+        sourceBindingKey,
+        applyResumeGateReplaySemanticFallbackBoost: params.applyResumeGateReplaySemanticFallbackBoost ?? false,
+      });
       graph.addEdge({
         source: sourceNodeIdRaw,
         target: candidate.candidate_id,
         kind: "learned",
-        weight: entry.weight,
+        weight: semanticFallbackEdge.weight,
         prior: entry.prior,
         metadata: {
           positive: entry.positive,
@@ -1150,6 +1206,7 @@ export function materializeColdStartRouterLivePolicyGraphV1(params: {
           support: entry.support,
           sourceBindingKey: entry.sourceBindingKey,
           targetSemanticClass: entry.targetSemanticClass,
+          ...semanticFallbackEdge.metadata,
         },
         decayedAt: 0,
         createdAt: Date.now(),
