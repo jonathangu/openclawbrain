@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1,
   ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1,
   buildColdStartRouteRow,
   buildSyntheticRouteCandidatesV1,
@@ -48,6 +49,9 @@ describe("activation-first gating retune runner helpers", () => {
       freezeCandidateSelection: true,
       freezeStopLocal: true,
       featureProfile: "resume_gate_v1",
+    });
+    expect(ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1).toEqual({
+      activationThreshold: 0.38,
     });
   });
 

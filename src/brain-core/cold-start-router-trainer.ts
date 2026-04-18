@@ -320,6 +320,7 @@ export interface ColdStartRouterTrainingInputV1 {
   focusLaneWeights?: Record<string, number>;
   rowTypeWeights?: Partial<Record<PolicySupervisionRowType, number>>;
   interventionHead?: Partial<ColdStartRouterInterventionHeadConfigV1>;
+  calibrationOverrides?: Partial<Pick<ColdStartRouterCalibrationV1, "activationThreshold" | "abstentionThreshold" | "expectedUtilityThreshold" | "stopLocalThreshold">>;
   outputDir: string;
   routerIdentity?: string | null;
   createdAt?: string;
@@ -978,6 +979,11 @@ function validateTrainingInputs(params: ColdStartRouterTrainingInputV1): void {
   validateNonNegativeWeightMap("focusLaneWeights", params.focusLaneWeights);
   validateNonNegativeWeightMap("rowTypeWeights", params.rowTypeWeights, POLICY_SUPERVISION_ROW_TYPES);
   validateInterventionHeadConfig(params.interventionHead);
+  for (const key of ["activationThreshold", "abstentionThreshold", "expectedUtilityThreshold", "stopLocalThreshold"] as const) {
+    if (params.calibrationOverrides?.[key] !== undefined && typeof params.calibrationOverrides[key] !== "number") {
+      throw new Error(`calibrationOverrides.${key} must be a number when provided`);
+    }
+  }
 
   for (const entry of params.registryEntries) {
     const validation = validateDataRegistryEntryV1(entry);
@@ -1117,10 +1123,12 @@ function normalizeCalibration(
 function mergeCalibration(params: {
   priorCalibration?: ColdStartRouterCalibrationV1 | null;
   interventionHead?: Partial<ColdStartRouterInterventionHeadConfigV1>;
+  calibrationOverrides?: Partial<Pick<ColdStartRouterCalibrationV1, "activationThreshold" | "abstentionThreshold" | "expectedUtilityThreshold" | "stopLocalThreshold">>;
 }): ColdStartRouterCalibrationV1 {
   const base = normalizeCalibration(params.priorCalibration);
   return {
     ...base,
+    ...(params.calibrationOverrides ?? {}),
     interventionHead: normalizeInterventionHeadConfig({
       ...base.interventionHead,
       ...(params.interventionHead ?? {}),
@@ -1584,6 +1592,7 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
   const calibration = mergeCalibration({
     priorCalibration: warmStart?.bundle.model.calibration ?? null,
     interventionHead: params.interventionHead,
+    calibrationOverrides: params.calibrationOverrides,
   });
   const featureWeightMap = normalizeFeatureWeights(
     featureCounts,

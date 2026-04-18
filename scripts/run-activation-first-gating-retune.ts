@@ -65,6 +65,9 @@ export const ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1: ColdStartRouterI
   freezeStopLocal: true,
   featureProfile: "resume_gate_v1",
 };
+export const ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1 = {
+  activationThreshold: 0.38,
+} as const;
 
 export type ActivationFirstLaneKeyV1 = "feltResume" | "mustFire" | "mustNotFire";
 export type ActivationFirstCandidateStatusV1 = "pass" | "reject" | "architecture_verdict";
@@ -1683,6 +1686,7 @@ async function main(): Promise<void> {
     focusLaneWeights: harness.suggestedTrainingConfig.focusLaneWeights,
     rowTypeWeights: harness.suggestedTrainingConfig.rowTypeWeights,
     interventionHead: ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1,
+    calibrationOverrides: ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1,
     outputDir: artifacts.candidateArtifactDir,
     routerIdentity: candidateRouterIdentity,
     createdAt: args.generatedAt,

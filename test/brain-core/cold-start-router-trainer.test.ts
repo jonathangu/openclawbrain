@@ -229,7 +229,7 @@ function makePolicySupervisionRowFixture(params: {
 function trainActivationFirstFixture(
   outputDir: string,
   datasetId: string,
-  overrides: Partial<Pick<ColdStartRouterTrainingInputV1, "policySupervisionRows" | "focusLaneWeights" | "rowTypeWeights" | "interventionHead">> = {},
+  overrides: Partial<Pick<ColdStartRouterTrainingInputV1, "policySupervisionRows" | "focusLaneWeights" | "rowTypeWeights" | "interventionHead" | "calibrationOverrides">> = {},
 ) {
   return trainColdStartRouterArtifactV1({
     artifactId: `router-artifact-${datasetId}`,
@@ -507,6 +507,62 @@ describe("cold-start router trainer", () => {
 
     expect(scoring.decisionSummary).toMatchObject({
       activationThreshold: 0.45,
+      abstentionThreshold: 0.55,
+      expectedUtilityThreshold: 0,
+      stopLocalThreshold: 0.5,
+      decisionPolicyMode: "gating_only_v1",
+      freezeCandidateSelection: true,
+      freezeStopLocal: true,
+    });
+  });
+
+  it("applies calibration overrides for gating-only resume-gate experiments", () => {
+    const outputDir = createTempRoot("cold-start-router-gating-only-calibration-override");
+    const result = trainColdStartRouterArtifactV1({
+      artifactId: "router-artifact-gating-only-calibration-override",
+      artifactVersion: "0.0.1",
+      packType: "base",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+      registryEntries: [makeActivationFirstRegistryEntry("dataset_activation_first_override")],
+      routeRows: makeActivationFirstTrainingRows("dataset_activation_first_override"),
+      outputDir,
+      routerIdentity: "router:dataset_activation_first_override",
+      createdAt: "2026-04-18T10:45:00Z",
+      trainingDataRefs: ["dataset_activation_first_override"],
+      replayGateRefs: ["replay:dataset_activation_first_override"],
+      warmStartArtifactDir: approvedTrainV2Dir,
+      interventionHead: {
+        decisionPolicyMode: "gating_only_v1",
+        freezeCandidateSelection: true,
+        freezeStopLocal: true,
+        featureProfile: "resume_gate_v1",
+      },
+      calibrationOverrides: {
+        activationThreshold: 0.38,
+      },
+    });
+
+    expect(result.model.calibration).toMatchObject({
+      activationThreshold: 0.38,
+      abstentionThreshold: 0.55,
+      expectedUtilityThreshold: 0,
+      stopLocalThreshold: 0.5,
+      interventionHead: {
+        decisionPolicyMode: "gating_only_v1",
+        freezeCandidateSelection: true,
+        freezeStopLocal: true,
+        featureProfile: "resume_gate_v1",
+      },
+    });
+
+    const runtimeBundle = loadColdStartRouterArtifactBundleV1(outputDir);
+    const scoring = scoreColdStartRouteRowFromArtifactBundleV1({
+      artifactBundle: runtimeBundle,
+      row: makeGreedyThresholdRouteRow("dataset_activation_first_greedy_lane"),
+    });
+
+    expect(scoring.decisionSummary).toMatchObject({
+      activationThreshold: 0.38,
       abstentionThreshold: 0.55,
       expectedUtilityThreshold: 0,
       stopLocalThreshold: 0.5,
