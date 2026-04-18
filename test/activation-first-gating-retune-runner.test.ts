@@ -82,6 +82,7 @@ describe("activation-first gating retune runner helpers", () => {
       {
         candidate_id: "pack:event:alpha",
         candidate_type: "graph_node",
+        semantic_class: "event_context",
         authority: "snapshot_supporting_fact",
         freshness: "eval_only",
         score_hint: 0.95,
@@ -90,6 +91,7 @@ describe("activation-first gating retune runner helpers", () => {
       {
         candidate_id: "pack:pointer-aware-init",
         candidate_type: "graph_node",
+        semantic_class: "init_context",
         authority: "snapshot_context",
         freshness: "eval_only",
         score_hint: 0.35,
@@ -98,6 +100,7 @@ describe("activation-first gating retune runner helpers", () => {
       {
         candidate_id: "phrase-context:trace:1",
         candidate_type: "graph_node",
+        semantic_class: "phrase_context",
         authority: "snapshot_context",
         freshness: "eval_only",
         score_hint: 0.75,
@@ -106,6 +109,7 @@ describe("activation-first gating retune runner helpers", () => {
       {
         candidate_id: "cue-context:trace:1",
         candidate_type: "graph_node",
+        semantic_class: "cue_context",
         authority: "snapshot_context",
         freshness: "eval_only",
         score_hint: 0.55,
@@ -114,6 +118,7 @@ describe("activation-first gating retune runner helpers", () => {
       {
         candidate_id: "synthetic-context:trace:1",
         candidate_type: "graph_node",
+        semantic_class: "synthetic_context",
         authority: "snapshot_context",
         freshness: "eval_only",
         score_hint: 0.05,
@@ -130,6 +135,7 @@ describe("activation-first gating retune runner helpers", () => {
       {
         candidate_id: "pack:event:alpha",
         candidate_type: "graph_node",
+        semantic_class: "event_context",
         authority: "recorded_session_replay",
         freshness: "replay_eval",
         score_hint: 0.9,
@@ -138,6 +144,7 @@ describe("activation-first gating retune runner helpers", () => {
       {
         candidate_id: "pack:pointer-aware-init",
         candidate_type: "graph_node",
+        semantic_class: "init_context",
         authority: "recorded_session_replay",
         freshness: "replay_eval",
         score_hint: 0.2,
@@ -146,6 +153,7 @@ describe("activation-first gating retune runner helpers", () => {
       {
         candidate_id: "phrase-context:trace:1",
         candidate_type: "graph_node",
+        semantic_class: "phrase_context",
         authority: "recorded_session_replay",
         freshness: "replay_eval",
         score_hint: 0.65,
@@ -154,6 +162,7 @@ describe("activation-first gating retune runner helpers", () => {
       {
         candidate_id: "cue-context:trace:1",
         candidate_type: "graph_node",
+        semantic_class: "cue_context",
         authority: "recorded_session_replay",
         freshness: "replay_eval",
         score_hint: 0.45,
@@ -162,6 +171,7 @@ describe("activation-first gating retune runner helpers", () => {
       {
         candidate_id: "synthetic-context:trace:1",
         candidate_type: "graph_node",
+        semantic_class: "synthetic_context",
         authority: "recorded_session_replay",
         freshness: "replay_eval",
         score_hint: 0.1,
@@ -206,6 +216,7 @@ describe("activation-first gating retune runner helpers", () => {
     expect(feltRow.teacher_action).toEqual({ kind: "traverse", target_ids: ["pack:event:alpha"] });
     expect(feltRow.candidate_set[0]).toMatchObject({
       candidate_id: "pack:event:alpha",
+      semantic_class: "event_context",
       authority: "recorded_session_replay",
       freshness: "replay_eval",
       score_hint: 0.9,

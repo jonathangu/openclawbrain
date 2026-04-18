@@ -141,6 +141,7 @@ export const RouteCandidateSchemaV1 = Type.Object(
       Type.Literal("pr"),
       Type.Literal("trace"),
     ]),
+    semantic_class: Type.Optional(Type.String({ minLength: 1 })),
     authority: Type.Optional(Type.String({ minLength: 1 })),
     freshness: Type.Optional(Type.String({ minLength: 1 })),
     token_cost: Type.Optional(Type.Integer({ minimum: 0 })),

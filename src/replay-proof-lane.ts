@@ -704,6 +704,26 @@ function normalizeReplayOverrideExcerpt(value: string | null | undefined): strin
   return normalized.length > 160 ? `${normalized.slice(0, 157)}...` : normalized;
 }
 
+function replayCandidateSemanticClass(blockId: string): string {
+  if (blockId.includes(":event:")) {
+    return "event_context";
+  }
+  if (
+    blockId.includes(":pointer-aware-init")
+    || blockId.includes(":pointer-passive-expansion")
+    || blockId.includes(":workspace-init:")
+  ) {
+    return "init_context";
+  }
+  if (blockId.startsWith("phrase-context:")) {
+    return "phrase_context";
+  }
+  if (blockId.startsWith("cue-context:")) {
+    return "cue_context";
+  }
+  return "other_context";
+}
+
 function buildReplayLearnedRouteDecisionRow(params: {
   artifactDatasetId: string;
   input: LearnedRouteSelectionOverrideInput;
@@ -719,6 +739,7 @@ function buildReplayLearnedRouteDecisionRow(params: {
   const candidateSet: RouteCandidateV1[] = replayCandidates.map((entry) => ({
     candidate_id: entry.blockId,
     candidate_type: "graph_node",
+    semantic_class: replayCandidateSemanticClass(entry.blockId),
     authority: "recorded_session_replay",
     freshness: "replay_eval",
     ...(typeof entry.tokenCount === "number" && Number.isFinite(entry.tokenCount)

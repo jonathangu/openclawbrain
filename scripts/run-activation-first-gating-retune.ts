@@ -659,6 +659,24 @@ function candidateOrigin(candidateId: string): "event" | "init" | "phrase" | "cu
   return "other";
 }
 
+function candidateSemanticClass(candidateId: string): string {
+  const origin = candidateOrigin(candidateId);
+  switch (origin) {
+    case "event":
+      return "event_context";
+    case "init":
+      return "init_context";
+    case "phrase":
+      return "phrase_context";
+    case "cue":
+      return "cue_context";
+    case "synthetic":
+      return "synthetic_context";
+    default:
+      return "other_context";
+  }
+}
+
 export function buildSyntheticRouteCandidatesV1(
   candidateIds: string[],
   profile: SyntheticCandidateMetadataProfileV1 = "synthetic_eval",
@@ -714,6 +732,7 @@ export function buildSyntheticRouteCandidatesV1(
     return {
       candidate_id: candidateId,
       candidate_type: "graph_node",
+      semantic_class: candidateSemanticClass(candidateId),
       authority,
       freshness,
       score_hint: Number(scoreHint.toFixed(2)),

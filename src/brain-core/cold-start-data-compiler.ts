@@ -267,6 +267,7 @@ function canonicalCandidateSet(rawCandidates: RawDocsQaCandidateV1[]): {
     const normalizedCandidate: RouteDecisionRowV1["candidate_set"][number] = {
       candidate_id: candidateId,
       candidate_type: candidate.candidate_type,
+      ...(candidate.semantic_class ? { semantic_class: normalizeWhitespace(candidate.semantic_class) } : {}),
       ...(candidate.authority ? { authority: normalizeWhitespace(candidate.authority) } : {}),
       ...(candidate.freshness ? { freshness: normalizeWhitespace(candidate.freshness) } : {}),
       ...(typeof candidate.token_cost === "number" && Number.isFinite(candidate.token_cost)
@@ -298,6 +299,7 @@ function canonicalCandidateSet(rawCandidates: RawDocsQaCandidateV1[]): {
     if (nextScore > existingScore) {
       seen.set(candidateId, {
         ...existing,
+        ...(normalizedCandidate.semantic_class ? { semantic_class: normalizedCandidate.semantic_class } : {}),
         ...(normalizedCandidate.authority ? { authority: normalizedCandidate.authority } : {}),
         ...(normalizedCandidate.freshness ? { freshness: normalizedCandidate.freshness } : {}),
         ...(normalizedCandidate.token_cost !== undefined ? { token_cost: normalizedCandidate.token_cost } : {}),

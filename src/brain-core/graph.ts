@@ -812,6 +812,7 @@ function cloneRouteCandidate(candidate: RouteCandidateV1): RouteCandidateV1 {
   return {
     candidate_id: candidate.candidate_id,
     candidate_type: candidate.candidate_type,
+    ...(candidate.semantic_class ? { semantic_class: candidate.semantic_class } : {}),
     ...(candidate.authority ? { authority: candidate.authority } : {}),
     ...(candidate.freshness ? { freshness: candidate.freshness } : {}),
     ...(candidate.token_cost !== undefined ? { token_cost: candidate.token_cost } : {}),
