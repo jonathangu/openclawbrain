@@ -471,6 +471,24 @@ export interface ColdStartRouterLivePolicyEdgeWeightV1 {
   weight: number;
 }
 
+export interface ColdStartRouterLivePolicySemanticClassSeedWeightV1 {
+  semanticClass: string;
+  positive: number;
+  negative: number;
+  support: number;
+  weight: number;
+}
+
+export interface ColdStartRouterLivePolicySemanticClassEdgeWeightV1 {
+  sourceBindingKey: string;
+  targetSemanticClass: string;
+  positive: number;
+  negative: number;
+  support: number;
+  prior: number;
+  weight: number;
+}
+
 export interface ColdStartRouterToolActionPriorV1 {
   sourceNodeId: string;
   toolNodeId: string;
@@ -494,8 +512,10 @@ export interface ColdStartRouterLivePolicyInitializerV1 {
   contract: typeof COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1;
   policyParams: PolicyParams;
   seedWeights: ColdStartRouterLivePolicySeedWeightV1[];
+  semanticClassSeedWeights?: ColdStartRouterLivePolicySemanticClassSeedWeightV1[];
   stopLocalWeights: ColdStartRouterLivePolicyStopWeightV1[];
   edgeWeights: ColdStartRouterLivePolicyEdgeWeightV1[];
+  semanticClassEdgeWeights?: ColdStartRouterLivePolicySemanticClassEdgeWeightV1[];
   toolActionPriors: ColdStartRouterToolActionPriorV1[];
   toolActionSets: ColdStartRouterToolActionSetV1[];
   skippedToolRowIds: string[];
@@ -591,6 +611,14 @@ function normalizeCursorSourceNodeId(cursorPath: readonly string[]): string {
   return START_NODE_ID;
 }
 
+export function normalizeLivePolicySourceBindingKeyV1(sourceNodeId: string): string {
+  const normalized = normalizeText(sourceNodeId, START_NODE_ID);
+  if (normalized === "felt_resume_25" || normalized === "recorded_session_replay") {
+    return "resume_replay_context";
+  }
+  return normalized;
+}
+
 function candidateTrust(candidate: RouteCandidateV1): TrustLevel {
   switch (normalizeText(candidate.authority, "").toLowerCase()) {
     case "human":
@@ -645,6 +673,7 @@ function ensureCandidateNode(graph: BrainGraph, candidate: RouteCandidateV1): vo
     tags: [
       `candidate_type:${candidate.candidate_type}`,
       ...(candidate.candidate_type === "tool" ? ["action_kind:tool"] : []),
+      ...(candidate.semantic_class ? [`semantic_class:${candidate.semantic_class}`] : []),
       ...(candidate.authority ? [`authority:${candidate.authority}`] : []),
       ...(candidate.freshness ? [`freshness:${candidate.freshness}`] : []),
     ],
@@ -654,6 +683,7 @@ function ensureCandidateNode(graph: BrainGraph, candidate: RouteCandidateV1): vo
     metadata: {
       candidate_type: candidate.candidate_type,
       action_kind: candidate.candidate_type === "tool" ? "tool" : "traverse",
+      semantic_class: candidate.semantic_class ?? null,
       authority: candidate.authority ?? null,
       freshness: candidate.freshness ?? null,
       score_hint: candidate.score_hint ?? null,
@@ -826,10 +856,18 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
   warmStartStopLabelCounts?: Record<ColdStartStopLabelV1, number>;
 }): ColdStartRouterLivePolicyInitializerV1 {
   const seedCounts = seedCountMapFromEntries(params.warmStartInitializer?.seedWeights ?? [], (entry) => entry.nodeId);
+  const semanticClassSeedCounts = seedCountMapFromEntries(
+    params.warmStartInitializer?.semanticClassSeedWeights ?? [],
+    (entry) => entry.semanticClass,
+  );
   const stopCounts = seedCountMapFromEntries(params.warmStartInitializer?.stopLocalWeights ?? [], (entry) => entry.sourceNodeId);
   const edgeCounts = seedCountMapFromEntries(
     params.warmStartInitializer?.edgeWeights ?? [],
     (entry) => `${entry.sourceNodeId}→${entry.targetNodeId}`,
+  );
+  const semanticClassEdgeCounts = seedCountMapFromEntries(
+    params.warmStartInitializer?.semanticClassEdgeWeights ?? [],
+    (entry) => `${entry.sourceBindingKey}→${entry.targetSemanticClass}`,
   );
   const toolActionCounts = seedToolActionCountsFromInitializer(params.warmStartInitializer);
   const toolActionSets = seedToolActionSetsFromInitializer(params.warmStartInitializer);
@@ -842,6 +880,7 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
   for (const row of params.routeRows) {
     const rowWeight = toRowWeight(row);
     const sourceNodeId = normalizeCursorSourceNodeId(row.cursor_path);
+    const sourceBindingKey = normalizeLivePolicySourceBindingKeyV1(sourceNodeId);
     const positiveCandidateIds = parsePositiveCandidateIds(row);
     const toolCandidates = row.candidate_set.filter((candidate) => candidate.candidate_type === "tool");
     const teacherToolNodeIds = row.teacher_action.kind === "tool"
@@ -881,6 +920,13 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
       const bucket = seedCounts.get(candidate.candidate_id) ?? createCountBucket();
       bumpCountBucket(bucket, positiveCandidateIds.has(candidate.candidate_id), rowWeight);
       seedCounts.set(candidate.candidate_id, bucket);
+
+      const semanticClass = normalizeText(candidate.semantic_class, "");
+      if (semanticClass.length > 0) {
+        const semanticBucket = semanticClassSeedCounts.get(semanticClass) ?? createCountBucket();
+        bumpCountBucket(semanticBucket, positiveCandidateIds.has(candidate.candidate_id), rowWeight);
+        semanticClassSeedCounts.set(semanticClass, semanticBucket);
+      }
     }
 
     const stopBucket = stopCounts.get(sourceNodeId) ?? createCountBucket();
@@ -895,6 +941,14 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
         const edgeBucket = edgeCounts.get(bucketKey) ?? createCountBucket();
         bumpCountBucket(edgeBucket, positiveCandidateIds.has(candidate.candidate_id), rowWeight);
         edgeCounts.set(bucketKey, edgeBucket);
+
+        const semanticClass = normalizeText(candidate.semantic_class, "");
+        if (semanticClass.length > 0) {
+          const semanticEdgeKey = `${sourceBindingKey}→${semanticClass}`;
+          const semanticEdgeBucket = semanticClassEdgeCounts.get(semanticEdgeKey) ?? createCountBucket();
+          bumpCountBucket(semanticEdgeBucket, positiveCandidateIds.has(candidate.candidate_id), rowWeight);
+          semanticClassEdgeCounts.set(semanticEdgeKey, semanticEdgeBucket);
+        }
       }
     }
 
@@ -952,6 +1006,13 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
       support: bucket.support,
       weight: calcLiveWeight(bucket.positive, bucket.negative, bucket.support, 1, 2),
     })),
+    semanticClassSeedWeights: sortedCountEntries(semanticClassSeedCounts).map(({ key, bucket }) => ({
+      semanticClass: key,
+      positive: bucket.positive,
+      negative: bucket.negative,
+      support: bucket.support,
+      weight: calcLiveWeight(bucket.positive, bucket.negative, bucket.support, 1, 2),
+    })),
     stopLocalWeights: sortedCountEntries(stopCounts).map(({ key, bucket }) => ({
       sourceNodeId: key,
       positive: bucket.positive,
@@ -964,6 +1025,18 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
       return {
         sourceNodeId: sourceNodeId ?? START_NODE_ID,
         targetNodeId: targetNodeId ?? "",
+        positive: bucket.positive,
+        negative: bucket.negative,
+        support: bucket.support,
+        prior: 1,
+        weight: calcLiveWeight(bucket.positive, bucket.negative, bucket.support, 1, 2),
+      };
+    }),
+    semanticClassEdgeWeights: sortedCountEntries(semanticClassEdgeCounts).map(({ key, bucket }) => {
+      const [sourceBindingKey, targetSemanticClass] = key.split("→", 2);
+      return {
+        sourceBindingKey: sourceBindingKey ?? START_NODE_ID,
+        targetSemanticClass: targetSemanticClass ?? "",
         positive: bucket.positive,
         negative: bucket.negative,
         support: bucket.support,
@@ -986,6 +1059,7 @@ export function materializeColdStartRouterLivePolicyGraphV1(params: {
 }): ColdStartRouterLivePolicyMaterializationV1 {
   const graph = new BrainGraph();
   const sourceNodeIdRaw = normalizeCursorSourceNodeId(params.row.cursor_path);
+  const sourceBindingKey = normalizeLivePolicySourceBindingKeyV1(sourceNodeIdRaw);
   const sourceNodeId = sourceNodeIdRaw === START_NODE_ID ? null : sourceNodeIdRaw;
 
   for (const candidate of params.row.candidate_set) {
@@ -1009,6 +1083,23 @@ export function materializeColdStartRouterLivePolicyGraphV1(params: {
       graph.setSeedWeight(entry.nodeId, entry.weight);
     }
   }
+  const semanticClassSeedWeightMap = new Map(
+    (params.initializer.semanticClassSeedWeights ?? []).map((entry) => [entry.semanticClass, entry.weight]),
+  );
+  for (const candidate of params.row.candidate_set) {
+    if (graph.getSeedWeight(candidate.candidate_id) !== 0) {
+      continue;
+    }
+    const semanticClass = normalizeText(candidate.semantic_class, "");
+    if (semanticClass.length === 0) {
+      continue;
+    }
+    const semanticWeight = semanticClassSeedWeightMap.get(semanticClass);
+    if (semanticWeight === undefined) {
+      continue;
+    }
+    graph.setSeedWeight(candidate.candidate_id, semanticWeight);
+  }
   for (const entry of params.initializer.stopLocalWeights) {
     graph.setStopLocalWeight(entry.sourceNodeId === START_NODE_ID ? null : entry.sourceNodeId, entry.weight);
   }
@@ -1030,6 +1121,40 @@ export function materializeColdStartRouterLivePolicyGraphV1(params: {
       decayedAt: 0,
       createdAt: Date.now(),
     });
+  }
+  const semanticClassEdgeWeightMap = new Map(
+    (params.initializer.semanticClassEdgeWeights ?? []).map((entry) => [`${entry.sourceBindingKey}→${entry.targetSemanticClass}`, entry]),
+  );
+  if (graph.getNode(sourceNodeIdRaw)) {
+    for (const candidate of params.row.candidate_set) {
+      if (graph.getEdge(sourceNodeIdRaw, candidate.candidate_id)) {
+        continue;
+      }
+      const semanticClass = normalizeText(candidate.semantic_class, "");
+      if (semanticClass.length === 0) {
+        continue;
+      }
+      const entry = semanticClassEdgeWeightMap.get(`${sourceBindingKey}→${semanticClass}`);
+      if (!entry) {
+        continue;
+      }
+      graph.addEdge({
+        source: sourceNodeIdRaw,
+        target: candidate.candidate_id,
+        kind: "learned",
+        weight: entry.weight,
+        prior: entry.prior,
+        metadata: {
+          positive: entry.positive,
+          negative: entry.negative,
+          support: entry.support,
+          sourceBindingKey: entry.sourceBindingKey,
+          targetSemanticClass: entry.targetSemanticClass,
+        },
+        decayedAt: 0,
+        createdAt: Date.now(),
+      });
+    }
   }
 
   for (const entry of params.initializer.toolActionPriors) {

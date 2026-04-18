@@ -664,6 +664,116 @@ describe("cold-start router trainer", () => {
     expect(scoring.rankedCandidates[0]?.candidate.candidate_id).toBe("mem:shipping_correction");
   });
 
+  it("transfers live-policy prior binding across replay-like source ids via semantic class fallback", () => {
+    const outputDir = createTempRoot("cold-start-router-semantic-class-live-priors");
+    const trained = trainActivationFirstFixture(outputDir, "dataset_activation_first_semantic_class_live_priors");
+    const model: ColdStartRouterModelV1 = {
+      ...trained.model,
+      livePolicyInitializer: {
+        ...trained.model.livePolicyInitializer,
+        seedWeights: [],
+        semanticClassSeedWeights: [
+          {
+            semanticClass: "event_context",
+            positive: 5,
+            negative: 0,
+            support: 5,
+            weight: 0.35,
+          },
+          {
+            semanticClass: "init_context",
+            positive: 0,
+            negative: 5,
+            support: 5,
+            weight: -0.35,
+          },
+        ],
+        stopLocalWeights: [
+          {
+            sourceNodeId: "recorded_session_replay",
+            positive: 1,
+            negative: 4,
+            support: 5,
+            weight: 0,
+          },
+        ],
+        edgeWeights: [],
+        semanticClassEdgeWeights: [
+          {
+            sourceBindingKey: "resume_replay_context",
+            targetSemanticClass: "event_context",
+            positive: 5,
+            negative: 0,
+            support: 5,
+            prior: 1,
+            weight: 0.3,
+          },
+          {
+            sourceBindingKey: "resume_replay_context",
+            targetSemanticClass: "init_context",
+            positive: 0,
+            negative: 5,
+            support: 5,
+            prior: 1,
+            weight: -0.05,
+          },
+        ],
+        toolActionPriors: [],
+        toolActionSets: [],
+      },
+    };
+    const row: RouteDecisionRowV1 = {
+      row_id: "row_replay_semantic_class_transfer",
+      dataset_id: "dataset_activation_first_semantic_class_live_priors",
+      query: "Recover the replay event instead of defaulting to pointer-aware init",
+      cursor_path: ["recorded_session_replay"],
+      candidate_set: [
+        {
+          candidate_id: "pack-runtime:event:alpha",
+          candidate_type: "graph_node",
+          semantic_class: "event_context",
+          authority: "recorded_session_replay",
+          freshness: "replay_eval",
+          token_cost: 72,
+          score_hint: 0.9,
+        },
+        {
+          candidate_id: "pack-runtime:pointer-aware-init",
+          candidate_type: "graph_node",
+          semantic_class: "init_context",
+          authority: "recorded_session_replay",
+          freshness: "replay_eval",
+          token_cost: 96,
+          score_hint: 0.2,
+        },
+      ],
+      teacher_action: { kind: "traverse", target_ids: ["pack-runtime:event:alpha"] },
+      stop_label: "CONTINUE",
+      evidence_spans: [
+        { source_ref: "replay:evidence:0", start: 0, end: 24, excerpt: "Need the replay event." },
+      ],
+      hard_negatives: ["pack-runtime:pointer-aware-init"],
+      outcome_gain: 1,
+      provenance: {
+        dataset: "dataset_activation_first_semantic_class_live_priors",
+        source_license: "internal_local_only",
+        source_family: "agent_traces",
+        source_snapshot_ref: "snapshot:replay-semantic-class-transfer",
+        recorded_by: "test",
+        recorded_at: "2026-04-18T05:10:00Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-18T05:10:00Z",
+    };
+
+    const scoring = scoreColdStartRouteRowV1({ model, row });
+
+    expect(scoring.decisionSummary.activated).toBe(true);
+    expect(scoring.rankedCandidates[0]?.candidate.candidate_id).toBe("pack-runtime:event:alpha");
+    expect(scoring.rankedCandidates[0]?.score).toBeGreaterThan(scoring.rankedCandidates[1]?.score ?? Number.NEGATIVE_INFINITY);
+  });
+
   it("predicts STOP_LOCAL for the two MuSiQue replay rows that only have a single evidence span", () => {
     const loadedExport = loadAndFilterColdStartRouterApprovedExportV1(approvedExportV2Path);
     const runtimeBundle = loadColdStartRouterArtifactBundleV1(approvedTrainV2Dir);
