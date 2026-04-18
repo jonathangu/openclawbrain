@@ -859,6 +859,10 @@ function isReplayLikeLivePriorFallbackCandidate(candidate: RouteCandidateV1): bo
   return authority === "recorded_session_replay" || freshness === "replay_eval";
 }
 
+function isReplayPreferredFallbackSemanticClass(semanticClass: string): boolean {
+  return semanticClass === "feedback_context" || semanticClass === "event_context";
+}
+
 function resolveSemanticFallbackEdgeMaterialization(params: {
   candidate: RouteCandidateV1;
   entry: ColdStartRouterLivePolicySemanticClassEdgeWeightV1;
@@ -868,7 +872,7 @@ function resolveSemanticFallbackEdgeMaterialization(params: {
   if (
     !params.applyResumeGateReplaySemanticFallbackBoost
     || params.sourceBindingKey !== "resume_replay_context"
-    || normalizeText(params.candidate.semantic_class, "") !== "event_context"
+    || !isReplayPreferredFallbackSemanticClass(normalizeText(params.candidate.semantic_class, ""))
     || !isReplayLikeLivePriorFallbackCandidate(params.candidate)
   ) {
     return {

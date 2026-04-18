@@ -639,7 +639,13 @@ function buildCandidateIds(params: {
   return candidateIds.slice(0, params.targetCount);
 }
 
-function candidateOrigin(candidateId: string): "event" | "init" | "phrase" | "cue" | "synthetic" | "other" {
+function candidateOrigin(candidateId: string): "feedback" | "interaction" | "event" | "init" | "phrase" | "cue" | "synthetic" | "other" {
+  if (candidateId.includes(":feedback")) {
+    return "feedback";
+  }
+  if (candidateId.includes(":interaction")) {
+    return "interaction";
+  }
   if (candidateId.includes(":event:")) {
     return "event";
   }
@@ -665,6 +671,10 @@ function candidateOrigin(candidateId: string): "event" | "init" | "phrase" | "cu
 function candidateSemanticClass(candidateId: string): string {
   const origin = candidateOrigin(candidateId);
   switch (origin) {
+    case "feedback":
+      return "feedback_context";
+    case "interaction":
+      return "interaction_context";
     case "event":
       return "event_context";
     case "init":
@@ -687,7 +697,11 @@ export function buildSyntheticRouteCandidatesV1(
   return candidateIds.map((candidateId, index) => {
     const origin = candidateOrigin(candidateId);
     const scoreHint = profile === "runtime_like_replay"
-      ? origin === "event"
+      ? origin === "feedback"
+        ? 0.95
+        : origin === "interaction"
+          ? 0.55
+          : origin === "event"
         ? 0.9
         : origin === "init"
           ? 0.2
@@ -698,7 +712,11 @@ export function buildSyntheticRouteCandidatesV1(
               : origin === "synthetic"
                 ? 0.1
                 : Math.max(0.15, 0.45 - (index * 0.05))
-      : origin === "event"
+      : origin === "feedback"
+        ? 0.98
+        : origin === "interaction"
+          ? 0.7
+          : origin === "event"
         ? 0.95
         : origin === "init"
           ? 0.35
@@ -711,12 +729,16 @@ export function buildSyntheticRouteCandidatesV1(
                 : Math.max(0.1, 0.5 - (index * 0.05));
     const authority = profile === "runtime_like_replay"
       ? "recorded_session_replay"
-      : origin === "event"
+      : origin === "feedback" || origin === "event"
         ? "snapshot_supporting_fact"
         : "snapshot_context";
     const freshness = profile === "runtime_like_replay" ? "replay_eval" : "eval_only";
     const tokenCost = profile === "runtime_like_replay"
-      ? origin === "event"
+      ? origin === "feedback"
+        ? 80
+        : origin === "interaction"
+          ? 56
+          : origin === "event"
         ? 72
         : origin === "init"
           ? 96
@@ -727,7 +749,11 @@ export function buildSyntheticRouteCandidatesV1(
               : origin === "synthetic"
                 ? 32
                 : 48
-      : origin === "event"
+      : origin === "feedback"
+        ? 24
+        : origin === "interaction"
+          ? 20
+          : origin === "event"
         ? 24
         : origin === "init"
           ? 48
@@ -746,7 +772,8 @@ export function buildSyntheticRouteCandidatesV1(
 
 export function chooseTraverseTargetCandidateIdV1(candidateIds: string[]): string | null {
   for (const candidateId of candidateIds) {
-    if (candidateOrigin(candidateId) === "event") {
+    const origin = candidateOrigin(candidateId);
+    if (origin === "feedback" || origin === "event") {
       return candidateId;
     }
   }
@@ -1505,6 +1532,7 @@ function runCandidateSpecificBroadLiveProofRead(params: {
       manifestPath,
       outputDir: params.broadLiveOutputDir,
       learnedRouteCandidateArtifactDir: params.candidateArtifact.outputDir,
+      learnedRouteCandidateArtifactMode: "served_pack_adapter",
     });
     const laneSummaryTablesPath = descriptor.report.files.laneSummaryTables === null
       ? null

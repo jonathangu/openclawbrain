@@ -7,16 +7,34 @@ import type {
   LearnedRouteSelectionOverrideInput,
 } from "../packages/compiler/vendor/index.js";
 import {
+  compileRuntimeContext,
   validateRecordedSessionReplayProofBundle,
   writeRecordedSessionReplayProofBundle,
+  type CompileRuntimeContextInput,
   type RecordedSessionReplayMode,
+  type RecordedSessionReplayFixtureV1,
   type RecordedSessionReplayModeReportV1,
   type RecordedSessionReplayProofBundleDescriptorV1,
+  type RecordedSessionReplayServedPackAdapterV1,
   type RecordedSessionReplayProofBundleValidationV1,
   type RecordedSessionReplayTurnReportV1,
   type RecordedSessionTraceTurnV1,
   type RecordedSessionTraceV1,
 } from "../packages/cli/dist/src/index.js";
+import {
+  CONTRACT_IDS,
+  buildRouteArtifactReference,
+  checksumJsonPayload,
+  computeRouterCollectedLabelCounts,
+  computeRouterFreshnessChecksum,
+  computeRouterObjectiveChecksum,
+  computeRouterQueryChecksum,
+  computeRouterWeightsChecksum,
+  type RouterArtifactV1,
+  type RouterPolicyUpdateV1,
+  type RouterTraceV1,
+} from "../packages/contracts/vendor/index.js";
+import { activatePack, loadPack } from "../packages/pack-format/vendor/index.js";
 import type {
   RouteCandidateV1,
   RouteDecisionRowV1 as ColdStartRouteDecisionRowV1,
@@ -90,7 +108,7 @@ export interface RecordedSessionReplayProofLaneTraceInputV1 {
 
 export interface LearnedRouteCandidateArtifactOverrideV1 {
   artifactDir: string;
-  mode?: "selection_override" | "served_live_policy_spike";
+  mode?: "selection_override" | "served_live_policy_spike" | "served_pack_adapter";
 }
 
 export interface WriteRecordedSessionReplayProofLaneInputV1 {
@@ -705,6 +723,12 @@ function normalizeReplayOverrideExcerpt(value: string | null | undefined): strin
 }
 
 function replayCandidateSemanticClass(blockId: string): string {
+  if (blockId.includes(":feedback")) {
+    return "feedback_context";
+  }
+  if (blockId.includes(":interaction")) {
+    return "interaction_context";
+  }
   if (blockId.includes(":event:")) {
     return "event_context";
   }
@@ -834,6 +858,282 @@ function createLearnedRouteSelectionOverride(
         evidenceSource,
         authoritativeUsedLearnedRouteFn,
       };
+    },
+  };
+}
+
+interface ReplayServedRouterObservationV1 {
+  turnId: string;
+  userMessage: string;
+  selectedBlockIds: string[];
+  matchedTokensByBlockId: Record<string, string[]>;
+}
+
+const REPLAY_SERVED_ROUTER_OBJECTIVE_PROFILE_V1 = {
+  traceSource: "serve_time_decision_log",
+  actionSpace: "pack_block_softmax",
+  targetConstruction: "trajectory_reconstruction",
+  rewardSignal: "explicit_label_reward_table_v1",
+  baseline: "none",
+  offPolicyCorrection: "none",
+  updateCadence: "candidate_pack_refresh",
+} as const;
+
+function tokenizeReplayQuery(userMessage: string): string[] {
+  return Array.from(userMessage.toLowerCase().matchAll(/[a-z0-9_]+/g), (match) => match[0]).filter(
+    (token) => token.length > 0,
+  );
+}
+
+function buildReplayQueryVector(tokens: readonly string[]): Record<string, number> {
+  const vector: Record<string, number> = {};
+  for (const token of tokens) {
+    vector[token] = (vector[token] ?? 0) + 1;
+  }
+  return vector;
+}
+
+function buildReplayServedRouterArtifact(params: {
+  routerIdentity: string;
+  eventExportDigest: string | null;
+  observations: ReplayServedRouterObservationV1[];
+}): RouterArtifactV1 {
+  const traces: RouterTraceV1[] = params.observations.map((observation) => {
+    const queryTokens = tokenizeReplayQuery(observation.userMessage);
+    return {
+      traceId: `replay-served-router:${observation.turnId}`,
+      sourceEventId: `evt-replay-served-router:${observation.turnId}`,
+      sourceContract: CONTRACT_IDS.interactionEvents,
+      sourceKind: "message_delivered",
+      supervisionKind: "route_trace",
+      targetBlockIds: [...observation.selectedBlockIds],
+      reward: 0,
+      queryTokens,
+      queryVector: buildReplayQueryVector(queryTokens),
+    };
+  });
+
+  const updatesByBlockId = new Map<
+    string,
+    {
+      blockId: string;
+      delta: number;
+      evidenceCount: number;
+      rewardSum: number;
+      tokenWeights: Record<string, number>;
+      traceIds: Set<string>;
+    }
+  >();
+
+  for (const trace of traces) {
+    const observation = params.observations.find((entry) => `replay-served-router:${entry.turnId}` === trace.traceId);
+    if (!observation) {
+      continue;
+    }
+    for (const blockId of observation.selectedBlockIds) {
+      const matchedTokens = observation.matchedTokensByBlockId[blockId] ?? [];
+      const tokenBasis = matchedTokens.length > 0 ? matchedTokens : trace.queryTokens;
+      const bucket =
+        updatesByBlockId.get(blockId) ??
+        {
+          blockId,
+          delta: 0,
+          evidenceCount: 0,
+          rewardSum: 0,
+          tokenWeights: {},
+          traceIds: new Set<string>(),
+        };
+      bucket.delta += 8 + Math.min(4, tokenBasis.length * 0.5);
+      bucket.evidenceCount += 1;
+      bucket.rewardSum += 1;
+      bucket.traceIds.add(trace.traceId);
+      for (const token of tokenBasis) {
+        bucket.tokenWeights[token] = (bucket.tokenWeights[token] ?? 0) + (trace.queryVector[token] ?? 1);
+      }
+      updatesByBlockId.set(blockId, bucket);
+    }
+  }
+
+  const policyUpdates: RouterPolicyUpdateV1[] = [...updatesByBlockId.values()]
+    .map((entry) => ({
+      blockId: entry.blockId,
+      delta: roundValue(entry.delta),
+      evidenceCount: entry.evidenceCount,
+      rewardSum: roundValue(entry.rewardSum),
+      tokenWeights: Object.fromEntries(
+        Object.entries(entry.tokenWeights).sort(([left], [right]) => left.localeCompare(right)),
+      ),
+      traceIds: [...entry.traceIds].sort((left, right) => left.localeCompare(right)),
+    }))
+    .sort((left, right) => left.blockId.localeCompare(right.blockId));
+
+  const collectedLabels = computeRouterCollectedLabelCounts(traces);
+  const queryChecksum = computeRouterQueryChecksum(traces);
+  const trainingStatus = policyUpdates.length > 0 ? "updated" : "no_supervision";
+  const trainedAt = REPLAY_LEARNED_ROUTE_OVERRIDE_CREATED_AT;
+  const supervisionCount = traces.filter((trace) => trace.supervisionKind !== "route_trace" && trace.reward !== 0).length;
+  const updateCount = policyUpdates.length;
+
+  return {
+    routerIdentity: params.routerIdentity,
+    strategy: "learned_route_fn_v1",
+    trainedAt,
+    requiresLearnedRouting: true,
+    training: {
+      method: "policy_gradient_v1",
+      status: trainingStatus,
+      eventExportDigest: params.eventExportDigest,
+      routeTraceCount: traces.length,
+      supervisionCount,
+      updateCount,
+      collectedLabels,
+      objective: {
+        updateMechanism: "policy_gradient",
+        updateVersion: "route_pg_update_v1",
+        objective: "supervised_route_pg_v1",
+        profile: REPLAY_SERVED_ROUTER_OBJECTIVE_PROFILE_V1,
+        objectiveChecksum: computeRouterObjectiveChecksum({
+          updateMechanism: "policy_gradient",
+          updateVersion: "route_pg_update_v1",
+          objective: "supervised_route_pg_v1",
+          profile: REPLAY_SERVED_ROUTER_OBJECTIVE_PROFILE_V1,
+          eventExportDigest: params.eventExportDigest,
+          routeTraceCount: traces.length,
+          supervisionCount,
+          collectedLabels,
+          queryChecksum,
+        }),
+      },
+      queryChecksum,
+      weightsChecksum: computeRouterWeightsChecksum(policyUpdates),
+      freshnessChecksum: computeRouterFreshnessChecksum({
+        method: "policy_gradient_v1",
+        trainedAt,
+        status: trainingStatus,
+        eventExportDigest: params.eventExportDigest,
+        routeTraceCount: traces.length,
+        supervisionCount,
+        updateCount,
+      }),
+      noOpReason:
+        policyUpdates.length > 0
+          ? null
+          : "cold-start served-pack adapter produced no selected replay blocks on the seed pack surface",
+    },
+    traces,
+    policyUpdates,
+  };
+}
+
+function installServedRouterArtifactOnSeedPack(params: {
+  seedPackRoot: string;
+  router: RouterArtifactV1;
+}): void {
+  const pack = loadPack(params.seedPackRoot);
+  const manifestPath = path.join(params.seedPackRoot, "manifest.json");
+  const routerRelativePath = pack.manifest.runtimeAssets.router.artifactPath ?? "router/model.json";
+  const routerPath = path.join(params.seedPackRoot, routerRelativePath);
+  const routerChecksum = checksumJsonPayload(params.router);
+  const manifest = {
+    ...pack.manifest,
+    runtimeAssets: {
+      ...pack.manifest.runtimeAssets,
+      router: {
+        kind: "artifact",
+        identity: params.router.routerIdentity,
+        artifactPath: routerRelativePath,
+      },
+    },
+    payloadChecksums: {
+      ...pack.manifest.payloadChecksums,
+      router: routerChecksum,
+    },
+    routeArtifact: buildRouteArtifactReference({
+      routerAssetKind: "artifact",
+      routerIdentity: params.router.routerIdentity,
+      routerChecksum,
+      router: params.router,
+      eventExportDigest: pack.manifest.provenance.eventExports?.exportDigest ?? null,
+    }),
+    modelFingerprints: [...new Set([
+      ...(Array.isArray(pack.manifest.modelFingerprints) ? pack.manifest.modelFingerprints : []),
+      params.router.routerIdentity,
+    ])],
+  };
+  mkdirSync(path.dirname(routerPath), { recursive: true });
+  writeJson(routerPath, params.router);
+  writeJson(manifestPath, manifest);
+  loadPack(params.seedPackRoot);
+}
+
+function createLearnedRouteServedPackAdapter(
+  input: LearnedRouteCandidateArtifactOverrideV1,
+): RecordedSessionReplayServedPackAdapterV1 {
+  const artifactBundle = loadColdStartRouterArtifactBundleV1(input.artifactDir);
+  const artifactTruth = summarizeColdStartRouterArtifactBundleRuntimeTruthV1(artifactBundle);
+  const selectionOverride = createLearnedRouteSelectionOverride({
+    artifactDir: input.artifactDir,
+    mode: "selection_override",
+  });
+
+  return {
+    prepare(params) {
+      const prepassActivationRoot = path.join(params.activationRoot, "served-pack-adapter-prepass");
+      rmSync(prepassActivationRoot, { recursive: true, force: true });
+      activatePack(prepassActivationRoot, params.seedPackRoot, {
+        updatedAt: params.fixture.seedActivatedAt,
+        reason: "recorded_session_seed_activate_served_candidate_prepass",
+      });
+      const observations: ReplayServedRouterObservationV1[] = [];
+      for (const turnFixture of params.fixture.turns) {
+        const tapSelectionOverride: LearnedRouteSelectionOverride = {
+          select(selectionInput: LearnedRouteSelectionOverrideInput) {
+            const result = selectionOverride.select(selectionInput);
+            const rankedById = new Map(selectionInput.ranked.map((entry) => [entry.blockId, entry]));
+            observations.push({
+              turnId: turnFixture.turnId,
+              userMessage: turnFixture.turn.userMessage,
+              selectedBlockIds: [...result.selectedBlockIds],
+              matchedTokensByBlockId: Object.fromEntries(
+                result.selectedBlockIds.map((blockId) => [blockId, [...(rankedById.get(blockId)?.matchedTokens ?? [])]]),
+              ),
+            });
+            return result;
+          },
+        };
+
+        const compileInput: CompileRuntimeContextInput & {
+          _learnedRouteSelectionOverride: LearnedRouteSelectionOverride;
+        } = {
+          activationRoot: prepassActivationRoot,
+          message: turnFixture.turn.userMessage,
+          ...(turnFixture.turn.agentId == null ? {} : { agentId: turnFixture.turn.agentId }),
+          maxContextBlocks: turnFixture.turn.maxContextBlocks ?? 3,
+          mode: "learned_route",
+          ...(turnFixture.turn.selectionMode == null ? {} : { selectionMode: turnFixture.turn.selectionMode }),
+          ...(turnFixture.turn.runtimeHints == null ? {} : { runtimeHints: turnFixture.turn.runtimeHints }),
+          ...(turnFixture.turn.sessionId == null ? {} : { sessionId: turnFixture.turn.sessionId }),
+          ...(turnFixture.turn.channel == null ? {} : { channel: turnFixture.turn.channel }),
+          _suppressServeLog: true,
+          _learnedRouteSelectionOverride: tapSelectionOverride,
+        };
+        const compile = compileRuntimeContext(compileInput);
+        if (!compile.ok) {
+          throw new Error(
+            `served-pack adapter prepass compile failed for ${turnFixture.turnId}: ${compile.error}`,
+          );
+        }
+      }
+
+      const router = buildReplayServedRouterArtifact({
+        routerIdentity: artifactTruth.routerIdentity,
+        eventExportDigest: loadPack(params.seedPackRoot).manifest.provenance.eventExports?.exportDigest ?? null,
+        observations,
+      });
+      installServedRouterArtifactOnSeedPack({
+        seedPackRoot: params.seedPackRoot,
+        router,
+      });
     },
   };
 }
@@ -1998,8 +2298,12 @@ export function writeRecordedSessionReplayProofLane(
   const sourceManifest = readSourceManifest(input.sourceManifestPath ?? null);
   const pricingTable = loadPricingTable();
   const learnedRouteSelectionOverride = input.learnedRouteCandidateArtifact == null
+    || input.learnedRouteCandidateArtifact.mode === "served_pack_adapter"
     ? null
     : createLearnedRouteSelectionOverride(input.learnedRouteCandidateArtifact);
+  const learnedRouteServedPackAdapter = input.learnedRouteCandidateArtifact?.mode === "served_pack_adapter"
+    ? createLearnedRouteServedPackAdapter(input.learnedRouteCandidateArtifact)
+    : null;
   ensureDir(artifactRoot);
   rmSync(laneDir, { recursive: true, force: true });
   ensureDir(laneDir);
@@ -2017,6 +2321,7 @@ export function writeRecordedSessionReplayProofLane(
         trace: traceInput.trace,
         scratchRootDir: input.scratchRootDir ?? undefined,
         ...(learnedRouteSelectionOverride === null ? {} : { learnedRouteSelectionOverride }),
+        ...(learnedRouteServedPackAdapter === null ? {} : { learnedRouteServedPackAdapter }),
       });
       const validation = validateRecordedSessionReplayProofBundle(bundleDir);
       writeJson(validationPath, validation);

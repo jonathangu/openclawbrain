@@ -416,6 +416,7 @@ export interface RunComparativeEvalInput {
   workedTraceLimit?: number | null;
   policy?: Partial<ComparativeEvalPolicyThresholdsV1>;
   learnedRouteCandidateArtifactDir?: string;
+  learnedRouteCandidateArtifactMode?: LearnedRouteCandidateArtifactOverrideV1["mode"];
 }
 
 const DEFAULT_COMPARATIVE_EVAL_POLICY_THRESHOLDS: ComparativeEvalPolicyThresholdsV1 = {
@@ -1772,7 +1773,12 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
   if (issues.length === 0 && manifestLoad.manifest !== null) {
     const learnedRouteCandidateArtifact: LearnedRouteCandidateArtifactOverrideV1 | null =
       input.learnedRouteCandidateArtifactDir
-        ? { artifactDir: path.resolve(input.learnedRouteCandidateArtifactDir) }
+        ? {
+            artifactDir: path.resolve(input.learnedRouteCandidateArtifactDir),
+            ...(input.learnedRouteCandidateArtifactMode == null
+              ? {}
+              : { mode: input.learnedRouteCandidateArtifactMode }),
+          }
         : null;
     laneDescriptor = writeRecordedSessionReplayProofLane({
       artifactRoot: traceRoot,

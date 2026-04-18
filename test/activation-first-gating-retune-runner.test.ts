@@ -77,12 +77,32 @@ describe("activation-first gating retune runner helpers", () => {
 
   it("builds felt synthetic candidates with ranking-distinguishing features", () => {
     expect(buildSyntheticRouteCandidatesV1([
+      "pack:event:alpha:feedback",
+      "pack:event:alpha:interaction",
       "pack:event:alpha",
       "pack:pointer-aware-init",
       "phrase-context:trace:1",
       "cue-context:trace:1",
       "synthetic-context:trace:1",
     ])).toEqual([
+      {
+        candidate_id: "pack:event:alpha:feedback",
+        candidate_type: "graph_node",
+        semantic_class: "feedback_context",
+        authority: "snapshot_supporting_fact",
+        freshness: "eval_only",
+        score_hint: 0.98,
+        token_cost: 24,
+      },
+      {
+        candidate_id: "pack:event:alpha:interaction",
+        candidate_type: "graph_node",
+        semantic_class: "interaction_context",
+        authority: "snapshot_context",
+        freshness: "eval_only",
+        score_hint: 0.7,
+        token_cost: 20,
+      },
       {
         candidate_id: "pack:event:alpha",
         candidate_type: "graph_node",
@@ -130,12 +150,32 @@ describe("activation-first gating retune runner helpers", () => {
       },
     ]);
     expect(buildSyntheticRouteCandidatesV1([
+      "pack:event:alpha:feedback",
+      "pack:event:alpha:interaction",
       "pack:event:alpha",
       "pack:pointer-aware-init",
       "phrase-context:trace:1",
       "cue-context:trace:1",
       "synthetic-context:trace:1",
     ], "runtime_like_replay")).toEqual([
+      {
+        candidate_id: "pack:event:alpha:feedback",
+        candidate_type: "graph_node",
+        semantic_class: "feedback_context",
+        authority: "recorded_session_replay",
+        freshness: "replay_eval",
+        score_hint: 0.95,
+        token_cost: 80,
+      },
+      {
+        candidate_id: "pack:event:alpha:interaction",
+        candidate_type: "graph_node",
+        semantic_class: "interaction_context",
+        authority: "recorded_session_replay",
+        freshness: "replay_eval",
+        score_hint: 0.55,
+        token_cost: 56,
+      },
       {
         candidate_id: "pack:event:alpha",
         candidate_type: "graph_node",
@@ -184,9 +224,10 @@ describe("activation-first gating retune runner helpers", () => {
     ]);
     expect(chooseTraverseTargetCandidateIdV1([
       "pack:pointer-aware-init",
+      "pack:event:alpha:feedback",
       "pack:event:alpha",
       "phrase-context:trace:1",
-    ])).toBe("pack:event:alpha");
+    ])).toBe("pack:event:alpha:feedback");
   });
 
   it("makes felt route rows traversal-supervised while keeping restraint lanes gating-only", () => {

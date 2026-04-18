@@ -376,6 +376,34 @@ describe("recorded session replay proof lane", () => {
       },
       ranked: [
         {
+          blockId: "pack:event:alpha:feedback",
+          source: "graph",
+          text: "event alpha feedback",
+          score: 98.4,
+          channelScores: { graph: 1, shortTerm: 0, vector: 0 },
+          routingChannels: ["graph"],
+          priority: 0,
+          matchedTokens: ["task"],
+          tokenCount: 64,
+          packOrder: 0,
+          candidateSemanticClass: "answer_bearing",
+          candidateSemanticEvidence: [],
+        },
+        {
+          blockId: "pack:event:alpha:interaction",
+          source: "graph",
+          text: "event alpha interaction",
+          score: 92.1,
+          channelScores: { graph: 1, shortTerm: 0, vector: 0 },
+          routingChannels: ["graph"],
+          priority: 1,
+          matchedTokens: ["task"],
+          tokenCount: 56,
+          packOrder: 0,
+          candidateSemanticClass: "answer_bearing",
+          candidateSemanticEvidence: [],
+        },
+        {
           blockId: "pack:event:alpha",
           source: "graph",
           text: "event alpha",
@@ -413,14 +441,26 @@ describe("recorded session replay proof lane", () => {
     });
 
     expect(row).not.toBeNull();
-    expect(row?.candidate_set).toHaveLength(2);
+    expect(row?.candidate_set).toHaveLength(4);
     expect(row?.candidate_set[0]).toMatchObject({
+      candidate_id: "pack:event:alpha:feedback",
+      semantic_class: "feedback_context",
+      token_cost: 64,
+    });
+    expect(row?.candidate_set[1]).toMatchObject({
+      candidate_id: "pack:event:alpha:interaction",
+      semantic_class: "interaction_context",
+      token_cost: 56,
+    });
+    expect(row?.candidate_set[2]).toMatchObject({
       candidate_id: "pack:event:alpha",
       semantic_class: "event_context",
       token_cost: 48,
     });
     expect("score_hint" in (row?.candidate_set[0] ?? {})).toBe(false);
     expect("score_hint" in (row?.candidate_set[1] ?? {})).toBe(false);
+    expect("score_hint" in (row?.candidate_set[2] ?? {})).toBe(false);
+    expect("score_hint" in (row?.candidate_set[3] ?? {})).toBe(false);
   });
 
   it("writes stable aggregate artifacts under _lane with pairwise deltas and win-rate matrices", () => {
@@ -565,6 +605,33 @@ describe("recorded session replay proof lane", () => {
     expect(spikeLearnedRoute?.turns.map((turn) => turn.selectedContextIds)).toEqual([[], []]);
     expect(spikeLearnedRoute?.turns.every((turn) => turn.activationSource?.startsWith("learned_route_artifact:candidate_override_live_policy:"))).toBe(true);
     expect(spikeLearnedRoute?.turns.every((turn) => turn.activationReason?.includes("usedLearnedRouteFn=false"))).toBe(true);
+  });
+
+  it("can adapt a cold-start candidate artifact onto the served pack path for authoritative replay", () => {
+    const trace = createComparativeTrace();
+    const adapterRoot = makeTempDir("replay-proof-lane-served-pack-adapter-");
+    const candidateArtifactDir = makeTempDir("replay-proof-lane-served-pack-candidate-");
+    const candidateRouterIdentity = "router:replay-proof-lane-served-pack-stop";
+
+    trainReplayStopArtifact(candidateArtifactDir, candidateRouterIdentity);
+
+    writeRecordedSessionReplayProofLane({
+      artifactRoot: adapterRoot,
+      traces: [{ trace: structuredClone(trace) }],
+      learnedRouteCandidateArtifact: {
+        artifactDir: candidateArtifactDir,
+        mode: "served_pack_adapter",
+      },
+    });
+
+    const adapterBundle = loadRecordedSessionReplayProofBundle(path.join(adapterRoot, trace.traceId));
+    const adapterLearnedRoute = adapterBundle.bundle.modes.find((mode) => mode.mode === "learned_route");
+
+    expect(adapterLearnedRoute).toBeDefined();
+    expect(adapterLearnedRoute?.summary.usedLearnedRouteTurnCount).toBe(2);
+    expect(adapterLearnedRoute?.turns.every((turn) => turn.usedLearnedRouteFn === true)).toBe(true);
+    expect(adapterLearnedRoute?.turns.every((turn) => turn.routerIdentity === candidateRouterIdentity)).toBe(true);
+    expect(adapterLearnedRoute?.turns.every((turn) => turn.activationSource === "learned_route_fn")).toBe(true);
   });
 
   it("keeps the core _lane artifacts reproducible across different output roots", () => {
