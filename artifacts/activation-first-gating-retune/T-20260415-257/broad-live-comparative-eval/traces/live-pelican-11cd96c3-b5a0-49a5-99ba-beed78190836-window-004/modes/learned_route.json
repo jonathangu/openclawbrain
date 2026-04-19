@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-498f9c28"
+      "pack-de90f7fb"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-498f9c28",
-    "frozenEvalRouterIdentity": "pack-498f9c28:route_fn",
+    "frozenEvalPackId": "pack-de90f7fb",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-f3b69d62676643b69ae32a0adbd9a75b08326dbb9a053b76974a2fa5277152d9"
+    "scoreHash": "sha256-0482db2ae32816d54ed62347711285562b4ad0419919e0d90c7f37288e9ab5e4"
   },
   "turns": [
     {
@@ -51,24 +51,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-498f9c28",
+      "activePackId": "pack-de90f7fb",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-41eba997f09d87e6abd8404cb68b21b4a7acc9320e4b106a604233ccdf227ce5",
+      "selectionDigest": "sha256-4b5fee40ed6c201a024e0d230f1332814b8fe30135049a81b2b33cdbd6deb03f",
       "selectedContextIds": [
-        "pack-498f9c28:pointer-aware-init"
+        "pack-de90f7fb:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-4:feedback",
+        "pack-de90f7fb:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-6:feedback",
+        "pack-de90f7fb:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-options-entry.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, memory/2026-04-07.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 6:59 AM (America/Los_Angeles) / 2026-04-12 13:59 UTC. Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 6:59 AM (America/Los_Angeles) / 2026-04-12 13:59 UTC. Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-6:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-options-entry.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/2026-04-07.md, docs/training-launch-contract.md, +2 more, and passive expansion docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, memory/archive/2026-03-02.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-5404f86d260218e9705199b6267b9c1285f010ec9941d471252ee51b6e5c430e",
+      "eventExportDigest": "sha256-b3a2a9045055274ce5b2df0a2c69bece0233da6722da0f7facc9e62b6d014e17",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md\"}",
         "/Users/guclaw/.openclaw/pelican/runtime/quant-research",
@@ -86,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.905,
-        "routeSelectionMs": 5.499,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 3.405,
+        "totalMs": 7.813,
+        "routeSelectionMs": 4.868,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.944,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

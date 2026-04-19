@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-982b3005"
+      "pack-4910961d"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-982b3005",
-    "frozenEvalRouterIdentity": "pack-982b3005:route_fn",
+    "frozenEvalPackId": "pack-4910961d",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-911501914ea380ac35e141944e51a365a827eeefe011ddf5f035c1ceb6258091"
+    "scoreHash": "sha256-eda05e570a17db93ff27f42835fdab01587f290b3620d0fbf7b1ac4b2753d8c5"
   },
   "turns": [
     {
@@ -51,24 +51,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-982b3005",
+      "activePackId": "pack-4910961d",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-df94696b09d4e75e90a7b88ef796c8b9db52886c4134fce89f71755795cd05ae",
+      "selectionDigest": "sha256-6963e0384e19edfcaade74f5e50fa88b747e284cba1cb5b977d53315ff4a93ae",
       "selectedContextIds": [
-        "pack-982b3005:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:feedback"
+        "pack-4910961d:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
+        "pack-4910961d:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:feedback",
+        "pack-4910961d:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19124\", \"reply_to_id\": \"19123\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:57 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"I’m checking the real choke point before I touch live config.\\n\\nBluntly.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:interaction."
+        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19110\", \"reply_to_id\": \"19109\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:37 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"I wrote the full file-backed plan and committed it.\\n\\n• Artifact: task-.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19124\", \"reply_to_id\": \"19123\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:57 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"I’m checking the real choke point before I touch live config.\\n\\nBluntly.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19108\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:36 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Stay in the owner lane. Make a deep engineering plan. Let's do all four options structures and make our allocation sizing way bigger. Implement all these changes now. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-35f43a7e7c0eaa1cb82479203bf48f7e1c06c62c03b396de0718cb433dd5d02c",
+      "eventExportDigest": "sha256-f95aa4a5f7680d926fe7fc0a00a4a2537ec40cc8f37a34c59c6d18892aa3d857",
       "expectedContextPhrases": [
         "9d55da9",
         "7c587d0",
@@ -86,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 10.117,
-        "routeSelectionMs": 6.739,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 3.376,
+        "totalMs": 8.435,
+        "routeSelectionMs": 5.358,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.075,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

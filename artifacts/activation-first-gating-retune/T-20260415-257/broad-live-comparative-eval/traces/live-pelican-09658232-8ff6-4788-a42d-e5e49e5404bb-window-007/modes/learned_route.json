@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-81c9df35"
+      "pack-dadc2240"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-81c9df35",
-    "frozenEvalRouterIdentity": "pack-81c9df35:route_fn",
+    "frozenEvalPackId": "pack-dadc2240",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-ff2fe16c77b289d4acc8a8820ad284f32dc9e7ba270c2a37150a0a2b032e2564"
+    "scoreHash": "sha256-51db3baafd03ae065a89a2c7cb6ad085b53067e35bb16b14eca29a2d5521cc5b"
   },
   "turns": [
     {
@@ -51,24 +51,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-81c9df35",
+      "activePackId": "pack-dadc2240",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-2602288fc1b7d278c5005dc441d2f01826c34ca0dc0358b47a3f1187e1b0d5f0",
+      "selectionDigest": "sha256-32886bcb3e49d6af45449090ff20639b51571f5cb4c74d682ae8caa589c4d15f",
       "selectedContextIds": [
-        "pack-81c9df35:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction"
+        "pack-dadc2240:pointer-aware-init",
+        "pack-dadc2240:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
+        "pack-dadc2240:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
-        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, task-artifacts/guclaw-cleanup-2026-04-18/MEMORY.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, +8 more from the MEMORY index graph.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: Now I have the full picture. Here's what happened: **The `retrain_v5_aws.sh` script worked perfectly.** It's NOT the problem. **Timeline:** 1. Earlier today, you (or a previous session) launched instance `i-05558106413ea7065` tagged **\"pelican-test-old-ami\"** — this was from debugging AMI issues. It was manually terminated at 2:17 PM PT (`User initiated shutdown`). 2. Then `retrain_v5_aws.sh` ran and launched **two new instances** at ~2:00 PM PT: - `i-0d5a22ba13d1c3568` (35.161.172.172) = **G.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-90f5c2e0f5d22855e2d15aca4f21a2de9d4687dc693f0d05d32ca535e09f8a1e",
+      "eventExportDigest": "sha256-cc76e76bb0d25a0a4d03d48be52ea77fe79955f90b31e46def16c3ddcc549663",
       "expectedContextPhrases": [
         "/topic."
       ],
@@ -82,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.788,
-        "routeSelectionMs": 5.388,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 3.399,
+        "totalMs": 7.643,
+        "routeSelectionMs": 4.783,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.858,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-e87fd86c"
+      "pack-11509e1f"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-c8e99c08fa9a9f740c3e6451db85cc24a1dd5f5dbcbad1273787fadddbbd230e"
+    "scoreHash": "sha256-6b283f0c955a8556ab20a049d2487be6a045d2c903e45af734b9574bc5c45ea0"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-e87fd86c",
+      "activePackId": "pack-11509e1f",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-36ff2411ecff9775eacca58450f369e361ef289e2db090d99426bcf10aeadc31",
+      "routerIdentity": "pack-11509e1f:route_fn",
+      "selectionDigest": "sha256-4130ed9c2ec8a5796253b71c1c403e96dfda173ebfb2f2d9b6efbf9fda61426a",
       "selectedContextIds": [
-        "pack-e87fd86c:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-        "pack-e87fd86c:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:feedback",
-        "pack-e87fd86c:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:feedback"
+        "pack-11509e1f:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
+        "pack-11509e1f:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:feedback",
+        "pack-11509e1f:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19091\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 02:59 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Clean up tasks and context. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction.",
-        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: assistant: Short answer: **no, yesterday’s live execution did not use all four structures.** What actually happened on the 2026-04-14 market day: - **5 fills total**, **1 reject**, **71.4% fill rate** - **Entry fills:** - CRM **bear_call** - MU **bull_put** - AAPL **bull_put** - DASH **bear_call** - **Exit fill:** - HOOD **bear_call** close - **Rejected:** - PYPL **bull_put**, rejected at sizing floor (`edge_below_tier1`) So yesterday’s real live mix was **2 structures only**: - **bear_call** - **bull_p.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:interaction."
+        "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-007722d8860a4ff4d36d3d8db5b2a778e5ef2ac0397ff809f4eae01da6860882",
+      "eventExportDigest": "sha256-289cbe7e74dd247f6d20920cbb7143353bc36cac379188cfcf8be51d8c271b4d",
       "expectedContextPhrases": [
         "toolcall",
         "update_plan",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.144,
-        "routeSelectionMs": 4.488,
+        "totalMs": 8.732,
+        "routeSelectionMs": 5.358,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.654,
+        "otherMs": 3.373,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

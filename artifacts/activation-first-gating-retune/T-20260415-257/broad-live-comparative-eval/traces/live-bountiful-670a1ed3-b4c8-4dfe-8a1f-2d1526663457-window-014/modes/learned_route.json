@@ -5,19 +5,19 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 40,
+    "qualityScore": 100,
     "compileOkCount": 1,
-    "phraseHitCount": 0,
+    "phraseHitCount": 1,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-e931bd7e"
+      "pack-961b336f"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-e931bd7e",
-    "frozenEvalRouterIdentity": "pack-e931bd7e:route_fn",
+    "frozenEvalPackId": "pack-961b336f",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-133e50261c585eb187cac08d92c044408933b6f82ef34b8346b15ada31e2636e"
+    "scoreHash": "sha256-bb2a2ffe75ce3e1e4a3088f73ee715bb1cb7e4d5e42358be790701397570208b"
   },
   "turns": [
     {
@@ -51,41 +51,45 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-e931bd7e",
+      "activePackId": "pack-961b336f",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-af4777a65d47a8d3922a3cadb0006f82c031332d01fed5c786f2fb9a3d076da0",
+      "selectionDigest": "sha256-6b077bf27fbdbc0e04ba5f59e7672d96522e94118ada26bbd6dd8080c33268c7",
       "selectedContextIds": [
-        "pack-e931bd7e:pointer-aware-init"
+        "pack-961b336f:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-6:feedback",
+        "pack-961b336f:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-1:feedback",
+        "pack-961b336f:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-05-1953.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/archive/2026-03-05-1953.md, docs/jon-model.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Pre-compaction memory flush. Store durable memories now (use memory/2026-03-05.md; create memory/ if needed). IMPORTANT: If the file already exists, APPEND new content only and do not overwrite existing entries. If nothing to store, reply with NO_REPLY. Current time: Thursday, March 5th, 2026 — 8:26 AM (America/Los_Angeles). Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Pre-compaction memory flush. Store durable memories now (use memory/2026-03-05.md; create memory/ if needed). IMPORTANT: If the file already exists, APPEND new content only and do not overwrite existing entries. If nothing to store, reply with NO_REPLY. Current time: Thursday, March 5th, 2026 — 8:10 AM (America/Los_Angeles). Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Pre-compaction memory flush. Store durable memories now (use memory/2026-03-05.md; create memory/ if needed). IMPORTANT: If the file already exists, APPEND new content only and do not overwrite existing entries. If nothing to store, reply with NO_REPLY. Current time: Thursday, March 5th, 2026 — 8:24 AM (America/Los_Angeles). Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-916f46cbf8174f4145c4f06cef8247c4d1a628eff7eff9284ee65e22f04e9ea0",
+      "eventExportDigest": "sha256-57aadce654f52e4baf91365dad0692faa98c50e8132adcd58997170818bee73d",
       "expectedContextPhrases": [
         "no_reply"
       ],
       "minimumPhraseHits": 1,
-      "phraseHits": [],
-      "missedPhrases": [
+      "phraseHits": [
         "no_reply"
       ],
-      "qualityScore": 40,
+      "missedPhrases": [],
+      "qualityScore": 100,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.75,
-        "routeSelectionMs": 5.864,
+        "totalMs": 8.108,
+        "routeSelectionMs": 5.079,
         "promptAssemblyMs": 0.003,
-        "otherMs": 3.883,
+        "otherMs": 3.027,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-de3e663a"
+      "pack-c8ac6967"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-39081bcb14c935a823f55defd8af62ebba2abd58d2e3519282739760c6a4b691"
+    "scoreHash": "sha256-95d484ec7748c6654df7695b6560f440f5aa056bf3b18248f8c5e31242845c4e"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-de3e663a",
+      "activePackId": "pack-c8ac6967",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-49886c84127d6baafb1b77e58b41bde1bb9e4d04161883c5e7834906f36d936f",
+      "routerIdentity": "pack-c8ac6967:route_fn",
+      "selectionDigest": "sha256-6789d60149323d6ff52c9c58890434c51608710fd7cdfa727bbe1ca597a60c7d",
       "selectedContextIds": [
-        "pack-de3e663a:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:feedback",
-        "pack-de3e663a:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:feedback",
-        "pack-de3e663a:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction"
+        "pack-c8ac6967:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:feedback",
+        "pack-c8ac6967:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:feedback",
+        "pack-c8ac6967:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:interaction"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19108\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:36 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Stay in the owner lane. Make a deep engineering plan. Let's do all four options structures and make our allocation sizing way bigger. Implement all these changes now. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19110\", \"reply_to_id\": \"19109\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:37 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"I wrote the full file-backed plan and committed it.\\n\\n• Artifact: task-.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction.",
-        "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-2-seed-message."
+        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19108\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:36 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Stay in the owner lane. Make a deep engineering plan. Let's do all four options structures and make our allocation sizing way bigger. Implement all these changes now. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:interaction.",
+        "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-1-seed-message."
       ],
-      "eventExportDigest": "sha256-62a393c5a578a8c9c53630b12e36c901b3cbc7f7c453f00fc296f4c40e2c34f7",
+      "eventExportDigest": "sha256-3772ea4c056cdf9d2dd90f88568e17468124dbc81c6d8724a73fd4e49727e0fa",
       "expectedContextPhrases": [
         "correct model trading never",
         "even correct model trading",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.218,
-        "routeSelectionMs": 5.537,
+        "totalMs": 9.513,
+        "routeSelectionMs": 6.077,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.679,
+        "otherMs": 3.434,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-e4093802"
+      "pack-c88596bd"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-e4093802",
-    "frozenEvalRouterIdentity": "pack-e4093802:route_fn",
+    "frozenEvalPackId": "pack-c88596bd",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-5146bd4093267dcac1f908ea753d60b8533c75b18da2b5a4fc26e4bcd5855cc3"
+    "scoreHash": "sha256-28aea1127fbd8333f8ce28bb376a3a77d4d2dad0cbce7c564f94a0d57eb5194d"
   },
   "turns": [
     {
@@ -51,24 +51,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-e4093802",
+      "activePackId": "pack-c88596bd",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-6ee0190fd2d5f46e5a31ddbd6adf68b04d60ee4b6ea1b6560909f8dba41fbc63",
+      "selectionDigest": "sha256-2ba45f1ba36692fa816412a91c2a0cda01a800f5b23696daa2c5bd84dcd16ea9",
       "selectedContextIds": [
-        "pack-e4093802:pointer-aware-init"
+        "pack-c88596bd:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
+        "pack-c88596bd:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction",
+        "pack-c88596bd:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 16:20:01 PST] Exec completed (keen-dun, code 0) :: - `--force-terminate` support - run.json status updates - JSON-parseable final status - exit codes: `0` complete, `1` still running, `2` error Commit: `af76391` `feat: retrain v6 … Yes push it merge it. Make sure nothing breaks. Test it.. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-6-seed-message.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. Current time: Friday, February 27th, 2026 — 4:07 PM (America/Los_Angeles). Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-a7aa00ed977b3a8a303bff1d4b3c546c0f1869161bb0d7ba20840b959f079bb8",
+      "eventExportDigest": "sha256-2e535cdaa6d6ef8b5aeedad27a2c1eace48c9f9bb62b8392438248134a124bfb",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research\\n\\n#",
         "/dev/null\\n\\necho"
@@ -84,10 +88,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.672,
-        "routeSelectionMs": 5.336,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 3.334,
+        "totalMs": 7.644,
+        "routeSelectionMs": 4.766,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.876,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

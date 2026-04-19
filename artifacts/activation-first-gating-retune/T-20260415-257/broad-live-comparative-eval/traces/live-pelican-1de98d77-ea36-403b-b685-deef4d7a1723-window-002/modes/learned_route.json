@@ -5,19 +5,19 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 40,
+    "qualityScore": 60,
     "compileOkCount": 1,
-    "phraseHitCount": 0,
+    "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-9e34a4d8"
+      "pack-dacd81f0"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-9e34a4d8",
-    "frozenEvalRouterIdentity": "pack-9e34a4d8:route_fn",
+    "frozenEvalPackId": "pack-dacd81f0",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-61dc0b1d0474a2ecf4275329aba9ad85c575b95530c7f440abb1cac9e07a0813"
+    "scoreHash": "sha256-ef28aaa6e44dccf47262b3512731d71b5d56dca28299c3de0efd80279e1db485"
   },
   "turns": [
     {
@@ -51,45 +51,50 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-9e34a4d8",
+      "activePackId": "pack-dacd81f0",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-24a4e2e9c501f6295687291b4e16184175ac2bfa085cb6b466d5d2c6c6a06331",
+      "selectionDigest": "sha256-d2d941003151f2be779a09722519d1a0b89dc5b033936acb593e98e1445bb5b2",
       "selectedContextIds": [
-        "pack-9e34a4d8:event:1de98d77-ea36-403b-b685-deef4d7a1723-seed:cue-2:interaction"
+        "pack-dacd81f0:pointer-aware-init",
+        "pack-dacd81f0:workspace",
+        "pack-dacd81f0:pointer-passive-expansion"
       ],
       "selectedContextTexts": [
-        "Interaction operator_override on live-session session 1de98d77-ea36-403b-b685-deef4d7a1723-seed. Message: cue-2-seed-message."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph.",
+        "Workspace snapshot session-1de98d77-ea36-403b-b685-deef4d7a1723 for ws-pelican captured at 2026-04-13T07:33:11.441Z with revision 1de98d77-ea36-403b-b685-deef4d7a1723.",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, memory/2026-04-08.md, memory/2026-04-14.md, +6 more."
       ],
-      "eventExportDigest": "sha256-f7f13ca83eeea0976db0acd8462753a90a2326f50b086f0514f737254690c951",
+      "eventExportDigest": "sha256-073dad159a59812e6fee7f545fd4f5ec7600447b34af3de8482887b66f714b87",
       "expectedContextPhrases": [
         "here.",
         "pelican",
         "awake"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [],
+      "phraseHits": [
+        "pelican"
+      ],
       "missedPhrases": [
         "here.",
-        "pelican",
         "awake"
       ],
-      "qualityScore": 40,
+      "qualityScore": 60,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.805,
-        "routeSelectionMs": 4.183,
+        "totalMs": 6.333,
+        "routeSelectionMs": 3.912,
         "promptAssemblyMs": 0.001,
-        "otherMs": 2.621,
+        "otherMs": 2.42,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -1,0 +1,117 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-1caa6726"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-09T14:02:56.010Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-77cd4071b4ceacf137781d686b88c7d080058ec6196bbdec2ce4bd9a9b27de09"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-1caa6726",
+      "modeRequested": "heuristic",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": "pack-1caa6726:route_fn",
+      "selectionDigest": "sha256-67874db89b6c296b378c6e7ddc348bb92ccfbb3c0ddd4d8aa342c7cde0305036",
+      "selectedContextIds": [
+        "pack-1caa6726:event:685b2c1a-b082-4f5a-a284-ff9623440da6-seed:cue-1:feedback",
+        "pack-1caa6726:event:685b2c1a-b082-4f5a-a284-ff9623440da6-seed:cue-1:interaction",
+        "pack-1caa6726:event:685b2c1a-b082-4f5a-a284-ff9623440da6-seed:cue-2:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 685b2c1a-b082-4f5a-a284-ff9623440da6-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260409-192 lane B. Diagnose why `graph_prior_only` beats `learned_route` on the fresh canonical replay set. Inspect the replay bundles/results, identify the traces or failure buckets causing the 20-5 outcome, and propose the highest-impact fixes. Write a concise report to /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260409-192/lane-B-baseline-loss.md an.... Related interaction: 685b2c1a-b082-4f5a-a284-ff9623440da6-seed:cue-1:interaction.",
+        "Interaction operator_override on live-session session 685b2c1a-b082-4f5a-a284-ff9623440da6-seed. Message: cue-1-seed-message.",
+        "Interaction operator_override on live-session session 685b2c1a-b082-4f5a-a284-ff9623440da6-seed. Message: cue-2-seed-message."
+      ],
+      "eventExportDigest": "sha256-0b0ec97d4861adc9fbaca81e9cb655c5e1bdb94638efec19928d1342d04de657",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace",
+        "/Users/guclaw/.openclaw/workspace/openclawbrain",
+        "/dev/null"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "/Users/guclaw/.openclaw/workspace"
+      ],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/openclawbrain",
+        "/dev/null"
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.791,
+        "routeSelectionMs": 5.346,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.442,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-09T14:02:56.010Z"
+      },
+      "warnings": []
+    }
+  ]
+}

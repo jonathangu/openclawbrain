@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
       "pack-efd8fca8"
@@ -17,7 +17,7 @@
     "trainTurnCount": 0,
     "evalTurnCount": 1,
     "frozenEvalPackId": "pack-efd8fca8",
-    "frozenEvalRouterIdentity": "pack-efd8fca8:route_fn",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-96eff8c31fb90eb38dec1351c57a72a3b1d6edcb2faffb7437e1bead70b054e4"
+    "scoreHash": "sha256-3c2c91f7865f6d550ea991480403eac8ef588431296597c051f349168f963978"
   },
   "turns": [
     {
@@ -55,20 +55,24 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-614475a7034baf18effab38fdcc4d89fdca2cfafad76b1a148dbd6d41580fdfe",
+      "selectionDigest": "sha256-8ece610fa4e929c5c6f033ffbf87681ef0df3f101e882bb9722e3222d92e882b",
       "selectedContextIds": [
-        "pack-efd8fca8:pointer-aware-init"
+        "pack-efd8fca8:pointer-aware-init",
+        "pack-efd8fca8:pointer-passive-expansion",
+        "pack-efd8fca8:workspace-init:7d655cbb"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, memory/2026-03-25.md, task-artifacts/ledger-archive/TASKS-2026-03-24-reset-for-new-mission.md, +6 more.",
+        "Working-set input task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md selected by pointer-aware init (inbound=6, outbound=26). Last ledger refresh: 2026-03-20 09:48 PT Status keys: active | parked | blocked | done Current queue: T-065 is complete. T-063 is complete. T-064 is complete. T-062 is complete. T-061 is complete. T-060 is complete. T-059 is complete. T-058 is complete. T-057 is complete. Docs purge is already done. --- T-065 — Railwa…"
       ],
-      "eventExportDigest": "sha256-4bc2b6d560f4e8a6e196b390650ae1c2f93f60c6492c2421bb0410a556ec015a",
+      "eventExportDigest": "sha256-5fc8b1171c6a3511c98a4cb3d262d1e6bcad1f88d2f92c1b5fa4f3281c141f73",
       "expectedContextPhrases": [
         "no_reply"
       ],
@@ -82,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.807,
-        "routeSelectionMs": 5.451,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.354,
+        "totalMs": 7.68,
+        "routeSelectionMs": 4.788,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.889,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

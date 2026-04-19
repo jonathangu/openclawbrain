@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-54671da2"
+      "pack-81062d7b"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-5c4373f8699259d61fed6d524145f5734236b091df14d002224a0c178d97af95"
+    "scoreHash": "sha256-8c5eb36a7942cc42b5783db540adb706168090bd9007e085df7173b4f0f19567"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-54671da2",
+      "activePackId": "pack-81062d7b",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-8a9239aa82f488e17e0f4062b4e0ae33d402fa8aad5fb95670d5530b20fd0b05",
+      "routerIdentity": "pack-81062d7b:route_fn",
+      "selectionDigest": "sha256-41b1117555710f5561e2ea4479f8a6168a100c26ffb5bfd2698155745150ff30",
       "selectedContextIds": [
-        "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
-        "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:feedback",
-        "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:feedback"
+        "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
+        "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:feedback",
+        "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I’m loading the requested artifacts/tests first, then I’ll reproduce the failures and fix the real behavior on this branch. ToolCall read {\"path\": \"/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/final-replay-eval-swarm-board.md\"}. Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:interaction.",
         "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I found the real regression: this branch’s clean-install path resolves `@openclawbrain/*` to the lightweight local bridge packages added in Lane C, while the passing `main` checkout was still picking up richer nested package installs under `packages/cli/node_modules`. The bridge versions are too weak for replay/eval runtime use. I’m tightening the local `contracts` and `event-export` bridges so clean installs behave like the real packages instead of degrading to partial/blocked. ToolCall edit.... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-04cfa9a8483970b3f4c2b29e1ad9fe7090ea431767df62250b13c08e19dd89b5",
+      "eventExportDigest": "sha256-b7c96d394054abd2c66c8c101cc9b04558ba2f8b208f2b24e683053a1e11c195",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.864,
-        "routeSelectionMs": 5.106,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.757,
+        "totalMs": 14.688,
+        "routeSelectionMs": 9.312,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 5.372,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

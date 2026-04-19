@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-02T00:51:49.691Z",
   "traceHash": "sha256-dcacef92b60f17d22d3d52374e44f238a440853875f12c7d1e583783b59ae36c",
   "fixtureHash": "sha256-0309e3e5061db0b2681b554a0a0a11c1546e71f80786bcf376c32c5e8bf3ada4",
-  "scoreHash": "sha256-fe7f8b01f8fd9ccf4f7979741c846f1be94a6f0331d5207771c5694a0468f5d2",
+  "scoreHash": "sha256-3c60e3e4123ee812d33df45ea986d7882f8cc3f7d976e5cc6c1ea44b6d0e0dae",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.048,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.048,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-d5ff1665"
+          "pack-f05a677a"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-e2ffa7578325096e969f7b42acc1696695a74f0a0bde11f299af51977f04831e"
+        "scoreHash": "sha256-9800d94e45ae1a3a036afb8a6c28ad8f7881665ce2ff3db05a535c29ba0f0f4e"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-d5ff1665",
+          "activePackId": "pack-f05a677a",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-209f47cf4f897dd46ba9075be6337f84e8023be28ba97f68cf0808aa7a57c5d7",
+          "routerIdentity": "pack-f05a677a:route_fn",
+          "selectionDigest": "sha256-94369e84a086c305c6ace5ae40d69d0547978fccbace2989fba2477569ab149d",
           "selectedContextIds": [
-            "pack-d5ff1665:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
-            "pack-d5ff1665:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
-            "pack-d5ff1665:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback"
+            "pack-f05a677a:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
+            "pack-f05a677a:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
+            "pack-f05a677a:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 16:45:19 PST] Exec completed (ember-em, code 1) :: on_gbm_v5_20260228.pkl -t models/ensemble_production_tft_v5_20260228.pkl and ensure output is valid JSON only. - Also run without --json to ensure human output still prints. Make … Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Okay double check that the data collector works. The data gets to s3 clean.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction.",
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: assistant: What happened: the Codex job didn’t run any code changes because **Codex Spark is rate-limited right now** (“usage limit for GPT‑5.3‑Codex‑Spark”). I’ve already restarted the same fix using **fallback `gpt-5.3-codex --yolo`** (in flight). Here’s **what’s sus from my checks** (and what’s *not*): ### Clean / green (things you asked me to double-check) - **Collector → S3 cleanliness:** latest S3 snapshot (`data/2026/02/27/16-00-49.json`) downloads clean (~**14.98MB**), parses clean, and has **`c.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-0a1c41f8132701cb4d08bfd37ed9043fab1b63205a3a3701a33e95ab738401a1",
+          "eventExportDigest": "sha256-3b9a3a1c265ec6dccb53a75d5c38d6a611b42fe23b4cc991e52002150ed817ce",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.806,
-            "routeSelectionMs": 6.105,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.699,
+            "totalMs": 14.514,
+            "routeSelectionMs": 9.355,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 5.154,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -248,10 +248,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-d5ff1665"
+          "pack-f05a677a"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-a05adea9c042d5a9bf2fa133b65f869c476c2079b931f318b225d8d5bb34b1b2"
+        "scoreHash": "sha256-6d1d87f88a989a6b9a27db4d82c3b0e74450b3a7ecdd229e829955a01a4cd932"
       },
       "turns": [
         {
@@ -289,28 +289,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-d5ff1665",
+          "activePackId": "pack-f05a677a",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-0faff769bcec703213085f6309d60d0886dc011e22d26a933b461273673c11ac",
+          "routerIdentity": "pack-f05a677a:route_fn",
+          "selectionDigest": "sha256-5055c6fbf34d7759be1c7a011cac8d21e6b3ed3a6df425c534408f6ac4c4fc39",
           "selectedContextIds": [
-            "pack-d5ff1665:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
-            "pack-d5ff1665:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction",
-            "pack-d5ff1665:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback"
+            "pack-f05a677a:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
+            "pack-f05a677a:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction",
+            "pack-f05a677a:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 16:45:19 PST] Exec completed (ember-em, code 1) :: on_gbm_v5_20260228.pkl -t models/ensemble_production_tft_v5_20260228.pkl and ensure output is valid JSON only. - Also run without --json to ensure human output still prints. Make … Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Okay double check that the data collector works. The data gets to s3 clean.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction.",
             "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-5-seed-message.",
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: assistant: What happened: the Codex job didn’t run any code changes because **Codex Spark is rate-limited right now** (“usage limit for GPT‑5.3‑Codex‑Spark”). I’ve already restarted the same fix using **fallback `gpt-5.3-codex --yolo`** (in flight). Here’s **what’s sus from my checks** (and what’s *not*): ### Clean / green (things you asked me to double-check) - **Collector → S3 cleanliness:** latest S3 snapshot (`data/2026/02/27/16-00-49.json`) downloads clean (~**14.98MB**), parses clean, and has **`c.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-499d1a9cb5d9d7b2c4f7b0ce5b9fd9035f8972f11669d0946eced2e5d07b9771",
+          "eventExportDigest": "sha256-4c8d906f50d8e3c45b757754381bbd1b674fe1414a23c2455c715a18818c43b3",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.737,
-            "routeSelectionMs": 5.032,
+            "totalMs": 13.427,
+            "routeSelectionMs": 8.657,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.703,
+            "otherMs": 4.768,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -365,7 +365,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
           "pack-f05a677a"
@@ -373,7 +373,7 @@
         "trainTurnCount": 0,
         "evalTurnCount": 1,
         "frozenEvalPackId": "pack-f05a677a",
-        "frozenEvalRouterIdentity": "pack-f05a677a:route_fn",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-cf869076bc02c5fccf6234a4dcdc86b4d3c127541ffe03d5392809f9c5d8a359"
+        "scoreHash": "sha256-a0b7a05a8df8739a39a724972daec7d06cb1af33a3159e9176d01978871d8aae"
       },
       "turns": [
         {
@@ -411,20 +411,24 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-f625760872e93bfeb736057bf6a497f745db7521bec939ac9ff408a6a200c37d",
+          "selectionDigest": "sha256-94369e84a086c305c6ace5ae40d69d0547978fccbace2989fba2477569ab149d",
           "selectedContextIds": [
-            "pack-f05a677a:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback"
+            "pack-f05a677a:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
+            "pack-f05a677a:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
+            "pack-f05a677a:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 16:45:19 PST] Exec completed (ember-em, code 1) :: on_gbm_v5_20260228.pkl -t models/ensemble_production_tft_v5_20260228.pkl and ensure output is valid JSON only. - Also run without --json to ensure human output still prints. Make … Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Okay double check that the data collector works. The data gets to s3 clean.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction."
+            "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 16:45:19 PST] Exec completed (ember-em, code 1) :: on_gbm_v5_20260228.pkl -t models/ensemble_production_tft_v5_20260228.pkl and ensure output is valid JSON only. - Also run without --json to ensure human output still prints. Make … Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Okay double check that the data collector works. The data gets to s3 clean.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: assistant: What happened: the Codex job didn’t run any code changes because **Codex Spark is rate-limited right now** (“usage limit for GPT‑5.3‑Codex‑Spark”). I’ve already restarted the same fix using **fallback `gpt-5.3-codex --yolo`** (in flight). Here’s **what’s sus from my checks** (and what’s *not*): ### Clean / green (things you asked me to double-check) - **Collector → S3 cleanliness:** latest S3 snapshot (`data/2026/02/27/16-00-49.json`) downloads clean (~**14.98MB**), parses clean, and has **`c.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-8d9bb065dbdc622b4b5443ef6af1a4f4c569dd6e2247d87676f1dfce4c736a66",
+          "eventExportDigest": "sha256-5f9ba3aad140d2c7a5291895d1b76f1eb50b9615fa3c54599ffcfce86617b971",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -443,10 +447,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.386,
-            "routeSelectionMs": 7.012,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.373,
+            "totalMs": 12.336,
+            "routeSelectionMs": 7.856,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.477,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -490,5 +494,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-eef430b4f67883f880f3c86b32533a31cb1219f3b60fe7cec7e5ac25de8bbf54"
+  "bundleHash": "sha256-106983959421e7e87fe269de06b537fee174bdd832140186905294150c0f2002"
 }

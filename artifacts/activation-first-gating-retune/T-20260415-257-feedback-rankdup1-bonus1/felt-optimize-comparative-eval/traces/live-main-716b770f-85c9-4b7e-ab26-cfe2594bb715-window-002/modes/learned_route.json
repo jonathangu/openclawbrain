@@ -1,0 +1,111 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-00b45518"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-00b45518",
+    "frozenEvalRouterIdentity": "pack-00b45518:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-07T00:09:13.211Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-b77a9c7a3fd050b98645168b1be756ca8e6c5953ae851e3df40cf768202f9e90"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-00b45518",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": true,
+      "activationSource": "learned_route_artifact:candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationConfidence": "high",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-6f4fc1450001333c7337a34510a398a10f15ec998420873b25e47bab6c5825e4",
+      "selectedContextIds": [
+        "pack-00b45518:event:716b770f-85c9-4b7e-ab26-cfe2594bb715-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 716b770f-85c9-4b7e-ab26-cfe2594bb715-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260406-162 publish/docs/sites wave — Lane A (repo release/docs bump). Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Goal: cut the public 0.4.35 pass for the finished tool-action symmetry work. Scope: bump split-package versions to 0.4.35 where appropriate, update README.md, CHANGELOG.md, docs/README.md, docs/END_STATE.md, docs/release-notes-0.4.35.md.... Related interaction: 716b770f-85c9-4b7e-ab26-cfe2594bb715-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-53ea199caa3c55ebab1d1f70317d0beeb0c36983765b2c0e26b10f7b661e1b48",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/openclawbrain/README.md\"}",
+        "/Users/guclaw/.openclaw/workspace/openclawbrain/CHANGELOG.md\"}"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/openclawbrain/README.md\"}",
+        "/Users/guclaw/.openclaw/workspace/openclawbrain/CHANGELOG.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.098,
+        "routeSelectionMs": 5.621,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.474,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-07T00:09:13.211Z"
+      },
+      "warnings": []
+    }
+  ]
+}

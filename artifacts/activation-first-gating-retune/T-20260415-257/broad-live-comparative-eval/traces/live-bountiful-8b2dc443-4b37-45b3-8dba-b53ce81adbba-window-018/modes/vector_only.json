@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-f529b044"
+      "pack-5e566f08"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-e73d72910eec5afa7895ce560843f7e44eadc5eaf580315a6b771d87a31eba7d"
+    "scoreHash": "sha256-4878a1af6aa18c221a7574a2d650098583f6eb7970772869ffdc567def6bedcd"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-f529b044",
+      "activePackId": "pack-5e566f08",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-4d180a5f364f41e76b98ec41ba59be91be51e3ed436b5403428145ebd3ab7318",
+      "routerIdentity": "pack-5e566f08:route_fn",
+      "selectionDigest": "sha256-b0737b10f7105592d35c7286d8ff3115023648d0a0ece54b0c95da826e96b362",
       "selectedContextIds": [
-        "pack-f529b044:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:feedback",
-        "pack-f529b044:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback",
-        "pack-f529b044:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback"
+        "pack-5e566f08:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:feedback",
+        "pack-5e566f08:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback",
+        "pack-5e566f08:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: [sessionId: 14210ef4-6dff-4693-816f-bfb689b6ad2d] A subagent task \"Return ONLY Part 2/3 of the critique (max 5,500 characters): bullet list of problems (mental model, trust/safety, UX overload, language), and a clear recommendation about removing the Counter button (yes/no, why) and what replaces it. Do not include Part 1 or Part 3. Screens summary: A Bounty detail: Gather. B Quick sheet: qty chips, message, add from your garden, Gather now, Full proposal. C Full proposal: qty +/- and Send Re.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:interaction.",
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7449\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` lets think deeply about how this trade works. can you ask OPUS 4.6 high thinking. ask it for a full critique. show it screenshots. what is each person \"thinking\" when they see this .... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction.",
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"7436\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-c167edd56638e5b38b394e3f1ac34ad9394d655806f1d32d4e068dd386f41007",
+      "eventExportDigest": "sha256-5d63fdb0a74e47b4ef3d9dc87c52ea7f06e2cfa2fea9a5dae06d2731dcdd3719",
       "expectedContextPhrases": [
         "546b496d",
         "c4458340c0ee"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.318,
-        "routeSelectionMs": 5.64,
+        "totalMs": 10.678,
+        "routeSelectionMs": 7.15,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.674,
+        "otherMs": 3.524,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

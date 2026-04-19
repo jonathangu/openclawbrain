@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-8d691c06"
+      "pack-b2026767"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-a1e1373adfd87dd3b36273a052c866bfcb64f6eacbee788ad673bdcf1fe07de6"
+    "scoreHash": "sha256-5d5fda4bcc4e8477301b039dffc710ef76c3e0a20267d92d17bb262bd5d48ea4"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-8d691c06",
+      "activePackId": "pack-b2026767",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-19f6181abd3a5c9a2f991d9c82ab6e45264ad8e446a5d4e78936d469cbb24c11",
+      "routerIdentity": "pack-b2026767:route_fn",
+      "selectionDigest": "sha256-dac1904f1e501e8e6107710f7dcd90d2ac22f5a7b4f7599a47fba9c72489ccad",
       "selectedContextIds": [
-        "pack-8d691c06:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-1:feedback",
-        "pack-8d691c06:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-2:feedback",
-        "pack-8d691c06:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-2:interaction"
+        "pack-b2026767:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-1:feedback",
+        "pack-b2026767:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-2:feedback",
+        "pack-b2026767:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 7:08 AM (America/Los_Angeles) / 2026-04-13 14:08 UTC. Related interaction: 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 7:08 AM (America/Los_Angeles) / 2026-04-13 14:08 UTC. Related interaction: 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-2:interaction.",
         "Interaction operator_override on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-e280952415a08554d2ebec74351c8d359709b58b93f20d814005f2a532517637",
+      "eventExportDigest": "sha256-02535a28beada0139941fe72c89cebae881e97b6d37e65b09e6dcc612fd062f7",
       "expectedContextPhrases": [
         "toolcall",
         "process",
@@ -90,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.049,
-        "routeSelectionMs": 4.408,
+        "totalMs": 9.177,
+        "routeSelectionMs": 5.266,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.64,
+        "otherMs": 3.909,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

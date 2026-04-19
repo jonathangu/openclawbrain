@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-bc5709ac"
+      "pack-5c27ba27"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-23b53c80c1ff60b0c8f63bc7c76be5e016adcea91412f19eec0c564c1b9c9038"
+    "scoreHash": "sha256-2ddcb132921587597b6575a3a3e63756d4f597fba3ba4dd9c2674931f99f5689"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-bc5709ac",
+      "activePackId": "pack-5c27ba27",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-660af57dabd50f289e5b2c98de01b67c8a3b935d1b4f3dd3e09ca0157babab2f",
+      "routerIdentity": "pack-5c27ba27:route_fn",
+      "selectionDigest": "sha256-0f7e9f8995780dc9c00af8fcce199d491f984a2ede7bea609c111bd90754cb12",
       "selectedContextIds": [
-        "pack-bc5709ac:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
-        "pack-bc5709ac:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction",
-        "pack-bc5709ac:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:feedback"
+        "pack-5c27ba27:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+        "pack-5c27ba27:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction",
+        "pack-5c27ba27:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15822\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 12:57 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Lets returns to the best way to use heartbeat. Mostly yes. Your writeup is substantively correct, with a few important corrections. The current OpenClaw docs say Heartbeat is the mechanism for periodic proactive.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
         "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-6-seed-message.",
         "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/workspace-bountiful/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7th, 2026 — 12:01 PM (America/Los_Angeles) / 2026-04-07 19:01 UTC. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-4d94b3d16948eb92664bb36b16151805ccb3cb1ad367b1ec93f71adf2add9018",
+      "eventExportDigest": "sha256-fdf1a3d9cb4d291ea1148ac6c08a47412f20fc743f6d67563a1478d2c264fd90",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace-bountiful/HEARTBEAT.md\"}"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 3.431,
-        "routeSelectionMs": 2.087,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 1.341,
+        "totalMs": 5.803,
+        "routeSelectionMs": 3.476,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.324,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

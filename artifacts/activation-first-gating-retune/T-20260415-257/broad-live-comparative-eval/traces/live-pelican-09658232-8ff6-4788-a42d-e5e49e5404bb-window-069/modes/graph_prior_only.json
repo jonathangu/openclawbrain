@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-9f969700"
+      "pack-60b4351c"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-a01bf96bcc57fab9cf2f8fe586e29e464461a4b3907d7a9023a7a6fcb9e470b2"
+    "scoreHash": "sha256-8e0b58363c285204028703e495f92edea003857aa8e309d43ca3f850d75a5c57"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-9f969700",
+      "activePackId": "pack-60b4351c",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-703fce1e35d8ce1c0076cf92399600adf184ecfae8be38046342a6ae3789ea2b",
+      "routerIdentity": "pack-60b4351c:route_fn",
+      "selectionDigest": "sha256-9103e2017ae1b993ae9480b2bfd7caca5289ffd40333e4ac8477db277d11e19d",
       "selectedContextIds": [
-        "pack-9f969700:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
-        "pack-9f969700:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
-        "pack-9f969700:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
+        "pack-60b4351c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+        "pack-60b4351c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
+        "pack-60b4351c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: e36799be-585c-4f29-a86a-2e84e09fee99] A cron job \"v6-slim-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 1m57s • tokens 4.3k (in 19 / out 4.3k) • prompt/cache 26.8k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system me.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
         "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-4-seed-message.",
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 1m33s • tokens 35.8k (in 31.0k / out 4.8k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim. Reply ONLY: NO_REPLY if this exact result was alr.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-1c0d4e3023581ef5d4919dbf74821f81e12dd1d8b8820a9d3cc0f30fed8d3285",
+      "eventExportDigest": "sha256-99f4ed5223f1d1c868e1f6cdbda540cc53649b77ee7643f87f18dba507dedaa0",
       "expectedContextPhrases": [
         "/.ssh/guclaw-tft-v2.pem",
         "/tmp/tft_v6_train.log",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.405,
-        "routeSelectionMs": 5.683,
+        "totalMs": 10.177,
+        "routeSelectionMs": 6.38,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.719,
+        "otherMs": 3.795,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

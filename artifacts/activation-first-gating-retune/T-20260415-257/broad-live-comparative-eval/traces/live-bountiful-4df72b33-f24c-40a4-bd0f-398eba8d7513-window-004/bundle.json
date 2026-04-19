@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T03:27:35.751Z",
   "traceHash": "sha256-4b9d58238866be4c30cb67001ed41c476bb074abc457ce91f27bdf2a95087dda",
   "fixtureHash": "sha256-93a191f41c9134f7fb1b39f4120c598d79722f0fdf720a1c60726eeea45f85a7",
-  "scoreHash": "sha256-0873679a0a4b87b70a8fd1d437a064b8ffdd714a0df9b54d38e4d06685f1f3f9",
+  "scoreHash": "sha256-d5a17c0f2703a9b95012beefa5ccfc761c8be1e2205de0d7aa576efb20710e83",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.033,
+            "totalMs": 0.038,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.033,
+            "otherMs": 0.038,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-9b2a810f"
+          "pack-c86fce94"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-a50c1f6f1f8493a189b351db513bd7f4bfe65f284812b5bbeaad2e5c6da09cca"
+        "scoreHash": "sha256-f56367d3abbd873e2a89f11121f52b28c8fb570325adef1f96a5188853bb5289"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-9b2a810f",
+          "activePackId": "pack-c86fce94",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-9d03a37d0269db6d858cc72b8e4470443a815de044f40330499eeb6232ce6234",
+          "routerIdentity": "pack-c86fce94:route_fn",
+          "selectionDigest": "sha256-c03077c1e7754575fbe018086f77253ff7827138d16ead773df71f468340bb68",
           "selectedContextIds": [
-            "pack-9b2a810f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
-            "pack-9b2a810f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback",
-            "pack-9b2a810f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:feedback"
+            "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
+            "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback",
+            "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction.",
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8095\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:25 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Hello?. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:interaction.",
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-6512f97bd8e68ce6034032be670ae349839939f99216cea26a993a1d29d5354f",
+          "eventExportDigest": "sha256-26d0dc758cd824048b17028b1251a40cdc6f2b524e85d27089a4d4c5194188a8",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.488,
-            "routeSelectionMs": 4.818,
-            "promptAssemblyMs": 0.005,
-            "otherMs": 2.665,
+            "totalMs": 10.053,
+            "routeSelectionMs": 6.584,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 3.465,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -248,10 +248,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-9b2a810f"
+          "pack-c86fce94"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-2094a489d37d16d27e45a03bf95e4e1f48ae2d2eda93174876c571e2622d9a18"
+        "scoreHash": "sha256-56d5338c96f9ed363ff06c18ab91a4ed6fb2634d9ec0cb74535e8d4fda080d11"
       },
       "turns": [
         {
@@ -289,28 +289,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-9b2a810f",
+          "activePackId": "pack-c86fce94",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-2b44469ba6704b449b77e892228b6da7c0a84167083254b5657d6b00dce48e5b",
+          "routerIdentity": "pack-c86fce94:route_fn",
+          "selectionDigest": "sha256-6a288bc13cdaf26df3ad175e3c935ba0ab52242d6cba8b8f3da386f8b8bc29c6",
           "selectedContextIds": [
-            "pack-9b2a810f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
-            "pack-9b2a810f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction",
-            "pack-9b2a810f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback"
+            "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
+            "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction",
+            "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction.",
             "Interaction operator_override on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed. Message: cue-5-seed-message.",
             "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8095\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:25 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Hello?. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:interaction."
           ],
-          "eventExportDigest": "sha256-c8740b639175f748e25da6e223b29713c819147ce6661380db304dac33f0d68c",
+          "eventExportDigest": "sha256-d1680c4e18daf485b033dcd42c1689faa3bc6fde8267bce41fdce37a206190ff",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.299,
-            "routeSelectionMs": 4.647,
+            "totalMs": 8.879,
+            "routeSelectionMs": 5.484,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.649,
+            "otherMs": 3.392,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -365,15 +365,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-79a24fec"
+          "pack-c86fce94"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-79a24fec",
-        "frozenEvalRouterIdentity": "pack-79a24fec:route_fn",
+        "frozenEvalPackId": "pack-c86fce94",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-0e7ab81aa3fe427bcb3ed7d42bd4d09a92bd8728ecd8c89bb2c8923358cf0b24"
+        "scoreHash": "sha256-b1e8504b415063d40ff37ae69e03b2eff20a69d22ed880b3966f1a1547ae8bef"
       },
       "turns": [
         {
@@ -407,24 +407,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-79a24fec",
+          "activePackId": "pack-c86fce94",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-4de3f0c0dfd04fa0c70cdc7180ec1f1219d9a7dd2f11c819931f8357c335b6c2",
+          "selectionDigest": "sha256-c03077c1e7754575fbe018086f77253ff7827138d16ead773df71f468340bb68",
           "selectedContextIds": [
-            "pack-79a24fec:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:interaction"
+            "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
+            "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback",
+            "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
-            "Interaction operator_override on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed. Message: cue-3-seed-message."
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8095\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:25 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Hello?. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-379d6e5f226681851f523a8b7b0589fc6c5f2d945f5792ef19ac58f1925b5e4d",
+          "eventExportDigest": "sha256-9844b075455520e9d5d83b5473cb400f9ccd5a9336038267fd48ea78f4792de2",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -443,10 +447,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.592,
-            "routeSelectionMs": 6.291,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.299,
+            "totalMs": 7.625,
+            "routeSelectionMs": 4.788,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.834,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -490,5 +494,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-cc68456247e3ef7e6cbd038a6403c9473f3c45021530d011b0e3978375c51f3f"
+  "bundleHash": "sha256-62af66b5e3eaa1ec97fd92a3b533422e33e99dc70595e92e25f3f90c93178ff5"
 }

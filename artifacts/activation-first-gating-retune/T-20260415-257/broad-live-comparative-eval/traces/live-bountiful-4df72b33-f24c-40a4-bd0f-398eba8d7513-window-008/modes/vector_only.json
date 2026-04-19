@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-5102e7dd"
+      "pack-60e8e66e"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-ea600060f25b29041e592417d5844c5a9559d892829476758d6a656fe04ab92d"
+    "scoreHash": "sha256-4abcaa9c9de165c85dd7ee3accbbd46527213913b90726a5c87209474ad8f630"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-5102e7dd",
+      "activePackId": "pack-60e8e66e",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-5c2816a96a0f6deac0985102a9986ef2f67e35ae52bbfee6c9956a1946e2873a",
+      "routerIdentity": "pack-60e8e66e:route_fn",
+      "selectionDigest": "sha256-faf69ef94a9bdb1ce7901afd2a9be13c3c53089642f56c3ebfdd02f2f619fa78",
       "selectedContextIds": [
-        "pack-5102e7dd:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
-        "pack-5102e7dd:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
-        "pack-5102e7dd:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:feedback"
+        "pack-60e8e66e:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
+        "pack-60e8e66e:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
+        "pack-60e8e66e:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8103\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 20:00 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` How's it going. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction.",
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8104\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 20:00 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Find bugs and squash them use codex and Claude code. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction.",
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8095\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:25 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Hello?. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-fc161edc8072891b0aff5f272c94b13556f8faebc08e9320d1e176ed4f4b606a",
+      "eventExportDigest": "sha256-47f3d03cf714ab3c78658376dcc1c05913dda25f56be1eaf9faa4fd98d36a62d",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe",
         "/main\","
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.179,
-        "routeSelectionMs": 4.522,
+        "totalMs": 8.762,
+        "routeSelectionMs": 5.366,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.654,
+        "otherMs": 3.393,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

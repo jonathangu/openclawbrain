@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-5593370a"
+      "pack-a0a98196"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-48af7f98890ea127ba3c328249c9a0af2f2bfd6278ccdebcc756b15400e7722e"
+    "scoreHash": "sha256-6f7befe6a5f09f6a9268b2da5f01da3c2b26c5da52ecb5fc774ae0b75bb7eb1e"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-5593370a",
+      "activePackId": "pack-a0a98196",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-acd8340e450e87dfe52d06d4f1ce742990b517c3a3e6c59445f8f9be5d041faf",
+      "routerIdentity": "pack-a0a98196:route_fn",
+      "selectionDigest": "sha256-4b32956cd1b65905d3b336c6b3f06b41251e8db938ec60e002807e9b4edb7010",
       "selectedContextIds": [
-        "pack-5593370a:pointer-aware-init",
-        "pack-5593370a:workspace-init:f4134aaa",
-        "pack-5593370a:workspace-init:b2452372"
+        "pack-a0a98196:pointer-aware-init",
+        "pack-a0a98196:workspace-init:a20f3c81",
+        "pack-a0a98196:workspace-init:d0a81abb"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Top-priority boot input TOOLS.md selected by pointer-aware init (inbound=1, outbound=0). TOOLS.md — Local Notes Preferred lanes - Codex for code-heavy work - Claude Code for writing-heavy work - Review rendered public writing, not just diffs CLI rules - Codex binary: /opt/homebrew/bin/codex - Headless Codex: use codex exec, not bare codex - Default Codex lane: codex exec --full-auto -C /path/to/project \"p…",
-        "Top-priority boot input SOUL.md selected by pointer-aware init (inbound=1, outbound=0). SOUL.md — GUCLAW GUCLAW, Jon's high-trust operator. 🦅 Calm, direct, kind, decisive. Practical engineer who owns outcomes. Defaults - Jonathan's instructions first. - Own the outcome, verify facts, move fast without surprise. - Reduce load: next actions, artifacts, verification, minimal chatter. - Ask only when truly…"
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, task-artifacts/guclaw-cleanup-2026-04-18/MEMORY.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, +8 more from the MEMORY index graph.",
+        "Working-set input task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md selected by pointer-aware init (inbound=1, outbound=0). TOOLS.md — Local Notes Preferred lanes - Codex for code-heavy work - Claude Code for writing-heavy work - Review rendered public writing, not just diffs CLI rules - Codex binary: /opt/homebrew/bin/codex - Headless Codex: use codex exec, not bare codex - Default Codex lane: codex exec --full-auto -C /path/to/project \"p…",
+        "Working-set input task-artifacts/guclaw-cleanup-2026-04-18/SOUL.md selected by pointer-aware init (inbound=1, outbound=0). SOUL.md — GUCLAW GUCLAW, Jon's high-trust operator. 🦅 Calm, direct, kind, decisive. Practical engineer who owns outcomes. Defaults - Jonathan's instructions first. - Own the outcome, verify facts, move fast without surprise. - Reduce load: next actions, artifacts, verification, minimal chatter. - Ask only when truly…"
       ],
-      "eventExportDigest": "sha256-adeadde14b9b397a2760109da20c940abe38e50b0326759ac1dd772a1617e9d0",
+      "eventExportDigest": "sha256-0feb504c99f0da968a7df5f8c96d941f474761ac01f6347853f5b3a990199500",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research/retrain_v6_aws.sh",
         "/Users/guclaw/.openclaw/workspace/quant-research/retrain_v6_monitor.sh\\necho"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.737,
-        "routeSelectionMs": 4.837,
+        "totalMs": 8.964,
+        "routeSelectionMs": 5.458,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.898,
+        "otherMs": 3.504,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

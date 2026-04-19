@@ -5,19 +5,19 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 40,
+    "qualityScore": 80,
     "compileOkCount": 1,
-    "phraseHitCount": 0,
+    "phraseHitCount": 2,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-64a7562b"
+      "pack-66fd9085"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-64a7562b",
-    "frozenEvalRouterIdentity": "pack-64a7562b:route_fn",
+    "frozenEvalPackId": "pack-66fd9085",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-fc99ebff7aaae47cb18181a4b48a3aa999e163ef6abe3438ba64a38ce40a1986"
+    "scoreHash": "sha256-f8638c44c117c475842fe83bd3ff4eff6f8e87341f11e317a2b3414287bbf0ca"
   },
   "turns": [
     {
@@ -51,45 +51,50 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-64a7562b",
+      "activePackId": "pack-66fd9085",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-736943aa28e822a5bcaa311c2af543a32f0562d1f994934c642e07e317f5ffe1",
+      "selectionDigest": "sha256-c0a12f44ad4613a8665ab68f1a0cba471d49a3632b42f9711c0b18f83d4aac28",
       "selectedContextIds": [
-        "pack-64a7562b:pointer-aware-init"
+        "pack-66fd9085:event:8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-1:feedback",
+        "pack-66fd9085:event:8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-6:feedback",
+        "pack-66fd9085:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 3 lane B for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate3b on branch t129-gate3b-replay-shadow. Mission: implement replay over real candidate state for shadow-only Teacher v3 proposal classes: mutation and forgetting. Build the narrowest real replay path and class-specific replay summaries that keep mutation/forgetting sha.... Related interaction: 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed: assistant: Done. Implemented the Gate 3 shadow-replay path for mutation and forgetting: - Added reusable real replay summaries for: - mutation candidate graphs via shadow candidate state replay + rollback reset - forgetting retention transitions via actual retention evaluation + rollback semantics - Extended the Teacher v3 proof-bundle writer with a `shadowReplay` seam and class-specific shadow-only rendering - Added focused tests covering: - real mutation candidate replay - forgetting replay - user_exp.... Related interaction: 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-6:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, BOOT.md, task-artifacts/T-20260415-257/task-list.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-524f02408564415e8895cb51330eb1f2697567a2d6f4c3e8ac7024e6a1815b93",
+      "eventExportDigest": "sha256-c25b4635bbabb1d718e1c7b9dc5b20ed33c95862faaa611c3df1a03f0b5bae4a",
       "expectedContextPhrases": [
         "T-20260403-129",
         "/T-20260403-129/lane-gate3b-replay-shadow.md",
         "/forgetting"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [],
-      "missedPhrases": [
+      "phraseHits": [
         "T-20260403-129",
-        "/T-20260403-129/lane-gate3b-replay-shadow.md",
         "/forgetting"
       ],
-      "qualityScore": 40,
+      "missedPhrases": [
+        "/T-20260403-129/lane-gate3b-replay-shadow.md"
+      ],
+      "qualityScore": 80,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.448,
-        "routeSelectionMs": 6.113,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.334,
+        "totalMs": 12.995,
+        "routeSelectionMs": 8.388,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 4.605,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

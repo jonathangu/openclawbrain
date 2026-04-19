@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-1bde35ea"
+      "pack-36a93872"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-27519deda398b6b6132f8c25c0bce8714cdaa2688b98960b60a6c782d8b69e43"
+    "scoreHash": "sha256-0a13ccbe91d4e4cb7226f12457960a4a00e34c965dcbd8b4b21e162673f68efd"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-1bde35ea",
+      "activePackId": "pack-36a93872",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-e2aa19da16355c5e5a9c773ce92b7ad32807ca483d4bd7b5378ac7fa3fb5a2b8",
+      "routerIdentity": "pack-36a93872:route_fn",
+      "selectionDigest": "sha256-1bc9e7947e9fcc0430f645524da7087613d149f4f650e956662b571bd0fcc98b",
       "selectedContextIds": [
-        "pack-1bde35ea:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-        "pack-1bde35ea:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
-        "pack-1bde35ea:pointer-aware-init"
+        "pack-36a93872:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+        "pack-36a93872:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+        "pack-36a93872:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 4ff6d91e-8778-4011-b5aa-df96cf3d35c1] A cron job \"tft-v6-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 44s • tokens 1.7k (in 10 / out 1.7k) • prompt/cache 20.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system messa.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: fbb9da7c-1222-4552-984d-393a914dab91] A cron job \"tft-v6-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 1m59s • tokens 3.1k (in 18 / out 3.1k) • prompt/cache 25.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system mes.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: cff9acc9-284a-4510-beec-dafba4104b03] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 48s • tokens 30.2k (in 27.4k / out 2.9k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim. R.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-6b6e1f4f98e950186f8f85b77978a42734b43e989033ffba4cbe1c57be35ef66",
+      "eventExportDigest": "sha256-55dea0602eeafea4b0732cd35cb306901bc9326c0782b34964a3cd9cc1b04e0e",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace-pelican\\n\\n#"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.509,
-        "routeSelectionMs": 4.815,
+        "totalMs": 10.241,
+        "routeSelectionMs": 6.467,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.692,
+        "otherMs": 3.772,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

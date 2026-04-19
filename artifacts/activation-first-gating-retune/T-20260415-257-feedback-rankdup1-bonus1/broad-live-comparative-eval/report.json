@@ -1,0 +1,65 @@
+{
+  "contract": "comparative_eval_runner_report.v1",
+  "status": "ok",
+  "generatedAt": "2026-04-18T22:34:21.597Z",
+  "repoRoot": "/Users/guclaw/.openclaw/workspace/openclawbrain",
+  "gitSha": "627639721049957f7920995f24b550f618afa58d",
+  "manifestPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
+  "manifestContract": "frozen_recorded_session_eval_manifest.v1",
+  "manifestId": "extracted-semantic-rich-live-535",
+  "outputDir": "/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257-feedback-rankdup1-bonus1/broad-live-comparative-eval",
+  "traceRoot": "/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257-feedback-rankdup1-bonus1/broad-live-comparative-eval/traces",
+  "requestedTraceCount": 403,
+  "expectedTraceCount": 403,
+  "successfulTraceCount": 403,
+  "failedTraceCount": 0,
+  "notes": [
+    "default manifest path is /Users/guclaw/.openclaw/workspace/openclawbrain/evals/recorded-session-replay/canonical-frozen-20/manifest.json",
+    "mode order is no_brain, vector_only, graph_prior_only, learned_route",
+    "the comparative runner delegates replay execution to writeRecordedSessionReplayProofLane so each trace still runs through the real replay/runtime path",
+    "learned_route replay override artifact: /Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257-feedback-rankdup1-bonus1/candidate-artifact",
+    "candidate override runs are non-authoritative for served learned-route hotpath truth because replay override keeps usedLearnedRouteFn=false by construction",
+    "Extracted from /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-250/semantic-rich-live-535.json",
+    "Internal local-only live-history replay traces.",
+    "One-turn traces with prior session messages converted into seed cues.",
+    "Not approved for public export without a separate redaction pass."
+  ],
+  "assumptions": [
+    "accepted manifest contracts: canonical_recorded_session_trace_set_manifest.v1, frozen_recorded_session_eval_manifest.v1",
+    "manifest trace paths resolve relative to the manifest file location",
+    "traceHash, when present in the manifest, is checksumJsonPayload(trace-json)",
+    "scorecard prompt-cost metrics are cheap deterministic proxies derived from selected context chars",
+    "learned_route is the candidate mode, graph_prior_only is the baseline mode, and no_brain is the floor anchor for the explicit comparative policy",
+    "when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state",
+    "candidate override replay does not bind the candidate as the served learned-route router, so authoritative broad-live verdicts still require a served-pack bridge",
+    "this scaffold does not finalize the frozen trace set or widen proof-bundle generation scope"
+  ],
+  "issues": [],
+  "pricingTable": {
+    "version": "v1",
+    "path": "scripts/pricing-table.v1.json",
+    "charsPerToken": 4,
+    "promptPriceUsdPer1mTokens": 1.25
+  },
+  "scorecardHash": "sha256-ef44d09bc453453dd0659e3a0a6154dab14f91bb5eaf7728edb61e979280682c",
+  "explainableScorecardHash": "sha256-fd429da939f0b5b4221f7bfe32e17682b09866fdbee7b8276aae264c839ffada",
+  "gateStatus": "pass",
+  "gateDecisive": true,
+  "gateFailedCheckIds": [],
+  "files": {
+    "sourceManifest": "source-manifest.json",
+    "report": "report.json",
+    "scorecard": "scorecard.json",
+    "explainableScorecard": "explainable-scorecard.json",
+    "summary": "summary.md",
+    "traceDir": "traces",
+    "laneDir": "traces/_lane",
+    "laneIndex": "traces/_lane/index.json",
+    "laneSummaryTables": "traces/_lane/summary-tables.json",
+    "lanePairwiseDeltas": "traces/_lane/pairwise-deltas.json",
+    "laneWinRateMatrix": "traces/_lane/win-rate-matrix.json",
+    "laneWorkedTraces": "traces/_lane/worked-traces.md",
+    "laneGenerationReport": "traces/_lane/generation-report.json"
+  }
+}
+

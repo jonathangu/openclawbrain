@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-02T01:12:38.057Z",
   "traceHash": "sha256-2f6c0119a771d3d4002ad2796a568648f1ef4a576c6d777928a579e3ee482d2c",
   "fixtureHash": "sha256-bc5d36362845b850e526b2c0c66165097088057015558a1287a8837f47ec0645",
-  "scoreHash": "sha256-015ed456379247d344c065f80c3ddb94ea46a8a85fb23777dad60f4dd2fa88d2",
+  "scoreHash": "sha256-055ef8ed0835bcc57482ac6fab30da8d0a498d080df9d1c8ed79f27b638b0f1a",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.036,
+            "totalMs": 0.043,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.036,
+            "otherMs": 0.043,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-373cc85c"
+          "pack-ca4e78bb"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-80223d37b2996bd8adb1de12037b4fcecf30a990f688bcbc582b1bc96c6a4527"
+        "scoreHash": "sha256-b861e3c9c9357e372c8212e337ff34823f2c965854087a9eac536e6fc0750c86"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-373cc85c",
+          "activePackId": "pack-ca4e78bb",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-29a8a27c31d156f5408ab87898af6f513256e3659bed73b95fb20022d6005cd9",
+          "routerIdentity": "pack-ca4e78bb:route_fn",
+          "selectionDigest": "sha256-9bf5500b244901b6bb48a2a19dc8fbe7386ccdf62586409c2c5998faf37b672e",
           "selectedContextIds": [
-            "pack-373cc85c:pointer-aware-init",
-            "pack-373cc85c:workspace-init:0d01dda4",
-            "pack-373cc85c:pointer-passive-expansion"
+            "pack-ca4e78bb:pointer-aware-init",
+            "pack-ca4e78bb:workspace-init:0d01dda4",
+            "pack-ca4e78bb:pointer-passive-expansion"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
             "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
             "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, memory/2026-03-25.md, task-artifacts/ledger-archive/TASKS-2026-03-24-reset-for-new-mission.md, +6 more."
           ],
-          "eventExportDigest": "sha256-cebc9a2d6d0b62aae8c49372174d12581aa8fe22eb35d8432c2d56f18a6087a6",
+          "eventExportDigest": "sha256-67fa1de0efbde681e38970ac4eb1e19d5dbff9a3fa6432f8b2c33afc3158a8cb",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.169,
-            "routeSelectionMs": 4.45,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.716,
+            "totalMs": 12.274,
+            "routeSelectionMs": 8.52,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 3.75,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-373cc85c"
+          "pack-ca4e78bb"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-768fdcfff38fc902f1037729945884d32d78afb15358011bf10b2d0dca22390e"
+        "scoreHash": "sha256-d9086a128d1c333cc2420bd0ad58d3238df10a71e77641ce351450694bb6e133"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-373cc85c",
+          "activePackId": "pack-ca4e78bb",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-53d6ae7a9acadbad99fc248581a5abff1ef858b49dda9e7407712c4741de8089",
+          "routerIdentity": "pack-ca4e78bb:route_fn",
+          "selectionDigest": "sha256-49ab82fa521cc58165ea9e59d9422b7e3ee854439f63433bdc4d8dfab4d2d79c",
           "selectedContextIds": [
-            "pack-373cc85c:pointer-aware-init",
-            "pack-373cc85c:workspace-init:0d01dda4",
-            "pack-373cc85c:workspace-init:16415817"
+            "pack-ca4e78bb:pointer-aware-init",
+            "pack-ca4e78bb:workspace-init:0d01dda4",
+            "pack-ca4e78bb:workspace-init:16415817"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
             "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
             "Working-set input TASKS.md selected by pointer-aware init (inbound=6, outbound=19). Last ledger refresh: 2026-04-08 15:05 PT Status keys: active | parked | blocked | done Current queue: **T-117** Live truth - Active principal task: none - Highest-priority blocked principal task: **T-117 — App Store + Play Store launch master plan and execution track** - Canonical repo: /Users/guclaw/.openclaw/workspa…"
           ],
-          "eventExportDigest": "sha256-8ec9adac7d4ef2cb6841b2de4228f6c44fab00ebafc39e5712bb5eda072a13cc",
+          "eventExportDigest": "sha256-062b249186387472f1d5623501b4be7bdabfd0cb44af2ef9ee4d174ef1212f46",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.634,
-            "routeSelectionMs": 5.926,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.705,
+            "totalMs": 15.296,
+            "routeSelectionMs": 9.164,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 6.128,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
           "pack-ca4e78bb"
@@ -371,7 +371,7 @@
         "trainTurnCount": 0,
         "evalTurnCount": 1,
         "frozenEvalPackId": "pack-ca4e78bb",
-        "frozenEvalRouterIdentity": "pack-ca4e78bb:route_fn",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-edf30b7701a5ab490f4a6fe30a70f666f7610e1dbeb39c4fe4c3aebd6b5ec089"
+        "scoreHash": "sha256-1ff181ecdcea021cb5666087100f760cc21fd784331c5e8442e331b12d113669"
       },
       "turns": [
         {
@@ -409,20 +409,24 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-ae95a77d1e16a48675913c5992e02c39b06bd1c7079c6f5a9996e77643c54111",
+          "selectionDigest": "sha256-9bf5500b244901b6bb48a2a19dc8fbe7386ccdf62586409c2c5998faf37b672e",
           "selectedContextIds": [
-            "pack-ca4e78bb:pointer-aware-init"
+            "pack-ca4e78bb:pointer-aware-init",
+            "pack-ca4e78bb:workspace-init:0d01dda4",
+            "pack-ca4e78bb:pointer-passive-expansion"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
+            "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, memory/2026-03-25.md, task-artifacts/ledger-archive/TASKS-2026-03-24-reset-for-new-mission.md, +6 more."
           ],
-          "eventExportDigest": "sha256-fd06a90c8890bbf31f725aa1b5579220680618a0ed9d2e9b8d8033c17c79fb0d",
+          "eventExportDigest": "sha256-2fa8ff024375dd9f4a63c95921d86dc192543c963f480f007088b5695b501af0",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.895,
-            "routeSelectionMs": 5.334,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.56,
+            "totalMs": 11.35,
+            "routeSelectionMs": 7.022,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.325,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-691724bb9ab66536e4a257981cc7b0d497cabedb211d8b9e701a4ca08bf1e761"
+  "bundleHash": "sha256-8f4dc4823172b7a6c6559c3535501cdaff019fb4cc2d839f5d8e69f82fe1f457"
 }

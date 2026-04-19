@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-27T23:47:41.912Z",
   "traceHash": "sha256-0e0ac143317067e59f64740cdb9f819c48d2981153767f573c0e73b22b2b7c81",
   "fixtureHash": "sha256-dbbac8f5cf8c52842e2689d4f90634fa33bc0bae1bc0d3bfd9ad2ad85d720253",
-  "scoreHash": "sha256-db972f17752f455de48a64ab54a2626445fa153c5601da5648336694e60ad840",
+  "scoreHash": "sha256-dad92fdc522f08ed6f8418a8f5143d11ecde680aa0879488c1e4cc0820b515fc",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.025,
+            "totalMs": 0.031,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.025,
+            "otherMs": 0.031,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -127,10 +127,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-c0bbe941"
+          "pack-2fa1fc2f"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-d85bbf18206580d38602b33a20e6aefb1543fdaf79a1c12448346d9e90edf5cc"
+        "scoreHash": "sha256-e5b8b35f021690918370e0236328407b2a62493674a4afb9282db138f2a3d50b"
       },
       "turns": [
         {
@@ -168,28 +168,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-c0bbe941",
+          "activePackId": "pack-2fa1fc2f",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-98d038e18058eddcaf52e3abb2c2a6d89f5cc8c6ebaa0ebe1e096bebbc5adf9d",
+          "routerIdentity": "pack-2fa1fc2f:route_fn",
+          "selectionDigest": "sha256-cdacc4bc89b004340d5458aba44c2fdaa7eeb8225f756686717754206540220d",
           "selectedContextIds": [
-            "pack-c0bbe941:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
-            "pack-c0bbe941:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
-            "pack-c0bbe941:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
+            "pack-2fa1fc2f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-2fa1fc2f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
+            "pack-2fa1fc2f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: eeb5903a-1991-4471-87ba-565408d3db83] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Good context. Training is at member 5/15, ~28 min left. Let me update the heartbeat with current progress: Stats: runtime 22s • tokens 787 (in 7 / out 780) • prompt/cache 20.8k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention s.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 9e9acf30-fee4-41a1-97f6-ac5597851b77] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 1m41s • tokens 19.9k (in 13.7k / out 6.2k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim..... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: d4fe5adc-c09d-4b95-86b2-b106a2a97c64] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Training is still in progress — member 9/15 is running now. Each member takes ~160s, so ~16 minutes remaining. Let me check if the runs file is elsewhere: Stats: runtime 15s • tokens 450 (in 5 / out 445) • prompt/cache 17.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Kee.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-8d1a11df3999ee6f172e3c11b8cf62808d9ccfbccf9ae6cb0437f836efa66ffa",
+          "eventExportDigest": "sha256-54cc0ac699c59c8af84de2667d01c12f4fe2b7d2d9c410118a25b3393fcdfed8",
           "expectedContextPhrases": [
             "/15"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.252,
-            "routeSelectionMs": 5.543,
+            "totalMs": 10.784,
+            "routeSelectionMs": 6.543,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.707,
+            "otherMs": 4.239,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -239,10 +239,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-c0bbe941"
+          "pack-2fa1fc2f"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-6f738a9db8f4f46c378a2fe5dfd490ee82eb70a4196496bf6b23ce23796152a2"
+        "scoreHash": "sha256-171851e92ec213c22240103678f2410b4348457d3599a2c976fe2533a3a0b977"
       },
       "turns": [
         {
@@ -280,28 +280,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-c0bbe941",
+          "activePackId": "pack-2fa1fc2f",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-d7ec7b55ee0b249a5c653ac322c0b0cbde3322144bf0cf6efcc3b0acaf18f4e4",
+          "routerIdentity": "pack-2fa1fc2f:route_fn",
+          "selectionDigest": "sha256-729a1a78f8bd6bd84880f46aba24ca25da62dc4bdf624a6ca3061a96e9add36a",
           "selectedContextIds": [
-            "pack-c0bbe941:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
-            "pack-c0bbe941:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
-            "pack-c0bbe941:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
+            "pack-2fa1fc2f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-2fa1fc2f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
+            "pack-2fa1fc2f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: eeb5903a-1991-4471-87ba-565408d3db83] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Good context. Training is at member 5/15, ~28 min left. Let me update the heartbeat with current progress: Stats: runtime 22s • tokens 787 (in 7 / out 780) • prompt/cache 20.8k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention s.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
             "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-4-seed-message.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 9e9acf30-fee4-41a1-97f6-ac5597851b77] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 1m41s • tokens 19.9k (in 13.7k / out 6.2k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim..... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-5ebb65d608eb938c3f50338c35dc9c3b0f9a6d6caccce57bac5b810b21dfeef3",
+          "eventExportDigest": "sha256-4e7f59a2e7386dff3b5c1b807c2b6697275317acfade52af1643d4c489dea9f2",
           "expectedContextPhrases": [
             "/15"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.651,
-            "routeSelectionMs": 4.947,
+            "totalMs": 9.442,
+            "routeSelectionMs": 5.938,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.702,
+            "otherMs": 3.502,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -347,19 +347,19 @@
         "activationStrategy": "continuous_learned_loop",
         "modeRequested": "learned",
         "selectionEngine": "graph_walk_v1",
-        "qualityScore": 40,
+        "qualityScore": 100,
         "compileOkCount": 1,
-        "phraseHitCount": 0,
+        "phraseHitCount": 1,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-e3732764"
+          "pack-2fa1fc2f"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-e3732764",
-        "frozenEvalRouterIdentity": "pack-e3732764:route_fn",
+        "frozenEvalPackId": "pack-2fa1fc2f",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-317f30becb56b7cb7bcf22b053158b28719e297749fb4dbe1155da1d5ad6db26"
+        "scoreHash": "sha256-5d10fa5304fbeeaa9c877ee71d9c53a6567ba98b5a48701ea749a48c434382b3"
       },
       "turns": [
         {
@@ -393,41 +393,45 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e3732764",
+          "activePackId": "pack-2fa1fc2f",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-b2dcadc8856d69cabb803b8f2c488625887e1c8657731c1d5d3657c7ef3e67cf",
+          "selectionDigest": "sha256-cdacc4bc89b004340d5458aba44c2fdaa7eeb8225f756686717754206540220d",
           "selectedContextIds": [
-            "pack-e3732764:pointer-aware-init"
+            "pack-2fa1fc2f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-2fa1fc2f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
+            "pack-2fa1fc2f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: eeb5903a-1991-4471-87ba-565408d3db83] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Good context. Training is at member 5/15, ~28 min left. Let me update the heartbeat with current progress: Stats: runtime 22s • tokens 787 (in 7 / out 780) • prompt/cache 20.8k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention s.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 9e9acf30-fee4-41a1-97f6-ac5597851b77] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 1m41s • tokens 19.9k (in 13.7k / out 6.2k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim..... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: d4fe5adc-c09d-4b95-86b2-b106a2a97c64] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Training is still in progress — member 9/15 is running now. Each member takes ~160s, so ~16 minutes remaining. Let me check if the runs file is elsewhere: Stats: runtime 15s • tokens 450 (in 5 / out 445) • prompt/cache 17.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Kee.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-0e2db8dcc326bd70bcba32d93ea1422eb1f9fa0e63c4215dfe4f743e200c792a",
+          "eventExportDigest": "sha256-ba09a631516e181b2b29020788f11fa7652f60548b21d07e90f220473e3c4444",
           "expectedContextPhrases": [
             "/15"
           ],
           "minimumPhraseHits": 1,
-          "phraseHits": [],
-          "missedPhrases": [
+          "phraseHits": [
             "/15"
           ],
-          "qualityScore": 40,
+          "missedPhrases": [],
+          "qualityScore": 100,
           "compileActiveVersion": 1,
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.48,
-            "routeSelectionMs": 5.996,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.482,
+            "totalMs": 8.199,
+            "routeSelectionMs": 5.201,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.996,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -458,12 +462,12 @@
         "qualityScore": 100
       },
       {
-        "mode": "vector_only",
+        "mode": "learned_route",
         "qualityScore": 100
       },
       {
-        "mode": "learned_route",
-        "qualityScore": 40
+        "mode": "vector_only",
+        "qualityScore": 100
       },
       {
         "mode": "no_brain",
@@ -471,5 +475,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-4869acd71550bf0b4fcb1ff2b3aa9325838ef9c1f6611230bd52ca2c403676ff"
+  "bundleHash": "sha256-a7261a2a94946dafda893fb842f1d38e530e22ab86794f98df0c9c8c9e060773"
 }

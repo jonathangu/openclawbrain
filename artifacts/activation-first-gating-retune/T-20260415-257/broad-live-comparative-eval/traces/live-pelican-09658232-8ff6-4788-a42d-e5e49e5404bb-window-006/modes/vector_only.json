@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-ed68c3ab"
+      "pack-6578fed9"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-d650b12934efeebec392e80917208dc079fcbd5611721905297c4a0eac8f663a"
+    "scoreHash": "sha256-0cbbfe125cc7bee27fe487199c221fe0af92d3fa60185c23e7c38618c1768bdb"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-ed68c3ab",
+      "activePackId": "pack-6578fed9",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-df4aead15c5f9c4e4a9e2f76c564449caf42b148a6791a299eef2e5107277fad",
+      "routerIdentity": "pack-6578fed9:route_fn",
+      "selectionDigest": "sha256-f69b043faad1667876ae2d8ee9326f4bfe3044a881a238f2066f209e8c43adaf",
       "selectedContextIds": [
-        "pack-ed68c3ab:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-        "pack-ed68c3ab:pointer-aware-init",
-        "pack-ed68c3ab:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
+        "pack-6578fed9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+        "pack-6578fed9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction",
+        "pack-6578fed9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: We had training running. How's it going pelican: 🚀 GBM retrain is RUNNING on AWS Instance: g5.xlarge (44.247.209.229) Training: 15 members × 23 quantiles, 31,926 rows, 178 features All embeddings-only, no has_news/news_missing ✅ Had to fight through: • New Ubuntu 24.04/22.04 AMIs auto-terminate on g5 (!) • Old AMI has Python 3.7 → installed lightgbm<4.0 • SCP kills connections >5MB → uploaded via S3 chunks • 6 dead instances along the way ETA: ~30-40 min for GBM, then TFT on same instance (~3.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction."
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message.",
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-3-seed-message."
       ],
-      "eventExportDigest": "sha256-972d3f9d4b29953116ce58bf6b03d923444af9b0d7b0265235672a73a1b7e0f8",
+      "eventExportDigest": "sha256-bab18bfaa125c594ef389a3edaf176dd78510c84f3f0cbb1e75533982bb425f5",
       "expectedContextPhrases": [
         "let",
         "dig",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.945,
-        "routeSelectionMs": 5.292,
+        "totalMs": 9.99,
+        "routeSelectionMs": 6.402,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.651,
+        "otherMs": 3.586,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

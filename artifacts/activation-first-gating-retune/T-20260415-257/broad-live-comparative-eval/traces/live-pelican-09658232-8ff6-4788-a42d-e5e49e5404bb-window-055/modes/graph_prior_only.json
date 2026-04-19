@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-315808e9"
+      "pack-9169e217"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-fd5ab8c984ca2e69196990b255cd432be1b5d76fe5914834c0c3bc1dad6defef"
+    "scoreHash": "sha256-30ebdbd586c20b5b8328231870407e7345f3d8e8db8bed77a3d53453ab70b534"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-315808e9",
+      "activePackId": "pack-9169e217",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-ba496b1b6896976a16d43a3bad29bfad74655511f4d6c13c7922a4e830bd6ad9",
+      "routerIdentity": "pack-9169e217:route_fn",
+      "selectionDigest": "sha256-9c76d4c369a4dc972189b188126499e9a9df107de8ddb3eaac39fef22d7be1aa",
       "selectedContextIds": [
-        "pack-315808e9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-        "pack-315808e9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction",
-        "pack-315808e9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction"
+        "pack-9169e217:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+        "pack-9169e217:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction",
+        "pack-9169e217:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:38:10 PST] Exec completed (swift-cr, code 1) :: erify failed for embeddings_contextual.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for embeddings_contextual.parquet (attempt 3/5), retrying... ⚠ Upload verify faile… System: [2026-02-27 17:39:30 PST] Exec completed (quick-ba, code 0) :: ation is currently not supported. Please check the documentation for supported configurations. Instance: (us-west-1) Waiter InstanceRunning failed: An error occurred (Missing.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
         "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-2-seed-message.",
         "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message."
       ],
-      "eventExportDigest": "sha256-b930e0aba0b87a623b76805ff5b519a732974fd96915fef2f0abccff0e4682bb",
+      "eventExportDigest": "sha256-1673cf2f74046ff326389184d496e307c7717a9c3552e540bc43f8c9a74c6012",
       "expectedContextPhrases": [
         "02ff48e800d3550ab"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.712,
-        "routeSelectionMs": 4.871,
+        "totalMs": 9.117,
+        "routeSelectionMs": 5.6,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.839,
+        "otherMs": 3.516,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-b77824ee"
+      "pack-d9455849"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-b77824ee",
-    "frozenEvalRouterIdentity": "pack-b77824ee:route_fn",
+    "frozenEvalPackId": "pack-d9455849",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-e04f8f76e3132476fc03d09a74155fb366138c63a1087cd46ed34a09e315db94"
+    "scoreHash": "sha256-35d11b0a779d566338122b33bb9fda961d2d4b6c9e83da2070eb4a35d43161f9"
   },
   "turns": [
     {
@@ -51,24 +51,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-b77824ee",
+      "activePackId": "pack-d9455849",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-278a267c0c366945af4172b8baec50aa820f36b3d010d3784b1f610e067f9c64",
+      "selectionDigest": "sha256-7ba76c73750fb8dd46f8a13a2b4199d825b2103f7b04acc04c78c799933c30a3",
       "selectedContextIds": [
-        "pack-b77824ee:pointer-aware-init"
+        "pack-d9455849:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:feedback",
+        "pack-d9455849:pointer-aware-init",
+        "pack-d9455849:workspace-init:16415817"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session aba6eef9-56f5-4609-aed4-3859e5ad2833-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"22355\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-04-06 02:07 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Harvest all good stuff. Clean up. Related interaction: aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, BOOT.md, task-artifacts/T-20260415-257/task-list.md, +8 more from the MEMORY index graph.",
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=7, outbound=17). TASKS.md — Canonical Task Ledger Last updated: 2026-04-18 5:40 PM PT Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator edits it. - Workers report only through announces, task-artifacts/<task-id>/, or task-status/<ta…"
       ],
-      "eventExportDigest": "sha256-3ff0f6ff4301c62f4740d7a749ebc359872b9f5bb359fbf3f4990808c07dab2c",
+      "eventExportDigest": "sha256-31e07514340ef28600a473f45c839aab288a781f9141d8154d81702190546606",
       "expectedContextPhrases": [
         "T-20260406-153",
         "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-153/closeout.md\"}",
@@ -86,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.923,
-        "routeSelectionMs": 6.078,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.843,
+        "totalMs": 10.812,
+        "routeSelectionMs": 6.164,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 4.645,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

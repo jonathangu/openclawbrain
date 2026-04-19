@@ -68,6 +68,49 @@ export const ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1: ColdStartRouterI
 export const ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1 = {
   activationThreshold: 0.38,
 } as const;
+export const FELT_SAFE_POSITIVE_PRESSURE_ROW_WEIGHT_OVERRIDES_V1: Record<string, number> = {
+  "activation-first:felt_resume_25:live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002": 3,
+  "activation-first:felt_resume_25:live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002": 3,
+  "activation-first:felt_resume_25:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003": 3,
+  "activation-first:felt_resume_25:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003": 3,
+  "activation-first:felt_resume_25:live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-002": 3,
+  "activation-first:felt_resume_25:live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003": 3,
+  "activation-first:felt_resume_25:live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016": 3,
+};
+export const FELT_SAFE_POSITIVE_PRESSURE_SUPPLEMENTAL_ROW_WEIGHT_V1 = 1.5;
+
+function parseNonNegativeIntegerEnvV1(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) {
+    return fallback;
+  }
+  const value = Number.parseInt(raw, 10);
+  if (!Number.isFinite(value) || value < 0) {
+    return fallback;
+  }
+  return value;
+}
+
+function parseFiniteNumberEnvV1(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) {
+    return fallback;
+  }
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+  return value;
+}
+
+export const SAFE_FEEDBACK_ROUTE_DUPLICATE_COUNT_V1 = parseNonNegativeIntegerEnvV1(
+  "OCB_SAFE_FEEDBACK_ROUTE_DUPLICATE_COUNT",
+  0,
+);
+export const SAFE_FEEDBACK_ROUTE_OUTCOME_GAIN_BONUS_V1 = parseFiniteNumberEnvV1(
+  "OCB_SAFE_FEEDBACK_ROUTE_OUTCOME_GAIN_BONUS",
+  0,
+);
 
 export type ActivationFirstLaneKeyV1 = "feltResume" | "mustFire" | "mustNotFire";
 export type ActivationFirstCandidateStatusV1 = "pass" | "reject" | "architecture_verdict";
@@ -195,6 +238,8 @@ interface ReplayBundleSurfaceV1 {
   selectedContextIds: string[];
   selectedContextTexts: string[];
   expectedContextPhrases: string[];
+  modeSelectedContextIds: Record<string, string[]>;
+  modeSelectedContextTexts: Record<string, string[]>;
   usedLearnedRouteTurnCount: number;
   activatedTurnCount: number;
   boundTurnCount: number;
@@ -530,7 +575,14 @@ function hashId(prefix: string, ...parts: Array<string | number | null | undefin
   return `${prefix}-${sha256Text(parts.map((part) => String(part ?? "")).join("\u001f")).slice(0, 16)}`;
 }
 
-function collectBundleReplaySurfaces(bundleRoot: string): ReplayBundleSurfaceV1[] {
+const REPLAY_TRAINING_SURFACE_MODE_PRIORITY = [
+  "graph_prior_only",
+  "vector_only",
+  "learned_route",
+  "no_brain",
+] as const;
+
+export function collectBundleReplaySurfaces(bundleRoot: string): ReplayBundleSurfaceV1[] {
   if (!existsSync(bundleRoot)) {
     return [];
   }
@@ -546,14 +598,38 @@ function collectBundleReplaySurfaces(bundleRoot: string): ReplayBundleSurfaceV1[
     }
     const trace = readJson<RecordedSessionTraceV1>(tracePath);
     const learnedRoute = readJson<LearnedRouteBundleV1>(learnedRoutePath);
+    const modeDir = path.join(bundleRoot, entry.name, "modes");
+    const prioritizedModeNames = [
+      ...REPLAY_TRAINING_SURFACE_MODE_PRIORITY,
+      ...readdirSync(modeDir, { withFileTypes: true })
+        .filter((modeEntry) => modeEntry.isFile() && modeEntry.name.endsWith(".json"))
+        .map((modeEntry) => modeEntry.name.replace(/\.json$/, ""))
+        .filter((modeName) => !REPLAY_TRAINING_SURFACE_MODE_PRIORITY.includes(modeName as typeof REPLAY_TRAINING_SURFACE_MODE_PRIORITY[number])),
+    ];
+    const modeBundles = prioritizedModeNames
+      .map((modeName) => ({ modeName, modePath: path.join(modeDir, `${modeName}.json`) }))
+      .filter(({ modePath }) => existsSync(modePath))
+      .map(({ modeName, modePath }) => ({ modeName, bundle: readJson<LearnedRouteBundleV1>(modePath) }));
+    const modeSelectedContextIds = Object.fromEntries(
+      modeBundles.map(({ modeName, bundle }) => [
+        modeName,
+        uniqueStrings(bundle.turns.flatMap((turn) => stringifyUnknown(turn.selectedContextIds))),
+      ]),
+    );
+    const modeSelectedContextTexts = Object.fromEntries(
+      modeBundles.map(({ modeName, bundle }) => [
+        modeName,
+        uniqueStrings(bundle.turns.flatMap((turn) => stringifyUnknown(turn.selectedContextTexts))),
+      ]),
+    );
     const selectedContextIds = uniqueStrings(
-      learnedRoute.turns.flatMap((turn) => stringifyUnknown(turn.selectedContextIds)),
+      Object.values(modeSelectedContextIds).flat(),
     );
     const selectedContextTexts = uniqueStrings(
-      learnedRoute.turns.flatMap((turn) => stringifyUnknown(turn.selectedContextTexts)),
+      Object.values(modeSelectedContextTexts).flat(),
     );
     const expectedContextPhrases = uniqueStrings(
-      learnedRoute.turns.flatMap((turn) => stringifyUnknown(turn.expectedContextPhrases)),
+      modeBundles.flatMap(({ bundle }) => bundle.turns.flatMap((turn) => stringifyUnknown(turn.expectedContextPhrases))),
     );
     const usedLearnedRouteTurnCount = learnedRoute.turns.filter((turn) => turn.usedLearnedRouteFn === true).length;
     const activatedTurnCount = learnedRoute.turns.filter((turn) => turn.activationTaken === true).length;
@@ -566,6 +642,8 @@ function collectBundleReplaySurfaces(bundleRoot: string): ReplayBundleSurfaceV1[
       selectedContextIds,
       selectedContextTexts,
       expectedContextPhrases,
+      modeSelectedContextIds,
+      modeSelectedContextTexts,
       usedLearnedRouteTurnCount,
       activatedTurnCount,
       boundTurnCount,
@@ -593,6 +671,18 @@ function buildReplaySurfaceIndex(harnessDir: string): Map<string, ReplayBundleSu
   return surfacesByTraceId;
 }
 
+function packNativeWinnerCandidateIds(bundleSurfaces: ReplayBundleSurfaceV1[]): string[] {
+  const graphPriorWinnerIds = uniqueStrings(
+    bundleSurfaces.flatMap((surface) => surface.modeSelectedContextIds.graph_prior_only ?? []),
+  );
+  if (graphPriorWinnerIds.length > 0) {
+    return graphPriorWinnerIds;
+  }
+  return uniqueStrings(
+    bundleSurfaces.flatMap((surface) => surface.modeSelectedContextIds.vector_only ?? []),
+  );
+}
+
 function buildCandidateIds(params: {
   trace: RecordedSessionTraceV1;
   traceLabel: GraphifyRouteObjectiveTraceLabelLikeV1;
@@ -601,6 +691,10 @@ function buildCandidateIds(params: {
 }): string[] {
   const selectedContextIds = uniqueStrings(
     params.bundleSurfaces.flatMap((surface) => surface.selectedContextIds),
+  );
+  const winnerCandidateIds = packNativeWinnerCandidateIds(params.bundleSurfaces);
+  const learnedRouteCandidateIds = uniqueStrings(
+    params.bundleSurfaces.flatMap((surface) => surface.modeSelectedContextIds.learned_route ?? []),
   );
   const expectedContextPhrases = uniqueStrings([
     ...stringifyUnknown(params.trace.turns[0]?.expectedContextPhrases),
@@ -623,6 +717,12 @@ function buildCandidateIds(params: {
     candidateIds.push(normalized);
   };
 
+  for (const candidateId of winnerCandidateIds) {
+    pushCandidateId(candidateId);
+  }
+  for (const candidateId of learnedRouteCandidateIds) {
+    pushCandidateId(candidateId);
+  }
   for (const candidateId of selectedContextIds) {
     pushCandidateId(candidateId);
   }
@@ -780,6 +880,66 @@ export function chooseTraverseTargetCandidateIdV1(candidateIds: string[]): strin
   return candidateIds[0] ?? null;
 }
 
+function chooseTraverseTargetCandidateIdsV1(bundleSurfaces: ReplayBundleSurfaceV1[], candidateIds: string[]): string[] {
+  const winnerCandidateIds = packNativeWinnerCandidateIds(bundleSurfaces).filter((candidateId) => candidateIds.includes(candidateId));
+  const highAuthorityWinnerIds = winnerCandidateIds.filter((candidateId) => {
+    const origin = candidateOrigin(candidateId);
+    return origin === "feedback" || origin === "event";
+  });
+  const highestAuthorityWinner = chooseTraverseTargetCandidateIdV1(highAuthorityWinnerIds);
+  if (highestAuthorityWinner !== null) {
+    return [highestAuthorityWinner];
+  }
+  const fallback = chooseTraverseTargetCandidateIdV1(candidateIds);
+  return fallback === null ? [] : [fallback];
+}
+
+export function deriveFeltRouteSourceNodeIdV1(params: {
+  laneName: string;
+  traceId: string;
+  traverseTargetCandidateIds: string[];
+}): string {
+  const preferredTarget = params.traverseTargetCandidateIds[0] ?? null;
+  if (preferredTarget) {
+    return `${params.laneName}:source:${preferredTarget}`;
+  }
+  return `${params.laneName}:source:trace:${params.traceId}`;
+}
+
+function isSafeFeedbackCohortRowIdV1(rowId: string): boolean {
+  return Object.prototype.hasOwnProperty.call(FELT_SAFE_POSITIVE_PRESSURE_ROW_WEIGHT_OVERRIDES_V1, rowId);
+}
+
+function shouldUseFeedbackScopedFeltSourceNodeV1(rowId: string, traverseTargetCandidateIds: string[]): boolean {
+  return traverseTargetCandidateIds.length > 0 && isSafeFeedbackCohortRowIdV1(rowId);
+}
+
+export function appendSafeFeedbackRankingRouteRowsV1(
+  routeRow: ColdStartRouteDecisionRowV1,
+  laneKey: ActivationFirstLaneKeyV1,
+): ColdStartRouteDecisionRowV1[] {
+  if (laneKey !== "feltResume" || !isSafeFeedbackCohortRowIdV1(routeRow.row_id) || SAFE_FEEDBACK_ROUTE_DUPLICATE_COUNT_V1 <= 0) {
+    return [routeRow];
+  }
+  const rows = [routeRow];
+  for (let index = 0; index < SAFE_FEEDBACK_ROUTE_DUPLICATE_COUNT_V1; index += 1) {
+    rows.push({
+      ...routeRow,
+      row_id: `${routeRow.row_id}:feedback_rank_bonus:${index + 1}`,
+      outcome_gain: routeRow.outcome_gain + SAFE_FEEDBACK_ROUTE_OUTCOME_GAIN_BONUS_V1,
+      cursor_path: [...routeRow.cursor_path],
+      candidate_set: routeRow.candidate_set.map((candidate) => ({ ...candidate })),
+      evidence_spans: routeRow.evidence_spans.map((span) => ({ ...span })),
+      hard_negatives: [...routeRow.hard_negatives],
+      teacher_action: routeRow.teacher_action.kind === "traverse"
+        ? { kind: "traverse", target_ids: [...routeRow.teacher_action.target_ids] }
+        : { ...routeRow.teacher_action },
+      provenance: { ...routeRow.provenance },
+    });
+  }
+  return rows;
+}
+
 function buildEvidenceSpans(params: {
   trace: RecordedSessionTraceV1;
   bundleSurfaces: ReplayBundleSurfaceV1[];
@@ -810,11 +970,31 @@ function buildEvidenceSpans(params: {
 function buildHardNegatives(
   traceId: string,
   traceLabel: GraphifyRouteObjectiveTraceLabelLikeV1,
+  bundleSurfaces: ReplayBundleSurfaceV1[],
   count: number,
+  targetCandidateId: string | null,
 ): string[] {
   if (count <= 0) {
     return [];
   }
+
+  const learnedRouteNegativeIds = uniqueStrings(
+    bundleSurfaces.flatMap((surface) => surface.modeSelectedContextIds.learned_route ?? []),
+  )
+    .filter((candidateId) => candidateId !== targetCandidateId)
+    .sort((left, right) => {
+      const leftInit = candidateOrigin(left) === "init" ? 1 : 0;
+      const rightInit = candidateOrigin(right) === "init" ? 1 : 0;
+      if (rightInit !== leftInit) {
+        return rightInit - leftInit;
+      }
+      return left.localeCompare(right);
+    });
+
+  if (learnedRouteNegativeIds.length > 0) {
+    return learnedRouteNegativeIds.slice(0, count);
+  }
+
   const suffix = traceLabel.hardNegativeClass ? `:${traceLabel.hardNegativeClass}` : "";
   return Array.from({ length: count }, (_, index) => `gating-negative:${traceId}:${index}${suffix}`);
 }
@@ -852,32 +1032,48 @@ export function buildColdStartRouteRow(params: {
     bundleSurfaces: params.bundleSurfaces,
     targetCount: bucketPlan.evidenceSpanCount,
   });
-  const traverseTargetCandidateId = params.laneKey === "feltResume" && bucketPlan.chosenActionKind === "traverse"
-    ? chooseTraverseTargetCandidateIdV1(candidateIds)
-    : null;
+  const traverseTargetCandidateIds = params.laneKey === "feltResume" && bucketPlan.chosenActionKind === "traverse"
+    ? chooseTraverseTargetCandidateIdsV1(params.bundleSurfaces, candidateIds)
+    : [];
+  const hardNegatives = buildHardNegatives(
+    params.trace.traceId,
+    params.traceLabel,
+    params.bundleSurfaces,
+    bucketPlan.hardNegativeCount,
+    traverseTargetCandidateIds[0] ?? null,
+  );
+
+  const rowId = `activation-first:${params.laneName}:${params.trace.traceId}`;
+  const cursorPath = params.laneKey === "feltResume"
+    && shouldUseFeedbackScopedFeltSourceNodeV1(rowId, traverseTargetCandidateIds)
+    ? [
+        params.laneName,
+        deriveFeltRouteSourceNodeIdV1({
+          laneName: params.laneName,
+          traceId: params.trace.traceId,
+          traverseTargetCandidateIds,
+        }),
+      ]
+    : [params.laneName];
 
   return {
-    row_id: `activation-first:${params.laneName}:${params.trace.traceId}`,
+    row_id: rowId,
     dataset_id: params.datasetId,
     query: firstUserMessage(params.trace),
-    cursor_path: [params.laneName],
+    cursor_path: cursorPath,
     candidate_set: candidates,
-    teacher_action: traverseTargetCandidateId === null
+    teacher_action: traverseTargetCandidateIds.length === 0
       ? {
           kind: "tool",
           tool_name: `__gating_only__:${params.laneName}`,
         }
       : {
           kind: "traverse",
-          target_ids: [traverseTargetCandidateId],
+          target_ids: traverseTargetCandidateIds,
         },
     stop_label: bucketPlan.stopLabel,
     evidence_spans: evidenceSpans,
-    hard_negatives: buildHardNegatives(
-      params.trace.traceId,
-      params.traceLabel,
-      bucketPlan.hardNegativeCount,
-    ),
+    hard_negatives: hardNegatives,
     outcome_gain: bucketPlan.outcomeGain,
     provenance: {
       dataset: params.datasetId,
@@ -1043,6 +1239,57 @@ function applyHardNegativeWeightFloor(
   };
 }
 
+export function applyPositivePressureWeightOverrideV1(
+  policyRow: PolicySupervisionRowV1,
+  routeRowId: string,
+  laneKey: ActivationFirstLaneKeyV1,
+): PolicySupervisionRowV1 {
+  if (laneKey !== "feltResume" || policyRow.row_type !== "activate") {
+    return policyRow;
+  }
+  const configuredWeight = FELT_SAFE_POSITIVE_PRESSURE_ROW_WEIGHT_OVERRIDES_V1[routeRowId];
+  if (!Number.isFinite(configuredWeight) || configuredWeight === undefined || configuredWeight <= policyRow.row_weight) {
+    return policyRow;
+  }
+  return {
+    ...policyRow,
+    row_weight: Number(configuredWeight.toFixed(6)),
+    notes: [
+      ...policyRow.notes,
+      `Row weight raised to ${configuredWeight} by the activation-first safe positive-pressure cohort.`,
+    ],
+  };
+}
+
+export function appendPositivePressureSupplementalRowsV1(
+  policyRow: PolicySupervisionRowV1,
+  routeRowId: string,
+  laneKey: ActivationFirstLaneKeyV1,
+): PolicySupervisionRowV1[] {
+  if (laneKey !== "feltResume" || policyRow.row_type !== "activate") {
+    return [policyRow];
+  }
+  if (!(routeRowId in FELT_SAFE_POSITIVE_PRESSURE_ROW_WEIGHT_OVERRIDES_V1)) {
+    return [policyRow];
+  }
+  const supplementalWeight = FELT_SAFE_POSITIVE_PRESSURE_SUPPLEMENTAL_ROW_WEIGHT_V1;
+  if (!Number.isFinite(supplementalWeight) || supplementalWeight <= 0) {
+    return [policyRow];
+  }
+  return [
+    policyRow,
+    {
+      ...policyRow,
+      row_id: `${policyRow.row_id}:felt_feedback_bonus`,
+      row_weight: Number(supplementalWeight.toFixed(6)),
+      notes: [
+        ...policyRow.notes,
+        `Supplemental activation example added at weight ${supplementalWeight} for the safe feedback-target positive-pressure cohort.`,
+      ],
+    },
+  ];
+}
+
 export function coerceRestraintLanePolicyRowV1(
   policyRow: PolicySupervisionRowV1,
   laneKey: ActivationFirstLaneKeyV1,
@@ -1152,17 +1399,21 @@ function materializeLaneRows(params: {
       traceLabel: loadedTrace.traceLabel,
     });
     const policyRow = coerceRestraintLanePolicyRowV1(
-      applyHardNegativeWeightFloor(
-        buildPolicySupervisionRowV1({
-          routeRow: projectionRouteRow,
-          traceLabel: loadedTrace.traceLabel,
-        }),
-        params.weightFloorsByClass,
+      applyPositivePressureWeightOverrideV1(
+        applyHardNegativeWeightFloor(
+          buildPolicySupervisionRowV1({
+            routeRow: projectionRouteRow,
+            traceLabel: loadedTrace.traceLabel,
+          }),
+          params.weightFloorsByClass,
+        ),
+        coldStartRouteRow.row_id,
+        params.laneKey,
       ),
       params.laneKey,
     );
-    routeRows.push(coldStartRouteRow);
-    policyRows.push(policyRow);
+    routeRows.push(...appendSafeFeedbackRankingRouteRowsV1(coldStartRouteRow, params.laneKey));
+    policyRows.push(...appendPositivePressureSupplementalRowsV1(policyRow, coldStartRouteRow.row_id, params.laneKey));
   }
 
   return {
@@ -1483,6 +1734,8 @@ function runCandidateSpecificFeltOptimizeEval(params: {
       manifestPath,
       outputDir: params.feltOptimizeOutputDir,
       learnedRouteCandidateArtifactDir: params.candidateArtifact.outputDir,
+      learnedRouteCandidateArtifactMode: "graph_walk_score_boost",
+      learnedRouteCandidateReplayCursorPath: ["felt_resume_25"],
     });
     return summarizeFeltOptimizeScorecardV1({
       scorecard: descriptor.scorecard,

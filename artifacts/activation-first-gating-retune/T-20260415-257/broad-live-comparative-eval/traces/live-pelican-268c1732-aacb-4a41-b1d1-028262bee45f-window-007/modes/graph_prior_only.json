@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-c2fa456b"
+      "pack-93c474e8"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-5c5d1d9c90751e0d695beaea35f0fc58834f7bea7ebfaabacaa1961ec9e1cacf"
+    "scoreHash": "sha256-2c7f4b1586491e01ac60e21d3fe4146c649073e8b21c03727b0f7b2ce7ee13b1"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-c2fa456b",
+      "activePackId": "pack-93c474e8",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-0b8c51ad9d8f97fc2ac7e480efce119111f505a47287daafc83ac42c08e85e32",
+      "routerIdentity": "pack-93c474e8:route_fn",
+      "selectionDigest": "sha256-374c761c46a09123997756f88bd909134306c3b96e8853cb8efb96ad1c2c6780",
       "selectedContextIds": [
-        "pack-c2fa456b:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-        "pack-c2fa456b:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction",
-        "pack-c2fa456b:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback"
+        "pack-93c474e8:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
+        "pack-93c474e8:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction",
+        "pack-93c474e8:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19098\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:28 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Why not all four? Is there something structurally blocking us. Some calculation? Can you check logs. Is something broken. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
         "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-4-seed-message.",
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-2d2a5433af2ef1ecf4eb79ae3ace086b09d3ccfb81830e89db82e50bd5748a71",
+      "eventExportDigest": "sha256-e7c3705d257dd1f7cb721e96d480b7877d0682adab85453cc031da45bec6bb06",
       "expectedContextPhrases": [
         "/openclaw/skills/coding-agent/SKILL.md\"}"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.443,
-        "routeSelectionMs": 4.812,
+        "totalMs": 9.121,
+        "routeSelectionMs": 5.793,
         "promptAssemblyMs": 0.001,
-        "otherMs": 2.63,
+        "otherMs": 3.327,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

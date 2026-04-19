@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-bc49e4ab"
+      "pack-abbb915b"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-007243bc46347d340a3a23c7b1c33987bb09ce2f578bba4480e6796401484403"
+    "scoreHash": "sha256-82c1623ab8e54cb12580a7e9109a4dd76a6190abe1f5481651c1758fd255d228"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-bc49e4ab",
+      "activePackId": "pack-abbb915b",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-d64b81ee3bbc07204a3a76794d244464812fb8a4bb36702e6c571d0cdf4089e4",
+      "routerIdentity": "pack-abbb915b:route_fn",
+      "selectionDigest": "sha256-ac7c562dec639d9663a0b9230cc5f8118b3bad2c68627716a4cc6e829f11214e",
       "selectedContextIds": [
-        "pack-bc49e4ab:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
-        "pack-bc49e4ab:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction",
-        "pack-bc49e4ab:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback"
+        "pack-abbb915b:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
+        "pack-abbb915b:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction",
+        "pack-abbb915b:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: assistant: Work is continuing. I launched the 126a–126d blocker swarm from the retrain single-truth plan and updated `TASKS.md` to reflect that they’re now active. I also checked live market-hours truth on deployed head `d079a46`: the `10:30 ET` cycle processed successfully in explicit GBM-only fallback with no new hold and no TFT crash, so that crash seam is materially closed. Current live issue is narrower now: - latest processed snapshot: `data/2026/04/09/10-30-18.json` - `run_once.status=success` - .... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction.",
         "Interaction operator_override on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed. Message: cue-6-seed-message.",
         "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: System: [2026-04-09 07:02:47 PDT] Exec completed (briny-ne, code 0) :: e7_35.py M tests/test_native_remake_handoff_contract.py M tests/test_pelican_deep_health.py M tests/test_pipeline_health_check.py M tests/test_refresh_canonical_training_inputs.py… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-0e1197ddb5d5e99ca6842fd7079297c6b1645afcd0d6626e2364ba1d089e087e",
+      "eventExportDigest": "sha256-9102a229986ec92b759b21cd8607911d8c032a0e69995addc02353ef1e5e913f",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/126c-listener-scheduler-freshness-2026-04-09.md\"}",
         "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.897,
-        "routeSelectionMs": 5.179,
+        "totalMs": 13.446,
+        "routeSelectionMs": 8.203,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.716,
+        "otherMs": 5.241,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

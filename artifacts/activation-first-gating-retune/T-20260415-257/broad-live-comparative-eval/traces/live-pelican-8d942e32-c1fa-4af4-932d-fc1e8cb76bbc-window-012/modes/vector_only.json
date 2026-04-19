@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-3fa24cda"
+      "pack-3bb580f3"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-baa47dc7a34e48efa363cef12030e589639e6bbe5927d5ac769e7c69ebdf80fe"
+    "scoreHash": "sha256-904deef7c7a278e155e527295184f03045e694361e93b63c37ae9b913236f180"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-3fa24cda",
+      "activePackId": "pack-3bb580f3",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-ef54863d25d0434e845d5dc4cc0064eb03fcb57b9cc0e77d037f763150d586ae",
+      "routerIdentity": "pack-3bb580f3:route_fn",
+      "selectionDigest": "sha256-f8561563127c31b74e19fb58b0a44a8191a5367a03935a989c97c8d1676391d6",
       "selectedContextIds": [
-        "pack-3fa24cda:workspace-init:02e33be9",
-        "pack-3fa24cda:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-1:feedback",
-        "pack-3fa24cda:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-2:feedback"
+        "pack-3bb580f3:pointer-aware-init",
+        "pack-3bb580f3:workspace-init:b8b445e5",
+        "pack-3bb580f3:pointer-passive-expansion"
       ],
       "selectedContextTexts": [
-        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…",
-        "Teaching feedback on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed: user: Exec completed (good-emb, code 134) :: rkaround you can set the environment variable KMP_DUPLICATE_LIB_OK=TRUE to allow the program to continue to execute, but that may cause crashes or silently produce incorrect resul… System (untrusted): [2026-04-13 07:12:12 PDT] Exec failed (young-da, signal SIGKILL) System (untrusted): [2026-04-13 07:12:29 PDT] Exec completed (faint-su, code 3) :: e trading path. Use --allow-market-hours to override. [2026-04-13T14:12:29Z] Status JSON: /Users/guclaw/.open.... Related interaction: 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-1:interaction.",
-        "Teaching feedback on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed: user: Exec completed (good-emb, code 134) :: rkaround you can set the environment variable KMP_DUPLICATE_LIB_OK=TRUE to allow the program to continue to execute, but that may cause crashes or silently produce incorrect resul… System (untrusted): [2026-04-13 07:12:12 PDT] Exec failed (young-da, signal SIGKILL) System (untrusted): [2026-04-13 07:12:29 PDT] Exec completed (faint-su, code 3) :: e trading path. Use --allow-market-hours to override. [2026-04-13T14:12:29Z] Status JSON: /Users/guclaw/.open.... Related interaction: 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-2:interaction."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph.",
+        "Working-set input quant-research/IRON_SOUL.md selected by pointer-aware init (inbound=5, outbound=18). IRON SOUL RULES — Non-Negotiable **Source**: Jon's Project Reset spec (2026-02-07 msgs 406-409). This is the single source of truth. **Every sub-agent, every script, every feature must comply. Violations = thrown out.** Scope Clarifier (Read First) - This document is the **rules contract**. - Current implementation st…",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, memory/2026-04-08.md, memory/2026-04-14.md, +6 more."
       ],
-      "eventExportDigest": "sha256-91811c89ab2251c3494192edd3c8a9ea33122a08c913564b568cdb5b868f56ee",
+      "eventExportDigest": "sha256-2eb5c55a47bc17c327353bbe11874432069fca2b2ee6116f07ccb17c135d80c9",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/runtime/quant-research",
         "/{run}/run.json',\\n",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.082,
-        "routeSelectionMs": 4.434,
+        "totalMs": 8.576,
+        "routeSelectionMs": 5.237,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.646,
+        "otherMs": 3.337,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

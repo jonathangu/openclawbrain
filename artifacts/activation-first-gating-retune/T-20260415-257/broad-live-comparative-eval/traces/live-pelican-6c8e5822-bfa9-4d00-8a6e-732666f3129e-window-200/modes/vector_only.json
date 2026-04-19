@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-32485515"
+      "pack-ef246c74"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-92c107a93e595f51c64ac9b22fd6f422bc04f4d52307a624a9b618a3acc75534"
+    "scoreHash": "sha256-e10e95de191116bb1259ed2083dd5fd2af7e4afaddbc4797989e800d305a34a2"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-32485515",
+      "activePackId": "pack-ef246c74",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-5367c2fcb14321aad9116cb49776cde76e742b3e5ba743178f00c91620b88af2",
+      "routerIdentity": "pack-ef246c74:route_fn",
+      "selectionDigest": "sha256-84d9c3530d4688d42e3ff932d937f5bda6061409e5eeb6b5330d13eaa57bccc5",
       "selectedContextIds": [
-        "pack-32485515:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
-        "pack-32485515:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:feedback",
-        "pack-32485515:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback"
+        "pack-ef246c74:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
+        "pack-ef246c74:pointer-aware-init",
+        "pack-ef246c74:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 4:29 PM (America/Los_Angeles) / 2026-04-12 23:29 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction.",
-        "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Sunday, April 12t.... Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:interaction.",
-        "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Sunday, April 12t.... Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:interaction."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph.",
+        "Interaction operator_override on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed. Message: cue-4-seed-message."
       ],
-      "eventExportDigest": "sha256-3d43e7f8afdfa037ce2b7154280ea5a217a1a71809ad2db569eec42817f296e4",
+      "eventExportDigest": "sha256-f4a08d6951dd8857fad5e3822c330b404363ed38e52ba3b0fdb26377aca1f09a",
       "expectedContextPhrases": [
         "/LATEST.json",
         "/download",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.105,
-        "routeSelectionMs": 4.465,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.638,
+        "totalMs": 8.508,
+        "routeSelectionMs": 5.168,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.338,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

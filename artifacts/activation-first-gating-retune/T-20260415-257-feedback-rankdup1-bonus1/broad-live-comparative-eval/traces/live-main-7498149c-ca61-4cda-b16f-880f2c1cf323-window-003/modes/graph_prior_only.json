@@ -1,0 +1,112 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-d54501d2"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-11T09:16:03.981Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-4527390821eb86f36f8a45b5ba89c7d6f0c1226c2c154517b0430f33c37b8628"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-d54501d2",
+      "modeRequested": "heuristic",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": "pack-d54501d2:route_fn",
+      "selectionDigest": "sha256-ced242ab1f71d3efbcda8015eb8e9a1cde5977f3ed1f0e06b80769acf9b40a2d",
+      "selectedContextIds": [
+        "pack-d54501d2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
+        "pack-d54501d2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction",
+        "pack-d54501d2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-2:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction.",
+        "Interaction operator_override on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed. Message: cue-1-seed-message.",
+        "Interaction operator_override on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed. Message: cue-2-seed-message."
+      ],
+      "eventExportDigest": "sha256-1a8ffe1938904bdb59acae8f3b4eb3b709a3f3d3aea2067ef3aab62b445d39cc",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 10.72,
+        "routeSelectionMs": 6.312,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 4.406,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-11T09:16:03.981Z"
+      },
+      "warnings": []
+    }
+  ]
+}

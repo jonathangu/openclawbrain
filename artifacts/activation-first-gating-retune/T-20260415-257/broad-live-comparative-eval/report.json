@@ -1,9 +1,9 @@
 {
   "contract": "comparative_eval_runner_report.v1",
   "status": "ok",
-  "generatedAt": "2026-04-17T23:00:08.509Z",
+  "generatedAt": "2026-04-19T01:04:56.772Z",
   "repoRoot": "/Users/guclaw/.openclaw/workspace/openclawbrain",
-  "gitSha": "b783ac8ae5006b124821d85963455b2fea0fc307",
+  "gitSha": "627639721049957f7920995f24b550f618afa58d",
   "manifestPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
   "manifestContract": "frozen_recorded_session_eval_manifest.v1",
   "manifestId": "extracted-semantic-rich-live-535",
@@ -17,8 +17,8 @@
     "default manifest path is /Users/guclaw/.openclaw/workspace/openclawbrain/evals/recorded-session-replay/canonical-frozen-20/manifest.json",
     "mode order is no_brain, vector_only, graph_prior_only, learned_route",
     "the comparative runner delegates replay execution to writeRecordedSessionReplayProofLane so each trace still runs through the real replay/runtime path",
-    "learned_route replay override artifact: /Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/candidate-artifact",
-    "candidate override runs are non-authoritative for served learned-route hotpath truth because replay override keeps usedLearnedRouteFn=false by construction",
+    "learned_route candidate artifact: /Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/activation-first-gating-retune/T-20260415-257/candidate-artifact",
+    "candidate replay stages a temporary served pack so learned_route runs through the served router hotpath instead of replay override mode",
     "Extracted from /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-250/semantic-rich-live-535.json",
     "Internal local-only live-history replay traces.",
     "One-turn traces with prior session messages converted into seed cues.",
@@ -31,7 +31,7 @@
     "scorecard prompt-cost metrics are cheap deterministic proxies derived from selected context chars",
     "learned_route is the candidate mode, graph_prior_only is the baseline mode, and no_brain is the floor anchor for the explicit comparative policy",
     "when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state",
-    "candidate override replay does not bind the candidate as the served learned-route router, so authoritative broad-live verdicts still require a served-pack bridge",
+    "served-pack adapter replay binds the candidate as the served learned-route router, so broad-live verdicts can be authoritative when the replay proof surface confirms the binding",
     "this scaffold does not finalize the frozen trace set or widen proof-bundle generation scope"
   ],
   "issues": [],
@@ -41,13 +41,11 @@
     "charsPerToken": 4,
     "promptPriceUsdPer1mTokens": 1.25
   },
-  "scorecardHash": "sha256-f26c30c4b06da02e18f5f341e70c1f8bb5800c062ee64c6c0a55683c2d6e7339",
-  "explainableScorecardHash": "sha256-f214b2f7dedabf47ca624ad0a69cc1923f8ff3b2b6ca96729dd700091f070419",
-  "gateStatus": "fail",
+  "scorecardHash": "sha256-ae9414bcc9b8632211ed0cc63788e6dc6ab95d74b61669fd59e9a4fccf98656b",
+  "explainableScorecardHash": "sha256-e5628ecd3f39d18e0af674521735cc837f138153ce40d4087f5f4e8259b98064",
+  "gateStatus": "pass",
   "gateDecisive": true,
-  "gateFailedCheckIds": [
-    "candidate_trace_tie_or_better_vs_baseline"
-  ],
+  "gateFailedCheckIds": [],
   "files": {
     "sourceManifest": "source-manifest.json",
     "report": "report.json",

@@ -5,19 +5,19 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 40,
+    "qualityScore": 60,
     "compileOkCount": 1,
-    "phraseHitCount": 0,
+    "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-d402728f"
+      "pack-e5cb5aa7"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-d402728f",
-    "frozenEvalRouterIdentity": "pack-d402728f:route_fn",
+    "frozenEvalPackId": "pack-e5cb5aa7",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-578e1b1d3a368a7d05cc682b0efaba49e2b0fe1e995caac709390187b3f10525"
+    "scoreHash": "sha256-baaa18b48077a46507680410f4977296502a1211c699cadfd2b5cf7bdd393e33"
   },
   "turns": [
     {
@@ -51,45 +51,50 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-d402728f",
+      "activePackId": "pack-e5cb5aa7",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-024765504655c6cd2c191552652bd4e05504ddf75498de53d0f4886c9b801855",
+      "selectionDigest": "sha256-3b54eca99962c15fcedd83d7aa3571cf1a146de7a257b072d7188a231eba658b",
       "selectedContextIds": [
-        "pack-d402728f:pointer-aware-init"
+        "pack-e5cb5aa7:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:feedback",
+        "pack-e5cb5aa7:pointer-aware-init",
+        "pack-e5cb5aa7:workspace-init:b8b445e5"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session a509425f-19f1-4b37-8672-1f0162567058-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 1:21 PM (America/Los_Angeles) / 2026-04-13 20:21 UTC. Related interaction: a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph.",
+        "Working-set input quant-research/IRON_SOUL.md selected by pointer-aware init (inbound=5, outbound=18). IRON SOUL RULES — Non-Negotiable **Source**: Jon's Project Reset spec (2026-02-07 msgs 406-409). This is the single source of truth. **Every sub-agent, every script, every feature must comply. Violations = thrown out.** Scope Clarifier (Read First) - This document is the **rules contract**. - Current implementation st…"
       ],
-      "eventExportDigest": "sha256-186b02aaabd1a1048e46dbe42c6c4111789d64a39f2f53d437899d78c8bdb3b6",
+      "eventExportDigest": "sha256-4a648c7f23f53c763dcbd3732a629eca5fb7c3d18795d3c8ad0df3c1c2296da3",
       "expectedContextPhrases": [
         "toolcall",
         "read",
         "path"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [],
+      "phraseHits": [
+        "read"
+      ],
       "missedPhrases": [
         "toolcall",
-        "read",
         "path"
       ],
-      "qualityScore": 40,
+      "qualityScore": 60,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.856,
-        "routeSelectionMs": 5.465,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 3.39,
+        "totalMs": 7.562,
+        "routeSelectionMs": 4.722,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.838,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

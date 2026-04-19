@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-d88200f6"
+      "pack-29e7f02d"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-1e9351cd6aff9f559ea708b517cb6eeb184df56d8510a1c97c67b22d65f52e0a"
+    "scoreHash": "sha256-43700eb5fc2610a97d478848c2b7d8c7cb68501e128713238d89316bd183e83e"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-d88200f6",
+      "activePackId": "pack-29e7f02d",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-326043936d34f55ec004e591d053aa874de7f85fc408e5828b46f2bf89a7a906",
+      "routerIdentity": "pack-29e7f02d:route_fn",
+      "selectionDigest": "sha256-b7a09e37a1c2c1e214390654e47f0093ca18cdba7b70659db2796f4948b36eff",
       "selectedContextIds": [
-        "pack-d88200f6:event:b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-1:feedback",
-        "pack-d88200f6:event:b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-1:interaction",
-        "pack-d88200f6:event:b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-2:interaction"
+        "pack-29e7f02d:event:b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-1:feedback",
+        "pack-29e7f02d:event:b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-1:interaction",
+        "pack-29e7f02d:event:b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session b0e3391b-baa0-4726-8c00-aef55c962f2e-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 3 lane C for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate3c on branch t129-gate3c-replay-harvest. Mission: build the shared replay harness/plumbing needed to make Teacher v3 replay outcomes durable and inspectable across proposal classes. Focus on reusable replay result capture, proof-bundle capture of replay outcomes, and .... Related interaction: b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-1:interaction.",
         "Interaction operator_override on live-session session b0e3391b-baa0-4726-8c00-aef55c962f2e-seed. Message: cue-1-seed-message.",
         "Interaction operator_override on live-session session b0e3391b-baa0-4726-8c00-aef55c962f2e-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-c7020d89adb3b9f299fa37df9302b2afb042c7686e57155af4bdd5ff432c01bf",
+      "eventExportDigest": "sha256-d961248d2f34d2352a8f78c2b20d8c89a2739d7cf51d6d99170bfbfffda82b64",
       "expectedContextPhrases": [
         "heartbeat_ok"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.692,
-        "routeSelectionMs": 4.991,
+        "totalMs": 14.847,
+        "routeSelectionMs": 9.529,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.699,
+        "otherMs": 5.316,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

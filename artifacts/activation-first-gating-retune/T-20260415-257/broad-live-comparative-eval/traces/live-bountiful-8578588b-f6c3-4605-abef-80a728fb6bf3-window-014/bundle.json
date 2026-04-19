@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-07T21:03:07.163Z",
   "traceHash": "sha256-428224300aac4f3f06119d7ecdc386e98266d57e94ee4a94bb3cd7cf1ec92fdf",
   "fixtureHash": "sha256-48b4c185a62e99db11ed2f294b118b4c1031f6e03346711368215f8f92e0f14c",
-  "scoreHash": "sha256-e2e07f06af21ec2f44fc726dcf06ee2b0e34cf8df1b7bcb71a785ac259906683",
+  "scoreHash": "sha256-0feeb7de0056f8f44de4a524d0ec6cc908e78ef611c7d276582174cc3ad78c31",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.043,
+            "totalMs": 0.04,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.043,
+            "otherMs": 0.04,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-b77aa315"
+          "pack-cecc2a24"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-f2f6859c7db4fa10a3134c7be46b8692e29fb9928ea29b9ff8e711e572b5477c"
+        "scoreHash": "sha256-14b80c00a9ffb837e5482052d57160e413a5c2030ff849e749fedbd71bc93320"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b77aa315",
+          "activePackId": "pack-cecc2a24",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-0f3455952fb6ae3b96121ac508deb197d1bf08229f8170b8bc2e9249b94d736f",
+          "routerIdentity": "pack-cecc2a24:route_fn",
+          "selectionDigest": "sha256-b029cade02483238ba9951c7a0452cb476c5a8b35e3729d266c50fb0b8982171",
           "selectedContextIds": [
-            "pack-b77aa315:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
-            "pack-b77aa315:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
-            "pack-b77aa315:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
+            "pack-cecc2a24:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+            "pack-cecc2a24:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+            "pack-cecc2a24:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15837\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Please edit heartbeat to make sure the tasks are updated and don't discuss stale work that's already done.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
             "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15832\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 13:33 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes please update all context injection files to be reasonable size!. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-94a6545efe3bf86b37660a0cc00a325eae2131075f7d1b2be2e4eb3dd6636b77",
+          "eventExportDigest": "sha256-13f67d81892919281efa478e108a159724b4c78ef418d25858590f3c0cb1663e",
           "expectedContextPhrases": [
             "context injection files reasonable",
             "maxresults minscore query context",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 3.545,
-            "routeSelectionMs": 2.213,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 1.329,
+            "totalMs": 5.725,
+            "routeSelectionMs": 3.471,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 2.25,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-b77aa315"
+          "pack-cecc2a24"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-e8361a9fd07eadc82485688e5c16496a044b44cc903de3a79ea7301409a18076"
+        "scoreHash": "sha256-375cd225b301cffddb0b720d97ff51d820ed495f95230e8573bda1372d3d2faa"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b77aa315",
+          "activePackId": "pack-cecc2a24",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-e8e82d0db405756ec5e5689aa110f9ca379056e78613fea1ee77f0f3d54e3b63",
+          "routerIdentity": "pack-cecc2a24:route_fn",
+          "selectionDigest": "sha256-6e2cbc1c8b1f95de65105ef90e699e745d299427a888baaaeaf7478095e95838",
           "selectedContextIds": [
-            "pack-b77aa315:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
-            "pack-b77aa315:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction",
-            "pack-b77aa315:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback"
+            "pack-cecc2a24:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+            "pack-cecc2a24:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction",
+            "pack-cecc2a24:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15837\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Please edit heartbeat to make sure the tasks are updated and don't discuss stale work that's already done.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-964c40472401fe8e28f30e303e93c78d9f11edd57919d149f809b771dd543ca2",
+          "eventExportDigest": "sha256-5524f9e172a133741e11461993d7b72c6f924a49347c60aae255a126f7f7e91a",
           "expectedContextPhrases": [
             "context injection files reasonable",
             "maxresults minscore query context",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 3.397,
-            "routeSelectionMs": 2.097,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 1.297,
+            "totalMs": 5.69,
+            "routeSelectionMs": 3.355,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 2.331,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
           "pack-cecc2a24"
@@ -371,7 +371,7 @@
         "trainTurnCount": 0,
         "evalTurnCount": 1,
         "frozenEvalPackId": "pack-cecc2a24",
-        "frozenEvalRouterIdentity": "pack-cecc2a24:route_fn",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-ce7b8eef468dc815cfd804a8b57eacb054bb25651a041d3a469055523dc02c4a"
+        "scoreHash": "sha256-17729b0e432eabfbeedecf56ac30bf0b420b6795e2d790312cb766ecfc8966d6"
       },
       "turns": [
         {
@@ -409,20 +409,24 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-938ed347aa80fb22607c435983df0963742bd66bc1038dad39bb0401ba5f57c7",
+          "selectionDigest": "sha256-b029cade02483238ba9951c7a0452cb476c5a8b35e3729d266c50fb0b8982171",
           "selectedContextIds": [
-            "pack-cecc2a24:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction"
+            "pack-cecc2a24:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+            "pack-cecc2a24:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+            "pack-cecc2a24:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
-            "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-6-seed-message."
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15837\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Please edit heartbeat to make sure the tasks are updated and don't discuss stale work that's already done.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15832\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 13:33 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes please update all context injection files to be reasonable size!. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-bf70948d9c67993c11e0727777549891c0d752cd2ea4e6046486b1c8efae88c8",
+          "eventExportDigest": "sha256-d85016fbb2dd05bd544851356c88563dfe0a04666888c1ef18b19f060e920324",
           "expectedContextPhrases": [
             "context injection files reasonable",
             "maxresults minscore query context",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 5.487,
-            "routeSelectionMs": 3.519,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 1.966,
+            "totalMs": 4.507,
+            "routeSelectionMs": 2.761,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 1.743,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-9a5995e474f2b907cd6f9a007b328762270d242798a56e93d4d9d240dab8d8b2"
+  "bundleHash": "sha256-d15408a1be9fe349c0c2e9bd30174cc154f3af03ea50add0253f0867b7460d47"
 }

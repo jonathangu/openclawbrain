@@ -56,6 +56,24 @@ interface PricingTable {
   promptPriceUsdPer1mTokens: number;
 }
 
+function normalizeEvalId(value: string | null | undefined): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function isFeltResumeOptimizeManifestV1(manifestId: string | null | undefined): boolean {
+  const normalized = normalizeEvalId(manifestId);
+  return normalized === "felt_resume_25-eval" || normalized.includes("felt_resume_25");
+}
+
+function isFeedbackContextIdV1(contextId: string): boolean {
+  return normalizeEvalId(contextId).includes(":feedback");
+}
+
+function isInitContextIdV1(contextId: string): boolean {
+  const normalized = normalizeEvalId(contextId);
+  return normalized.includes("pointer-aware-init") || normalized.includes(":workspace-init:");
+}
+
 interface LoadedTraceInput {
   traceId: string;
   traceHash: string;
@@ -120,6 +138,8 @@ export interface ComparativeEvalTraceModeScorecardRowV1 {
   warningCount: number;
   selectedContextBlockCount: number;
   selectedContextChars: number;
+  selectedFeedbackContextBlockCount: number;
+  selectedInitContextBlockCount: number;
   estimatedPromptTokens: number;
   estimatedPromptCostUsd: number | null;
 }
@@ -417,6 +437,7 @@ export interface RunComparativeEvalInput {
   policy?: Partial<ComparativeEvalPolicyThresholdsV1>;
   learnedRouteCandidateArtifactDir?: string;
   learnedRouteCandidateArtifactMode?: LearnedRouteCandidateArtifactOverrideV1["mode"];
+  learnedRouteCandidateReplayCursorPath?: string[];
 }
 
 const DEFAULT_COMPARATIVE_EVAL_POLICY_THRESHOLDS: ComparativeEvalPolicyThresholdsV1 = {
@@ -863,6 +884,7 @@ function buildTraceModeRow(
   mode: RecordedSessionReplayModeReportV1,
   pricingTable: PricingTable,
 ): ComparativeEvalTraceModeScorecardRowV1 {
+  const selectedContextIds = mode.turns.flatMap((turn) => Array.isArray(turn.selectedContextIds) ? turn.selectedContextIds : []);
   const selectedContextBlockCount = mode.turns.reduce((total, turn) => total + (
     Array.isArray(turn.selectedContextIds)
       ? turn.selectedContextIds.length
@@ -889,9 +911,54 @@ function buildTraceModeRow(
     warningCount: mode.summary.scannerEvidence.warnings.length,
     selectedContextBlockCount,
     selectedContextChars,
+    selectedFeedbackContextBlockCount: selectedContextIds.filter((contextId) => isFeedbackContextIdV1(contextId)).length,
+    selectedInitContextBlockCount: selectedContextIds.filter((contextId) => isInitContextIdV1(contextId)).length,
     estimatedPromptTokens,
     estimatedPromptCostUsd: estimateUsdFromTokens(estimatedPromptTokens, pricingTable.promptPriceUsdPer1mTokens),
   };
+}
+
+export function compareTraceModeRowsForOutcomeV1(params: {
+  left: ComparativeEvalTraceModeScorecardRowV1;
+  right: ComparativeEvalTraceModeScorecardRowV1;
+  manifestId?: string | null;
+}): ComparativeEvalRelation {
+  if (params.left.qualityScore > params.right.qualityScore) {
+    return "better";
+  }
+  if (params.left.qualityScore < params.right.qualityScore) {
+    return "worse";
+  }
+  if (!isFeltResumeOptimizeManifestV1(params.manifestId)) {
+    return "tied";
+  }
+
+  const feltTieBreakScore = (row: ComparativeEvalTraceModeScorecardRowV1): number => {
+    const hasFeedback = row.selectedFeedbackContextBlockCount > 0;
+    const hasInit = row.selectedInitContextBlockCount > 0;
+    let score = 0;
+    if (hasFeedback && !hasInit) {
+      score += 3;
+    } else if (hasFeedback) {
+      score += 1;
+    } else if (hasInit) {
+      score -= 1;
+    }
+    if (hasFeedback) {
+      score += Math.max(0, 3 - row.selectedContextBlockCount);
+    }
+    return score;
+  };
+
+  const leftTieBreak = feltTieBreakScore(params.left);
+  const rightTieBreak = feltTieBreakScore(params.right);
+  if (leftTieBreak > rightTieBreak) {
+    return "better";
+  }
+  if (leftTieBreak < rightTieBreak) {
+    return "worse";
+  }
+  return "tied";
 }
 
 function topScoreModes(rows: ComparativeEvalTraceModeScorecardRowV1[]): ComparativeEvalMode[] {
@@ -912,6 +979,7 @@ function scoreSpread(rows: ComparativeEvalTraceModeScorecardRowV1[]): number | n
 
 function buildTraceScorecardRows(params: {
   outputDir: string;
+  manifestId: string | null;
   manifestTraces: LoadedTraceInput[];
   laneDescriptor: RecordedSessionReplayProofLaneDescriptorV1 | null;
   pricingTable: PricingTable;
@@ -970,19 +1038,19 @@ function buildTraceScorecardRows(params: {
         topScoreModes: topScoreModes(modeRows),
         scoreSpread: scoreSpread(modeRows),
         candidateRelationVsBaseline: candidateRow && baselineRow
-          ? relationFromScores(candidateRow.qualityScore, baselineRow.qualityScore)
+          ? compareTraceModeRowsForOutcomeV1({ left: candidateRow, right: baselineRow, manifestId: params.manifestId })
           : null,
         candidateRelationVsFloor: candidateRow && floorRow
-          ? relationFromScores(candidateRow.qualityScore, floorRow.qualityScore)
+          ? compareTraceModeRowsForOutcomeV1({ left: candidateRow, right: floorRow, manifestId: params.manifestId })
           : null,
         candidateTieOrBetterVsBaseline: candidateRow && baselineRow
-          ? candidateRow.qualityScore >= baselineRow.qualityScore
+          ? compareTraceModeRowsForOutcomeV1({ left: candidateRow, right: baselineRow, manifestId: params.manifestId }) !== "worse"
           : null,
         candidateRegressionVsBaseline: candidateRow && baselineRow
-          ? candidateRow.qualityScore < baselineRow.qualityScore
+          ? compareTraceModeRowsForOutcomeV1({ left: candidateRow, right: baselineRow, manifestId: params.manifestId }) === "worse"
           : null,
         candidateRegressionVsFloor: candidateRow && floorRow
-          ? candidateRow.qualityScore < floorRow.qualityScore
+          ? compareTraceModeRowsForOutcomeV1({ left: candidateRow, right: floorRow, manifestId: params.manifestId }) === "worse"
           : null,
         error: generationEntry.error,
         modes: modeRows,
@@ -1065,13 +1133,15 @@ function buildTieOrBetterRow(
 function buildPairwiseScorecardRows(params: {
   laneDescriptor: RecordedSessionReplayProofLaneDescriptorV1 | null;
   successfulTraceIds: Set<string>;
+  traceRows: ComparativeEvalTraceScorecardRowV1[];
+  manifestId: string | null;
 }): ComparativeEvalPairwiseScorecardRowV1[] {
   if (params.laneDescriptor === null || params.successfulTraceIds.size === 0) {
     return [];
   }
 
-  const traceRows = params.laneDescriptor.summaryTables.traces.filter((trace) =>
-    trace.validationOk === true && params.successfulTraceIds.has(trace.traceId)
+  const traceRows = params.traceRows.filter((trace) =>
+    trace.status === "ok" && trace.validationOk === true && params.successfulTraceIds.has(trace.traceId)
   );
   const turnRows = params.laneDescriptor.summaryTables.turns.filter((turn) => params.successfulTraceIds.has(turn.traceId));
   const pairwiseRows: ComparativeEvalPairwiseScorecardRowV1[] = [];
@@ -1098,9 +1168,10 @@ function buildPairwiseScorecardRows(params: {
         if (!left || !right) {
           throw new Error(`Missing pairwise trace mode rows for ${leftMode} vs ${rightMode}`);
         }
-        if (left.qualityScore > right.qualityScore) {
+        const traceRelation = compareTraceModeRowsForOutcomeV1({ left, right, manifestId: params.manifestId });
+        if (traceRelation === "better") {
           traceLeftWins += 1;
-        } else if (left.qualityScore < right.qualityScore) {
+        } else if (traceRelation === "worse") {
           traceRightWins += 1;
         } else {
           traceTies += 1;
@@ -1541,6 +1612,8 @@ function buildScorecard(params: {
         .filter((traceRow) => traceRow.status === "ok" && traceRow.validationOk === true)
         .map((traceRow) => traceRow.traceId),
     ),
+    traceRows: params.traceRows,
+    manifestId: params.manifestId,
   });
   const policy = buildPolicy({
     requestedTraceCount: params.requestedTraceCount,
@@ -1570,6 +1643,7 @@ function buildScorecard(params: {
     pricingTable: params.pricingTable,
     scoringProxyNotes: [
       "qualityScore remains a deterministic replay diagnostic, not the public definition of victory",
+      "felt_resume_25 trace comparisons may use a selection-shape tie-break on exact qualityScore ties, favoring compact feedback-target recovery over broad pointer/init fallback bundles",
       "estimatedPromptTokens is ceil(selectedContextChars / charsPerToken)",
       "estimatedPromptCostUsd uses promptPriceUsdPer1mTokens from scripts/pricing-table.v1.json",
       "winnerMode is a tie-break diagnostic only; explainableScorecard leads with regression, tie-or-better, recall, and economics surfaces",
@@ -1736,16 +1810,34 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
   const manifestLoad = loadManifestInputs(manifestPath);
   const pricingTable = loadPricingTable();
   const policyThresholds = mergePolicyThresholds(input.policy);
+  const learnedRouteCandidateMode = input.learnedRouteCandidateArtifactMode ?? "selection_override";
+  const learnedRouteCandidateNotes = input.learnedRouteCandidateArtifactDir
+    ? learnedRouteCandidateMode === "served_pack_adapter"
+      ? [
+          `learned_route candidate artifact: ${path.resolve(input.learnedRouteCandidateArtifactDir)}`,
+          "candidate replay stages a temporary served pack so learned_route runs through the served router hotpath instead of replay override mode",
+        ]
+      : [
+          `learned_route replay override artifact: ${path.resolve(input.learnedRouteCandidateArtifactDir)}`,
+          "candidate override runs are non-authoritative for served learned-route hotpath truth because replay override keeps usedLearnedRouteFn=false by construction",
+        ]
+    : [];
+  const learnedRouteCandidateAssumptions = input.learnedRouteCandidateArtifactDir
+    ? learnedRouteCandidateMode === "served_pack_adapter"
+      ? [
+          "when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state",
+          "served-pack adapter replay binds the candidate as the served learned-route router, so broad-live verdicts can be authoritative when the replay proof surface confirms the binding",
+        ]
+      : [
+          "when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state",
+          "candidate override replay does not bind the candidate as the served learned-route router, so authoritative broad-live verdicts still require a served-pack bridge",
+        ]
+    : [];
   const notes = [
     `default manifest path is ${DEFAULT_COMPARATIVE_EVAL_MANIFEST_PATH}`,
     `mode order is ${RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER.join(", ")}`,
     "the comparative runner delegates replay execution to writeRecordedSessionReplayProofLane so each trace still runs through the real replay/runtime path",
-    ...(input.learnedRouteCandidateArtifactDir
-      ? [
-          `learned_route replay override artifact: ${path.resolve(input.learnedRouteCandidateArtifactDir)}`,
-          "candidate override runs are non-authoritative for served learned-route hotpath truth because replay override keeps usedLearnedRouteFn=false by construction",
-        ]
-      : []),
+    ...learnedRouteCandidateNotes,
     ...manifestLoad.notes,
   ];
   const assumptions = [
@@ -1754,12 +1846,7 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     "traceHash, when present in the manifest, is checksumJsonPayload(trace-json)",
     "scorecard prompt-cost metrics are cheap deterministic proxies derived from selected context chars",
     `${policyThresholds.candidateMode} is the candidate mode, ${policyThresholds.baselineMode} is the baseline mode, and ${policyThresholds.floorMode} is the floor anchor for the explicit comparative policy`,
-    ...(input.learnedRouteCandidateArtifactDir
-      ? [
-          "when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state",
-          "candidate override replay does not bind the candidate as the served learned-route router, so authoritative broad-live verdicts still require a served-pack bridge",
-        ]
-      : []),
+    ...learnedRouteCandidateAssumptions,
     "this scaffold does not finalize the frozen trace set or widen proof-bundle generation scope",
   ];
 
@@ -1778,6 +1865,9 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
             ...(input.learnedRouteCandidateArtifactMode == null
               ? {}
               : { mode: input.learnedRouteCandidateArtifactMode }),
+            ...(input.learnedRouteCandidateReplayCursorPath?.length
+              ? { replayCursorPath: input.learnedRouteCandidateReplayCursorPath }
+              : {}),
           }
         : null;
     laneDescriptor = writeRecordedSessionReplayProofLane({
@@ -1802,6 +1892,7 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
 
   const traceRows = buildTraceScorecardRows({
     outputDir,
+    manifestId: manifestLoad.manifestId,
     manifestTraces: manifestLoad.traces,
     laneDescriptor,
     pricingTable,

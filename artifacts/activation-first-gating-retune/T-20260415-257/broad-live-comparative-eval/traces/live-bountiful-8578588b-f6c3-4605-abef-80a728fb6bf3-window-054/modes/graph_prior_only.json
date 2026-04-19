@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-46dce247"
+      "pack-a02ba616"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-8da7f8484080e627bfba54336f08a3b0236b13bfaf5414f1bfc7e55d82d03f1c"
+    "scoreHash": "sha256-75f6ffdce7cf91896a637882cc5a81cb7916d4b40dfef14bed6f0196858a77d7"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-46dce247",
+      "activePackId": "pack-a02ba616",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-18e1d9b3c06bb7d411bf3f9d1e8dfe2720863238b19e7d9e6277b4340de7ca09",
+      "routerIdentity": "pack-a02ba616:route_fn",
+      "selectionDigest": "sha256-eecd73cbfd716c04461d00972e5637162b53f2cca864c8f24e4136e5b65ca230",
       "selectedContextIds": [
-        "pack-46dce247:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
-        "pack-46dce247:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction",
-        "pack-46dce247:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback"
+        "pack-a02ba616:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
+        "pack-a02ba616:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction",
+        "pack-a02ba616:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15854\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 15:45 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Make heartbeat actually work: Yes — here's the deep, production-grade Heartbeat configuration that turns OpenClaw into a truly self-propelling agent. It will proactively review its own work (TASKS.md /.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction.",
         "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-2-seed-message.",
         "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15858\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 18:41 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` What was the trick for using RAILWAY_ACCOUNT_TOKEN check your memories.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-fe943136bac188d00f19b9a82cb82e5335cadfac01bbc5a83e11ec65b9e96347",
+      "eventExportDigest": "sha256-29c3bc366ee72c24cbe652cd986de28b7899aec5f3c3130ebf2eb204a0d421b3",
       "expectedContextPhrases": [
         "/incorrect",
         "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 3.41,
-        "routeSelectionMs": 2.127,
+        "totalMs": 6.531,
+        "routeSelectionMs": 3.859,
         "promptAssemblyMs": 0.002,
-        "otherMs": 1.28,
+        "otherMs": 2.67,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

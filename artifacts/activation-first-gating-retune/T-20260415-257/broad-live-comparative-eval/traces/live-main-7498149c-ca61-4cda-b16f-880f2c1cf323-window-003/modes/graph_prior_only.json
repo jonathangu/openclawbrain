@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-54671da2"
+      "pack-81062d7b"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-819fcff1c2477d520d807edae765d86c07e7030bf1ef4672bbfb97c96d16e7ef"
+    "scoreHash": "sha256-cdee4c4a06901bb1558959ab501ed7d4cec9e87e2524a02077123b2b87370930"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-54671da2",
+      "activePackId": "pack-81062d7b",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-50e6656aa6fc3ad541eda4ae0d6136377d0a0c6cef6bf44a52dd9266c867b116",
+      "routerIdentity": "pack-81062d7b:route_fn",
+      "selectionDigest": "sha256-ae267ee7979d88c547f7dcbc5e897cd5e6fd36f64416930689f373eb281e652e",
       "selectedContextIds": [
-        "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
-        "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction",
-        "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-2:interaction"
+        "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
+        "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction",
+        "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction.",
         "Interaction operator_override on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed. Message: cue-1-seed-message.",
         "Interaction operator_override on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-023639af5109441a1dfdc5d11aaf50541c62de9352c0702ff0f5a548de1605a3",
+      "eventExportDigest": "sha256-7be3fe7eb191ddc0da59b57e65abf67cfa9368aa4a0de0463757ca1917ea2c1e",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.895,
-        "routeSelectionMs": 5.104,
+        "totalMs": 14.955,
+        "routeSelectionMs": 9.24,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.79,
+        "otherMs": 5.713,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

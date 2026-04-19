@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-04T02:04:28.205Z",
   "traceHash": "sha256-035806e6f9bcb3753f58456b70d56dc8a01f4abf60114aeaf359384806f6c24b",
   "fixtureHash": "sha256-74bbbcc2ba3e23b87dadc56cde438b46daa30c3743245ccd0b40d24de1249370",
-  "scoreHash": "sha256-957eaf3fbab64f021842a509b68d54399b6a277b81927cf4c7f08eb5a7ebe2d3",
+  "scoreHash": "sha256-d38c0c85951f9ba2055d9be65cb92f679d3dfb2a9cb3ce659f17735ee22545b2",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.03,
+            "totalMs": 0.051,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.03,
+            "otherMs": 0.051,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 2,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-83e9262b"
+          "pack-6ccef6c6"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-aaaec0ad942066322a218ef005de122fbe503eabc3315a87cccbd5a71fe4ea9d"
+        "scoreHash": "sha256-2baedc8c7f064fcba151e195b6f98ab30d6fba996f2b8b7212c2e253a4ce1d02"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-83e9262b",
+          "activePackId": "pack-6ccef6c6",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-61d7693f6422d8d8414b57513725d46d3662070847fc80638f5f9ef8b61537b6",
+          "routerIdentity": "pack-6ccef6c6:route_fn",
+          "selectionDigest": "sha256-9381d19d4a3f180a5ec5dba3365c3a32d7359367918e02c07717f880c4bb92ff",
           "selectedContextIds": [
-            "pack-83e9262b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:feedback",
-            "pack-83e9262b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:feedback",
-            "pack-83e9262b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:feedback"
+            "pack-6ccef6c6:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:feedback",
+            "pack-6ccef6c6:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:feedback",
+            "pack-6ccef6c6:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: Done. What I added: - A target-state compiled-artifact fixture pack at `artifacts/fixtures/compiled-artifacts/target-state-scaffold/` - Three example artifacts: - concept page - map-of-territory page - provenance-gap report - A pack README and manifest tying the examples together What it shows: - markdown + sidecar artifact shape - explicit evidence/provenance fields - clear separation between derived scaffolding and live truth Validation: - Parsed all new JSON files successfully - Verified a.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: I'm adding a small target-state fixture pack under `artifacts/fixtures/compiled-artifacts/` with three example compiled artifacts: a concept page, a map-of-territory page, and a provenance-gap report. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\nimport hashlib\\nimport json\\n\\nbase = Path('/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/fixtures/compiled-artifacts/target-state-scaffold')\\nartifacts. Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:interaction.",
             "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Worker I for task T-20260403-126 in /Users/guclaw/.openclaw/workspace. Goal: make compiled artifacts tangible with examples/fixtures in /Users/guclaw/.openclaw/workspace/openclawbrain. Read first: /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-126/wave2-board.md and docs/architecture/compiled-artifacts.md. Then add a small set of example compil.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-13dc8b9e3a7c5ec802ae18a8ce73caf679b22bfc410e9785ab878c7f8c03f9d4",
+          "eventExportDigest": "sha256-07464b38bac5859afb1f43199e2f6601df5cd19987e62da6e014d7b675ab4c9a",
           "expectedContextPhrases": [
             "/fixtures/compiled-artifacts/target-state-scaffold/",
             "a2a53360c1fc902dd4f610d53983747ea2775303",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.228,
-            "routeSelectionMs": 5.478,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.747,
+            "totalMs": 16.092,
+            "routeSelectionMs": 10.652,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 5.438,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -248,10 +248,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 2,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-83e9262b"
+          "pack-6ccef6c6"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-78a91008299b5508cf3a7e42bf55d8d513c18951d7a89e5d156b0d6d1f1d02f4"
+        "scoreHash": "sha256-ccc789de1c943de7447631c765be7cbbe6a53c9bb4de1edbff0d8d563af08f8a"
       },
       "turns": [
         {
@@ -289,28 +289,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-83e9262b",
+          "activePackId": "pack-6ccef6c6",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-b702f9473576ecfc6c37d75e878987bb0a1e3d7a5f7aa9d1ccd215ceabfe30cc",
+          "routerIdentity": "pack-6ccef6c6:route_fn",
+          "selectionDigest": "sha256-787dcee592efde9a7146dd36cf9adda461600d7286ad8d179be467e659d9f508",
           "selectedContextIds": [
-            "pack-83e9262b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:feedback",
-            "pack-83e9262b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:interaction",
-            "pack-83e9262b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:feedback"
+            "pack-6ccef6c6:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:feedback",
+            "pack-6ccef6c6:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:interaction",
+            "pack-6ccef6c6:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: Done. What I added: - A target-state compiled-artifact fixture pack at `artifacts/fixtures/compiled-artifacts/target-state-scaffold/` - Three example artifacts: - concept page - map-of-territory page - provenance-gap report - A pack README and manifest tying the examples together What it shows: - markdown + sidecar artifact shape - explicit evidence/provenance fields - clear separation between derived scaffolding and live truth Validation: - Parsed all new JSON files successfully - Verified a.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: I'm adding a small target-state fixture pack under `artifacts/fixtures/compiled-artifacts/` with three example compiled artifacts: a concept page, a map-of-territory page, and a provenance-gap report. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\nimport hashlib\\nimport json\\n\\nbase = Path('/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/fixtures/compiled-artifacts/target-state-scaffold')\\nartifacts. Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-3dd76c287dae551c1197b58c0ca686fef6aabef2a649408988fabe89cbb845f3",
+          "eventExportDigest": "sha256-0d8e06fbd2d3c1968df25c65e6daaba8a3e76b2d65076811cadc80f12c7c22e3",
           "expectedContextPhrases": [
             "/fixtures/compiled-artifacts/target-state-scaffold/",
             "a2a53360c1fc902dd4f610d53983747ea2775303",
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.248,
-            "routeSelectionMs": 5.495,
+            "totalMs": 15.769,
+            "routeSelectionMs": 10.332,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.751,
+            "otherMs": 5.434,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -361,19 +361,19 @@
         "activationStrategy": "continuous_learned_loop",
         "modeRequested": "learned",
         "selectionEngine": "graph_walk_v1",
-        "qualityScore": 40,
+        "qualityScore": 80,
         "compileOkCount": 1,
-        "phraseHitCount": 0,
+        "phraseHitCount": 2,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-31a9ff4a"
+          "pack-6ccef6c6"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-31a9ff4a",
-        "frozenEvalRouterIdentity": "pack-31a9ff4a:route_fn",
+        "frozenEvalPackId": "pack-6ccef6c6",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-7c488f87b58f64fe7af7f3e54109fd78e5772b321f267b3e919ea12a417a0d5e"
+        "scoreHash": "sha256-e1c6c77983a767e185323ad5168b385b5dc0e75258e70ca2fd32552706a0146f"
       },
       "turns": [
         {
@@ -407,45 +407,50 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-31a9ff4a",
+          "activePackId": "pack-6ccef6c6",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-da9b0c41567fe1991d6026a316072a3abbeacb7fb03dc4eb296e0c9b9b848c50",
+          "selectionDigest": "sha256-9381d19d4a3f180a5ec5dba3365c3a32d7359367918e02c07717f880c4bb92ff",
           "selectedContextIds": [
-            "pack-31a9ff4a:pointer-aware-init"
+            "pack-6ccef6c6:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:feedback",
+            "pack-6ccef6c6:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:feedback",
+            "pack-6ccef6c6:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: Done. What I added: - A target-state compiled-artifact fixture pack at `artifacts/fixtures/compiled-artifacts/target-state-scaffold/` - Three example artifacts: - concept page - map-of-territory page - provenance-gap report - A pack README and manifest tying the examples together What it shows: - markdown + sidecar artifact shape - explicit evidence/provenance fields - clear separation between derived scaffolding and live truth Validation: - Parsed all new JSON files successfully - Verified a.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: I'm adding a small target-state fixture pack under `artifacts/fixtures/compiled-artifacts/` with three example compiled artifacts: a concept page, a map-of-territory page, and a provenance-gap report. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\nimport hashlib\\nimport json\\n\\nbase = Path('/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/fixtures/compiled-artifacts/target-state-scaffold')\\nartifacts. Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Worker I for task T-20260403-126 in /Users/guclaw/.openclaw/workspace. Goal: make compiled artifacts tangible with examples/fixtures in /Users/guclaw/.openclaw/workspace/openclawbrain. Read first: /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-126/wave2-board.md and docs/architecture/compiled-artifacts.md. Then add a small set of example compil.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-a8eb823fbb800bfdfe4523144fb00a766ffbfede7ca5bbcc4514331376e6aa04",
+          "eventExportDigest": "sha256-33fff89ee3884bf80ada5df09ad271bb30dc2331e4fea729b123236635d8da82",
           "expectedContextPhrases": [
             "/fixtures/compiled-artifacts/target-state-scaffold/",
             "a2a53360c1fc902dd4f610d53983747ea2775303",
             "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
           ],
           "minimumPhraseHits": 3,
-          "phraseHits": [],
-          "missedPhrases": [
+          "phraseHits": [
             "/fixtures/compiled-artifacts/target-state-scaffold/",
-            "a2a53360c1fc902dd4f610d53983747ea2775303",
             "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
           ],
-          "qualityScore": 40,
+          "missedPhrases": [
+            "a2a53360c1fc902dd4f610d53983747ea2775303"
+          ],
+          "qualityScore": 80,
           "compileActiveVersion": 1,
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 10.307,
-            "routeSelectionMs": 6.883,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.423,
+            "totalMs": 16.939,
+            "routeSelectionMs": 10.828,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 6.108,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -476,12 +481,12 @@
         "qualityScore": 80
       },
       {
-        "mode": "vector_only",
+        "mode": "learned_route",
         "qualityScore": 80
       },
       {
-        "mode": "learned_route",
-        "qualityScore": 40
+        "mode": "vector_only",
+        "qualityScore": 80
       },
       {
         "mode": "no_brain",
@@ -489,5 +494,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-dda0bc78deb581b3fac87a281dfad82bdeff23704d1a94d43eef6cb3c2a464de"
+  "bundleHash": "sha256-bce48fd5e3ac0de4c9e73208e885aac9dc3f13f2f8c3aa443026de6a3d14713e"
 }

@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-15T01:36:55.372Z",
   "traceHash": "sha256-2210bd8aa54ff55f81e90c13af23591578b0c820206054d3d91e01211b88bae7",
   "fixtureHash": "sha256-a562aa7a1ac863aa823f236bdbc816afd7b8d62760a47e5474f699f78bdac5e9",
-  "scoreHash": "sha256-a786dc09f88cfdee85da3e7505807e1167e0ae6bdb723285d1b3a79ec0836279",
+  "scoreHash": "sha256-3ffe30b2f0cc30d371266b563c8ad153f9e5dcab03835e2e3eb8614e4cfaf15f",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.036,
+            "totalMs": 0.046,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.036,
+            "otherMs": 0.046,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-efa214f8"
+          "pack-893cb0a1"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-8249f0ce1a76dc38679078cafd6e241863e5f24691143aabacb08b6ba18e0fa2"
+        "scoreHash": "sha256-f9a959148d723515def2255ad4f1e0fc14cc6477e0480eef31643aa86c289a1b"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-efa214f8",
+          "activePackId": "pack-893cb0a1",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-963bb74dba6a728fb2a1caaf56dbd21a147e363a4dfbfec40872028f218db6ed",
+          "routerIdentity": "pack-893cb0a1:route_fn",
+          "selectionDigest": "sha256-5a19a993cb13c5fe9c82c9722ffbb69f563d84ddad5edd4631d2dee8ab58d711",
           "selectedContextIds": [
-            "pack-efa214f8:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
-            "pack-efa214f8:pointer-aware-init",
-            "pack-efa214f8:workspace-init:16415817"
+            "pack-893cb0a1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
+            "pack-893cb0a1:pointer-aware-init",
+            "pack-893cb0a1:workspace-init:16415817"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths - they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"23568\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:03 PDT\" } ``` Sender (untr.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction.",
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=107). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:35 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, +8 more from the MEMORY index graph.",
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=7, outbound=17). TASKS.md — Canonical Task Ledger Last updated: 2026-04-18 5:40 PM PT Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator edits it. - Workers report only through announces, task-artifacts/<task-id>/, or task-status/<ta…"
           ],
-          "eventExportDigest": "sha256-85e2b251b8131f7dda007dd4613e586adc9ea8e473b987088e6c38d963caf2a2",
+          "eventExportDigest": "sha256-8154f8ddd1878d37fc46ed835c97aff62cc16c38a2b8f26b4acfb4458d7bbe95",
           "expectedContextPhrases": [
             "minscore query pelican down",
             "pelican down prior issue",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.747,
-            "routeSelectionMs": 4.936,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.808,
+            "totalMs": 14.58,
+            "routeSelectionMs": 9.014,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 5.561,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-efa214f8"
+          "pack-893cb0a1"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-95877134b78bd71419f6af4924aea3ad65504da39589aa84b62da3516d45366c"
+        "scoreHash": "sha256-bfdddbd635fc995c9e8291e11d0ca984d80a1d63b943887626397bf7c42690f4"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-efa214f8",
+          "activePackId": "pack-893cb0a1",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-9323e58253e2e6d50233c2203f8c03ac50cc11ab00ad767d407bc9caf1994f83",
+          "routerIdentity": "pack-893cb0a1:route_fn",
+          "selectionDigest": "sha256-517ceecb763e3b53cfd61af94f874fdc43b9b1b81571541b4e25e0ac20a908b7",
           "selectedContextIds": [
-            "pack-efa214f8:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
-            "pack-efa214f8:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction",
-            "pack-efa214f8:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction"
+            "pack-893cb0a1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
+            "pack-893cb0a1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction",
+            "pack-893cb0a1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths - they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"23568\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:03 PDT\" } ``` Sender (untr.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction.",
             "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-1-seed-message.",
             "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-44d8f02c9a33657c8d2a1a7785bfa319955d3a6d25ce31dd55d6db0f83e9bcc5",
+          "eventExportDigest": "sha256-de772448ac1245bf365db8036535229c2dde5b0fdc56f740a915af25804d5ade",
           "expectedContextPhrases": [
             "minscore query pelican down",
             "pelican down prior issue",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.524,
-            "routeSelectionMs": 4.76,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.763,
+            "totalMs": 12.686,
+            "routeSelectionMs": 7.798,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 4.886,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-eca84b2d"
+          "pack-893cb0a1"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-eca84b2d",
-        "frozenEvalRouterIdentity": "pack-eca84b2d:route_fn",
+        "frozenEvalPackId": "pack-893cb0a1",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-787966def1a324559f9aba2ba3aa6c0bdc27b281008ded4b38413eabea5bbe16"
+        "scoreHash": "sha256-7f437ef35c0aa7156ffd78fe916dc220a918a14548b980af9a0b383fa1bf7241"
       },
       "turns": [
         {
@@ -405,24 +405,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-eca84b2d",
+          "activePackId": "pack-893cb0a1",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-a7c1a9c2cf956c67f37b1b35e72a5ca65aa11eeae72f2683b33b83a5be6ab142",
+          "selectionDigest": "sha256-5a19a993cb13c5fe9c82c9722ffbb69f563d84ddad5edd4631d2dee8ab58d711",
           "selectedContextIds": [
-            "pack-eca84b2d:pointer-aware-init"
+            "pack-893cb0a1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
+            "pack-893cb0a1:pointer-aware-init",
+            "pack-893cb0a1:workspace-init:16415817"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+            "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths - they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"23568\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:03 PDT\" } ``` Sender (untr.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, +8 more from the MEMORY index graph.",
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=7, outbound=17). TASKS.md — Canonical Task Ledger Last updated: 2026-04-18 5:40 PM PT Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator edits it. - Workers report only through announces, task-artifacts/<task-id>/, or task-status/<ta…"
           ],
-          "eventExportDigest": "sha256-8659ee9a0cd7e41e03711033e6744ec09c2b0256e6fa44206054dac8c9e78637",
+          "eventExportDigest": "sha256-f8d91ceeeedfae57099d2ff24d09d6283c40d7219d3d4dbfbe77c7b4b37cab76",
           "expectedContextPhrases": [
             "minscore query pelican down",
             "pelican down prior issue",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.363,
-            "routeSelectionMs": 5.83,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.532,
+            "totalMs": 11.083,
+            "routeSelectionMs": 7.025,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.055,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-99ef2514b52527995194f520c38072d281eed40efd6503eb0e9ee86980913f19"
+  "bundleHash": "sha256-20a8deb4dfe4f228c633b66f262cb1e2380e6b4c36197fcd963e0b70fe9ef6f0"
 }

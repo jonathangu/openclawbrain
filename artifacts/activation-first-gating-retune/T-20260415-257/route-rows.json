@@ -4,33 +4,61 @@
     "dataset_id": "activation-first-gating:T-20260415-257:felt_resume_25",
     "query": "You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md 1. Read `TASKS.md`. 2. Confirm the principal orchestrator role; `TASKS.md` is single-writer. 3. Resume the highest-priority unfinished unblocked principal task. 4. Restore task state from `TASKS.md`, artifacts, status files, and repo/worktree state. 5. If retry is safe, relaunch stale work; otherwise record the blocker. 6. If merge, test, deploy, or closeout is the next ready phase, do it next. 7. Before editing `TASKS.md`, reread it from disk and recompute the change. 8. Keep chat brief: milestone, blocker, approval, or completion. If BOOT.md asks you to send a message, use the message tool (action=send with channel + target). Use the `target` field (not `to`) for message tool destinations. After sending with the message tool, reply with ONLY: NO_REPLY. If nothing needs attention, reply with ONLY: NO_REPLY.",
     "cursor_path": [
-      "felt_resume_25"
+      "felt_resume_25",
+      "felt_resume_25:source:pack-338dc61e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback"
     ],
     "candidate_set": [
       {
         "candidate_id": "pack-338dc61e:workspace-init:2eaa4a13",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.2,
+        "token_cost": 96
+      },
+      {
+        "candidate_id": "pack-338dc61e:workspace-init:16415817",
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.2,
+        "token_cost": 96
       },
       {
         "candidate_id": "pack-338dc61e:workspace-init:02e33be9",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.2,
+        "token_cost": 96
       },
       {
         "candidate_id": "pack-338dc61e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
       },
       {
         "candidate_id": "phrase-context:live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002-550a2c657384c99f",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "phrase-context:live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002-a937ab9eb1930261",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "pack-338dc61e:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -54,7 +82,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002:0"
+      "pack-338dc61e:workspace-init:02e33be9"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -63,44 +91,72 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-002",
     "dataset_id": "activation-first-gating:T-20260415-257:felt_resume_25",
     "query": "You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` immediately before any ledger edit. 6. Leaf workers do domain work only and must never read/write/edit `TASKS.md`; they report only by announce or by writing `task-artifacts/<task-id>/<worker-id>.md` or `task-status/<task-id>/<worker-id>.json`. 7. Keep `TASKS.md` updates phase-based only: create task, phase started, phase complete, blocker, done. If BOOT.md asks you to send a message, use the message tool (action=send with channel + target). Use the `target` field (not `to`) for message tool destinations. After sending with the message tool, reply with ONLY: NO_REPLY. If nothing needs attention, reply with ONLY: NO_REPLY.",
     "cursor_path": [
-      "felt_resume_25"
+      "felt_resume_25",
+      "felt_resume_25:source:pack-e409efb3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
     ],
     "candidate_set": [
       {
         "candidate_id": "pack-e409efb3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
+      },
+      {
+        "candidate_id": "pack-e409efb3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
+      },
+      {
+        "candidate_id": "pack-e409efb3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
       },
       {
         "candidate_id": "pack-e409efb3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
       },
       {
         "candidate_id": "pack-e409efb3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "phrase-context:live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-002-cf1ee5398f533f36",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "phrase-context:live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-002-169f53087f14c48b",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "pack-e409efb3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -124,7 +180,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-002:0"
+      "pack-e409efb3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -133,44 +189,72 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003",
     "dataset_id": "activation-first-gating:T-20260415-257:felt_resume_25",
     "query": "Your previous turn was interrupted by a gateway reload. Your original task was: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions happy. Exact currently reproduced failures on this clean installed worktree: - test/eval/comparative-eval-runner.test.ts:315 expected gateStatus 'partial', received 'blocked' - test/eval/comparative-eval-runner.test.ts:335 expected status 'ok', received 'partial' - CLI smoke path in test/eval/comparative-eval-runner.test.ts also fails - when run as a blocker bundle, these files are still red: - test/canonical-frozen-trace-set.test.ts - test/replay-proof-lane.test.ts - test/frozen-recorded-session-eval-gate-economics.test.ts - test/frozen-recorded-session-eval-gate.test.ts - test/eval/comparative-eval-runner.test.ts Likely focus areas: - src/eval/comparative-eval-runner.ts - scripts/eval/run-comparative-eval.ts - any manifest/contract interpretation or policy status computation causing valid frozen manifests to degrade from ok/pass to partial/blocked - any replay-proof interactions needed for the blocker bundle above Read first: - /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/final-replay-eval-swarm-board.md - /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/lane-c-verification.md - /Users/guclaw/.openclaw/workspace/openclawbrain/test/eval/comparative-eval-runner.test.ts - /Users/guclaw/.openclaw/workspace/openclawbrain/scripts/eval/run-comparative-eval.ts Deliverables: 1. real behavior fix for the comparative eval mismatches 2. passing blocker bundle: npx vitest run test/canonical-frozen-trace-set.test.ts test/replay-proof-lane.test.ts test/frozen-recorded-session-eval-gate-economics.test.ts test/frozen-recorded-session-eval-gate.test.ts test/eval/compara... The last message from the user before the interruption was: Continue where you left off. The previous model attempt failed or timed out. Please continue where you left off.",
     "cursor_path": [
-      "felt_resume_25"
+      "felt_resume_25",
+      "felt_resume_25:source:pack-96267af2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback"
     ],
     "candidate_set": [
       {
         "candidate_id": "pack-96267af2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
+      },
+      {
+        "candidate_id": "pack-96267af2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
+      },
+      {
+        "candidate_id": "pack-96267af2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-2:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
       },
       {
         "candidate_id": "pack-96267af2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
       },
       {
         "candidate_id": "pack-96267af2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:feedback",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "phrase-context:live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003-19876805d46938dc",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "cue-context:live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003-cfcc2e8ad79e850b",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "pack-96267af2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -194,7 +278,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003:0"
+      "pack-96267af2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:feedback"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -203,44 +287,72 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002",
     "dataset_id": "activation-first-gating:T-20260415-257:felt_resume_25",
     "query": "Continue where you left off, but narrow scope hard. Produce a usable Lane B result even if code changes are too risky. Minimum required outputs: /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-b-online-pg.md and /Users/guclaw/.openclaw/workspace/task-status/T-20260406-161/lane-b.json. Focus only on online PG symmetry for tool-action priors inside the same route_fn family: what exact update path should change in src/brain-core/update.ts or nearby files, and the smallest safe repo cut if any. If you can land a narrow code change, do it and run focused tests. If not, still write the artifact/status with exact file-level deltas and verification or N/A. Do not emit raw code snippets as the final result; write the files on disk and summarize cleanly.",
     "cursor_path": [
-      "felt_resume_25"
+      "felt_resume_25",
+      "felt_resume_25:source:pack-2bf95eb5:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback"
     ],
     "candidate_set": [
       {
         "candidate_id": "pack-2bf95eb5:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
+      },
+      {
+        "candidate_id": "pack-2bf95eb5:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
+      },
+      {
+        "candidate_id": "pack-2bf95eb5:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-2:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
       },
       {
         "candidate_id": "pack-2bf95eb5:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.2,
+        "token_cost": 96
       },
       {
         "candidate_id": "pack-2bf95eb5:pointer-passive-expansion",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "phrase-context:live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002-1c8738e1afe31592",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "phrase-context:live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002-aa288010a7925135",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.2,
+        "token_cost": 96
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "pack-2bf95eb5:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -264,7 +376,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002:0"
+      "pack-2bf95eb5:pointer-aware-init"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -273,44 +385,72 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003",
     "dataset_id": "activation-first-gating:T-20260415-257:felt_resume_25",
     "query": "Continue where you left off, but narrow scope hard. Produce a usable Lane A result even if code changes are too risky. Minimum required outputs: /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-a-capability-instance.md and /Users/guclaw/.openclaw/workspace/task-status/T-20260406-161/lane-a.json. Focus only on capability-vs-instance action representation in the live action set: what exact types/action kinds/trace fields should change, and the smallest safe repo cut if any. If you can land a narrow code change, do it and run focused tests. If not, still write the artifact/status with exact file-level deltas and conflict notes. Do not emit raw code snippets as the final result; write the files on disk and summarize cleanly.",
     "cursor_path": [
-      "felt_resume_25"
+      "felt_resume_25",
+      "felt_resume_25:source:pack-f6af8d6f:event:971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:feedback"
     ],
     "candidate_set": [
       {
         "candidate_id": "pack-f6af8d6f:event:971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
+      },
+      {
+        "candidate_id": "pack-f6af8d6f:event:971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
+      },
+      {
+        "candidate_id": "pack-f6af8d6f:event:971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-2:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
       },
       {
         "candidate_id": "pack-f6af8d6f:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.2,
+        "token_cost": 96
       },
       {
         "candidate_id": "pack-f6af8d6f:workspace-init:16415817",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "phrase-context:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003-5ce22bd15457d843",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "phrase-context:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003-1e10b1b2cba4cabf",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.2,
+        "token_cost": 96
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "pack-f6af8d6f:event:971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:feedback"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -334,7 +474,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003:0"
+      "pack-f6af8d6f:pointer-aware-init"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -343,44 +483,72 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003",
     "dataset_id": "activation-first-gating:T-20260415-257:felt_resume_25",
     "query": "Continue where you left off, but narrow scope to the smallest possible deliverable. Your job is to determine whether runtime scoring/binding already effectively uses the capability-vs-instance distinction or whether one tiny code cut is still needed. Minimum required outputs no matter what: write /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-d2-runtime-scoring.md and /Users/guclaw/.openclaw/workspace/task-status/T-20260406-161/lane-d2.json. If a narrow code change is safe, make it and run focused tests. If not, still write the artifact/status with the exact diagnosis, the smallest next cut, and whether T-20260406-161 should be considered complete enough to close now. Do not emit raw code as final output; write the files on disk and summarize cleanly.",
     "cursor_path": [
-      "felt_resume_25"
+      "felt_resume_25",
+      "felt_resume_25:source:pack-ce00f23f:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:feedback"
     ],
     "candidate_set": [
       {
         "candidate_id": "pack-ce00f23f:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
+      },
+      {
+        "candidate_id": "pack-ce00f23f:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
+      },
+      {
+        "candidate_id": "pack-ce00f23f:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-2:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
       },
       {
         "candidate_id": "pack-ce00f23f:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-3:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
       },
       {
         "candidate_id": "pack-ce00f23f:pointer-aware-init",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "phrase-context:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003-a62e91484afaeaa7",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "cue-context:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003-569577336592ed60",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.2,
+        "token_cost": 96
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "pack-ce00f23f:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:feedback"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -404,7 +572,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003:0"
+      "pack-ce00f23f:pointer-aware-init"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -413,11 +581,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002",
@@ -429,28 +597,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002-e3bf0525a4e096ed",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002-e354520efd77a088",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002-1850a59324260a11",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002-acdc291bd6171071",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002-fd8cf2252f07d941",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002-e3bf0525a4e096ed"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -483,11 +678,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002",
@@ -499,28 +694,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002-56c9e1c4b5360a5b",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002-559959444bc7b684",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002-609e550357354a28",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002-1bab2c1e1f021483",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002-794b94a48b14e5bb",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002-56c9e1c4b5360a5b"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -553,11 +775,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002",
@@ -569,28 +791,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002-992e5979a11ec1e9",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002-4171d249ada72fce",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002-2bfb4e8ff4569ba7",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002-e4a8a92c909c4d8b",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002-f55c589f09f52121",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002-992e5979a11ec1e9"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -623,11 +872,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002",
@@ -639,28 +888,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002-124eb8d9f105c47e",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002-1e10b1b2cba4cabf",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002-fd5d32feb2d35625",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002-610eac9c385bfae2",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002-7b04d3876d0a4fe4",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002-124eb8d9f105c47e"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -693,11 +969,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003",
@@ -709,28 +985,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003-a3ef9cbef2fe0f9d",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003-33d8eaaf979f6335",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003-74f3b11a34f7e3e5",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003-be3347a6cfcbad8d",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003-c99fa11ce5c39bb8",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003-a3ef9cbef2fe0f9d"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -763,11 +1066,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002",
@@ -779,28 +1082,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002-a3ef9cbef2fe0f9d",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002-33d8eaaf979f6335",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002-74f3b11a34f7e3e5",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002-9cdc0e1eba2a6444",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002-cbe7aef5c68c7d0e",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002-a3ef9cbef2fe0f9d"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -833,11 +1163,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002",
@@ -849,28 +1179,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002-a9bf0fdce6376d96",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002-97ae5dbb09c9bcf3",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002-1b1c4f962c2c5a8e",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002-5f183817f5072a98",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002-d101b51c5d88ee68",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002-a9bf0fdce6376d96"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -903,11 +1260,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003",
@@ -919,28 +1276,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003-4e2f3e99c451e9d8",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003-3c71f307ff922ab5",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003-6e78db5a8c71d6e7",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003-f09c12cb27f2f3ef",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003-34ce9ca9ba79bb1c",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003-4e2f3e99c451e9d8"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -973,11 +1357,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002",
@@ -989,28 +1373,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002-a3ef9cbef2fe0f9d",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002-33d8eaaf979f6335",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002-74f3b11a34f7e3e5",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002-b9ae8da481664bfa",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002-4b13deaf3cf62b48",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002-a3ef9cbef2fe0f9d"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1043,11 +1454,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007",
@@ -1059,28 +1470,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007-be7b9b79f60d8783",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007-6c493326789d789e",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007-126fe77b9e3d29ab",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007-c5021a0fdc913b06",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007-4008b6bd0d249fda",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007-be7b9b79f60d8783"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1113,11 +1551,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002",
@@ -1129,28 +1567,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002-b7976bf4e7f073ae",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002-c5faf3a509355d79",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002-894172cb9a41885a",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002-b82e5384da9da229",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002-7465d73fd9a4efc5",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002-b7976bf4e7f073ae"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1183,11 +1648,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002",
@@ -1199,28 +1664,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002-a3ef9cbef2fe0f9d",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002-33d8eaaf979f6335",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002-74f3b11a34f7e3e5",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002-569577336592ed60",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002-5954545a81cb6d5b",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002-a3ef9cbef2fe0f9d"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1253,11 +1745,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002",
@@ -1269,28 +1761,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002-a3ef9cbef2fe0f9d",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002-33d8eaaf979f6335",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002-74f3b11a34f7e3e5",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002-d90aa378477f57bf",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002-09b8388c767a61a2",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002-a3ef9cbef2fe0f9d"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1323,11 +1842,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002",
@@ -1339,28 +1858,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002-3b441a35c98df7d8",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002-702fce3c9a685af7",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002-cdded9a98e985189",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002-339e8ee52a24bddf",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002-ee747794a5e71d9f",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002-3b441a35c98df7d8"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1393,11 +1939,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002",
@@ -1409,28 +1955,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002-fd5d32feb2d35625",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002-14670e2abf3d93c3",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002-b23634d7bb1dc627",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002-9ecd4565e62aeb59",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002-6ede1ae1369489ab",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002-fd5d32feb2d35625"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1463,11 +2036,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002",
@@ -1479,28 +2052,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002-a3ef9cbef2fe0f9d",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002-33d8eaaf979f6335",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002-74f3b11a34f7e3e5",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002-c47f3d2d71299809",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002-2d93f692d8daf410",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002-a3ef9cbef2fe0f9d"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1533,44 +2133,72 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016",
     "dataset_id": "activation-first-gating:T-20260415-257:felt_resume_25",
     "query": "Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 02:13 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Keep going onto wave 4!",
     "cursor_path": [
-      "felt_resume_25"
+      "felt_resume_25",
+      "felt_resume_25:source:pack-d1d71300:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback"
     ],
     "candidate_set": [
       {
         "candidate_id": "pack-d1d71300:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
+      },
+      {
+        "candidate_id": "pack-d1d71300:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.55,
+        "token_cost": 56
       },
       {
         "candidate_id": "pack-d1d71300:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
       },
       {
         "candidate_id": "pack-d1d71300:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.95,
+        "token_cost": 80
       },
       {
         "candidate_id": "phrase-context:live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016-beae9d26de5b6611",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "phrase-context:live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016-c9a78e01f4048db2",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "pack-d1d71300:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1594,7 +2222,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016:0"
+      "pack-d1d71300:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -1603,11 +2231,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002",
@@ -1619,28 +2247,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002-6f59d95f4042917d",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002-5b404fa006b91bb0",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002-748cdf8064d91389",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002-556011ae99460f9a",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002-5b92e88c2e027dff",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002-6f59d95f4042917d"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1673,11 +2328,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:felt_resume_25:live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002",
@@ -1689,28 +2344,55 @@
     "candidate_set": [
       {
         "candidate_id": "phrase-context:live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002-b1f99260a33b7f96",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002-e81fa22cc41b995e",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "phrase-context:live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002-b3c2199a610fe633",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.65,
+        "token_cost": 64
       },
       {
         "candidate_id": "cue-context:live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002-1453b80a39203548",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       },
       {
         "candidate_id": "cue-context:live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002-4e936d8910b7e201",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "cue_context",
+        "authority": "recorded_session_replay",
+        "freshness": "replay_eval",
+        "score_hint": 0.45,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
-      "kind": "tool",
-      "tool_name": "__gating_only__:felt_resume_25"
+      "kind": "traverse",
+      "target_ids": [
+        "phrase-context:live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002-b1f99260a33b7f96"
+      ]
     },
     "stop_label": "CONTINUE",
     "evidence_spans": [
@@ -1743,11 +2425,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-fire-30:live-pelican-58e7c9e8-bc09-492d-8ce5-6e92f0078397-window-003",
@@ -1759,23 +2441,48 @@
     "candidate_set": [
       {
         "candidate_id": "pack-5350d4d8:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
         "candidate_id": "pack-5350d4d8:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
-        "candidate_id": "pack-5350d4d8:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-6:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-5350d4d8:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       },
       {
         "candidate_id": "pack-0846c0b0:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
         "candidate_id": "pack-0846c0b0:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -1804,7 +2511,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-pelican-58e7c9e8-bc09-492d-8ce5-6e92f0078397-window-003:0"
+      "pack-0846c0b0:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:feedback"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -1813,11 +2520,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-fire-30:live-pelican-fbedf897-7ceb-444b-a3c6-012985297ca1-window-002",
@@ -1829,23 +2536,48 @@
     "candidate_set": [
       {
         "candidate_id": "pack-49fd45a5:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
-        "candidate_id": "pack-49fd45a5:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-5:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-49fd45a5:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       },
       {
-        "candidate_id": "pack-49fd45a5:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-6:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-49fd45a5:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-2:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       },
       {
         "candidate_id": "pack-4dcc8730:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
-        "candidate_id": "pack-4dcc8730:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-5:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-4dcc8730:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       }
     ],
     "teacher_action": {
@@ -1874,7 +2606,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-pelican-fbedf897-7ceb-444b-a3c6-012985297ca1-window-002:0"
+      "pack-49fd45a5:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -1883,11 +2615,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-fire-30:live-pelican-8b146779-6fd1-4e35-b861-2d0ad85401e4-window-002",
@@ -1899,23 +2631,48 @@
     "candidate_set": [
       {
         "candidate_id": "pack-07f38a9a:workspace-init:16415817",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
         "candidate_id": "pack-07f38a9a:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
-        "candidate_id": "pack-07f38a9a:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-07f38a9a:workspace-init:b2452372",
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
         "candidate_id": "pack-f31909b1:workspace-init:16415817",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
         "candidate_id": "pack-f31909b1:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
@@ -1944,7 +2701,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-pelican-8b146779-6fd1-4e35-b861-2d0ad85401e4-window-002:0"
+      "pack-07f38a9a:pointer-aware-init"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -1953,11 +2710,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-fire-30:live-pelican-ad267ee2-3cc5-44dd-9e95-4b908028642a-window-002",
@@ -1969,23 +2726,48 @@
     "candidate_set": [
       {
         "candidate_id": "pack-d9b70439:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
-        "candidate_id": "pack-d9b70439:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-d9b70439:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       },
       {
-        "candidate_id": "pack-d9b70439:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-6:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-d9b70439:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-2:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       },
       {
         "candidate_id": "pack-d873256e:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
-        "candidate_id": "pack-d873256e:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-d873256e:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       }
     ],
     "teacher_action": {
@@ -2014,7 +2796,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-pelican-ad267ee2-3cc5-44dd-9e95-4b908028642a-window-002:0"
+      "pack-d873256e:pointer-aware-init"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -2023,11 +2805,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-fire-30:live-pelican-ad267ee2-3cc5-44dd-9e95-4b908028642a-window-003",
@@ -2039,23 +2821,48 @@
     "candidate_set": [
       {
         "candidate_id": "pack-5b1ec841:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
+      },
+      {
+        "candidate_id": "pack-5b1ec841:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       },
       {
         "candidate_id": "pack-5b1ec841:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "pack-5b1ec841:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
         "candidate_id": "pack-59dae976:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
-        "candidate_id": "pack-59dae976:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-59dae976:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       }
     ],
     "teacher_action": {
@@ -2084,7 +2891,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-pelican-ad267ee2-3cc5-44dd-9e95-4b908028642a-window-003:0"
+      "pack-59dae976:pointer-aware-init"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -2093,11 +2900,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-fire-30:live-pelican-469f7b7c-7551-4939-9416-5ac673c3b285-window-002",
@@ -2109,23 +2916,48 @@
     "candidate_set": [
       {
         "candidate_id": "pack-c21fffcf:pointer-aware-init",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "pack-c21fffcf:event:469f7b7c-7551-4939-9416-5ac673c3b285-seed:cue-6:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
         "candidate_id": "pack-c21fffcf:workspace-init:16415817",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
+      },
+      {
+        "candidate_id": "pack-c21fffcf:pointer-passive-expansion",
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
         "candidate_id": "pack-ad457ee6:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
-        "candidate_id": "pack-ad457ee6:event:469f7b7c-7551-4939-9416-5ac673c3b285-seed:cue-6:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-ad457ee6:workspace-init:16415817",
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
@@ -2154,7 +2986,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-pelican-469f7b7c-7551-4939-9416-5ac673c3b285-window-002:0"
+      "pack-ad457ee6:pointer-aware-init"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -2163,11 +2995,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-fire-30:live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-006",
@@ -2179,23 +3011,48 @@
     "candidate_set": [
       {
         "candidate_id": "pack-a96c1326:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
+      },
+      {
+        "candidate_id": "pack-a96c1326:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       },
       {
         "candidate_id": "pack-a96c1326:pointer-aware-init",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "pack-a96c1326:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
         "candidate_id": "pack-2c2f3dda:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
-        "candidate_id": "pack-2c2f3dda:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-2c2f3dda:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       }
     ],
     "teacher_action": {
@@ -2224,7 +3081,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-006:0"
+      "pack-2c2f3dda:pointer-aware-init"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -2233,11 +3090,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-fire-30:live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-054",
@@ -2249,23 +3106,48 @@
     "candidate_set": [
       {
         "candidate_id": "pack-255ffa68:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
-        "candidate_id": "pack-255ffa68:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-255ffa68:workspace-init:f4134aaa",
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
-        "candidate_id": "pack-255ffa68:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-255ffa68:workspace-init:b2452372",
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
         "candidate_id": "pack-dfac71d7:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       },
       {
-        "candidate_id": "pack-dfac71d7:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-dfac71d7:workspace-init:f4134aaa",
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
@@ -2294,7 +3176,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-054:0"
+      "pack-255ffa68:pointer-aware-init"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -2303,11 +3185,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-fire-30:live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-002",
@@ -2319,23 +3201,48 @@
     "candidate_set": [
       {
         "candidate_id": "pack-5a515b9f:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback",
-        "candidate_type": "graph_node"
-      },
-      {
-        "candidate_id": "pack-5a515b9f:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-1:interaction",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
         "candidate_id": "pack-5a515b9f:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
+      },
+      {
+        "candidate_id": "pack-5a515b9f:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       },
       {
         "candidate_id": "phrase-context:live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-002-3d317ee9f475ac2e",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.75,
+        "token_cost": 16
       },
       {
         "candidate_id": "phrase-context:live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-002-ea996e3d77b06b22",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "phrase_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.75,
+        "token_cost": 16
       }
     ],
     "teacher_action": {
@@ -2364,7 +3271,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-002:0"
+      "pack-5a515b9f:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-1:interaction"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -2373,11 +3280,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-fire-30:live-main-dd9238f7-bfae-4ab9-9640-9e63a04c89b7-window-002",
@@ -2389,23 +3296,48 @@
     "candidate_set": [
       {
         "candidate_id": "pack-bcb23398:event:dd9238f7-bfae-4ab9-9640-9e63a04c89b7-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
-        "candidate_id": "pack-bcb23398:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-bcb23398:event:dd9238f7-bfae-4ab9-9640-9e63a04c89b7-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       },
       {
-        "candidate_id": "pack-bcb23398:workspace-init:02e33be9",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-bcb23398:event:dd9238f7-bfae-4ab9-9640-9e63a04c89b7-seed:cue-2:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       },
       {
         "candidate_id": "pack-fd9e17f9:event:dd9238f7-bfae-4ab9-9640-9e63a04c89b7-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       },
       {
-        "candidate_id": "pack-fd9e17f9:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_id": "pack-fd9e17f9:event:dd9238f7-bfae-4ab9-9640-9e63a04c89b7-seed:cue-1:interaction",
+        "candidate_type": "graph_node",
+        "semantic_class": "interaction_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.7,
+        "token_cost": 20
       }
     ],
     "teacher_action": {
@@ -2434,7 +3366,7 @@
       }
     ],
     "hard_negatives": [
-      "gating-negative:live-main-dd9238f7-bfae-4ab9-9640-9e63a04c89b7-window-002:0"
+      "pack-bcb23398:pointer-aware-init"
     ],
     "outcome_gain": 1,
     "provenance": {
@@ -2443,11 +3375,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-pelican-3cb1eac8-82e4-48bf-8898-e9fa5bead77a-window-004",
@@ -2459,7 +3391,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-186e9414:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -2483,11 +3420,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-pelican-c848fc28-bf10-4fd5-83a4-31e1b3048349-window-002",
@@ -2499,7 +3436,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-dded380d:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -2523,11 +3465,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-pelican-c1be6f8d-22af-4aac-9f32-234846a9ef57-window-004",
@@ -2539,7 +3481,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-0098d2a8:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -2563,11 +3510,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-002",
@@ -2579,7 +3526,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-6c6f99b5:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -2603,11 +3555,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-003",
@@ -2619,7 +3571,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-eaa230d3:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -2643,11 +3600,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-pelican-8b146779-6fd1-4e35-b861-2d0ad85401e4-window-003",
@@ -2659,7 +3616,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-b4ac6b8d:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -2683,11 +3645,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-pelican-4654a9d2-02db-4eaa-a316-86d131e91df8-window-002",
@@ -2699,7 +3661,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-dc9b71c9:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
@@ -2723,11 +3690,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-029",
@@ -2739,7 +3706,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-e2d24086:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
@@ -2763,11 +3735,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-049",
@@ -2779,7 +3751,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-a3f2f99f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -2803,11 +3780,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-009",
@@ -2819,7 +3796,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-373cc85c:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
@@ -2843,11 +3825,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-main-468355da-cd1f-40fe-adc8-e1dc6dfa55ea-window-003",
@@ -2859,7 +3841,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-830ff8a8:pointer-aware-init",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "init_context",
+        "authority": "snapshot_context",
+        "freshness": "eval_only",
+        "score_hint": 0.35,
+        "token_cost": 48
       }
     ],
     "teacher_action": {
@@ -2883,11 +3870,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003",
@@ -2899,7 +3886,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-96267af2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -2923,11 +3915,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003",
@@ -2939,7 +3931,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-f6af8d6f:event:971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -2963,11 +3960,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002",
@@ -2979,7 +3976,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-2bf95eb5:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -3003,11 +4005,11 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   },
   {
     "row_id": "activation-first:must-not-fire-100:live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003",
@@ -3019,7 +4021,12 @@
     "candidate_set": [
       {
         "candidate_id": "pack-ce00f23f:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:feedback",
-        "candidate_type": "graph_node"
+        "candidate_type": "graph_node",
+        "semantic_class": "feedback_context",
+        "authority": "snapshot_supporting_fact",
+        "freshness": "eval_only",
+        "score_hint": 0.98,
+        "token_cost": 24
       }
     ],
     "teacher_action": {
@@ -3043,10 +4050,10 @@
       "source_family": "agent_traces",
       "source_snapshot_ref": "task-artifacts/T-20260415-257/activation-first-retune-harness",
       "recorded_by": "run-activation-first-gating-retune",
-      "recorded_at": "2026-04-17T23:00:02.391Z",
+      "recorded_at": "2026-04-19T01:04:50.277Z",
       "review_status": "approved_train"
     },
     "split_tag": "train",
-    "created_at": "2026-04-17T23:00:02.391Z"
+    "created_at": "2026-04-19T01:04:50.277Z"
   }
 ]

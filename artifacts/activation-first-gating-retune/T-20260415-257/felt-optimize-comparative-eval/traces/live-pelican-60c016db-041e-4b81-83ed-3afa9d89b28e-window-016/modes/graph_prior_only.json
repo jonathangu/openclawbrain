@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-b833f4b1"
+      "pack-d10c7dec"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-0fdf290056b254b512694dfabe1360dbf71ea619f2a99ebccb7b7edfa373e15a"
+    "scoreHash": "sha256-e5f7e90967ffef76a007ab56b09a4f32174cac5318b44f236f3959bf777f7eaf"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-b833f4b1",
+      "activePackId": "pack-d10c7dec",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-e0efd38c54273510fb6ac0c0bebc1a29d3f4ea1bba1ff2246b802d5ba840a9d3",
+      "routerIdentity": "pack-d10c7dec:route_fn",
+      "selectionDigest": "sha256-bff221cf306466e847c2c126f6ee4f4564343819ab576c1b79ef82aaab482b44",
       "selectedContextIds": [
-        "pack-b833f4b1:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
-        "pack-b833f4b1:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction",
-        "pack-b833f4b1:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
+        "pack-d10c7dec:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+        "pack-d10c7dec:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction",
+        "pack-d10c7dec:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 02:13 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make sure everything will work!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
         "Interaction operator_override on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed. Message: cue-6-seed-message.",
         "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:38 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes start the wave! Merge it! Ship it!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-7d7c3a597df79347117669323e6a0b16093f1bd52ac998e1131c92eb43d17155",
+      "eventExportDigest": "sha256-1025f88cd8b42fee3ea1e9752a0d6212aedfb6c75d131d0e3d24972bc7b86d33",
       "expectedContextPhrases": [
         "exec gpt-5.3-codex-spark yolo wave",
         "gpt-5.3-codex-spark yolo wave execution",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.976,
-        "routeSelectionMs": 4.413,
+        "totalMs": 8.911,
+        "routeSelectionMs": 5.353,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.561,
+        "otherMs": 3.556,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

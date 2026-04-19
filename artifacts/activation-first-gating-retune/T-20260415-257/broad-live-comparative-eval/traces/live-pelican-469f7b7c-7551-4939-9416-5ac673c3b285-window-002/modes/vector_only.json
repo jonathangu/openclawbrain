@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-0945c51b"
+      "pack-10b2ba9f"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-c5a8c7c7a0c38446f58a2c9ee2f24832ae5ecdc3acd7a1e925721c4fd67c821e"
+    "scoreHash": "sha256-f66da7e51ce32428d2bb9979618a17304aec2503303514eab1b3a38713458858"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-0945c51b",
+      "activePackId": "pack-10b2ba9f",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-c0def28c7cd8b4f6473067a7a31b784d7066813ab53d4dffbc47d480f21a4a8b",
+      "routerIdentity": "pack-10b2ba9f:route_fn",
+      "selectionDigest": "sha256-b2bd5216d99c44ca96aa0f4dc5a460019558732459fb4fa2f6827c7a382af409",
       "selectedContextIds": [
-        "pack-0945c51b:pointer-aware-init",
-        "pack-0945c51b:event:469f7b7c-7551-4939-9416-5ac673c3b285-seed:cue-6:feedback",
-        "pack-0945c51b:workspace-init:16415817"
+        "pack-10b2ba9f:pointer-aware-init",
+        "pack-10b2ba9f:event:469f7b7c-7551-4939-9416-5ac673c3b285-seed:cue-6:feedback",
+        "pack-10b2ba9f:workspace-init:16415817"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-31-context-cleanup.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-31-context-cleanup.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, docs/training-launch-contract.md, STARTUP_READY.md, +2 more, and passive expansion docs/prediction_pipeline.md, docs/quant-lessons.md, memory/2026-04-08.md, memory/2026-04-14.md, +8 more from the MEMORY index graph.",
         "Teaching feedback on live-session session 469f7b7c-7551-4939-9416-5ac673c3b285-seed: assistant: I landed the code changes for the 15:04 failure class and the no-entry funnel, but I could not finish commit/proof from this environment because shell exec is blocked here. What changed: - `spread_monitor.py` - Repairs missing ticker/expiration/strike geometry from OCC symbols on load - Coerces numeric fields safely - Makes `spread_width` / `max_loss` safe on malformed rows - Skips malformed open positions in exit checks instead of crashing - `exit_rules.py` - Bails out early for malformed po.... Related interaction: 469f7b7c-7551-4939-9416-5ac673c3b285-seed:cue-6:interaction.",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=10, outbound=24). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=20). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. Keep this file lean enough for cold starts. Detailed proof belongs in task-artifacts/. Current live pointers - finish-line handoff: task-artifacts/finish-line-handoff-2026-04-17.md - pre-compaction backup: ta…"
       ],
-      "eventExportDigest": "sha256-7ee765958a2593a9ed1c0b9ac6e295eb43137b3d9b5ab227c7599e9c68678e8d",
+      "eventExportDigest": "sha256-e90d502f25175999005db4d0fccf8823784746e8a4d4b1a0a72009a5f212fc01",
       "expectedContextPhrases": [
         "/cap",
         "/failure",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.09,
-        "routeSelectionMs": 4.438,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.65,
+        "totalMs": 12.252,
+        "routeSelectionMs": 7.5,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 4.749,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

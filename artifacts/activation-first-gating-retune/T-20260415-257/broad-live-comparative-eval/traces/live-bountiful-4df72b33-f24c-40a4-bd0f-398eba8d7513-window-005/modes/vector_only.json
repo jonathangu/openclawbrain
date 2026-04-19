@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-1cf9bb97"
+      "pack-f0e7f872"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-6f2167c15d1d52d07c3ba945e86de0b21b06b69346f288e21ae0699db3880f24"
+    "scoreHash": "sha256-e6c3d1bb884fac1b2298fd6dd50dbcdce251ca3f9f7a11d75f3509ef02df02ef"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-1cf9bb97",
+      "activePackId": "pack-f0e7f872",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-9de5860282548a710f42642d1ad3fab4cb00ea8e3c562a9d61f5cba56bdccf85",
+      "routerIdentity": "pack-f0e7f872:route_fn",
+      "selectionDigest": "sha256-cff6dd0c7081ba108c5321aa6136b466cf8fcac9ac132caa3f7975b51c344384",
       "selectedContextIds": [
-        "pack-1cf9bb97:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
-        "pack-1cf9bb97:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
-        "pack-1cf9bb97:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback"
+        "pack-f0e7f872:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
+        "pack-f0e7f872:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
+        "pack-f0e7f872:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: assistant: Got it, Jon — I’m updating the target: **zero “fruit” anywhere in the repo**, including **Drizzle table/type names and migration SQL** (no `fruits`, no `fruit_*`, nothing). Codex is already running on the /api/trades 500; after it lands I’ll do a hard `rg \"(?i)\\\\bfruit\\\\b|fruits\"` sweep (and if anything remains, I’ll run a Claude Code `--dangerously-skip-permissions` cleanup pass) until it’s truly gone.. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction.",
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8098\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Get rid of the term fruit in code I do not want to see any fruit mentioned as function names or db .... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction.",
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-d6dcbbd4151549eae5b12212f5a8ff7e0bd1b65fa179e71e133bc403c7b1e3e7",
+      "eventExportDigest": "sha256-37fddedbf0e3b9cbd5c5b96fe3e36a66193cc2672611be91c316fc606bed74dd",
       "expectedContextPhrases": [
         "toolcall",
         "process",
@@ -90,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.417,
-        "routeSelectionMs": 4.788,
+        "totalMs": 9.258,
+        "routeSelectionMs": 5.791,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.626,
+        "otherMs": 3.464,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

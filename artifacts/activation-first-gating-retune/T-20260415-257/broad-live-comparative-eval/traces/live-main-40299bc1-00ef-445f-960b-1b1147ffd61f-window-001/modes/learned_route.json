@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
       "pack-d2bcebcc"
@@ -17,7 +17,7 @@
     "trainTurnCount": 0,
     "evalTurnCount": 1,
     "frozenEvalPackId": "pack-d2bcebcc",
-    "frozenEvalRouterIdentity": "pack-d2bcebcc:route_fn",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-5a04221ab7673e2dc5c66677c8dfefa64a8a38517c384cd2ac7c652668330e77"
+    "scoreHash": "sha256-f559af85b41eb407b7b13d561f519316d2497299f1d0988a108680f060e1e535"
   },
   "turns": [
     {
@@ -55,20 +55,24 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-df3ca4becd6060bf9979268561734d9043a3259dbecb172fe683593ee28d7998",
+      "selectionDigest": "sha256-9f26495b9b67de5178140a0e556ea3543df6804e8156f89b758d03b7fef2afee",
       "selectedContextIds": [
-        "pack-d2bcebcc:event:40299bc1-00ef-445f-960b-1b1147ffd61f-seed:cue-1:interaction"
+        "pack-d2bcebcc:workspace",
+        "pack-d2bcebcc:event:40299bc1-00ef-445f-960b-1b1147ffd61f-seed:cue-1:feedback",
+        "pack-d2bcebcc:human-label-harvest"
       ],
       "selectedContextTexts": [
-        "Interaction operator_override on live-session session 40299bc1-00ef-445f-960b-1b1147ffd61f-seed. Message: cue-1-seed-message."
+        "Workspace snapshot session-40299bc1-00ef-445f-960b-1b1147ffd61f for ws-main captured at 2026-04-04T06:30:06.837Z with revision 40299bc1-00ef-445f-960b-1b1147ffd61f.",
+        "Teaching feedback on live-session session 40299bc1-00ef-445f-960b-1b1147ffd61f-seed: assistant: ✅ New session started · model: openai-codex/gpt-5.4. Related interaction: 40299bc1-00ef-445f-960b-1b1147ffd61f-seed:cue-1:interaction.",
+        "Human label harvest is first-class with 2 labels sourced from live/main/session-window/seed:operator_override, live/main/session-window/seed:teaching."
       ],
-      "eventExportDigest": "sha256-e902a3803f29fb4c330262378a6fff845de3acae56d8d8be347e8b39d748fe6c",
+      "eventExportDigest": "sha256-492503cd741c451d07418e4db71dc4448b66a937c16df4cb45f71c1fab143187",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/BOOT.md\"}",
         "/Users/guclaw/.openclaw/workspace/TASKS.md\"}"
@@ -84,10 +88,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 2.734,
-        "routeSelectionMs": 1.633,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 1.1,
+        "totalMs": 3.713,
+        "routeSelectionMs": 2.133,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 1.578,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

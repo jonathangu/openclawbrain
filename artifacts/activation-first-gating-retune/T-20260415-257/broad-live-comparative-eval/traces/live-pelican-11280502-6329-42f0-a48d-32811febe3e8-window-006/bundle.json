@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-02T00:45:40.741Z",
   "traceHash": "sha256-d39e73987cbab37d8621de930c333f3c7648788fff43ee43b47bd6d1ef64fb83",
   "fixtureHash": "sha256-a074cddd6e9248ce93aa0306421d446e0244240e7cd7f2087a7d75eb50352127",
-  "scoreHash": "sha256-1aa3f3c9b04cd69b0b6f6c658ee87809d53d08f9413370b4d04212d0a0056302",
+  "scoreHash": "sha256-fd0556bd5f58a96239646a1aa6461d67f27bf53aa1cb05f483924018527e3997",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.033,
+            "totalMs": 0.037,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.033,
+            "otherMs": 0.037,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-3c1c8590"
+          "pack-876d487b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-6eb74329ea4fc80b4d5539ff965e7ecf1296725f3abd73103eaeeb4f8e07fbda"
+        "scoreHash": "sha256-4c45b9ce6b57bbf7b72e5fc1ff6da60670e9b3d0d447ae1b632a778cfdc1806d"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-3c1c8590",
+          "activePackId": "pack-876d487b",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-7700311278171c21290a687cab4a18ed4fb7fd5bceedc6642a0b778e250fd4aa",
+          "routerIdentity": "pack-876d487b:route_fn",
+          "selectionDigest": "sha256-8503ea8e931cbe1cbb171b942ffcd31195d67f655772b4e0c9b9e5476619e1f5",
           "selectedContextIds": [
-            "pack-3c1c8590:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback",
-            "pack-3c1c8590:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
-            "pack-3c1c8590:pointer-aware-init"
+            "pack-876d487b:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback",
+            "pack-876d487b:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
+            "pack-876d487b:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction.",
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: assistant: Not fully “all good” yet — **trading-path looks green**, but **one of our safety verifiers (validate_model.py) is currently not trustworthy**, and I’m fixing that now. ### ✅ What I’ve re-checked and it’s OK - **S3 snapshots are clean:** latest key `data/2026/02/27/16-00-49.json` downloads fine (~15MB), **`collection_errors` empty**, and recent S3 object sizes look consistent. - **Inference-time feature extraction works on a real S3 snapshot:** parsed snapshot has **71 stocks / 60 option ticke.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction.",
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-f9fc5de5a1ef7ebcefe72ea33285f11356083778f7b236d54153f26504a0f344",
+          "eventExportDigest": "sha256-e178ef92cee98127cfb67939a9c187f1447c09ba3bd14c6ad436bf43c457718a",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.386,
-            "routeSelectionMs": 4.671,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.713,
+            "totalMs": 12.128,
+            "routeSelectionMs": 7.676,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.449,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -248,10 +248,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-3c1c8590"
+          "pack-876d487b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-9780d5908d5332e4993a076ebcc885c7cd931f4c6fb6d899a136a088da97dd29"
+        "scoreHash": "sha256-fc2a04ab56f7ee0b066f2f90d8a7c32d03b9ef884850b0aef2b7f5e6ca730162"
       },
       "turns": [
         {
@@ -289,28 +289,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-3c1c8590",
+          "activePackId": "pack-876d487b",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-8fc94fdb9306b99cbefdffba1299d1eda2eefe0ddf2cacc5c17c30abafe99ef5",
+          "routerIdentity": "pack-876d487b:route_fn",
+          "selectionDigest": "sha256-06fe276f7ba9af6174508373116782cd7dd99e0128d4881045bd8826e8ef3962",
           "selectedContextIds": [
-            "pack-3c1c8590:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback",
-            "pack-3c1c8590:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction",
-            "pack-3c1c8590:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-1:interaction"
+            "pack-876d487b:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback",
+            "pack-876d487b:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction",
+            "pack-876d487b:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-1:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction.",
             "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-2-seed-message.",
             "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-1-seed-message."
           ],
-          "eventExportDigest": "sha256-161ab2628f31de032025584c3da89ad357434bcc57d3b356d22f289024458747",
+          "eventExportDigest": "sha256-dc63bc95932a1d79f71eb7b100efa7bdbcaa31695c8680ae35e712e87d2ed964",
           "expectedContextPhrases": [
             "toolcall",
             "process",
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.358,
-            "routeSelectionMs": 4.669,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.688,
+            "totalMs": 12.841,
+            "routeSelectionMs": 7.817,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 5.021,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -361,11 +361,11 @@
         "activationStrategy": "continuous_learned_loop",
         "modeRequested": "learned",
         "selectionEngine": "graph_walk_v1",
-        "qualityScore": 40,
+        "qualityScore": 60,
         "compileOkCount": 1,
-        "phraseHitCount": 0,
+        "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
           "pack-876d487b"
@@ -373,7 +373,7 @@
         "trainTurnCount": 0,
         "evalTurnCount": 1,
         "frozenEvalPackId": "pack-876d487b",
-        "frozenEvalRouterIdentity": "pack-876d487b:route_fn",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-fe49fdfd65b4d11027ed72b0f5dbc012370d2326e6cc5710823b08fb98ddf011"
+        "scoreHash": "sha256-62c748886210498155b7d91b04d5b0e1c0632009edcb9454f6ea2ef80ae72772"
       },
       "turns": [
         {
@@ -411,41 +411,46 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-02165c8e7b63100d84a537a9d67294a627353a36bd8e8c64358eb284433391f9",
+          "selectionDigest": "sha256-8503ea8e931cbe1cbb171b942ffcd31195d67f655772b4e0c9b9e5476619e1f5",
           "selectedContextIds": [
+            "pack-876d487b:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback",
+            "pack-876d487b:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
             "pack-876d487b:pointer-aware-init"
           ],
           "selectedContextTexts": [
+            "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: assistant: Not fully “all good” yet — **trading-path looks green**, but **one of our safety verifiers (validate_model.py) is currently not trustworthy**, and I’m fixing that now. ### ✅ What I’ve re-checked and it’s OK - **S3 snapshots are clean:** latest key `data/2026/02/27/16-00-49.json` downloads fine (~15MB), **`collection_errors` empty**, and recent S3 object sizes look consistent. - **Inference-time feature extraction works on a real S3 snapshot:** parsed snapshot has **71 stocks / 60 option ticke.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction.",
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-f2dd2b24ea247e15db2de2618df2bb12c2a3b666ab50c323dbf64514ace472f6",
+          "eventExportDigest": "sha256-195a35c311c7bba26505d2ee42aa4825bf761c3975f0f72c5a16812fb082c775",
           "expectedContextPhrases": [
             "toolcall",
             "process",
             "action"
           ],
           "minimumPhraseHits": 3,
-          "phraseHits": [],
-          "missedPhrases": [
-            "toolcall",
-            "process",
+          "phraseHits": [
             "action"
           ],
-          "qualityScore": 40,
+          "missedPhrases": [
+            "toolcall",
+            "process"
+          ],
+          "qualityScore": 60,
           "compileActiveVersion": 1,
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.975,
-            "routeSelectionMs": 5.653,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.322,
+            "totalMs": 8.236,
+            "routeSelectionMs": 5.16,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.074,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -476,12 +481,12 @@
         "qualityScore": 60
       },
       {
-        "mode": "vector_only",
+        "mode": "learned_route",
         "qualityScore": 60
       },
       {
-        "mode": "learned_route",
-        "qualityScore": 40
+        "mode": "vector_only",
+        "qualityScore": 60
       },
       {
         "mode": "no_brain",
@@ -489,5 +494,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-dea188aebba9e5aa6e9840cf50fa5b7148d4ca06c0b05c51a445759047bf530c"
+  "bundleHash": "sha256-ab79ebbbe07eb13b6214971f7cb254174ea874de61aa164d7bf45c15ad32f01f"
 }

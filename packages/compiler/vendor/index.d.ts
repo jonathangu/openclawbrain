@@ -48,6 +48,8 @@ export interface LearnedRouteSelectionOverrideResult {
     selectedBlockIds: readonly string[];
     routerIdentity?: string | null;
     evidenceSource?: string | null;
+    selectionMode?: "direct_select" | "graph_walk_score_boost";
+    scoreBoostsByBlockId?: Record<string, number> | null;
 }
 export interface LearnedRouteSelectionOverride {
     select(input: LearnedRouteSelectionOverrideInput): LearnedRouteSelectionOverrideResult;

@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-6e346b85"
+      "pack-ea39d47a"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-3f2d66eb195d91b269c81cad6af686cc0be8c794943e309ed2119cae6146d07a"
+    "scoreHash": "sha256-2006cd6f81c6a1f403339d84bc03195ea41df9a56f020d20f39bb00a137349c2"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-6e346b85",
+      "activePackId": "pack-ea39d47a",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-3b6317b6d24da7c87f550260a07f3c108f4255f98268eeebe3103ee99308a1df",
+      "routerIdentity": "pack-ea39d47a:route_fn",
+      "selectionDigest": "sha256-da4203ea07e3a3b2a9066bf6cdc48943270008095140d8654efa91535d8fae54",
       "selectedContextIds": [
-        "pack-6e346b85:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:feedback",
-        "pack-6e346b85:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-        "pack-6e346b85:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction"
+        "pack-ea39d47a:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:feedback",
+        "pack-ea39d47a:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
+        "pack-ea39d47a:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19103\", \"reply_to_id\": \"19101\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:31 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Yes. I found a real structural blocker.\\n\\nThis is the clean root cause:.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19108\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:36 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Stay in the owner lane. Make a deep engineering plan. Let's do all four options structures and make our allocation sizing way bigger. Implement all these changes now. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
         "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-4-seed-message."
       ],
-      "eventExportDigest": "sha256-41e6652a21f1e39adfa64fade78778f70e4a11287099f12bf13e27e1108bb670",
+      "eventExportDigest": "sha256-bf68700c33f7d121c0afe1ecb090f2a05bf310374d6ab23ae4ddc1629eec32a6",
       "expectedContextPhrases": [
         "but not yet observed",
         "deployed but not yet",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.397,
-        "routeSelectionMs": 4.726,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.67,
+        "totalMs": 9.082,
+        "routeSelectionMs": 5.652,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.428,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

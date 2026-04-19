@@ -1,0 +1,519 @@
+{
+  "contract": "recorded_session_replay_proof_lane_index.v1",
+  "laneDir": "_lane",
+  "sourceManifest": {
+    "contract": "recorded_session_replay_proof_lane_source_manifest.v1",
+    "provided": true,
+    "manifestId": "felt_resume_25-eval",
+    "manifestContract": "frozen_recorded_session_eval_manifest.v1",
+    "manifestDigest": "sha256-0c68fa167a58d81648ec9993c58df3b2a62d26ffa04f33b6a6be3890ed802fec"
+  },
+  "modeOrder": [
+    "no_brain",
+    "vector_only",
+    "graph_prior_only",
+    "learned_route"
+  ],
+  "requestedTraceCount": 25,
+  "successfulTraceCount": 25,
+  "failedTraceCount": 0,
+  "failedTraceIds": [],
+  "assumptions": [
+    "accepted manifest contracts: canonical_recorded_session_trace_set_manifest.v1, frozen_recorded_session_eval_manifest.v1",
+    "manifest trace paths resolve relative to the manifest file location",
+    "traceHash, when present in the manifest, is checksumJsonPayload(trace-json)",
+    "scorecard prompt-cost metrics are cheap deterministic proxies derived from selected context chars",
+    "learned_route is the candidate mode, graph_prior_only is the baseline mode, and no_brain is the floor anchor for the explicit comparative policy",
+    "when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state",
+    "candidate override replay does not bind the candidate as the served learned-route router, so authoritative broad-live verdicts still require a served-pack bridge",
+    "this scaffold does not finalize the frozen trace set or widen proof-bundle generation scope"
+  ],
+  "files": {
+    "readme": "README.md",
+    "summary": "summary.md",
+    "closeout": "closeout.json",
+    "index": "index.json",
+    "summaryTables": "summary-tables.json",
+    "pairwiseDeltas": "pairwise-deltas.json",
+    "winRateMatrix": "win-rate-matrix.json",
+    "workedTraces": "worked-traces.md",
+    "generationReport": "generation-report.json"
+  },
+  "traceBundles": [
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002",
+      "bundleDir": "live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-22fd33fb866b3d46f9854953742393e0474f7f39c016560b72e4cd45bffd3e00",
+      "scoreHash": "sha256-260f42be064a6378acaca105888f64042451bdeb990aea369492b7c332cbfe23"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-002",
+      "bundleDir": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-7abe806107c573d579f8ade80d66dbf750e909e8cf54925c037dd8e98006bff6",
+      "scoreHash": "sha256-1e4888aaf49b1b6ceae392e1c2203f58996b61527ecfb4b54bafeef396e7da73"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002",
+      "bundleDir": "live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-12ec6c3ee90b58da76c2def06565a6ff075e6bf090dfd111cba2e79c35f59a36",
+      "scoreHash": "sha256-07af3e4a2bdb1e5d4dfb48b8ca455209914da7d0e74821af144e5f4f204783a9"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002",
+      "bundleDir": "live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-3a01556ed560c61c7c4c18e7ee97dbedaf1fef426b114095edac3d59bded575f",
+      "scoreHash": "sha256-563f1db06c250f66b6dda5e20d722b5c7a3c3a036729dd42dacc8140ffacba21"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002",
+      "bundleDir": "live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 60,
+      "bundleHash": "sha256-511208afaf01742288574c88a20dca9b0fcaac7c55f9360fdd99e636793f0ad6",
+      "scoreHash": "sha256-8d80e55fe49a7b4131e2e4538c87784cfa7c457561e5a224ee5ed9a9103bcbfe"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002",
+      "bundleDir": "live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-b2591d4b0d4dd49b5eba1730e3c998465909bd652dbbdc467e550c4044006748",
+      "scoreHash": "sha256-c2f5b02d79b35604cf8609fb7fe04f4c56c514e34a07b6fcd993f17e6ee732a7"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+      "bundleDir": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-aa28771686575fa3937b58819c2a2e98117f93240d8877dea2a2ece51a70277c",
+      "scoreHash": "sha256-8d72cd8f4c2633da60eb17d85141131f52504aedd31e63abfb26fb2a81740fac"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002",
+      "bundleDir": "live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 60,
+      "bundleHash": "sha256-fe80d29329763cd94bc4f59f7d50c078d6f626ecaf0f35176b04cc99b18bedb1",
+      "scoreHash": "sha256-84af5f89eb3067b7d765abf4c68db91d02d3d33f5f6ee54d9032f4c2d58e5b76"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003",
+      "bundleDir": "live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-96683535b1c42a33b89dc9a184889ed7fb965594fa3a5ad2d658d5b9723d50eb",
+      "scoreHash": "sha256-d4cf1de190b599fcf14920cd3bc3070c8ba95c6aeff5cc2e8fed21819355e2fd"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002",
+      "bundleDir": "live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-5ed7b998d20df8648d1088c480614204cd0e0ea8f1c56084b68d9a190f35b120",
+      "scoreHash": "sha256-c62161ca5c8326b0526463872712e63ca09742b900c0383c1d394a93e86fc19d"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002",
+      "bundleDir": "live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-078656a9706e3b2cd5d276f18b9fb5928dd0113d47aeedbdd0dfdc7687c8d574",
+      "scoreHash": "sha256-ee330413b5edd95838a0450eb0e53fa5b839d467d9a39d38043187ec79896a29"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003",
+      "bundleDir": "live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-a52dbf0eb94b85656891c6ca665ba4a27307685d507a88d3c021e9c7032fe8f2",
+      "scoreHash": "sha256-59878de16beeea99890a965256913ec07fc0aab670905d5ebdbaded31facee9b"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003",
+      "bundleDir": "live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-12a57086e35a040d3e0b5031e2b6104da93c0e7fff696f24fb09a594f20761ba",
+      "scoreHash": "sha256-38db68af0c7b7248bc6df6cd2f9c21a17060c4309db6a8f61fff3bbd924c4d9a"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002",
+      "bundleDir": "live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-4e5c891e03ac9d7b90d722cc1378426acc92632da666d91d720a6487a70f00a5",
+      "scoreHash": "sha256-b06e508da25d113b2bdc3ca55e2d4da8b0fc396b3c5b3b16711c9e4f5556900f"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003",
+      "bundleDir": "live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 70,
+      "bundleHash": "sha256-8acb9d000b2ffe7dac5ab66e074161dbae4c4bbeda67708cae1410d10e87d8b3",
+      "scoreHash": "sha256-319b718a3a987ff34a5904d8ea3bbc83f0ffbaaa33829833e6c06b0100ab44d1"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007",
+      "bundleDir": "live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-9812b74d79d5194b9070cb4be0c3ee7b7557f97398bf3ee8a32efefee6373f9d",
+      "scoreHash": "sha256-bad935ead26847c22196a8ddffbc5c8f5f47d14cbe50364f564aba2dfe5feca9"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002",
+      "bundleDir": "live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-1d9043da7115b18c4acca6819d90a586558bf29f66fd3116e173a971403d8e63",
+      "scoreHash": "sha256-8088faca4ae069397998376d4cf794b24a052e58871ceacd11dbf52842113b6d"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002",
+      "bundleDir": "live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-95d5ec9a538cb82200b1bc1b32425ccb1931e960bc8df361acd4e29a8e717073",
+      "scoreHash": "sha256-04356b15315a5e1c0f469395705fb95cb17cb4f660a7013d2915ed6707314d7f"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003",
+      "bundleDir": "live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-c22a443ad92de22734e718ac9ba611e7cd60f51e4e54d262feb0759d644fd622",
+      "scoreHash": "sha256-eeab3ad2f2d248637196dbd5f2a9277e91455bb7f53467f707b687ca69fab6db"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002",
+      "bundleDir": "live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-5b4d4f56864087946f4c499a9c37586c987b520b999dfb1cdacf0b80bc0e3012",
+      "scoreHash": "sha256-6f828a32be6f1c0e3b60c086e0a7bc1540a750f24c7e79e9c4bb3b20ffaf4c68"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002",
+      "bundleDir": "live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-dff7b3720286b1c61cf62788a95bcdaed26958dcdf60db7d2db873218641103b",
+      "scoreHash": "sha256-3b1bc220c3108a515ec43e6a90b573bfa9801a2e78c9a27cfa9cb968ab9f7d9e"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002",
+      "bundleDir": "live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-74df91dfbf47f5bb720dbf474fb9f1d67df3951edd489e7a24a56df9c7a88738",
+      "scoreHash": "sha256-7019b80c3393cc0fd40ec20d7046d61f8a5444f2e3802ed275fa9bff8b1ae969"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002",
+      "bundleDir": "live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-f400841c2046607bfdb363adc39a195132d313879a4a145f620271f748487c98",
+      "scoreHash": "sha256-e13ef8d6f2f16925fb8acfd1f2926a368cd40fe68dd0eaf6d32af64b88747bbe"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016",
+      "bundleDir": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-4017822955aab51aafbcc85a9d209335d2a5ff5b024129041bf755317a65a8e6",
+      "scoreHash": "sha256-b76d5019745176fb5022b082ad94ab1bc8480cba97d642a43b41620a6d5111eb"
+    },
+    {
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "traceId": "live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002",
+      "bundleDir": "live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "bundleHash": "sha256-090abe3d33a1d4dacf42aa64d5e317256c6ad0011a8bcaf25808f27caf274db1",
+      "scoreHash": "sha256-78eb837e4bbdd81567a59bac317fc70f33cb3237ea46ffd8291bb4dd016009c5"
+    }
+  ]
+}

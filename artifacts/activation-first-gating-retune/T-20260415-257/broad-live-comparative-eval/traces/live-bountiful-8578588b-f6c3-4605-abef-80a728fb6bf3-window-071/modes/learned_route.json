@@ -5,11 +5,11 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 40,
+    "qualityScore": 60,
     "compileOkCount": 1,
-    "phraseHitCount": 0,
+    "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
       "pack-fbdf5392"
@@ -17,7 +17,7 @@
     "trainTurnCount": 0,
     "evalTurnCount": 1,
     "frozenEvalPackId": "pack-fbdf5392",
-    "frozenEvalRouterIdentity": "pack-fbdf5392:route_fn",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-0e1d1a934bc984e0210b2890db1b88eefe9536e38e75fd871fc061497683bd2f"
+    "scoreHash": "sha256-dff8ebe4e1a72189ad0147027a41c33a64f0904d16aa4922509bbe1ca98b39d4"
   },
   "turns": [
     {
@@ -55,41 +55,46 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-df2a1007be8eb0f5bdd02c1304914c70a532067e783b9758632ab551a41d357c",
+      "selectionDigest": "sha256-40e28cd2852ac7c44b29916e4ff56f014d91ccf9e1e47548458a3068f9332685",
       "selectedContextIds": [
-        "pack-fbdf5392:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction"
+        "pack-fbdf5392:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+        "pack-fbdf5392:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction",
+        "pack-fbdf5392:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
-        "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-5-seed-message."
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15911\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Sat 2026-04-11 14:03 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Can you tell me everything about making the chat screen in the exchange board. How did you make it seem so snappy and smooth when people are using it live?. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
+        "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-5-seed-message.",
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-806df9b2dd9a0d5e77bd916183469415271ac199ace66a84c1c2b2dca3431d38",
+      "eventExportDigest": "sha256-44c1bfebe7176f1d4411b8c07dd0b2152aa75ec61c576d06fb400949022c3781",
       "expectedContextPhrases": [
         "hey",
         "jon",
         "good"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [],
+      "phraseHits": [
+        "jon"
+      ],
       "missedPhrases": [
         "hey",
-        "jon",
         "good"
       ],
-      "qualityScore": 40,
+      "qualityScore": 60,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 4.864,
-        "routeSelectionMs": 2.862,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2,
+        "totalMs": 5.23,
+        "routeSelectionMs": 2.838,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.39,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

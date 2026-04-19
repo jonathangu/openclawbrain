@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-bc5709ac"
+      "pack-5c27ba27"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-a9baf723212da94b401feee7e56222aa253cacfc454b70dc23e054c33e7d80c7"
+    "scoreHash": "sha256-8e62ef0d6b538b451eb99c1272658467b6b0c28f67572ac6a5ec3b60721cb948"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-bc5709ac",
+      "activePackId": "pack-5c27ba27",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-dc10efb69144327e2fc6ff7398f2dcb61276654b69835c4d252dd58bdd8f398b",
+      "routerIdentity": "pack-5c27ba27:route_fn",
+      "selectionDigest": "sha256-3f998662502a3dcb77203ac6655d73df74aeeafcaffdd5c70864f5781a42d181",
       "selectedContextIds": [
-        "pack-bc5709ac:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
-        "pack-bc5709ac:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:feedback",
-        "pack-bc5709ac:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:feedback"
+        "pack-5c27ba27:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+        "pack-5c27ba27:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:feedback",
+        "pack-5c27ba27:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15822\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 12:57 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Lets returns to the best way to use heartbeat. Mostly yes. Your writeup is substantively correct, with a few important corrections. The current OpenClaw docs say Heartbeat is the mechanism for periodic proactive.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
         "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/workspace-bountiful/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7th, 2026 — 12:01 PM (America/Los_Angeles) / 2026-04-07 19:01 UTC. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:interaction.",
         "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/workspace-bountiful/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7th, 2026 — 12:31 PM (America/Los_Angeles) / 2026-04-07 19:31 UTC. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-41abc33e7fb2be4b6806d1dc42b30ef656ca9afa964a32fd30a2a613c9f28971",
+      "eventExportDigest": "sha256-e8aaccc6f4f5bad43afdd0e48a0ea1101f3d7dfb343a3a540557112cd340f6a3",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace-bountiful/HEARTBEAT.md\"}"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 3.512,
-        "routeSelectionMs": 2.184,
+        "totalMs": 5.704,
+        "routeSelectionMs": 3.38,
         "promptAssemblyMs": 0.003,
-        "otherMs": 1.326,
+        "otherMs": 2.321,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

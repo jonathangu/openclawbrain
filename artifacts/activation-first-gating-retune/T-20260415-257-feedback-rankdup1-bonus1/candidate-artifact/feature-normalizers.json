@@ -1,0 +1,50 @@
+{
+  "contract": "cold_start_router_feature_normalizers.v1",
+  "candidateFeatures": {
+    "categorical": [
+      "candidate_type",
+      "authority",
+      "freshness"
+    ],
+    "tokenCostBuckets": [
+      "0",
+      "1-8",
+      "9-32",
+      "33-128",
+      "129+"
+    ],
+    "scoreHintBuckets": [
+      "missing",
+      "<0",
+      "0-0.25",
+      "0.25-0.5",
+      "0.5-0.75",
+      "0.75-1.0",
+      ">1.0"
+    ]
+  },
+  "stopFeatures": {
+    "candidate_count": [
+      "1",
+      "2-3",
+      "4-7",
+      "8+"
+    ],
+    "evidence_span_count": [
+      "1",
+      "2",
+      "3+"
+    ],
+    "hard_negative_count": [
+      "0",
+      "1",
+      "2+"
+    ],
+    "outcome_gain": [
+      "loss",
+      "low",
+      "medium",
+      "high"
+    ]
+  }
+}

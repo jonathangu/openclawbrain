@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-bbca8a6c"
+      "pack-eea2332e"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-a8a5bdd8f11440b353d6dc9dd58d86cc9920fbb187250bff088d018c3c4d3400"
+    "scoreHash": "sha256-17289a99ed66a337038d09921171ddf136f9ceffef12ca4811f844671213074f"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-bbca8a6c",
+      "activePackId": "pack-eea2332e",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-55abaeaecc3e2ab95c862abfc7e395fde9ac03d5ba49e094c7d189466abdca20",
+      "routerIdentity": "pack-eea2332e:route_fn",
+      "selectionDigest": "sha256-78b0b248752e0cddc710877918f9be6939b542c3bea99da18425893287e4a637",
       "selectedContextIds": [
-        "pack-bbca8a6c:pointer-aware-init",
-        "pack-bbca8a6c:pointer-passive-expansion",
-        "pack-bbca8a6c:workspace-init:420a4a5f"
+        "pack-eea2332e:pointer-aware-init",
+        "pack-eea2332e:pointer-passive-expansion",
+        "pack-eea2332e:workspace-init:16415817"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more.",
-        "Top-priority boot input memory/2026-04-08-boot-check.md selected by pointer-aware init (inbound=0, outbound=3). Session: 2026-04-08 03:58:54 UTC - **Session Key**: agent:main:main - **Session ID**: boot-2026-04-08_02-38-26-017-e5720adf - **Source**: telegram Conversation Summary assistant: I’m installing the latest OpenClawBrain on this host, then I’ll verify the runtime and proof surfaces so we know it landed cleanly. assistan…"
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, BOOT.md, task-artifacts/T-20260415-257/task-list.md, +8 more from the MEMORY index graph.",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, BOOT.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, task-artifacts/T-20260415-257/master-plan.md, +6 more.",
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=7, outbound=17). TASKS.md — Canonical Task Ledger Last updated: 2026-04-18 5:40 PM PT Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator edits it. - Workers report only through announces, task-artifacts/<task-id>/, or task-status/<ta…"
       ],
-      "eventExportDigest": "sha256-a25e6a4395185c5e9c847d4863de8f1bd51c16636837d43a345b1d318fe49aae",
+      "eventExportDigest": "sha256-9c3565806fc678f3e81ef27de187ca44f4abd718116752d5c024e8bc0bbc4c3e",
       "expectedContextPhrases": [
         "T-20260407-180",
         "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-180/closeout.md\"}",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.607,
-        "routeSelectionMs": 4.745,
+        "totalMs": 9.025,
+        "routeSelectionMs": 5.458,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.859,
+        "otherMs": 3.564,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

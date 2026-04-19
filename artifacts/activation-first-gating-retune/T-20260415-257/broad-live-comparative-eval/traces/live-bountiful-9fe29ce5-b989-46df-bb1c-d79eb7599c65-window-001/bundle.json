@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T09:38:48.156Z",
   "traceHash": "sha256-3249aba74ff3b68a3a52303cdd5411f6f55111b4c4f3feb276bc9f491c4a0dfc",
   "fixtureHash": "sha256-ae9594a971d6ccf182aa1cfc577566bae527c792a4eca57afc1a5a898e741bd0",
-  "scoreHash": "sha256-9a3f178192723776c531247b6ee15f4027b820845ea8129b07e354734d689a41",
+  "scoreHash": "sha256-7737ba4901415f48078d46751ea16ee31aff5884f5bcfe1d832660e961462162",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.031,
+            "totalMs": 0.034,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.031,
+            "otherMs": 0.034,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-d06e7f84"
+          "pack-8ac5398b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-58cd6dcc2bed2973f337171b8f5f01a7b2377b05306c9f5827cf669d07f67b99"
+        "scoreHash": "sha256-87a2303b14491b11370453ad3779c841a2285fada330c8c3944f65e4f731f69f"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-d06e7f84",
+          "activePackId": "pack-8ac5398b",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-218cc5abbcf13c0df2c77d7ae19b989679dae53727871c865848a06a15e252ec",
+          "routerIdentity": "pack-8ac5398b:route_fn",
+          "selectionDigest": "sha256-78debedf9e90d84795bc37ad1731c2660612e0a0ae1422a0a8f63eec7ef3c5f9",
           "selectedContextIds": [
-            "pack-d06e7f84:pointer-aware-init",
-            "pack-d06e7f84:workspace-init:0d01dda4",
-            "pack-d06e7f84:workspace-init:16415817"
+            "pack-8ac5398b:pointer-aware-init",
+            "pack-8ac5398b:workspace-init:0d01dda4",
+            "pack-8ac5398b:workspace-init:16415817"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
             "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
             "Working-set input TASKS.md selected by pointer-aware init (inbound=6, outbound=19). Last ledger refresh: 2026-04-08 15:05 PT Status keys: active | parked | blocked | done Current queue: **T-117** Live truth - Active principal task: none - Highest-priority blocked principal task: **T-117 — App Store + Play Store launch master plan and execution track** - Canonical repo: /Users/guclaw/.openclaw/workspa…"
           ],
-          "eventExportDigest": "sha256-38a4934799b0942bd964ac4a051dd8f8dfb4e32cc0d054fe0441167715884a63",
+          "eventExportDigest": "sha256-a28ffbe098704a807f543d253555987497e9acb51f213118176f6fbe8ea3f22d",
           "expectedContextPhrases": [
             "want tackle next bountiful",
             "tackle next bountiful",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.391,
-            "routeSelectionMs": 4.015,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.373,
+            "totalMs": 7.2,
+            "routeSelectionMs": 4.428,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 2.768,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-d06e7f84"
+          "pack-8ac5398b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-a9d735950e13bd5ea7dcf890468e9f24ab2039f1452675835c2efc00db46e327"
+        "scoreHash": "sha256-5cb5f8041d64489f7ea4a5ec8dee9b6090a399ca98e4b8dac757c861ad4deafc"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-d06e7f84",
+          "activePackId": "pack-8ac5398b",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-218cc5abbcf13c0df2c77d7ae19b989679dae53727871c865848a06a15e252ec",
+          "routerIdentity": "pack-8ac5398b:route_fn",
+          "selectionDigest": "sha256-78debedf9e90d84795bc37ad1731c2660612e0a0ae1422a0a8f63eec7ef3c5f9",
           "selectedContextIds": [
-            "pack-d06e7f84:pointer-aware-init",
-            "pack-d06e7f84:workspace-init:0d01dda4",
-            "pack-d06e7f84:workspace-init:16415817"
+            "pack-8ac5398b:pointer-aware-init",
+            "pack-8ac5398b:workspace-init:0d01dda4",
+            "pack-8ac5398b:workspace-init:16415817"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
             "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
             "Working-set input TASKS.md selected by pointer-aware init (inbound=6, outbound=19). Last ledger refresh: 2026-04-08 15:05 PT Status keys: active | parked | blocked | done Current queue: **T-117** Live truth - Active principal task: none - Highest-priority blocked principal task: **T-117 — App Store + Play Store launch master plan and execution track** - Canonical repo: /Users/guclaw/.openclaw/workspa…"
           ],
-          "eventExportDigest": "sha256-38a4934799b0942bd964ac4a051dd8f8dfb4e32cc0d054fe0441167715884a63",
+          "eventExportDigest": "sha256-a28ffbe098704a807f543d253555987497e9acb51f213118176f6fbe8ea3f22d",
           "expectedContextPhrases": [
             "want tackle next bountiful",
             "tackle next bountiful",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.632,
-            "routeSelectionMs": 5.281,
+            "totalMs": 7.578,
+            "routeSelectionMs": 4.635,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.348,
+            "otherMs": 2.939,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
           "pack-8ac5398b"
@@ -371,7 +371,7 @@
         "trainTurnCount": 0,
         "evalTurnCount": 1,
         "frozenEvalPackId": "pack-8ac5398b",
-        "frozenEvalRouterIdentity": "pack-8ac5398b:route_fn",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-14379ceeebc7a767b976b65777e1b2cab302de730cc1ce3406ace6fefd372525"
+        "scoreHash": "sha256-2dc627db8b5bf5d0853a86a91b1aff982ee225565a0ccda07c33e569b0c07ccc"
       },
       "turns": [
         {
@@ -409,20 +409,24 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-400e1a3c17badaa0ea50d7bcfbb2c1c89c32cf69074417ecf98703842731de12",
+          "selectionDigest": "sha256-78debedf9e90d84795bc37ad1731c2660612e0a0ae1422a0a8f63eec7ef3c5f9",
           "selectedContextIds": [
-            "pack-8ac5398b:pointer-aware-init"
+            "pack-8ac5398b:pointer-aware-init",
+            "pack-8ac5398b:workspace-init:0d01dda4",
+            "pack-8ac5398b:workspace-init:16415817"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=6, outbound=19). Last ledger refresh: 2026-04-08 15:05 PT Status keys: active | parked | blocked | done Current queue: **T-117** Live truth - Active principal task: none - Highest-priority blocked principal task: **T-117 — App Store + Play Store launch master plan and execution track** - Canonical repo: /Users/guclaw/.openclaw/workspa…"
           ],
-          "eventExportDigest": "sha256-aec2c91e4df2733979e7f532cdf0ea8a699cf22b878d6d425de1f1482f53f8be",
+          "eventExportDigest": "sha256-5f046409deca9e06c9dd0af9ba19bbe80305b19d5a106a34665fa098cd9d81e9",
           "expectedContextPhrases": [
             "want tackle next bountiful",
             "tackle next bountiful",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.132,
-            "routeSelectionMs": 4.469,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.661,
+            "totalMs": 6.626,
+            "routeSelectionMs": 4.111,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.512,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-262ac10294dc5327bf32bf9d1520b2c6b4c0030cedb9d269cde7b0d495a1fabd"
+  "bundleHash": "sha256-cc3f3ab982464e82c0b6a06bc2e2c4bdc5c20df99fbfc225f53981adbcc42bc0"
 }

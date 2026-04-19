@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-4ddb1eea"
+      "pack-634c4055"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-2b49744234430e1f48e0d0b79546c87167fbefbeab5a217e9b1f1a447dd505c9"
+    "scoreHash": "sha256-5004da2c574f0b95a49b9a00420d0200d207dfaafba341c77395b284ca9994ce"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-4ddb1eea",
+      "activePackId": "pack-634c4055",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-b1a98812782003344bb3663a2408a151a5d6b05cd54146b733baec87076e4bb4",
+      "routerIdentity": "pack-634c4055:route_fn",
+      "selectionDigest": "sha256-f7f895d0aa31c40b809fb04e3035c592ca68bc55acd066d83a75fdb06767bd6e",
       "selectedContextIds": [
-        "pack-4ddb1eea:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
-        "pack-4ddb1eea:pointer-aware-init",
-        "pack-4ddb1eea:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-6:feedback"
+        "pack-634c4055:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
+        "pack-634c4055:pointer-aware-init",
+        "pack-634c4055:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-072: fix Pelican retrain architecture for next run in /Users/guclaw/worktrees/quant-research/072a-parallel-retrain. Work only in that worktree. Problem: current AWS retrain is sequential by design (GBM first, TFT second) inside bootstrap-train.sh, with weak observability: GBM/TFT only emit training_started and sparse/empty train logs. Jon explicitly wants GBM a.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-01-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, docs/jon-model.md, docs/checklists.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-01-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, docs/jon-model.md, +2 more, and passive expansion docs/training-launch-contract.md, STARTUP_READY.md, docs/checklists.md, docs/prediction_pipeline.md, +8 more from the MEMORY index graph.",
         "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: assistant: Done. What changed: - Parallelized the retrain launch path in `retrain_v6_aws.sh`: - GBM and TFT now launch as sibling jobs on the same instance. - GBM feature cols are precomputed up front so TFT no longer waits on GBM completion. - Added periodic role progress checkpoints and live log uploads during the run. - Added `training_progress.json` and `training_completed.json` publication alongside the existing start/fail proofs. - Kept fail-closed publication behavior. - Updated `retrain_v6_monit.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-649e25f0bb3c271cf2e1f869524101d9adf8a29a9b2fa9904624603d9a50bae6",
+      "eventExportDigest": "sha256-1a4ce99a5e3192979a6e57465a5e33dcd6fd75b8983b18d3f770bdee2411e9a9",
       "expectedContextPhrases": [
         "/LATEST.json",
         "/Users/guclaw/worktrees/quant-research/072a-parallel-retrain\"}"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.259,
-        "routeSelectionMs": 4.555,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.703,
+        "totalMs": 12.303,
+        "routeSelectionMs": 7.367,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 4.934,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

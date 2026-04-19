@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-2ede11dd"
+      "pack-700601c6"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-31965e081c99e204f0890242d72e042873b0c1bd5c33daadfde7102fe0c8878a"
+    "scoreHash": "sha256-d4ec28d149b86fa305f3f07c6c40353aca4c024cffc1567a6259c8b082d82b36"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-2ede11dd",
+      "activePackId": "pack-700601c6",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-b6a2aa532a9f0134f025eb07e23dbf2425fa2e52e6b3706b714cf9b83e43d8a6",
+      "routerIdentity": "pack-700601c6:route_fn",
+      "selectionDigest": "sha256-a19449ab78e2ff826bceb181236d617d736521f93963622529e58bea7a3e949b",
       "selectedContextIds": [
-        "pack-2ede11dd:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-5:feedback",
-        "pack-2ede11dd:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-5:interaction",
-        "pack-2ede11dd:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-6:feedback"
+        "pack-700601c6:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-5:feedback",
+        "pack-700601c6:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-5:interaction",
+        "pack-700601c6:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 12:12 PM (America/Los_Angeles) / 2026-04-12 19:12 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-5:interaction.",
         "Interaction operator_override on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed. Message: cue-5-seed-message.",
         "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 12:25 PM (America/Los_Angeles) / 2026-04-12 19:25 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-d2a61aeea2a5453e850cf02fb9f18dac98ca565d5b04fc65af8acceef640704c",
+      "eventExportDigest": "sha256-11478b793d49f045b1ac66907f904a3fbabd77d7f8e2dd6dc4ce7fa36aa383c2",
       "expectedContextPhrases": [
         "handled internally. status change.",
         "handled internally. status",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.949,
-        "routeSelectionMs": 4.342,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.605,
+        "totalMs": 8.302,
+        "routeSelectionMs": 5.041,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.26,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

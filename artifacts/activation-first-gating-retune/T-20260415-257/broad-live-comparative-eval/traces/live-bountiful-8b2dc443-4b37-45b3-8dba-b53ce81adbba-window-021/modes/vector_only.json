@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-961ff7ba"
+      "pack-5abc7b30"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-310206025bb62feafecfeb48859d20e98d7f0d03e79f43a3121c31e4e9a39322"
+    "scoreHash": "sha256-a28b44c62195c17fe4617ba89f72abec83995ddc9f21da5cacf85cbf7efdc02b"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-961ff7ba",
+      "activePackId": "pack-5abc7b30",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-7847a37bcc9b57fc4953dab5d694a345f955e9546354faba54ee77e89ef0b60c",
+      "routerIdentity": "pack-5abc7b30:route_fn",
+      "selectionDigest": "sha256-78466b48e9fffc07f30bd8d462ec19959d835ecf98ead1c523a7e1f1b14def64",
       "selectedContextIds": [
-        "pack-961ff7ba:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-6:feedback",
-        "pack-961ff7ba:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback",
-        "pack-961ff7ba:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback"
+        "pack-5abc7b30:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-6:feedback",
+        "pack-5abc7b30:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback",
+        "pack-5abc7b30:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7464\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` I dont care about \"re use\" I just \"want the best\" ask OPUS 4.6 high thinking to say what the best end to end design would be. does it include chat? does it include map for pickup? d.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-6:interaction.",
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7455\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` read the full report from OPUS this is GOLD. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7459\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` cant you just have opus write the output to a document and we save it?. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-4666b4df7f17e4e685f93174a4dab3dd3395aaa78e70a5e43a398298d7f49095",
+      "eventExportDigest": "sha256-2a0c15248ae384e25390d682ca8b573282aa896f9f7d35cb3c551e9f836f0ff3",
       "expectedContextPhrases": [
         "/where,",
         "/ux/exchange-vNext.md",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.313,
-        "routeSelectionMs": 4.622,
+        "totalMs": 9.837,
+        "routeSelectionMs": 5.667,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.688,
+        "otherMs": 4.168,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

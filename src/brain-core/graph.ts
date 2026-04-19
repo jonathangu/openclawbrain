@@ -614,9 +614,57 @@ function normalizeCursorSourceNodeId(cursorPath: readonly string[]): string {
   return START_NODE_ID;
 }
 
+function isResumeReplayScopedCandidateV1(candidate: RouteCandidateV1): boolean {
+  if (candidate.candidate_type !== "graph_node") {
+    return false;
+  }
+  const semanticClass = normalizeText(candidate.semantic_class, "");
+  if (semanticClass === "event_context" || semanticClass === "feedback_context") {
+    return true;
+  }
+  const candidateId = normalizeText(candidate.candidate_id, "");
+  return candidateId.includes(":feedback");
+}
+
+export function deriveColdStartRouterSourceNodeIdV1(params: {
+  row: RouteDecisionRowV1;
+  applyResumeGateReplaySemanticFallbackBoost?: boolean;
+  initializer?: Pick<ColdStartRouterLivePolicyInitializerV1, "stopLocalWeights" | "edgeWeights" | "toolActionPriors" | "toolActionSets"> | null;
+}): string {
+  const sourceNodeIdRaw = normalizeCursorSourceNodeId(params.row.cursor_path);
+  if (!(params.applyResumeGateReplaySemanticFallbackBoost ?? false) || sourceNodeIdRaw !== "felt_resume_25") {
+    return sourceNodeIdRaw;
+  }
+
+  const scopedCandidates = [...new Set(
+    params.row.candidate_set
+      .filter((candidate) => isResumeReplayScopedCandidateV1(candidate))
+      .map((candidate) => normalizeText(candidate.candidate_id, ""))
+      .filter((candidateId) => candidateId.length > 0),
+  )].sort((left, right) => left.localeCompare(right));
+  if (scopedCandidates.length !== 1) {
+    return sourceNodeIdRaw;
+  }
+
+  const scopedSourceNodeId = `felt_resume_25:source:${scopedCandidates[0]}`;
+  if (!params.initializer) {
+    return scopedSourceNodeId;
+  }
+
+  const hasScopedInitializerEvidence = params.initializer.stopLocalWeights.some((entry) => entry.sourceNodeId === scopedSourceNodeId)
+    || params.initializer.edgeWeights.some((entry) => entry.sourceNodeId === scopedSourceNodeId)
+    || params.initializer.toolActionPriors.some((entry) => entry.sourceNodeId === scopedSourceNodeId)
+    || params.initializer.toolActionSets.some((entry) => entry.sourceNodeId === scopedSourceNodeId);
+  return hasScopedInitializerEvidence ? scopedSourceNodeId : sourceNodeIdRaw;
+}
+
 export function normalizeLivePolicySourceBindingKeyV1(sourceNodeId: string): string {
   const normalized = normalizeText(sourceNodeId, START_NODE_ID);
-  if (normalized === "felt_resume_25" || normalized === "recorded_session_replay") {
+  if (
+    normalized === "felt_resume_25"
+    || normalized === "recorded_session_replay"
+    || normalized.startsWith("felt_resume_25:source:")
+  ) {
     return "resume_replay_context";
   }
   return normalized;
@@ -907,6 +955,7 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
   routeRows: RouteDecisionRowV1[];
   warmStartInitializer?: ColdStartRouterLivePolicyInitializerV1;
   warmStartStopLabelCounts?: Record<ColdStartStopLabelV1, number>;
+  applyResumeGateReplaySemanticFallbackBoost?: boolean;
 }): ColdStartRouterLivePolicyInitializerV1 {
   const seedCounts = seedCountMapFromEntries(params.warmStartInitializer?.seedWeights ?? [], (entry) => entry.nodeId);
   const semanticClassSeedCounts = seedCountMapFromEntries(
@@ -932,7 +981,10 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
 
   for (const row of params.routeRows) {
     const rowWeight = toRowWeight(row);
-    const sourceNodeId = normalizeCursorSourceNodeId(row.cursor_path);
+    const sourceNodeId = deriveColdStartRouterSourceNodeIdV1({
+      row,
+      applyResumeGateReplaySemanticFallbackBoost: params.applyResumeGateReplaySemanticFallbackBoost,
+    });
     const sourceBindingKey = normalizeLivePolicySourceBindingKeyV1(sourceNodeId);
     const positiveCandidateIds = parsePositiveCandidateIds(row);
     const toolCandidates = row.candidate_set.filter((candidate) => candidate.candidate_type === "tool");
@@ -1112,7 +1164,11 @@ export function materializeColdStartRouterLivePolicyGraphV1(params: {
   applyResumeGateReplaySemanticFallbackBoost?: boolean;
 }): ColdStartRouterLivePolicyMaterializationV1 {
   const graph = new BrainGraph();
-  const sourceNodeIdRaw = normalizeCursorSourceNodeId(params.row.cursor_path);
+  const sourceNodeIdRaw = deriveColdStartRouterSourceNodeIdV1({
+    initializer: params.initializer,
+    row: params.row,
+    applyResumeGateReplaySemanticFallbackBoost: params.applyResumeGateReplaySemanticFallbackBoost ?? false,
+  });
   const sourceBindingKey = normalizeLivePolicySourceBindingKeyV1(sourceNodeIdRaw);
   const sourceNodeId = sourceNodeIdRaw === START_NODE_ID ? null : sourceNodeIdRaw;
 

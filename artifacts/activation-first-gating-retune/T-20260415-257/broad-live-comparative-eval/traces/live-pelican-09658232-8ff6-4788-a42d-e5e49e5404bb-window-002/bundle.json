@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-27T22:51:36.505Z",
   "traceHash": "sha256-823695d70f7872b1ae9eafb6d1d27250c7a30f3c8da0fb3fac149eb03366ef43",
   "fixtureHash": "sha256-bd84df8e56b4c53a26fb492fdea7511a22aab4ac1b787c58633c40d2b1aa4455",
-  "scoreHash": "sha256-5990c8cbb76b21a0a2584b7a3dba5528847d03c38a80d6694872bbf1a70754ca",
+  "scoreHash": "sha256-8770de740d048fd8a960a19a6d6bff1f009df0b3e917b3d8dce0b4518e7b994c",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.025,
+            "totalMs": 0.029,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.025,
+            "otherMs": 0.029,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -125,14 +125,14 @@
         "activationStrategy": "seed_pack",
         "modeRequested": "heuristic",
         "selectionEngine": "flat_rank_v1",
-        "qualityScore": 70,
+        "qualityScore": 40,
         "compileOkCount": 1,
-        "phraseHitCount": 1,
+        "phraseHitCount": 0,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-e4bf819b"
+          "pack-34d6579f"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-ae637e4c10b377c5f13202674ba19620fb25f60aa57c968a376df0408ea5d8d4"
+        "scoreHash": "sha256-4a7c42079da843794de789b0b75935ff5a283b2ab351bff3099b3c18d9feb388"
       },
       "turns": [
         {
@@ -170,48 +170,47 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e4bf819b",
+          "activePackId": "pack-34d6579f",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-7c703ff68be216e3b8ef2df95472bada00a10b291455345373f7b7fb8ea5700a",
+          "routerIdentity": "pack-34d6579f:route_fn",
+          "selectionDigest": "sha256-361e17ce85ce16d8963bc4d7554788ee220a6f97b8ebc402d89adfc8a0d7a9cf",
           "selectedContextIds": [
-            "pack-e4bf819b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
-            "pack-e4bf819b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-            "pack-e4bf819b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback"
+            "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
+            "pack-34d6579f:workspace-init:0d01dda4"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: ✅ New session started · model: anthropic/claude-opus-4-6. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
-            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
-            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction."
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/reflection-2026-02-27.md\"} ; /Users/guclaw/.openclaw/workspace-pelican/memory/reflection-2026-02-26.md\"}. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
+            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=2, outbound=1). MEMORY.md — GUCLAW long-term memory People - Patrick — Jon's 50/50 co-founder for Bountiful Garden; managed by @bbountiful_bot - Bihua Chen — Jon set up an OpenClaw starter kit for her Projects - Bountiful Garden — @bbountiful_bot, workspace workspace-bountiful/ - Pelican — @ppelican_bot, workspace workspace-pelican/…"
           ],
-          "eventExportDigest": "sha256-b91dd0796dc73d3789fe24f0baf11f303102f4108070998be0b4a2a1ef6ab295",
+          "eventExportDigest": "sha256-7d60a53b186c318f031bcef6c41967ecf5812b39c29eb5b868a14eed1458ecee",
           "expectedContextPhrases": [
             "hey",
             "jon."
           ],
           "minimumPhraseHits": 2,
-          "phraseHits": [
-            "hey"
-          ],
+          "phraseHits": [],
           "missedPhrases": [
+            "hey",
             "jon."
           ],
-          "qualityScore": 70,
+          "qualityScore": 40,
           "compileActiveVersion": 1,
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.91,
-            "routeSelectionMs": 4.461,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.447,
+            "totalMs": 9.653,
+            "routeSelectionMs": 5.476,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.174,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -244,10 +243,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-e4bf819b"
+          "pack-34d6579f"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -275,7 +274,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-819c2ce63044d4decb13705514cd54b79ba440be8973257b566cba91800b5ab8"
+        "scoreHash": "sha256-4128cdefb6d5a8637a26f02f871b7d79f350adba270097b13a6e11c48ffb3d87"
       },
       "turns": [
         {
@@ -285,28 +284,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e4bf819b",
+          "activePackId": "pack-34d6579f",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-6e6be7530c346fe6f02859fd4c043a5b2cfa253fc78ca0125321af0018447771",
+          "routerIdentity": "pack-34d6579f:route_fn",
+          "selectionDigest": "sha256-08ca637c7fbb63ba717588570ece9d6ec7cf349ad657b1138d77a900103c65ab",
           "selectedContextIds": [
-            "pack-e4bf819b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
-            "pack-e4bf819b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction",
-            "pack-e4bf819b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction"
+            "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
+            "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: ✅ New session started · model: anthropic/claude-opus-4-6. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
-            "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message.",
-            "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-2-seed-message."
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-4-seed-message.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/reflection-2026-02-27.md\"} ; /Users/guclaw/.openclaw/workspace-pelican/memory/reflection-2026-02-26.md\"}. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-55e3c464b7d16a91b3c716d4129b8fa8744845ddc917f2c06d0bf236beb171cb",
+          "eventExportDigest": "sha256-7100d3057b08cfc9a086c1955ff5e397d7824dc13319fe60710db976c9ab4a29",
           "expectedContextPhrases": [
             "hey",
             "jon."
@@ -322,10 +321,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.116,
-            "routeSelectionMs": 4.424,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.69,
+            "totalMs": 9.19,
+            "routeSelectionMs": 5.436,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.753,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,19 +353,19 @@
         "activationStrategy": "continuous_learned_loop",
         "modeRequested": "learned",
         "selectionEngine": "graph_walk_v1",
-        "qualityScore": 40,
+        "qualityScore": 70,
         "compileOkCount": 1,
-        "phraseHitCount": 0,
+        "phraseHitCount": 1,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-6e3246d4"
+          "pack-34d6579f"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-6e3246d4",
-        "frozenEvalRouterIdentity": "pack-6e3246d4:route_fn",
+        "frozenEvalPackId": "pack-34d6579f",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -390,7 +389,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-c74183ed6431633fd5b3742bc976a0b8fa151b3f69724054c45c68209ed2e5c9"
+        "scoreHash": "sha256-a7c186d28f0daf39bca2b8d3c1a2c5a96cab0aece5bf0d6fa96df8a76e9d48de"
       },
       "turns": [
         {
@@ -400,43 +399,48 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-6e3246d4",
+          "activePackId": "pack-34d6579f",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-bf04aa2bd6ef712da399b20eea9e9f91799185868d4cf48863e7f31fc6f6a601",
+          "selectionDigest": "sha256-1befc408d97e6a9671b4cc8b2c99226fe06a42d804b4d82ba90921e6d57b6fcb",
           "selectedContextIds": [
-            "pack-6e3246d4:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback"
+            "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
+            "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+            "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: ✅ New session started · model: anthropic/claude-opus-4-6. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
             "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-4516a9271b4e527e53fdf3f3e56673263477e6fc49a021f8681ec8916b5bc13b",
+          "eventExportDigest": "sha256-cc97e3902fde57ef534043a08de3ac0d9e15840712c9f936f0479f1f5c2c55c9",
           "expectedContextPhrases": [
             "hey",
             "jon."
           ],
           "minimumPhraseHits": 2,
-          "phraseHits": [],
+          "phraseHits": [
+            "hey"
+          ],
           "missedPhrases": [
-            "hey",
             "jon."
           ],
-          "qualityScore": 40,
+          "qualityScore": 70,
           "compileActiveVersion": 1,
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.464,
-            "routeSelectionMs": 5.171,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.292,
+            "totalMs": 7.574,
+            "routeSelectionMs": 4.651,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.92,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -460,10 +464,10 @@
     }
   ],
   "summary": {
-    "winnerMode": "vector_only",
+    "winnerMode": "learned_route",
     "ranking": [
       {
-        "mode": "vector_only",
+        "mode": "learned_route",
         "qualityScore": 70
       },
       {
@@ -471,7 +475,7 @@
         "qualityScore": 40
       },
       {
-        "mode": "learned_route",
+        "mode": "vector_only",
         "qualityScore": 40
       },
       {
@@ -480,5 +484,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-1747f336da2065cb911d6bd57f2b1ee34b65b8aee96a1f8e699f34d78c9c908d"
+  "bundleHash": "sha256-6f22d316cbdb747fdadc1a12c9c6ed52492ea4cfc90ea047e8a6328a6333f9d3"
 }

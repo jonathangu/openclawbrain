@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-11T22:17:13.840Z",
   "traceHash": "sha256-32e0b4ec2c1ecbf5a44b66dab5340f30730d05ccd8fc6dea8e459b03d93bb729",
   "fixtureHash": "sha256-cd231e74dab2c7ac691e39a4ea475c769c350fe4115dc674162e2af0c0f3148d",
-  "scoreHash": "sha256-0e74741983c66a61adeb5550c1e65748d667e4d61d0191ae23cf67d21c7cb8c4",
+  "scoreHash": "sha256-0db8d8b76ee814e092b2f324d12aa2d4d34e0ecc9a9090e0c206b6f5240f5d43",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.026,
+            "totalMs": 0.035,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.026,
+            "otherMs": 0.035,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -129,10 +129,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-ef645ab3"
+          "pack-dbba1a5e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-4065a0e311a9a1384e6369bcd8601d101e6f8bdf0f04da7f7284e2ccd5903b60"
+        "scoreHash": "sha256-bf1c6d84fab873c7372e9beb910ee6e8d79fd3b387f7052f30ff4d57455f1f4f"
       },
       "turns": [
         {
@@ -170,28 +170,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-ef645ab3",
+          "activePackId": "pack-dbba1a5e",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-ab25fa8c1a57db7d868cde19eaafe75198c200e08122e21ac2b39c824c7adbbb",
+          "routerIdentity": "pack-dbba1a5e:route_fn",
+          "selectionDigest": "sha256-fafc4c2be01ea043aff74307c02ea13c127a2dafd6cf8b27dddc7b49c7b9a3c7",
           "selectedContextIds": [
-            "pack-ef645ab3:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
-            "pack-ef645ab3:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
-            "pack-ef645ab3:pointer-aware-init"
+            "pack-dbba1a5e:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
+            "pack-dbba1a5e:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
+            "pack-dbba1a5e:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-B training-contract multi-horizon lane in /Users/guclaw/worktrees/quant-research/202-mh1b-training. Goal: - make GBM/TFT consume multi-horizon rows explicitly - ensure target_dte is active in training/panel paths and artifact/reporting surfaces - keep actual_exp_dte and dte_gap_abs out of model feature inputs - run focused tests for retrai.... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction.",
             "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: assistant: I found one contract gap worth fixing, the GBM/TFT feature selectors would still admit a couple of expiry metadata columns if they showed up. I’m tightening that now, then rerunning the focused tests. ToolCall exec {\"command\": \"python3 -m pytest tests/test_train_join_utils.py tests/test_retrain_pipeline_embeddings.py tests/test_tft_v11_bootstrap_panel.py tests/test_tft_v11_bootstrap_embedding_contract.py tests/test_retrain_honest_c. Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction.",
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-11-cron-removal.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, memory/2026-04-11.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-11-cron-removal.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/2026-04-11.md, docs/training-launch-contract.md, +2 more, and passive expansion docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, memory/2026-04-08.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-5d971b58637601c1770382c50ecc46bbe6584abaeb8dbbaa71d516a8d3532341",
+          "eventExportDigest": "sha256-3c0f4c59fe481db37e04113f4406751adb87b062fb0249d06aa7ab6dcdc097f6",
           "expectedContextPhrases": [
             "/Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py",
             "/Users/guclaw/worktrees/quant-research/202-mh1b-train"
@@ -208,10 +208,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.422,
-            "routeSelectionMs": 4.7,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.72,
+            "totalMs": 11.693,
+            "routeSelectionMs": 7.347,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.343,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -244,10 +244,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-ef645ab3"
+          "pack-dbba1a5e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -275,7 +275,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-9ca4d51ad7003f6566787f7ecfd6865563ad1d547d0d1d7313113773d9942dc2"
+        "scoreHash": "sha256-9cedf8ebce5683059922b679cdb4f336f0ef212a7c4dfbaa71d1326a0887ebdf"
       },
       "turns": [
         {
@@ -285,28 +285,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-ef645ab3",
+          "activePackId": "pack-dbba1a5e",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-f49b4ae0dfa774236052f860c4a7d1a399596b4c695b37dadbce531de1b4b432",
+          "routerIdentity": "pack-dbba1a5e:route_fn",
+          "selectionDigest": "sha256-9bc4dd036e18b844275159d8e155593017a4b9f8c2f5df2324f2f14c0d0d9ecc",
           "selectedContextIds": [
-            "pack-ef645ab3:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
-            "pack-ef645ab3:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction",
-            "pack-ef645ab3:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-2:interaction"
+            "pack-dbba1a5e:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
+            "pack-dbba1a5e:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction",
+            "pack-dbba1a5e:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-B training-contract multi-horizon lane in /Users/guclaw/worktrees/quant-research/202-mh1b-training. Goal: - make GBM/TFT consume multi-horizon rows explicitly - ensure target_dte is active in training/panel paths and artifact/reporting surfaces - keep actual_exp_dte and dte_gap_abs out of model feature inputs - run focused tests for retrai.... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction.",
             "Interaction operator_override on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed. Message: cue-1-seed-message.",
             "Interaction operator_override on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-e445796cd5fbb179e2fd898c75e5a0f8c7fa7796858cbd674ebf0f5a096049af",
+          "eventExportDigest": "sha256-b81ec5e628f93f0c5c2a6a9e95fca190051a0b121c96e31e214dab414bf4cb89",
           "expectedContextPhrases": [
             "/Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py",
             "/Users/guclaw/worktrees/quant-research/202-mh1b-train"
@@ -323,10 +323,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.373,
-            "routeSelectionMs": 4.676,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.696,
+            "totalMs": 11.008,
+            "routeSelectionMs": 6.917,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.089,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -355,19 +355,19 @@
         "activationStrategy": "continuous_learned_loop",
         "modeRequested": "learned",
         "selectionEngine": "graph_walk_v1",
-        "qualityScore": 40,
+        "qualityScore": 70,
         "compileOkCount": 1,
-        "phraseHitCount": 0,
+        "phraseHitCount": 1,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-f65fb3ae"
+          "pack-dbba1a5e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-f65fb3ae",
-        "frozenEvalRouterIdentity": "pack-f65fb3ae:route_fn",
+        "frozenEvalPackId": "pack-dbba1a5e",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -391,7 +391,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-c8dadfa945e75ac997208d797109666d0a00e0f5bc840c1eda48e487424cb56a"
+        "scoreHash": "sha256-81a8149212de22d7c4abb8b38ff3d899d03ff4acbc1806a413c82a15e8f4d204"
       },
       "turns": [
         {
@@ -401,43 +401,48 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-f65fb3ae",
+          "activePackId": "pack-dbba1a5e",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-45672a812cabeff1062ede22a18f40ca960b2701459cd81a9613540d91c86ad1",
+          "selectionDigest": "sha256-fafc4c2be01ea043aff74307c02ea13c127a2dafd6cf8b27dddc7b49c7b9a3c7",
           "selectedContextIds": [
-            "pack-f65fb3ae:pointer-aware-init"
+            "pack-dbba1a5e:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
+            "pack-dbba1a5e:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
+            "pack-dbba1a5e:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-11-cron-removal.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, memory/2026-04-11.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
+            "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-B training-contract multi-horizon lane in /Users/guclaw/worktrees/quant-research/202-mh1b-training. Goal: - make GBM/TFT consume multi-horizon rows explicitly - ensure target_dte is active in training/panel paths and artifact/reporting surfaces - keep actual_exp_dte and dte_gap_abs out of model feature inputs - run focused tests for retrai.... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: assistant: I found one contract gap worth fixing, the GBM/TFT feature selectors would still admit a couple of expiry metadata columns if they showed up. I’m tightening that now, then rerunning the focused tests. ToolCall exec {\"command\": \"python3 -m pytest tests/test_train_join_utils.py tests/test_retrain_pipeline_embeddings.py tests/test_tft_v11_bootstrap_panel.py tests/test_tft_v11_bootstrap_embedding_contract.py tests/test_retrain_honest_c. Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-11-cron-removal.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/2026-04-11.md, docs/training-launch-contract.md, +2 more, and passive expansion docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, memory/2026-04-08.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-558c578df2635784f0811f8bbc952c50daa30521215edff996e45f6e0e00fb60",
+          "eventExportDigest": "sha256-b1807804284d82ac60a9598ffdc94a51af6898c02467365ba371da0a02f9760f",
           "expectedContextPhrases": [
             "/Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py",
             "/Users/guclaw/worktrees/quant-research/202-mh1b-train"
           ],
           "minimumPhraseHits": 2,
-          "phraseHits": [],
-          "missedPhrases": [
-            "/Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py",
+          "phraseHits": [
             "/Users/guclaw/worktrees/quant-research/202-mh1b-train"
           ],
-          "qualityScore": 40,
+          "missedPhrases": [
+            "/Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py"
+          ],
+          "qualityScore": 70,
           "compileActiveVersion": 1,
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.14,
-            "routeSelectionMs": 5.727,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.412,
+            "totalMs": 10.456,
+            "routeSelectionMs": 7.005,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 3.448,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -468,12 +473,12 @@
         "qualityScore": 70
       },
       {
-        "mode": "vector_only",
+        "mode": "learned_route",
         "qualityScore": 70
       },
       {
-        "mode": "learned_route",
-        "qualityScore": 40
+        "mode": "vector_only",
+        "qualityScore": 70
       },
       {
         "mode": "no_brain",
@@ -481,5 +486,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-ece196fb29ce123cd0f4432ae8a98ee96a5ef0c285a65ff7ef5a9655ae20f2fe"
+  "bundleHash": "sha256-47fdfc24d90adf06476e61d0ec386ac3a55860f0a5fa239efd394fb0cbf4982f"
 }

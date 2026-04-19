@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-95698558"
+      "pack-c97fdb5f"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-ceb81c92a461161ccfacaa191555a1222dc8ae6738b2809ae8ed7a69683e8f12"
+    "scoreHash": "sha256-d0edb03f0f2e362fb01d70e197c53f19d09fd236db56be1e4bf98279dc7c27fb"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-95698558",
+      "activePackId": "pack-c97fdb5f",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-b3c0ab18da1a134eb4409f80bba6fcfbe52d210b5c0fe02af3186204fc9637a5",
+      "routerIdentity": "pack-c97fdb5f:route_fn",
+      "selectionDigest": "sha256-23ef23d3d565fa3751c0e93186814b6196d7fb2de82f2c9592183dc7de071fde",
       "selectedContextIds": [
-        "pack-95698558:event:1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-2:feedback",
-        "pack-95698558:event:1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-2:interaction",
-        "pack-95698558:event:1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-1:interaction"
+        "pack-c97fdb5f:event:1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-2:feedback",
+        "pack-c97fdb5f:event:1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-2:interaction",
+        "pack-c97fdb5f:event:1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-1:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 1df6876b-e41e-4352-8c17-b6d259ab93af-seed: user: A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Monday,.... Related interaction: 1df6876b-e41e-4352-8c17-b6d259ab93af-seed:cue-2:interaction.",
         "Interaction operator_override on live-session session 1df6876b-e41e-4352-8c17-b6d259ab93af-seed. Message: cue-2-seed-message.",
         "Interaction operator_override on live-session session 1df6876b-e41e-4352-8c17-b6d259ab93af-seed. Message: cue-1-seed-message."
       ],
-      "eventExportDigest": "sha256-83a1cde000cbe7d2a39fd4258ec5e9c99bb79dccdebdc1254c4a069a4744de00",
+      "eventExportDigest": "sha256-5a1ee84714d9d2e20bd04ab9078941213c3203e5b51a83af16499ce979b3c942",
       "expectedContextPhrases": [
         "/.openclaw",
         "72ad858"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 3.207,
-        "routeSelectionMs": 2.083,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 1.124,
+        "totalMs": 7.099,
+        "routeSelectionMs": 4.376,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.722,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

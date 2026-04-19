@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-0893270e"
+      "pack-3f5d2d21"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-3eaaaefeb515d77675804ae06fad2abeda64dfcdaeb5ebb62472f7bed468290e"
+    "scoreHash": "sha256-9766e6dc5727393a91afb3a519d2ebe2d7dfa38d4714de2560cad13a96865599"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-0893270e",
+      "activePackId": "pack-3f5d2d21",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-41b25affc45b015d8a6df9ab2db4afe48faea9d604f2108936e52ea173e4317a",
+      "routerIdentity": "pack-3f5d2d21:route_fn",
+      "selectionDigest": "sha256-709a9214655eb27089bbc9091aad27f8150dcf3336b3a90b58b79e99373b4391",
       "selectedContextIds": [
-        "pack-0893270e:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:feedback",
-        "pack-0893270e:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback",
-        "pack-0893270e:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:interaction"
+        "pack-3f5d2d21:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:feedback",
+        "pack-3f5d2d21:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback",
+        "pack-3f5d2d21:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 10:31 AM (America/Los_Angeles) / 2026-04-12 17:31 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 10:31 AM (America/Los_Angeles) / 2026-04-12 17:31 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:interaction.",
         "Interaction operator_override on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-ecd619831acf860f067b44b971a1dc541e048c03b2ce54f83bc1dbabe4558d71",
+      "eventExportDigest": "sha256-0436bbb2fba51069a23d91424a5b6a5ddeb9c1ec210e8a858600a7b1f1237f46",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/agents/pelican/sessions')\\nprint('LATEST"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.87,
-        "routeSelectionMs": 5.236,
+        "totalMs": 8.398,
+        "routeSelectionMs": 5.116,
         "promptAssemblyMs": 0.001,
-        "otherMs": 2.632,
+        "otherMs": 3.28,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-02T01:07:00.447Z",
   "traceHash": "sha256-1fa535bc6d12bb71f464c3299ac8be0aea3ff43ab51a534634c743c27f7f228f",
   "fixtureHash": "sha256-3d8b02b35686d528b31efaf88c8dfba1c6ab218b6a7b654b6357f35e5f82ffce",
-  "scoreHash": "sha256-38bfb0530318c82115d5dac9f6caeb07995d53031e663fb70d6d5db330903ec0",
+  "scoreHash": "sha256-3c9cf15df57f95431442f4783c78393065ad9bf73a50b99f63db34a603848735",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.037,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.037,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-8c57a1dd"
+          "pack-044a6800"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-68ed27b8dc8c7b6a66e11f28c47e1ddcfd13f92e8070c76cd46f0c52c3dbbd5d"
+        "scoreHash": "sha256-df2f34d5faf6a446420aad586702bd4514ce3ab62d42c5eeb27a5e0e06089eba"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-8c57a1dd",
+          "activePackId": "pack-044a6800",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-3058fc82fe63ff9263d0886cdd17a124e383b2b850d11f3b95e9121f079fd3da",
+          "routerIdentity": "pack-044a6800:route_fn",
+          "selectionDigest": "sha256-5b0eb8edba4622df61453c4cb07ac479aad7811a1a2b258181c84ad6e33265a8",
           "selectedContextIds": [
-            "pack-8c57a1dd:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
-            "pack-8c57a1dd:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
-            "pack-8c57a1dd:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback"
+            "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
+            "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
+            "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Not fully “all good” yet — trading-path looks green, but one of our safety verifiers (validate_model.py) is currently not trustworthy, and I’m fixing that now.\\n\\n✅ What I’ve re-checked and it’s OK\\n\\n• S3 snapshots are clean: latest key data/2026/02/27/16-00-49.json downloads fine (~15MB), collection_errors empty, and recent.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 16:45:19 PST] Exec completed (ember-em, code 1) :: on_gbm_v5_20260228.pkl -t models/ensemble_production_tft_v5_20260228.pkl and ensure output is valid JSON only. - Also run without --json to ensure human output still prints. Make … Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Okay double check that the data collector works. The data gets to s3 clean.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction.",
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-c3db5196b7c167c17bd2ef5c2fe97c6819feebea4e75c8e07c24d2da8ccd1e17",
+          "eventExportDigest": "sha256-8e51e95ac3dde60dce4576bb2eb73c55c541442525cb12a78a135e1163db54bc",
           "expectedContextPhrases": [
             "/NO-GO",
             "c81f6fc",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.768,
-            "routeSelectionMs": 5.051,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.715,
+            "totalMs": 14.841,
+            "routeSelectionMs": 9.512,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 5.326,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-8c57a1dd"
+          "pack-044a6800"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-625fd76ea004936a4f313425155ced530436b74dad316ad3f4a4cd3303adbc90"
+        "scoreHash": "sha256-5430bb8524987d7002589be58d270ef60f9c1a29427f62833db67d4f38597baa"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-8c57a1dd",
+          "activePackId": "pack-044a6800",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-d2ba5d4dd050df20281c54a4f7f9677b29da22c23abfde512395a0a3f3c4b184",
+          "routerIdentity": "pack-044a6800:route_fn",
+          "selectionDigest": "sha256-c71e603346c705982744f06813b9a351578c77d7c136cab1ccbfe3f058f10690",
           "selectedContextIds": [
-            "pack-8c57a1dd:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
-            "pack-8c57a1dd:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction",
-            "pack-8c57a1dd:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback"
+            "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
+            "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction",
+            "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Not fully “all good” yet — trading-path looks green, but one of our safety verifiers (validate_model.py) is currently not trustworthy, and I’m fixing that now.\\n\\n✅ What I’ve re-checked and it’s OK\\n\\n• S3 snapshots are clean: latest key data/2026/02/27/16-00-49.json downloads fine (~15MB), collection_errors empty, and recent.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 16:45:19 PST] Exec completed (ember-em, code 1) :: on_gbm_v5_20260228.pkl -t models/ensemble_production_tft_v5_20260228.pkl and ensure output is valid JSON only. - Also run without --json to ensure human output still prints. Make … Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Okay double check that the data collector works. The data gets to s3 clean.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-4c38edfd7c76c33f0e673bdf33950ad0285f6a7ed1b3b10f100850b77a8c7809",
+          "eventExportDigest": "sha256-579f1d0ca47152fcd099f970be52cf8cdee7724a19cd0b4a060d513349db847a",
           "expectedContextPhrases": [
             "/NO-GO",
             "c81f6fc",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.773,
-            "routeSelectionMs": 5.063,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.707,
+            "totalMs": 14.918,
+            "routeSelectionMs": 9.563,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 5.352,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
           "pack-044a6800"
@@ -371,7 +371,7 @@
         "trainTurnCount": 0,
         "evalTurnCount": 1,
         "frozenEvalPackId": "pack-044a6800",
-        "frozenEvalRouterIdentity": "pack-044a6800:route_fn",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-b86b4fa212f679fcd7a6d3a5a1bd6b8021c25ae8d2a33a63208cf173f85a65de"
+        "scoreHash": "sha256-6044903a85d1401471842a930c089505db2900b48e3748ebdb70a18ef3db2297"
       },
       "turns": [
         {
@@ -409,20 +409,24 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-b223f38b7f10648e68dacf276129f926793dc112f5f0f9aa6544e10b579caffc",
+          "selectionDigest": "sha256-5b0eb8edba4622df61453c4cb07ac479aad7811a1a2b258181c84ad6e33265a8",
           "selectedContextIds": [
-            "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction"
+            "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
+            "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
+            "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
-            "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-6-seed-message."
+            "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Not fully “all good” yet — trading-path looks green, but one of our safety verifiers (validate_model.py) is currently not trustworthy, and I’m fixing that now.\\n\\n✅ What I’ve re-checked and it’s OK\\n\\n• S3 snapshots are clean: latest key data/2026/02/27/16-00-49.json downloads fine (~15MB), collection_errors empty, and recent.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 16:45:19 PST] Exec completed (ember-em, code 1) :: on_gbm_v5_20260228.pkl -t models/ensemble_production_tft_v5_20260228.pkl and ensure output is valid JSON only. - Also run without --json to ensure human output still prints. Make … Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Okay double check that the data collector works. The data gets to s3 clean.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-a1c275a2d489a37e27a2b76ebf88457f2c5c32bf0ab7b7ec240a09f7b4fe7447",
+          "eventExportDigest": "sha256-2b97be886d9b3da6154292e093a9a37bb76a42cd6f8d266e4970ec1cb34b6c9c",
           "expectedContextPhrases": [
             "/NO-GO",
             "c81f6fc",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.933,
-            "routeSelectionMs": 6.566,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.366,
+            "totalMs": 13.145,
+            "routeSelectionMs": 8.578,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.564,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-94ceb10b36235b7bd8591e5e56ae7f973754cade1a91294b3edb79668325b4f4"
+  "bundleHash": "sha256-2ec109c91af85b362df0f5e4b8712280b10e6994f35183b3694d4606834efba2"
 }

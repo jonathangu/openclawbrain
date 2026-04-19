@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-b3ac2199"
+      "pack-4c8a0afa"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-0f233b82c8c9ec3c73d790df3579bab07873bd34606957592ad6a439bce03b41"
+    "scoreHash": "sha256-2bc934d52a40c4b89f56d20a5d6b312ab90c83c8d8cdea13e1ef76abb885c6a9"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-b3ac2199",
+      "activePackId": "pack-4c8a0afa",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-61aa89b7ea050b564283b08c54b4c2759ed73e535df35e41d3ef881645c12aa6",
+      "routerIdentity": "pack-4c8a0afa:route_fn",
+      "selectionDigest": "sha256-a46a2caaa7ace2c6ce5c2ebb78a901f4aa4f386bbb40fb64ae87bbd27e2bfbce",
       "selectedContextIds": [
-        "pack-b3ac2199:pointer-aware-init",
-        "pack-b3ac2199:pointer-passive-expansion",
-        "pack-b3ac2199:workspace-init:0d01dda4"
+        "pack-4c8a0afa:pointer-aware-init",
+        "pack-4c8a0afa:pointer-passive-expansion",
+        "pack-4c8a0afa:workspace-init:0d01dda4"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more.",
-        "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=3, outbound=1). MEMORY.md — Long-Term Memory People - Patrick — Jon's 50/50 co-founder for Bountiful Garden; managed by @bbountiful_bot - Bihua Chen — Jon set up an OpenClaw starter kit for her Projects - Bountiful Garden — @bbountiful_bot, workspace workspace-bountiful/, group -5151316478 - Pelican — @ppelican_bot, workspace workspa…"
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, task-artifacts/guclaw-cleanup-2026-04-18/MEMORY.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, +8 more from the MEMORY index graph.",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, task-artifacts/T-20260415-257/master-plan.md, STARTUP_READY.md, +6 more.",
+        "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=2, outbound=1). MEMORY.md — GUCLAW long-term memory People - Patrick — Jon's 50/50 co-founder for Bountiful Garden; managed by @bbountiful_bot - Bihua Chen — Jon set up an OpenClaw starter kit for her Projects - Bountiful Garden — @bbountiful_bot, workspace workspace-bountiful/ - Pelican — @ppelican_bot, workspace workspace-pelican/…"
       ],
-      "eventExportDigest": "sha256-80837f2190ef8f5042816b22c4943f219a7ccd8c12edf585a7fc7796d58bcb57",
+      "eventExportDigest": "sha256-9d001ffbd1dd5bda45f22f025e26a7147632d9c6e8494fc53d34be96f629af0d",
       "expectedContextPhrases": [
         "/retrain",
         "/Users/guclaw/.openclaw/workspace/openclawbrain/src",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.728,
-        "routeSelectionMs": 5.041,
+        "totalMs": 8.462,
+        "routeSelectionMs": 5.185,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.684,
+        "otherMs": 3.274,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

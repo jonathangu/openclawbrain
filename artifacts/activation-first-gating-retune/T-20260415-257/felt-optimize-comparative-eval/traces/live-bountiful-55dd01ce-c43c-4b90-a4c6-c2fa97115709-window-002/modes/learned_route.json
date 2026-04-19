@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-ebda3e93334b5189e49c11b13d5df9fe03b6882fdc30393996d7a71cdc459e4b"
+    "scoreHash": "sha256-6d0a6b6e38bf5c0df43d3e2e361a264c88a33037054146cabe99fdf8e1de32e4"
   },
   "turns": [
     {
@@ -57,18 +57,18 @@
       "selectionEngine": "graph_walk_v1",
       "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_artifact:candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-5d4ec216235257f1093e1936bd9f2799c0aa4c4dc2892b411bbb286cc819a91d",
+      "selectionDigest": "sha256-69018f6d069190e2fe0f6834ed74a13749328816a67e3f8f07e09b145ccf9c4d",
       "selectedContextIds": [
-        "pack-d2dddf68:pointer-aware-init"
+        "pack-d2dddf68:event:55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session 55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed: assistant: Jon — good. I pulled those two Codex branches together (exchange progress ladder + gratitude prompt), resolved the `TradeThreadRoute.tsx` overlap, and fixed a crash (`thankYouSent is not defined`) that was breaking the web unit tests. All unit tests are green again: - `pnpm --filter @bountiful/web test:unit` - `pnpm --filter @bountiful/api test:unit` Pushed to `origin/main` at `19485a2`. No deploy yet — want me to run `deploy.sh` when you’re ready?. Related interaction: 55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-6ee9418a829cd071da984f531e652d80e0f41033860a2f542f496bc7460edd61",
+      "eventExportDigest": "sha256-4a2855e5fd51cf978a858a0f4624ea2f69e7e786109021e241620830bb8a4f55",
       "expectedContextPhrases": [
         "keep going finish job",
         "feedback keep going finish",
@@ -86,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.035,
-        "routeSelectionMs": 5.694,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.339,
+        "totalMs": 9.52,
+        "routeSelectionMs": 5.993,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.524,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

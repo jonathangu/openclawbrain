@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-4397597b"
+      "pack-2a109521"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-9f3e625863df9c1d553e6d9d9627152f0a75cf542831210f359608c79a5ca4b7"
+    "scoreHash": "sha256-3d4d877baa7e46a1b6e36cfb7f47ba1872e3e03f138587aa471d600372dc227c"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-4397597b",
+      "activePackId": "pack-2a109521",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-a1fbac44f275df37b0a984182f4eae3d47831edd2d7866e547a04fab8c3188c2",
+      "routerIdentity": "pack-2a109521:route_fn",
+      "selectionDigest": "sha256-b39b83944dff19c4d02d7af58892b235151954d3815e611498ba9c01cee34f0e",
       "selectedContextIds": [
-        "pack-4397597b:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:feedback",
-        "pack-4397597b:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:interaction",
-        "pack-4397597b:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback"
+        "pack-2a109521:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:feedback",
+        "pack-2a109521:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:interaction",
+        "pack-2a109521:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7449\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` lets think deeply about how this trade works. can you ask OPUS 4.6 high thinking. ask it for a full critique. show it screenshots. what is each person \"thinking\" when they see this .... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:interaction.",
         "Interaction operator_override on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed. Message: cue-5-seed-message.",
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"7436\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-ee6ea8fe6db79413e0b5b2df14c17082024876e529f3ee94be739f40b0343fe3",
+      "eventExportDigest": "sha256-f959e1625b50d5d8d422046afd926bb1c770f55d40dcc64b134aa078168bf29f",
       "expectedContextPhrases": [
         "/3",
         "/−",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.057,
-        "routeSelectionMs": 6.335,
+        "totalMs": 10.843,
+        "routeSelectionMs": 7.276,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.72,
+        "otherMs": 3.564,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

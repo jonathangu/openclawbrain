@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-ed68c3ab"
+      "pack-6578fed9"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-0956396e2294b5febdbfcf41024de523cfa9a4f8d30a2fae27c3ed2f1beb278c"
+    "scoreHash": "sha256-8fa233b8185d1a9a95a0fe6044cfd25cbf96ca76fdeb02e699c55901f826f0be"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-ed68c3ab",
+      "activePackId": "pack-6578fed9",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-3340213401d25363ae6117d7a4f6334363774d0ac5cc84dee851ecc86bccd242",
+      "routerIdentity": "pack-6578fed9:route_fn",
+      "selectionDigest": "sha256-71b3aff136c28ac52aae8f70e092f8040ee945cd71afe8e2d3fe097cc1189789",
       "selectedContextIds": [
-        "pack-ed68c3ab:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
-        "pack-ed68c3ab:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction",
-        "pack-ed68c3ab:pointer-aware-init"
+        "pack-6578fed9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+        "pack-6578fed9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction",
+        "pack-6578fed9:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: We had training running. How's it going pelican: 🚀 GBM retrain is RUNNING on AWS Instance: g5.xlarge (44.247.209.229) Training: 15 members × 23 quantiles, 31,926 rows, 178 features All embeddings-only, no has_news/news_missing ✅ Had to fight through: • New Ubuntu 24.04/22.04 AMIs auto-terminate on g5 (!) • Old AMI has Python 3.7 → installed lightgbm<4.0 • SCP kills connections >5MB → uploaded via S3 chunks • 6 dead instances along the way ETA: ~30-40 min for GBM, then TFT on same instance (~3.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
         "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-3-seed-message.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message."
       ],
-      "eventExportDigest": "sha256-a9a4af45e3caa467b61b7ba518e706fdb9e15a9039fa10677a82d14abac39188",
+      "eventExportDigest": "sha256-16fd20ecfad86f688315ff151c1076931c1c09ff41cc96c955acaccd96917854",
       "expectedContextPhrases": [
         "let",
         "dig",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.328,
-        "routeSelectionMs": 4.608,
+        "totalMs": 9.064,
+        "routeSelectionMs": 5.526,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.717,
+        "otherMs": 3.536,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

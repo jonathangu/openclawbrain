@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-b6129078"
+      "pack-bec0a25b"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-9bc9407d116eca3ed0661edd76185b18193cc46b3563ace667a622ad68503c54"
+    "scoreHash": "sha256-814a22af5e08e3c9fa8323071c27e900d4e3023f2277c609cf2173617e531344"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-b6129078",
+      "activePackId": "pack-bec0a25b",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-9530b131ba4f2c3a156011147c624d8276a1f49e0d6d937d90ed91d3b63cc3b2",
+      "routerIdentity": "pack-bec0a25b:route_fn",
+      "selectionDigest": "sha256-7d90905ecaf8ed645f80380b96e8abdc60b421428d8a47cbdc7c7e562129d317",
       "selectedContextIds": [
-        "pack-b6129078:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-5:feedback",
-        "pack-b6129078:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-1:feedback",
-        "pack-b6129078:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-2:feedback"
+        "pack-bec0a25b:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-5:feedback",
+        "pack-bec0a25b:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-1:feedback",
+        "pack-bec0a25b:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: Exec failed (dawn-she, signal SIGKILL) An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 7:13 AM (America/Los_Angeles) / 2026-04-12 14:13 UTC. Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-5:interaction.",
         "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 6:59 AM (America/Los_Angeles) / 2026-04-12 13:59 UTC. Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 6:59 AM (America/Los_Angeles) / 2026-04-12 13:59 UTC. Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-13505f1e62b528b644cef220f91ab75a1f9123d76cee7bed8f1a1f489362fa4d",
+      "eventExportDigest": "sha256-48e15222da94e883a5250a10f32323e35e447ccc2628bed284de93c71490a775",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/runtime/quant-r",
         "news"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.886,
-        "routeSelectionMs": 4.293,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.592,
+        "totalMs": 8.351,
+        "routeSelectionMs": 5.084,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.266,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

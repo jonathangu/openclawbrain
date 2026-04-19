@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-01T12:29:49.778Z",
   "traceHash": "sha256-3e2ca93e26f85fd9a1adc63c2c9bbf2ce46e6fac1e384fb004554e3bdfbb894a",
   "fixtureHash": "sha256-2c882179454e5a495c5e21a4e1c041932e6e22fd8d004e6866e2895b395e2694",
-  "scoreHash": "sha256-ffd7ff5c00adfc819479068f9ee3fc99e2c86b3f0b4dd94ca46f6a15e94dad89",
+  "scoreHash": "sha256-260f42be064a6378acaca105888f64042451bdeb990aea369492b7c332cbfe23",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.024,
+            "totalMs": 0.029,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.024,
+            "otherMs": 0.029,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-4a32248d"
+          "pack-d2dddf68"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-033110223a450b6a49e86f186b394ec5095d93a835bc4f985793a7c31230287e"
+        "scoreHash": "sha256-b868b399044bf92a220680a025d72204855bcaa1c1b2ca4ca78ec7afaf35f6d8"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-4a32248d",
+          "activePackId": "pack-d2dddf68",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-cc91b8bf9114e3874f4649b081b945ed1279ff15b2b6e9d50926fd077a69a9ae",
+          "routerIdentity": "pack-d2dddf68:route_fn",
+          "selectionDigest": "sha256-33cd79bb820e1b707df1acc52a684677da818fc1417c3d8c816d83cba0987702",
           "selectedContextIds": [
-            "pack-4a32248d:pointer-aware-init",
-            "pack-4a32248d:event:55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed:cue-6:feedback",
-            "pack-4a32248d:workspace-init:0d01dda4"
+            "pack-d2dddf68:pointer-aware-init",
+            "pack-d2dddf68:event:55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed:cue-6:feedback",
+            "pack-d2dddf68:workspace-init:0d01dda4"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
             "Teaching feedback on live-session session 55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed: assistant: Jon — good. I pulled those two Codex branches together (exchange progress ladder + gratitude prompt), resolved the `TradeThreadRoute.tsx` overlap, and fixed a crash (`thankYouSent is not defined`) that was breaking the web unit tests. All unit tests are green again: - `pnpm --filter @bountiful/web test:unit` - `pnpm --filter @bountiful/api test:unit` Pushed to `origin/main` at `19485a2`. No deploy yet — want me to run `deploy.sh` when you’re ready?. Related interaction: 55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed:cue-6:interaction.",
             "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…"
           ],
-          "eventExportDigest": "sha256-c970bd60e47cfeb29c893a520a13609e0da7bc1553cb0a39220c1838915e77c9",
+          "eventExportDigest": "sha256-08337d87f56fa451290e269bd0fb80dffe822eab4115f2f907114e8ff880afa9",
           "expectedContextPhrases": [
             "keep going finish job",
             "feedback keep going finish",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.659,
-            "routeSelectionMs": 5.068,
+            "totalMs": 9.141,
+            "routeSelectionMs": 5.608,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.588,
+            "otherMs": 3.529,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-4a32248d"
+          "pack-d2dddf68"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-94858a9b686887fc4f86d47d3f9f40e4d6ecbaf795b8fa84e66a62d41aeb9821"
+        "scoreHash": "sha256-76c15adfddea61a2b56279072fa24cd36f77c9dcc8bec37f5557e9b96fa84532"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-4a32248d",
+          "activePackId": "pack-d2dddf68",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-7f7dc36bb35ef0306a3b7b5216ec542e0e102fe0539022be2f5cdd5d42db59d3",
+          "routerIdentity": "pack-d2dddf68:route_fn",
+          "selectionDigest": "sha256-ff20934fe555c350e21e20ad08a91d1fefac5656e1738140001c4463b3d9e638",
           "selectedContextIds": [
-            "pack-4a32248d:pointer-aware-init",
-            "pack-4a32248d:workspace-init:0d01dda4",
-            "pack-4a32248d:workspace-init:02e33be9"
+            "pack-d2dddf68:pointer-aware-init",
+            "pack-d2dddf68:workspace-init:0d01dda4",
+            "pack-d2dddf68:workspace-init:02e33be9"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
             "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
             "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Bountiful Use heartbeat to keep Bountiful moving without manual babysitting. 1. Reread TASKS.md from disk, then read only the relevant MEMORY.md snippets and project artifacts for the current live task. 2. Trust current file truth over chat or old summaries. 3. Treat only active tasks as live work. Trea…"
           ],
-          "eventExportDigest": "sha256-91ccaa0e653f64d93d702e11237b180546fa18e7f741715ca0089ee1d556d893",
+          "eventExportDigest": "sha256-8d534c09cb32499fb8d50b87cf86be9e773051c59fdc80f806729e7bdc6f7904",
           "expectedContextPhrases": [
             "keep going finish job",
             "feedback keep going finish",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.295,
-            "routeSelectionMs": 4.525,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.768,
+            "totalMs": 9.284,
+            "routeSelectionMs": 5.706,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 3.575,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-ebda3e93334b5189e49c11b13d5df9fe03b6882fdc30393996d7a71cdc459e4b"
+        "scoreHash": "sha256-6d0a6b6e38bf5c0df43d3e2e361a264c88a33037054146cabe99fdf8e1de32e4"
       },
       "turns": [
         {
@@ -411,18 +411,18 @@
           "selectionEngine": "graph_walk_v1",
           "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_artifact:candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-5d4ec216235257f1093e1936bd9f2799c0aa4c4dc2892b411bbb286cc819a91d",
+          "selectionDigest": "sha256-69018f6d069190e2fe0f6834ed74a13749328816a67e3f8f07e09b145ccf9c4d",
           "selectedContextIds": [
-            "pack-d2dddf68:pointer-aware-init"
+            "pack-d2dddf68:event:55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
+            "Teaching feedback on live-session session 55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed: assistant: Jon — good. I pulled those two Codex branches together (exchange progress ladder + gratitude prompt), resolved the `TradeThreadRoute.tsx` overlap, and fixed a crash (`thankYouSent is not defined`) that was breaking the web unit tests. All unit tests are green again: - `pnpm --filter @bountiful/web test:unit` - `pnpm --filter @bountiful/api test:unit` Pushed to `origin/main` at `19485a2`. No deploy yet — want me to run `deploy.sh` when you’re ready?. Related interaction: 55dd01ce-c43c-4b90-a4c6-c2fa97115709-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-6ee9418a829cd071da984f531e652d80e0f41033860a2f542f496bc7460edd61",
+          "eventExportDigest": "sha256-4a2855e5fd51cf978a858a0f4624ea2f69e7e786109021e241620830bb8a4f55",
           "expectedContextPhrases": [
             "keep going finish job",
             "feedback keep going finish",
@@ -440,10 +440,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.035,
-            "routeSelectionMs": 5.694,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.339,
+            "totalMs": 9.52,
+            "routeSelectionMs": 5.993,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 3.524,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +487,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-a0bf5c61cf3624be5b58fa88aedc262f78a47b3dae492ed61a3b696376bdbf96"
+  "bundleHash": "sha256-9737eda4c519aa2c92143d8f6bb4f02dfba326a05e876dc78e45f626e4b86b17"
 }

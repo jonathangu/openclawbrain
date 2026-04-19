@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-00121b8a"
+      "pack-2befe4c3"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-fe04b23af19679c2e6c9279567d3e844fb86e40da2ea805ccff0ac7ef1adf141"
+    "scoreHash": "sha256-dffab49d25da8effa8ebd70ea9d5c2bc8713fa8a0bd2b37a3a9b6e8d8f72dacc"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-00121b8a",
+      "activePackId": "pack-2befe4c3",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-a16f5e4a16de138ca5319d9e35170d8550af8315000a129094f4facfbc875c2b",
+      "routerIdentity": "pack-2befe4c3:route_fn",
+      "selectionDigest": "sha256-2c0b4ce7e03a80de325a8a36e2f5294b6eeeb82c21b90efa44e268fe3e703065",
       "selectedContextIds": [
-        "pack-00121b8a:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-3:feedback",
-        "pack-00121b8a:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
-        "pack-00121b8a:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-6:feedback"
+        "pack-2befe4c3:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-3:feedback",
+        "pack-2befe4c3:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:feedback",
+        "pack-2befe4c3:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 5:32 PM (America/Los_Angeles) / 2026-04-13 00:32 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-3:interaction.",
         "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 5:37 PM (America/Los_Angeles) / 2026-04-13 00:37 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-4:interaction.",
         "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Sunday, April 12th, 2026 - 5:58 PM (America/Los_Angeles) / 2026-04-13 00:58 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-4a59e73176635c8ae4a043155cc938004d210e1a4a9578b93ded270513c45050",
+      "eventExportDigest": "sha256-a3e5db9742b3fb2bb7ad505aa2c6ff38a927ecb4eda3e31d95515746f21c80c1",
       "expectedContextPhrases": [
         "/runs/v6_20260412_234742_8dff942_658e3d08'\\npython3",
         "/runs/v6_20260412_234742_8dff942_658e"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.311,
-        "routeSelectionMs": 4.626,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.683,
+        "totalMs": 8.52,
+        "routeSelectionMs": 5.206,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.313,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

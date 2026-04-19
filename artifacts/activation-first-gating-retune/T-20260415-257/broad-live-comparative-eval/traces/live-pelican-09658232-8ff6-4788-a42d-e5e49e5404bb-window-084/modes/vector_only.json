@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-d4e3da88"
+      "pack-39bf392c"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-b160bdd186e569574950bf57ab370956dbf6827892c528dacfdcf6eca0c9a36f"
+    "scoreHash": "sha256-526c3dcb797864e33984feb6e29a71ded6471462157b824ece1564ed5363bdc8"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-d4e3da88",
+      "activePackId": "pack-39bf392c",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-f842e417b1c796e48d2a04722471b29ead378787212ae45d2460c82a75825bbd",
+      "routerIdentity": "pack-39bf392c:route_fn",
+      "selectionDigest": "sha256-6b5cbb0511429938dcf8a4f7e76e44b6c90383bc481f4950bfca8e6df19ab676",
       "selectedContextIds": [
-        "pack-d4e3da88:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-        "pack-d4e3da88:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
-        "pack-d4e3da88:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
+        "pack-39bf392c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+        "pack-39bf392c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
+        "pack-39bf392c:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: fbb9da7c-1222-4552-984d-393a914dab91] A cron job \"tft-v6-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 1m59s • tokens 3.1k (in 18 / out 3.1k) • prompt/cache 25.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system mes.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 4ff6d91e-8778-4011-b5aa-df96cf3d35c1] A cron job \"tft-v6-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 44s • tokens 1.7k (in 10 / out 1.7k) • prompt/cache 20.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system messa.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: de88e7b1-6dc9-4b7f-82a2-a463bd656dce] A cron job \"tft-bulletproof-check\" just completed successfully. Result: Good intel. The run is active — I can see: - **GBM**: completed (model.tar.gz + train.log uploaded at 18:40) - **TFT**: partially uploaded — there's a `ensemble_production_tft_v5_20260228.pkl` (120MB, uploaded 20:17) but no `model.tar.gz` yet and no cloud-init log The TFT ensemble pickle is there but the final tar.gz bundle hasn't been created/uploaded yet. This suggests t.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-725053eec2b9cf92e032db08224eecb1cafe414ed4057cb7b63592ec72446e88",
+      "eventExportDigest": "sha256-ba405d5b4aa460877711456553ed2c0c70fdd2bc801c11e310f1fbe0397379d1",
       "expectedContextPhrases": [
         "/10"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.419,
-        "routeSelectionMs": 5.702,
+        "totalMs": 11.591,
+        "routeSelectionMs": 7.192,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.715,
+        "otherMs": 4.398,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

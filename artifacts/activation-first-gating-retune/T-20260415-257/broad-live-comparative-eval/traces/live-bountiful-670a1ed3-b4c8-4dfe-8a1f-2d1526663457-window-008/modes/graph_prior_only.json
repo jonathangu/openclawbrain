@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-d4b3f4ed"
+      "pack-530e3493"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-5a0d05af5e2778a7f6483833835a31ac7fb8afd28d0a0c30a7985ddcd1630761"
+    "scoreHash": "sha256-cc41c0b0ef3433d51268639cad2c2740eca935f0bfc4410c287da5c090e0c2d0"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-d4b3f4ed",
+      "activePackId": "pack-530e3493",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-8df3f6ac69aae03171d0a66887bf00e5b03300795fab5ee1ede748b9763172cc",
+      "routerIdentity": "pack-530e3493:route_fn",
+      "selectionDigest": "sha256-23f38d3c46db74da378343cdbc52ed1d43b63e7ee33deb292c13362c54ade0d7",
       "selectedContextIds": [
-        "pack-d4b3f4ed:pointer-aware-init",
-        "pack-d4b3f4ed:workspace-init:02e33be9",
-        "pack-d4b3f4ed:workspace-init:16415817"
+        "pack-530e3493:pointer-aware-init",
+        "pack-530e3493:workspace-init:16415817",
+        "pack-530e3493:workspace-init:b8b445e5"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-05-1953.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/archive/2026-03-05-1953.md, docs/jon-model.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph.",
-        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=5, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=24). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-05-1953.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, memory/archive/2026-03-05-1953.md, +2 more, and passive expansion docs/training-launch-contract.md, STARTUP_READY.md, docs/jon-model.md, quant-research/docs/OPENCLAWBRAIN_OPS.md, +8 more from the MEMORY index graph.",
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=6, outbound=20). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. Keep this file lean enough for cold starts. Detailed proof belongs in task-artifacts/. Current live pointers - finish-line handoff: task-artifacts/finish-line-handoff-2026-04-17.md - pre-compaction backup: ta…",
+        "Working-set input quant-research/IRON_SOUL.md selected by pointer-aware init (inbound=5, outbound=18). IRON SOUL RULES — Non-Negotiable **Source**: Jon's Project Reset spec (2026-02-07 msgs 406-409). This is the single source of truth. **Every sub-agent, every script, every feature must comply. Violations = thrown out.** Scope Clarifier (Read First) - This document is the **rules contract**. - Current implementation st…"
       ],
-      "eventExportDigest": "sha256-2787ae33733a23afcc772520be1e9ab3265cd4f4ecc132af19784f8b4e480895",
+      "eventExportDigest": "sha256-108c1f5f3209060c24ef4c7537fde1a3a9980647c7e9ec9a9262590c6aec6556",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace-bountiful/memory/2026-03-05.md",
         "@e2e.test"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.328,
-        "routeSelectionMs": 4.619,
+        "totalMs": 9.183,
+        "routeSelectionMs": 5.693,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.706,
+        "otherMs": 3.487,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

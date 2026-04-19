@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-764e6b27"
+      "pack-d3676ba9"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-1c8aaae2b5080b733599a3856431d8cd0a955a4096588e6a1d8b52d9fe59641a"
+    "scoreHash": "sha256-6bdea6cbdafc19aefd793d8e49d48499ea5387d51dc0b32a4e5b110816f8344d"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-764e6b27",
+      "activePackId": "pack-d3676ba9",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-20bf307e4ea815e131b7d32d517b7897760772e1bc2f48513c6c13253920af32",
+      "routerIdentity": "pack-d3676ba9:route_fn",
+      "selectionDigest": "sha256-9b9de8c96b0e7ca7e3527df666bcebc6cebe2111f945d37b9a725086e40de598",
       "selectedContextIds": [
-        "pack-764e6b27:pointer-aware-init",
-        "pack-764e6b27:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-1:feedback",
-        "pack-764e6b27:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-2:feedback"
+        "pack-d3676ba9:pointer-aware-init",
+        "pack-d3676ba9:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-1:feedback",
+        "pack-d3676ba9:event:11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-options-entry.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, memory/2026-04-07.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-options-entry.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/2026-04-07.md, docs/training-launch-contract.md, +2 more, and passive expansion docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, memory/archive/2026-03-02.md, +8 more from the MEMORY index graph.",
         "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Wednesday, April .... Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 11cd96c3-b5a0-49a5-99ba-beed78190836-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Thursday, April 9.... Related interaction: 11cd96c3-b5a0-49a5-99ba-beed78190836-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-f5c0b54e2743bd32fe576d9332ca2e39b2365ee0e74cb1c956d6d3c29f32476e",
+      "eventExportDigest": "sha256-174d60578abd89f6811161755f74d3c4e6fe8717e0634e9be4c651f843c8c3f2",
       "expectedContextPhrases": [
         "/callers",
         "/Users/guclaw/.openclaw/pelican/runtime/quant-research/tests/test_training_input_freshness.py\"}"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.274,
-        "routeSelectionMs": 4.773,
+        "totalMs": 9.089,
+        "routeSelectionMs": 5.566,
         "promptAssemblyMs": 0.001,
-        "otherMs": 3.5,
+        "otherMs": 3.521,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

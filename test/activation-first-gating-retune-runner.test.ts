@@ -1,13 +1,26 @@
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
   ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1,
   ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1,
+  FELT_SAFE_POSITIVE_PRESSURE_ROW_WEIGHT_OVERRIDES_V1,
+  FELT_SAFE_POSITIVE_PRESSURE_SUPPLEMENTAL_ROW_WEIGHT_V1,
+  SAFE_FEEDBACK_ROUTE_DUPLICATE_COUNT_V1,
+  SAFE_FEEDBACK_ROUTE_OUTCOME_GAIN_BONUS_V1,
+  appendPositivePressureSupplementalRowsV1,
+  appendSafeFeedbackRankingRouteRowsV1,
+  applyPositivePressureWeightOverrideV1,
   buildColdStartRouteRow,
   buildSyntheticRouteCandidatesV1,
+  collectBundleReplaySurfaces,
   chooseTraverseTargetCandidateIdV1,
   classifyBroadLiveProofReadV1,
   coerceRestraintLanePolicyRowV1,
+  deriveFeltRouteSourceNodeIdV1,
   deriveFinalCandidateStatusV1,
   derivePseudoRouteBucketPlanV1,
   summarizeFeltOptimizeScorecardV1,
@@ -43,6 +56,58 @@ function basePolicyRow(): PolicySupervisionRowV1 {
 }
 
 describe("activation-first gating retune runner helpers", () => {
+  it("harvests felt training candidates from graph-prior and vector replay surfaces before learned_route", () => {
+    const bundleRoot = mkdtempSync(path.join(tmpdir(), "activation-first-replay-surface-"));
+    const traceDir = path.join(bundleRoot, "trace-1");
+    const modeDir = path.join(traceDir, "modes");
+    mkdirSync(modeDir, { recursive: true });
+    writeFileSync(path.join(traceDir, "trace.json"), JSON.stringify({
+      contract: "recorded_session_replay_fixture.v1",
+      traceId: "trace-1",
+      turns: [{ userMessage: "resume the task" }],
+    }));
+    writeFileSync(path.join(modeDir, "learned_route.json"), JSON.stringify({
+      mode: "learned_route",
+      turns: [{ selectedContextIds: [], selectedContextTexts: [], expectedContextPhrases: [] }],
+    }));
+    writeFileSync(path.join(modeDir, "graph_prior_only.json"), JSON.stringify({
+      mode: "graph_prior_only",
+      turns: [{
+        selectedContextIds: ["pack:event:alpha:feedback", "pack:event:alpha"],
+        selectedContextTexts: ["feedback alpha", "event alpha"],
+        expectedContextPhrases: ["T-123"],
+      }],
+    }));
+    writeFileSync(path.join(modeDir, "vector_only.json"), JSON.stringify({
+      mode: "vector_only",
+      turns: [{
+        selectedContextIds: ["pack:event:alpha:interaction"],
+        selectedContextTexts: ["interaction alpha"],
+        expectedContextPhrases: ["T-123"],
+      }],
+    }));
+
+    const surfaces = collectBundleReplaySurfaces(bundleRoot);
+
+    expect(surfaces).toHaveLength(1);
+    expect(surfaces[0]?.selectedContextIds).toEqual([
+      "pack:event:alpha:feedback",
+      "pack:event:alpha",
+      "pack:event:alpha:interaction",
+    ]);
+    expect(surfaces[0]?.selectedContextTexts).toEqual([
+      "feedback alpha",
+      "event alpha",
+      "interaction alpha",
+    ]);
+    expect(surfaces[0]?.modeSelectedContextIds).toEqual({
+      graph_prior_only: ["pack:event:alpha:feedback", "pack:event:alpha"],
+      vector_only: ["pack:event:alpha:interaction"],
+      learned_route: [],
+    });
+    expect(surfaces[0]?.expectedContextPhrases).toEqual(["T-123"]);
+  });
+
   it("locks the candidate retune to the explicit gating-only intervention head", () => {
     expect(ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1).toEqual({
       decisionPolicyMode: "gating_only_v1",
@@ -243,6 +308,14 @@ describe("activation-first gating retune runner helpers", () => {
       selectedContextIds: ["pack:event:alpha", "pack:pointer-aware-init"],
       selectedContextTexts: ["event alpha", "init"],
       expectedContextPhrases: ["T-20260406-161"],
+      modeSelectedContextIds: {
+        graph_prior_only: ["pack:event:alpha"],
+        learned_route: ["pack:pointer-aware-init"],
+      },
+      modeSelectedContextTexts: {
+        graph_prior_only: ["event alpha"],
+        learned_route: ["init"],
+      },
       usedLearnedRouteTurnCount: 0,
       activatedTurnCount: 1,
       boundTurnCount: 1,
@@ -259,6 +332,8 @@ describe("activation-first gating retune runner helpers", () => {
       generatedAt: "2026-04-18T01:30:00Z",
     });
     expect(feltRow.teacher_action).toEqual({ kind: "traverse", target_ids: ["pack:event:alpha"] });
+    expect(feltRow.cursor_path).toEqual(["felt_resume_25"]);
+    expect(feltRow.hard_negatives).toEqual(["pack:pointer-aware-init"]);
     expect(feltRow.candidate_set[0]).toMatchObject({
       candidate_id: "pack:event:alpha",
       semantic_class: "event_context",
@@ -266,6 +341,115 @@ describe("activation-first gating retune runner helpers", () => {
       freshness: "replay_eval",
       score_hint: 0.9,
     });
+
+    const multiWinnerRow = buildColdStartRouteRow({
+      taskId: "T-1",
+      laneKey: "feltResume",
+      laneName: "felt_resume_25",
+      datasetId: "dataset-felt",
+      trace,
+      traceLabel,
+      bundleSurfaces: [{
+        ...bundleSurfaces[0],
+        selectedContextIds: ["pack:event:alpha:feedback", "pack:event:alpha:interaction", "pack:pointer-aware-init"],
+        selectedContextTexts: ["feedback alpha", "interaction alpha", "init"],
+        modeSelectedContextIds: {
+          graph_prior_only: ["pack:event:alpha:feedback", "pack:event:alpha:interaction"],
+          learned_route: ["pack:pointer-aware-init"],
+        },
+        modeSelectedContextTexts: {
+          graph_prior_only: ["feedback alpha", "interaction alpha"],
+          learned_route: ["init"],
+        },
+      }],
+      generatedAt: "2026-04-18T01:30:00Z",
+    });
+    expect(multiWinnerRow.teacher_action).toEqual({
+      kind: "traverse",
+      target_ids: ["pack:event:alpha:feedback"],
+    });
+    expect(multiWinnerRow.cursor_path).toEqual(["felt_resume_25"]);
+    expect(multiWinnerRow.candidate_set.slice(0, 3).map((candidate) => candidate.candidate_id)).toEqual([
+      "pack:event:alpha:feedback",
+      "pack:event:alpha:interaction",
+      "pack:pointer-aware-init",
+    ]);
+
+    const initWinnerRow = buildColdStartRouteRow({
+      taskId: "T-1",
+      laneKey: "feltResume",
+      laneName: "felt_resume_25",
+      datasetId: "dataset-felt",
+      trace,
+      traceLabel,
+      bundleSurfaces: [{
+        ...bundleSurfaces[0],
+        selectedContextIds: ["pack:pointer-aware-init:a", "pack:pointer-aware-init:b", "pack:event:alpha:feedback"],
+        selectedContextTexts: ["init a", "init b", "feedback alpha"],
+        modeSelectedContextIds: {
+          graph_prior_only: ["pack:pointer-aware-init:a", "pack:pointer-aware-init:b"],
+          learned_route: ["pack:pointer-aware-init:b"],
+        },
+        modeSelectedContextTexts: {
+          graph_prior_only: ["init a", "init b"],
+          learned_route: ["init b"],
+        },
+      }],
+      generatedAt: "2026-04-18T01:30:00Z",
+    });
+    expect(initWinnerRow.teacher_action).toEqual({
+      kind: "traverse",
+      target_ids: ["pack:event:alpha:feedback"],
+    });
+    expect(initWinnerRow.cursor_path).toEqual(["felt_resume_25"]);
+
+    const safeFeedbackRow = buildColdStartRouteRow({
+      taskId: "T-1",
+      laneKey: "feltResume",
+      laneName: "felt_resume_25",
+      datasetId: "dataset-felt",
+      trace: {
+        ...trace,
+        traceId: "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+      },
+      traceLabel,
+      bundleSurfaces: [{
+        ...bundleSurfaces[0],
+        traceId: "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+        selectedContextIds: ["pack:event:alpha:feedback", "pack:pointer-aware-init"],
+        selectedContextTexts: ["feedback alpha", "init"],
+        modeSelectedContextIds: {
+          graph_prior_only: ["pack:event:alpha:feedback"],
+          learned_route: ["pack:pointer-aware-init"],
+        },
+        modeSelectedContextTexts: {
+          graph_prior_only: ["feedback alpha"],
+          learned_route: ["init"],
+        },
+      }],
+      generatedAt: "2026-04-18T01:30:00Z",
+    });
+    expect(safeFeedbackRow.cursor_path).toEqual([
+      "felt_resume_25",
+      deriveFeltRouteSourceNodeIdV1({
+        laneName: "felt_resume_25",
+        traceId: "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+        traverseTargetCandidateIds: ["pack:event:alpha:feedback"],
+      }),
+    ]);
+
+    const feltTieRow = buildColdStartRouteRow({
+      taskId: "T-1",
+      laneKey: "feltResume",
+      laneName: "felt_resume_25",
+      datasetId: "dataset-felt",
+      trace,
+      traceLabel: { oracleBestMode: "tie" },
+      bundleSurfaces,
+      generatedAt: "2026-04-18T01:30:00Z",
+    });
+    expect(feltTieRow.teacher_action).toEqual({ kind: "tool", tool_name: "__gating_only__:felt_resume_25" });
+    expect(feltTieRow.cursor_path).toEqual(["felt_resume_25"]);
 
     const restraintRow = buildColdStartRouteRow({
       taskId: "T-1",
@@ -282,6 +466,125 @@ describe("activation-first gating retune runner helpers", () => {
       authority: "snapshot_supporting_fact",
       freshness: "eval_only",
     });
+  });
+
+  it("raises safe positive-pressure felt rows without touching other rows", () => {
+    const boosted = applyPositivePressureWeightOverrideV1(
+      {
+        ...basePolicyRow(),
+        row_type: "activate",
+        row_weight: 1.5,
+      },
+      "activation-first:felt_resume_25:live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+      "feltResume",
+    );
+    expect(boosted.row_weight).toBe(FELT_SAFE_POSITIVE_PRESSURE_ROW_WEIGHT_OVERRIDES_V1[
+      "activation-first:felt_resume_25:live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002"
+    ]);
+    expect(boosted.notes.at(-1)).toContain("safe positive-pressure cohort");
+
+    const expandedBoost = applyPositivePressureWeightOverrideV1(
+      {
+        ...basePolicyRow(),
+        row_type: "activate",
+        row_weight: 1.5,
+      },
+      "activation-first:felt_resume_25:live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016",
+      "feltResume",
+    );
+    expect(expandedBoost.row_weight).toBe(FELT_SAFE_POSITIVE_PRESSURE_ROW_WEIGHT_OVERRIDES_V1[
+      "activation-first:felt_resume_25:live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016"
+    ]);
+
+    const untouched = applyPositivePressureWeightOverrideV1(
+      {
+        ...basePolicyRow(),
+        row_type: "activate",
+        row_weight: 1.5,
+      },
+      "activation-first:felt_resume_25:other-trace",
+      "feltResume",
+    );
+    expect(untouched.row_weight).toBe(1.5);
+  });
+
+  it("adds a supplemental positive-pressure example only for the safe feedback cohort", () => {
+    const baseActivateRow = {
+      ...basePolicyRow(),
+      row_type: "activate" as const,
+      row_weight: 3,
+      row_id: "ps_activate",
+    };
+
+    const supplemented = appendPositivePressureSupplementalRowsV1(
+      baseActivateRow,
+      "activation-first:felt_resume_25:live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+      "feltResume",
+    );
+    expect(supplemented).toHaveLength(2);
+    expect(supplemented[1]).toMatchObject({
+      row_id: "ps_activate:felt_feedback_bonus",
+      row_weight: FELT_SAFE_POSITIVE_PRESSURE_SUPPLEMENTAL_ROW_WEIGHT_V1,
+    });
+    expect(supplemented[1]?.notes.at(-1)).toContain("Supplemental activation example");
+
+    const untouched = appendPositivePressureSupplementalRowsV1(
+      baseActivateRow,
+      "activation-first:felt_resume_25:other-trace",
+      "feltResume",
+    );
+    expect(untouched).toEqual([baseActivateRow]);
+  });
+
+  it("adds ranking-aware duplicate route rows only for the safe feedback cohort when enabled", () => {
+    const baseRouteRow = buildColdStartRouteRow({
+      taskId: "T-1",
+      laneKey: "feltResume",
+      laneName: "felt_resume_25",
+      datasetId: "dataset-felt",
+      trace: {
+        traceId: "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+        seedCues: [],
+        turns: [{ userMessage: "resume the task", expectedContextPhrases: ["T-123"] }],
+      } as never,
+      traceLabel: { oracleBestMode: "learned_route" },
+      bundleSurfaces: [{
+        traceId: "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+        bundleDir: "bundle",
+        selectedContextIds: ["pack:event:alpha:feedback", "pack:pointer-aware-init"],
+        selectedContextTexts: ["feedback alpha", "init"],
+        expectedContextPhrases: ["T-123"],
+        modeSelectedContextIds: {
+          graph_prior_only: ["pack:event:alpha:feedback"],
+          learned_route: ["pack:pointer-aware-init"],
+        },
+        modeSelectedContextTexts: {
+          graph_prior_only: ["feedback alpha"],
+          learned_route: ["init"],
+        },
+        usedLearnedRouteTurnCount: 0,
+        activatedTurnCount: 1,
+        boundTurnCount: 1,
+      }],
+      generatedAt: "2026-04-18T01:30:00Z",
+    });
+
+    const rankedRows = appendSafeFeedbackRankingRouteRowsV1(baseRouteRow, "feltResume");
+    expect(rankedRows).toHaveLength(1 + SAFE_FEEDBACK_ROUTE_DUPLICATE_COUNT_V1);
+    expect(rankedRows[0]?.row_id).toBe(baseRouteRow.row_id);
+    if (SAFE_FEEDBACK_ROUTE_DUPLICATE_COUNT_V1 > 0) {
+      expect(rankedRows[1]).toMatchObject({
+        row_id: `${baseRouteRow.row_id}:feedback_rank_bonus:1`,
+        outcome_gain: baseRouteRow.outcome_gain + SAFE_FEEDBACK_ROUTE_OUTCOME_GAIN_BONUS_V1,
+      });
+      expect(rankedRows[1]).not.toBe(baseRouteRow);
+    }
+
+    const untouched = appendSafeFeedbackRankingRouteRowsV1(
+      { ...baseRouteRow, row_id: "activation-first:felt_resume_25:other-trace" },
+      "feltResume",
+    );
+    expect(untouched).toHaveLength(1);
   });
 
   it("coerces must-not-fire rows to stop_local without changing other lanes", () => {

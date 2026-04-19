@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-a122b2b8"
+      "pack-ecf600a3"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-199a5047a73b037156704f95fd58e0b25dc98ee589d46bc1b5e4873fed2fb443"
+    "scoreHash": "sha256-a7896f3d4e25d65486a0acad8dc5ae63a0a75f664151c1c181cdf0adad4042bf"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-a122b2b8",
+      "activePackId": "pack-ecf600a3",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-ff34ee3ef3f5bf58c1186a9f30e4b8879e09a158bbc596a8140c78678459a465",
+      "routerIdentity": "pack-ecf600a3:route_fn",
+      "selectionDigest": "sha256-3678dcc0cbf0be52e9475d7b7d814fe2f3aa01cfd19349f1f1605ecbb3e90539",
       "selectedContextIds": [
-        "pack-a122b2b8:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback",
-        "pack-a122b2b8:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-5:feedback",
-        "pack-a122b2b8:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:feedback"
+        "pack-ecf600a3:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback",
+        "pack-ecf600a3:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-5:feedback",
+        "pack-ecf600a3:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23638\", \"reply_to_id\": \"23637\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 05:13 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Short version, learned_route is worse mostly because it is more expensive.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:interaction.",
         "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23640\", \"reply_to_id\": \"23637\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 05:14 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Short version, learned_route is worse mostly because it is more expensive.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-5:interaction.",
         "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23635\", \"reply_to_id\": \"23634\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 04:32 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Yep. In plain English:\\n\\n• I fixed the OpenClawBrain replay reporting so.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-ee4832af290bb945c6499334a22c3ffdd9f6d58cb27f3187a9cc7da99090ffef",
+      "eventExportDigest": "sha256-c621ba4145e99d0ddc7e335f37abd0d8259fce403f28d5a8887b6e1f819ced2c",
       "expectedContextPhrases": [
         "history pelican guclaw bountiful",
         "live history pelican guclaw",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.56,
-        "routeSelectionMs": 4.741,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.817,
+        "totalMs": 11.06,
+        "routeSelectionMs": 7.043,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 4.014,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-ac1ed9ed"
+      "pack-fb2bb1e2"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-1479388ba2e75bc0524fb54b3e116dde94b4bda26fa85282a26376658dec1367"
+    "scoreHash": "sha256-0514984a1845ab857b0f983a05155b19c3ef7b26a7eed6958fcddf35172e176f"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-ac1ed9ed",
+      "activePackId": "pack-fb2bb1e2",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-faddd5ae4f641a8a2d6a71fdc70348f8c93704b4040bde4b1b67d94c120c9b03",
+      "routerIdentity": "pack-fb2bb1e2:route_fn",
+      "selectionDigest": "sha256-04dabcdcd8ad3adb30947d7e2c168d283581ec47dfb45f7ddbe9680468da3f0a",
       "selectedContextIds": [
-        "pack-ac1ed9ed:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:feedback",
-        "pack-ac1ed9ed:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:interaction",
-        "pack-ac1ed9ed:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback"
+        "pack-fb2bb1e2:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:feedback",
+        "pack-fb2bb1e2:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:interaction",
+        "pack-fb2bb1e2:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19128\", \"reply_to_id\": \"19126\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 04:02 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Done.\\n\\nI pushed the live sizing wider now in the runtime config.\\n\\nNe.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:interaction.",
         "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-6-seed-message.",
-        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19110\", \"reply_to_id\": \"19109\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:37 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"I wrote the full file-backed plan and committed it.\\n\\n• Artifact: task-.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:interaction."
+        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19124\", \"reply_to_id\": \"19123\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:57 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"I’m checking the real choke point before I touch live config.\\n\\nBluntly.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-7a6d86d6ae687069a9fd57550b5d3664aec8bee7508d3fae4fc367422a5c1cac",
+      "eventExportDigest": "sha256-f8d715e15c695b0bc4f9638c33c555c00bbc3ba7f9a35fe4591ea2b53e201dd5",
       "expectedContextPhrases": [
         "9d55da9",
         "bull_call",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.343,
-        "routeSelectionMs": 4.644,
+        "totalMs": 9.318,
+        "routeSelectionMs": 5.472,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.697,
+        "otherMs": 3.844,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

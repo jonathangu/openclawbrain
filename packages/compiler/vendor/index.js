@@ -647,11 +647,50 @@ function normalizeLearnedRouteSelectionOverrideResult(value) {
     const evidenceSource = typeof value?.evidenceSource === "string" && value.evidenceSource.trim().length > 0
         ? value.evidenceSource.trim()
         : "replay_candidate_override";
+    const selectionMode = value?.selectionMode === "graph_walk_score_boost"
+        ? "graph_walk_score_boost"
+        : "direct_select";
+    const scoreBoostsByBlockId = value?.scoreBoostsByBlockId && typeof value.scoreBoostsByBlockId === "object"
+        ? Object.fromEntries(Object.entries(value.scoreBoostsByBlockId)
+            .filter(([blockId, boost]) => typeof blockId === "string"
+                && blockId.trim().length > 0
+                && typeof boost === "number"
+                && Number.isFinite(boost))
+            .map(([blockId, boost]) => [blockId.trim(), boost]))
+        : {};
     return {
         selectedBlockIds,
         routerIdentity,
-        evidenceSource
+        evidenceSource,
+        selectionMode,
+        scoreBoostsByBlockId
     };
+}
+function sortRankedContextEntries(left, right) {
+    if (right.matchedTokens.length !== left.matchedTokens.length) {
+        return right.matchedTokens.length - left.matchedTokens.length;
+    }
+    if (right.score !== left.score) {
+        return right.score - left.score;
+    }
+    if (right.priority !== left.priority) {
+        return right.priority - left.priority;
+    }
+    return left.packOrder - right.packOrder;
+}
+function applyLearnedRouteScoreBoosts(ranked, scoreBoostsByBlockId) {
+    const boosted = ranked.map((entry) => {
+        const boost = scoreBoostsByBlockId[entry.blockId] ?? 0;
+        if (!Number.isFinite(boost) || boost === 0) {
+            return entry;
+        }
+        return {
+            ...entry,
+            score: entry.score + boost
+        };
+    });
+    boosted.sort(sortRankedContextEntries);
+    return boosted;
 }
 function selectContextBlocksByLearnedRouteOverride(ranked, maxBlocks, selectedBlockIds) {
     if (maxBlocks === 0 || selectedBlockIds.length === 0) {
@@ -1503,8 +1542,16 @@ function compileRuntimeCore(packOrRoot, request, options = {}, rankOptions = {})
             ranked,
             maxBlocks
         }));
+    const rankedWithOverrideBoosts = learnedRouteSelectionOverrideResult !== null
+        && learnedRouteSelectionOverrideResult.selectionMode === "graph_walk_score_boost"
+        ? applyLearnedRouteScoreBoosts(ranked, learnedRouteSelectionOverrideResult.scoreBoostsByBlockId)
+        : ranked;
     const selection = learnedRouteSelectionOverrideResult !== null
-        ? selectContextBlocksByLearnedRouteOverride(ranked, maxBlocks, learnedRouteSelectionOverrideResult.selectedBlockIds)
+        ? learnedRouteSelectionOverrideResult.selectionMode === "graph_walk_score_boost"
+            ? selectionMode === "graph_walk_v1"
+                ? selectContextBlocksByGraphWalk(pack, rankedWithOverrideBoosts, maxBlocks)
+                : selectContextBlocks(rankedWithOverrideBoosts, maxBlocks)
+            : selectContextBlocksByLearnedRouteOverride(ranked, maxBlocks, learnedRouteSelectionOverrideResult.selectedBlockIds)
         : selectionMode === "graph_walk_v1"
             ? selectContextBlocksByGraphWalk(pack, ranked, maxBlocks)
             : selectContextBlocks(ranked, maxBlocks);

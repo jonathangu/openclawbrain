@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-8853d946"
+      "pack-5f21e8ff"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-2a65857ac9c26f00e8aa4149667829f426291cf130343ae7e2a1f2c9e43ffbdc"
+    "scoreHash": "sha256-a4b97306d6e492f21b6ea8067db345ca44cadab4c6ff6f64cd02ff96648af610"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-8853d946",
+      "activePackId": "pack-5f21e8ff",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-20c415590c1f9cea3046d0f4e0902c762b5274d3340fdb0c72c9690789984959",
+      "routerIdentity": "pack-5f21e8ff:route_fn",
+      "selectionDigest": "sha256-f42ee0d2da85b1db53dd0fd88ce9b74619c312a81ed5eabe6e4aaaa2a001a88f",
       "selectedContextIds": [
-        "pack-8853d946:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
-        "pack-8853d946:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
-        "pack-8853d946:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction"
+        "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
+        "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
+        "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction.",
         "Interaction operator_override on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-a88858d87afc3e84aa0377c8f8f2854f5e68c5840bcf71e7409208bfb4235e1a",
+      "eventExportDigest": "sha256-d52136544810c2e8891aa39b25e97471b1546c2cdb35b663dfbab5409b24e8ae",
       "expectedContextPhrases": [
         "next proof step against",
         "first smallest next proof",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.321,
-        "routeSelectionMs": 4.658,
+        "totalMs": 8.804,
+        "routeSelectionMs": 5.487,
         "promptAssemblyMs": 0.001,
-        "otherMs": 2.662,
+        "otherMs": 3.315,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

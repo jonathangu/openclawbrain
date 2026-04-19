@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-3c1c8590"
+      "pack-876d487b"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-9780d5908d5332e4993a076ebcc885c7cd931f4c6fb6d899a136a088da97dd29"
+    "scoreHash": "sha256-fc2a04ab56f7ee0b066f2f90d8a7c32d03b9ef884850b0aef2b7f5e6ca730162"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-3c1c8590",
+      "activePackId": "pack-876d487b",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-8fc94fdb9306b99cbefdffba1299d1eda2eefe0ddf2cacc5c17c30abafe99ef5",
+      "routerIdentity": "pack-876d487b:route_fn",
+      "selectionDigest": "sha256-06fe276f7ba9af6174508373116782cd7dd99e0128d4881045bd8826e8ef3962",
       "selectedContextIds": [
-        "pack-3c1c8590:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback",
-        "pack-3c1c8590:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction",
-        "pack-3c1c8590:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-1:interaction"
+        "pack-876d487b:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback",
+        "pack-876d487b:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction",
+        "pack-876d487b:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-1:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction.",
         "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-2-seed-message.",
         "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-1-seed-message."
       ],
-      "eventExportDigest": "sha256-161ab2628f31de032025584c3da89ad357434bcc57d3b356d22f289024458747",
+      "eventExportDigest": "sha256-dc63bc95932a1d79f71eb7b100efa7bdbcaa31695c8680ae35e712e87d2ed964",
       "expectedContextPhrases": [
         "toolcall",
         "process",
@@ -90,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.358,
-        "routeSelectionMs": 4.669,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.688,
+        "totalMs": 12.841,
+        "routeSelectionMs": 7.817,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 5.021,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

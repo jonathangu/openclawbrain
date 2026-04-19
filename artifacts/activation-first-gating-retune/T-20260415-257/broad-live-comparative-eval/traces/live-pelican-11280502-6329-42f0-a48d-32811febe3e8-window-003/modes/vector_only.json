@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-242d4aee"
+      "pack-bc17c331"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-c4b74fc6022413150d5a40e8b1228228de1e032f59085a3f83cf2f27cbb48c8e"
+    "scoreHash": "sha256-e2944b2240ffacd2084f194e40415b99a1debb940ff8a8c9755ba7c71840718f"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-242d4aee",
+      "activePackId": "pack-bc17c331",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-27a58a2f353716eed61769efdd8dca0b910eb2ebe09dec059d913fe6c31a2d34",
+      "routerIdentity": "pack-bc17c331:route_fn",
+      "selectionDigest": "sha256-6c1c52ec0e9c8431e46caf6f81b4374c3415af043ea4d70b96c8dec3c19ccdf0",
       "selectedContextIds": [
-        "pack-242d4aee:pointer-aware-init",
-        "pack-242d4aee:workspace-init:0e569182",
-        "pack-242d4aee:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-3:feedback"
+        "pack-bc17c331:pointer-aware-init",
+        "pack-bc17c331:workspace-init:0e569182",
+        "pack-bc17c331:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
         "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
         "Working-set input task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md selected by pointer-aware init (inbound=1, outbound=51). Last ledger refresh: 2026-03-30 16:02 PT Status keys: active | parked | blocked | done Current queue: **(none)** Master-plan snapshot for the next cold start: - Active principal task: **none**. - Canonical repo truth: /Users/guclaw/.openclaw/workspace/backyard-ripe on main at 9689ffa2, clean, synced with origin/main a…",
-        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: assistant: I’m Pelican—calm, precise, and obsessed with the dollars. What do you want to do right now: pipeline health check, daily refresh performance audit, or verify exit-monitor/trade-guard behavior end-to-end?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-3:interaction."
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: assistant: We can’t get to 100% certainty (broker + market data are external), but we *can* get to “high confidence + fail-closed if anything’s off” with a hard preflight + a premarket canary. **Where we are right now (evidence):** - **Daily refresh:** completes in **~3s** when up-to-date (incremental path is working). - **E2E smoke test:** **passes** (GBM+TFT load, calibrated CDF + PIT load, engine ready). It placed **0 trades** only because the newest snapshot on disk is old, so the cycle correctly sk.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-2222810f5fe296bee38b9f7a8979740f632fbd969527f8d4f9efa1db254a483c",
+      "eventExportDigest": "sha256-3b5d7f0f119968e0dffd852689969f50be4f9bf12a32fd42b61305839e58ea63",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research\\n\\n#"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.211,
-        "routeSelectionMs": 4.498,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.711,
+        "totalMs": 10.859,
+        "routeSelectionMs": 6.675,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 4.182,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

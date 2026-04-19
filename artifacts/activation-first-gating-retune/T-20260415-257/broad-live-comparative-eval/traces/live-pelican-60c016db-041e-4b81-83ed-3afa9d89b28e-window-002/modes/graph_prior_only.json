@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-ff25ac36"
+      "pack-1feae1f9"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-9bcc4ed1f972cda295df6df741e2d2567850dfe6b591797ee88ae5eb82118f91"
+    "scoreHash": "sha256-fc3e6628f1bb8a7de1fbb0b054ef5e706cabd0b5f8397c3c82f41cf5e677b6f1"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-ff25ac36",
+      "activePackId": "pack-1feae1f9",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-e023eb76fb7e33365b7846299c5cc3669104710422012f86b6b55d6e49b32972",
+      "routerIdentity": "pack-1feae1f9:route_fn",
+      "selectionDigest": "sha256-0a6ac4b1d272c6cc064aa518dde40ebb61f380c9c0373262427315734fff0c4b",
       "selectedContextIds": [
-        "pack-ff25ac36:pointer-aware-init",
-        "pack-ff25ac36:workspace-init:02e33be9",
-        "pack-ff25ac36:workspace-init:16415817"
+        "pack-1feae1f9:pointer-aware-init",
+        "pack-1feae1f9:workspace-init:02e33be9",
+        "pack-1feae1f9:pointer-passive-expansion"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=4, outbound=107). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:35 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, task-artifacts/guclaw-cleanup-2026-04-18/MEMORY.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, +8 more from the MEMORY index graph.",
+        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=0, outbound=1). HEARTBEAT.md - Read TASKS.md active section first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, task-artifacts/T-20260415-257/master-plan.md, STARTUP_READY.md, +6 more."
       ],
-      "eventExportDigest": "sha256-2de9639bd32f4ebc14d1114bcb7adf97b1d12ad64f6b51f7cc1654566fcba098",
+      "eventExportDigest": "sha256-3ebe5c6007cc59773dae9f25ffca9caab7540633ace95f4622eaa9f06dbd9220",
       "expectedContextPhrases": [
         "especially phrase new learnings.",
         "new learnings. memory flush",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.03,
-        "routeSelectionMs": 4.409,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.619,
+        "totalMs": 12.11,
+        "routeSelectionMs": 7.411,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 4.696,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

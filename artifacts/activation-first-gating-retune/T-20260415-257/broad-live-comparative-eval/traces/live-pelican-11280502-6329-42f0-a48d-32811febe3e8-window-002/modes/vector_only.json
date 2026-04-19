@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-5a515b9f"
+      "pack-7c5d5fba"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-0102c5e09191152a8cdc2736353a3fcb7500a1af712a2b03665e715b7dfa48f3"
+    "scoreHash": "sha256-370b401e89662ea559e1e622c4162e2c74a005fb8649b53458d54424bc12163d"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-5a515b9f",
+      "activePackId": "pack-7c5d5fba",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-38da3d948aa481a00be81df241dd809decbf63b7b9208add51ab71e3b7446180",
+      "routerIdentity": "pack-7c5d5fba:route_fn",
+      "selectionDigest": "sha256-326a0c352fcf1393bf40144ae8907641518b75b94b25c73a8c7e73b50f21b899",
       "selectedContextIds": [
-        "pack-5a515b9f:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback",
-        "pack-5a515b9f:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-1:interaction",
-        "pack-5a515b9f:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction"
+        "pack-7c5d5fba:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-1:interaction",
+        "pack-7c5d5fba:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction",
+        "pack-7c5d5fba:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction.",
         "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-1-seed-message.",
-        "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-2-seed-message."
+        "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-2-seed-message.",
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-7a661017544ec1d71ad094795b3966ec43224af13d60d8fe485d2a7b780b7ac8",
+      "eventExportDigest": "sha256-a6a095287b38ad6694f58246ab15fc745f26f487978c705486fb5a96daffbd9e",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research\\n\\necho",
         "/tmp/pi"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.979,
-        "routeSelectionMs": 4.248,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.73,
+        "totalMs": 9.419,
+        "routeSelectionMs": 5.773,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.644,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

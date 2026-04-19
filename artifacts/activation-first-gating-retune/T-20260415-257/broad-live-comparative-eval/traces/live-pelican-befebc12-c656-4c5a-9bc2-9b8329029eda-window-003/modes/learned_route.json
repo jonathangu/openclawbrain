@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-3a0559d0"
+      "pack-abbb915b"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-3a0559d0",
-    "frozenEvalRouterIdentity": "pack-3a0559d0:route_fn",
+    "frozenEvalPackId": "pack-abbb915b",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-0cabacf9029e74b3b2cbda5a6433db30894119e047cb3fb9bf96b3bddfd3f445"
+    "scoreHash": "sha256-1d5473a5b34d1eb161dc7f07b624a59aa598e1236945a4c96baa4b616e01f7ee"
   },
   "turns": [
     {
@@ -51,24 +51,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-3a0559d0",
+      "activePackId": "pack-abbb915b",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-90b5d4a2d978312592e155005f89f62b8168a49eb08b122e8248833cacfa2d06",
+      "selectionDigest": "sha256-e6a9c96f9983a04312a02d1d9aa30ab7f46dbdee08370987dd41dea6875cf898",
       "selectedContextIds": [
-        "pack-3a0559d0:workspace-init:16415817"
+        "pack-abbb915b:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
+        "pack-abbb915b:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback",
+        "pack-abbb915b:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=24). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
+        "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: assistant: Work is continuing. I launched the 126a–126d blocker swarm from the retrain single-truth plan and updated `TASKS.md` to reflect that they’re now active. I also checked live market-hours truth on deployed head `d079a46`: the `10:30 ET` cycle processed successfully in explicit GBM-only fallback with no new hold and no TFT crash, so that crash seam is materially closed. Current live issue is narrower now: - latest processed snapshot: `data/2026/04/09/10-30-18.json` - `run_once.status=success` - .... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: System: [2026-04-09 07:02:47 PDT] Exec completed (briny-ne, code 0) :: e7_35.py M tests/test_native_remake_handoff_contract.py M tests/test_pelican_deep_health.py M tests/test_pipeline_health_check.py M tests/test_refresh_canonical_training_inputs.py… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Thursday, April 9.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-f9f29f0a91752d0d08be9cc9dbbd311658890399af3d0339b8a3dc5d355ad0e8",
+      "eventExportDigest": "sha256-957a32b431ce664b0c5652feaa14aefb9ef42f0c013508d1f486312dc7ec50f0",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/126c-listener-scheduler-freshness-2026-04-09.md\"}",
         "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
@@ -84,10 +88,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.875,
-        "routeSelectionMs": 6.459,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 3.415,
+        "totalMs": 11.976,
+        "routeSelectionMs": 7.888,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 4.086,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

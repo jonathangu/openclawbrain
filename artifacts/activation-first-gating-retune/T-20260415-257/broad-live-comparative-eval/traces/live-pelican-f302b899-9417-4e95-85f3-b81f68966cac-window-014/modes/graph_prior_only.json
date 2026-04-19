@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-40b275aa"
+      "pack-5f6a78d1"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-48154e191f1bb977e0480d7ef5b06b28e37f699c21b8716b7b7dcdc2cf64aa7b"
+    "scoreHash": "sha256-d106b7f9a1f3267116b757280aeffe231ee561818b4f61ab0a5a704236e0c03f"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-40b275aa",
+      "activePackId": "pack-5f6a78d1",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-1955a740d258ed69c6f6d7e35bc11d92f605002ed348aa38fe79bf87570fd276",
+      "routerIdentity": "pack-5f6a78d1:route_fn",
+      "selectionDigest": "sha256-92b62c3d008d41b982e0d1ab341c10497401143fb1c89fde20377e63fa366017",
       "selectedContextIds": [
-        "pack-40b275aa:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-6:feedback",
-        "pack-40b275aa:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-6:interaction",
-        "pack-40b275aa:pointer-aware-init"
+        "pack-5f6a78d1:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-6:feedback",
+        "pack-5f6a78d1:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-6:interaction",
+        "pack-5f6a78d1:pointer-aware-init"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 9:04 AM (America/Los_Angeles) / 2026-04-12 16:04 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-6:interaction.",
         "Interaction operator_override on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed. Message: cue-6-seed-message.",
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-6f325a542b63fbe96078cce3862f2be18aabe0a4717456a811cbf36eda4cac4f",
+      "eventExportDigest": "sha256-527cf56dcc6cfacf151c1ec915ef35477d627dcca6d3cbb554e050fb0c6d2713",
       "expectedContextPhrases": [
         "handled internally. status change.",
         "handled internally. status",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.162,
-        "routeSelectionMs": 4.483,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.678,
+        "totalMs": 9.124,
+        "routeSelectionMs": 5.748,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.374,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

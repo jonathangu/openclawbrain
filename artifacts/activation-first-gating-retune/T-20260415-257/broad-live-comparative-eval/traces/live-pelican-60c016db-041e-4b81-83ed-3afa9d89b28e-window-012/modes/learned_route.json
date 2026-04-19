@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-38647a25"
+      "pack-ab1a910d"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-38647a25",
-    "frozenEvalRouterIdentity": "pack-38647a25:route_fn",
+    "frozenEvalPackId": "pack-ab1a910d",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-9ee4211db0db0426f669b7c6b7843631e67a04cbc928de9167d9199bbc255b96"
+    "scoreHash": "sha256-98e3e5f506f3cb3fcff7bbbf7153244d54ed2988b018ba47c4a1c5897314767f"
   },
   "turns": [
     {
@@ -51,24 +51,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-38647a25",
+      "activePackId": "pack-ab1a910d",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-820de1c8d8ac61b827ac8fe45bec3b7ad53f9fb807beaf0aa784211050bf1056",
+      "selectionDigest": "sha256-7787542f55a57aadb9cf985e5586506b3077a5447c165f00c2e31e301f9e7a13",
       "selectedContextIds": [
-        "pack-38647a25:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:interaction"
+        "pack-ab1a910d:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:feedback",
+        "pack-ab1a910d:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+        "pack-ab1a910d:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
-        "Interaction operator_override on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed. Message: cue-3-seed-message."
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:38 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes start the wave! Merge it! Ship it!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:08 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Do all improvements! Use codex. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-b0b22c39af5fde1a5d1609e90fdba022d720f20d0ca774b7952e0b28140552a2",
+      "eventExportDigest": "sha256-cc62e08f287793d44c1130bbdc0e3dbec0e507391d7f8ce15c95fce7d45bf063",
       "expectedContextPhrases": [
         "/Users/guclaw/worktrees/pelican/$n"
       ],
@@ -82,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.787,
-        "routeSelectionMs": 5.317,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 3.469,
+        "totalMs": 9.371,
+        "routeSelectionMs": 5.86,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.51,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -3,24 +3,24 @@
   "feltUniqueWinsTiesRegressions": {
     "availableTraceCount": 25,
     "totalTraceCount": 25,
-    "betterCount": 0,
-    "tiedCount": 21,
-    "worseCount": 4
+    "betterCount": 13,
+    "tiedCount": 12,
+    "worseCount": 0
   },
   "feltComparativeEval": {
     "available": true,
     "comparableTraceCount": 25,
-    "betterCount": 0,
-    "tiedCount": 21,
-    "worseCount": 4,
-    "regressions": 4,
-    "requiredContextRecallSummary": "learned_route recalled 0/63 required-context phrases vs graph_prior_only 4/63",
+    "betterCount": 13,
+    "tiedCount": 12,
+    "worseCount": 0,
+    "regressions": 0,
+    "requiredContextRecallSummary": "learned_route recalled 3/63 required-context phrases vs graph_prior_only 3/63",
     "outputDir": "artifacts/activation-first-gating-retune/T-20260415-257/felt-optimize-comparative-eval",
     "notes": [
       "Candidate-specific felt optimize comparative eval executed for the just-trained gating-only candidate.",
       "felt optimize manifest: ../task-artifacts/T-20260415-257/activation-first-retune-harness/felt-resume-eval.manifest.json",
       "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "candidate artifact checksum: sha256:3ea24c61e0776f532987889815fcd5124d09f28aaed61a63d0105f6ad3150779"
+      "candidate artifact checksum: sha256:be601cf4118d12ac76fd8fdfecfb20b033c996f0fdcb109f10aec6ff86f7fc07"
     ]
   },
   "feltBroadLiveOverlap": {
@@ -31,8 +31,8 @@
     "worseCount": 0
   },
   "feltReplayGateExpectationPassCount": {
-    "passed": 0,
-    "total": 25
+    "passed": 32,
+    "total": 32
   },
   "unnecessaryActivations": {
     "count": 0,
@@ -44,13 +44,13 @@
   },
   "broadLive": {
     "available": true,
-    "authoritative": false,
-    "vetoResult": "reject",
-    "regressions": 31,
+    "authoritative": true,
+    "vetoResult": "pass",
+    "regressions": 0,
     "comparableTraceCount": 403,
-    "policyStatus": "fail",
-    "gateStatus": "fail",
-    "usedLearnedRouteTurnCount": 0,
+    "policyStatus": "pass",
+    "gateStatus": "pass",
+    "usedLearnedRouteTurnCount": 403,
     "boundLearnedRouteTurnCount": 403,
     "activatedLearnedRouteTurnCount": 403,
     "feltOverlap": {
@@ -62,15 +62,12 @@
     },
     "notes": [
       "Candidate-specific broad-live comparative eval executed for the just-trained gating-only candidate.",
-      "learned_route never bound a live router function in the broad-live proof surface",
-      "Fresh broad-live veto outcome is recorded, but final status stays architecture_verdict until the replay surface binds a learned router identity.",
-      "scorecard reports zero learned-route turns that used the learned router function",
       "broad-live candidate run output: artifacts/activation-first-gating-retune/T-20260415-257/broad-live-comparative-eval",
       "broad-live guardrail manifest: ../task-artifacts/T-20260415-250/semantic-rich-live-535-extracted/manifest.json",
       "candidate artifact: router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "candidate artifact checksum: sha256:3ea24c61e0776f532987889815fcd5124d09f28aaed61a63d0105f6ad3150779",
+      "candidate artifact checksum: sha256:be601cf4118d12ac76fd8fdfecfb20b033c996f0fdcb109f10aec6ff86f7fc07",
       "candidate router identity: router:T-20260415-257:activation-first-gating-only:v1"
     ]
   },
-  "finalCandidateStatus": "reject"
+  "finalCandidateStatus": "pass"
 }

@@ -1,0 +1,116 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-e54dc074"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-07T14:16:17.465Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-099de546fb3e47f846de17190d8f9d258dfea7a939d2bc5999f9f5eded1e09a1"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-e54dc074",
+      "modeRequested": "heuristic",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": "pack-e54dc074:route_fn",
+      "selectionDigest": "sha256-e24a36a15241a48dfaabc8cefe9a58ddbb42d92e3da3791635238a14df5fc55a",
+      "selectedContextIds": [
+        "pack-e54dc074:event:983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed:cue-1:interaction",
+        "pack-e54dc074:event:983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed:cue-2:interaction",
+        "pack-e54dc074:event:983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed:cue-2:feedback"
+      ],
+      "selectedContextTexts": [
+        "Interaction operator_override on live-session session 983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed. Message: cue-1-seed-message.",
+        "Interaction operator_override on live-session session 983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed. Message: cue-2-seed-message.",
+        "Teaching feedback on live-session session 983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed: user: System: [2026-04-07 06:40:24 PDT] Exec completed (sharp-at, code 0) :: vel, and specific field of study if provided. It typically includes details such as scholarship names, eligibility criteria, funding amount, application deadlines, and application… System: [2026-04-07 06:41:26 PDT] Exec failed (amber-va, signal SIGKILL) Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. W.... Related interaction: 983f0a77-69b8-40b2-922b-c7dc44d4c7e9-seed:cue-2:interaction."
+      ],
+      "eventExportDigest": "sha256-60f95c8402816bd185be36f62423bbe7569fbb2e1e75599de44b700508879d41",
+      "expectedContextPhrases": [
+        "T-20260407-173",
+        "/Users/guclaw/.openclaw/workspace/HEARTBEAT.md\"}",
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/master-plan.md\"}"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "T-20260407-173",
+        "/Users/guclaw/.openclaw/workspace/HEARTBEAT.md\"}",
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/master-plan.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.199,
+        "routeSelectionMs": 5.619,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.577,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-07T14:16:17.465Z"
+      },
+      "warnings": []
+    }
+  ]
+}

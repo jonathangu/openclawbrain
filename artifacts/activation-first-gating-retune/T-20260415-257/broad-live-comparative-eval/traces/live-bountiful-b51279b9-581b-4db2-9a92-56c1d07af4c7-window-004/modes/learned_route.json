@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
       "pack-bc0ea1ee"
@@ -17,7 +17,7 @@
     "trainTurnCount": 0,
     "evalTurnCount": 1,
     "frozenEvalPackId": "pack-bc0ea1ee",
-    "frozenEvalRouterIdentity": "pack-bc0ea1ee:route_fn",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-6b060a898506f64616c4d02293344e9e95e3e5aa380667913c56b7be502a0d2e"
+    "scoreHash": "sha256-007649168dd5420649fb6e9d21b663fbf1742dbbbaad71e1015cba41c1024755"
   },
   "turns": [
     {
@@ -55,20 +55,24 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-1ec2f902e25c4d6b6cfa79c7ec3ce7c1a2650147343407efc60c70a6e3c204b6",
+      "selectionDigest": "sha256-613fb82b4b8db23999e518ce5d0d825b90275f2a6bc5a81cd7be136d745211e9",
       "selectedContextIds": [
-        "pack-bc0ea1ee:pointer-aware-init"
+        "pack-bc0ea1ee:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:feedback",
+        "pack-bc0ea1ee:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-3:feedback",
+        "pack-bc0ea1ee:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: 3a4cab56-64f1-4eb1-a427-cc6d90dfcea8] A cron job \"bountiful-learning-v2\" just completed successfully. Result: **Learning Harness v2 — Bountiful (4h window)** ✅ Harvest complete — no new messages to classify **Maintenance:** - **main:** 5,591 nodes, 15,631 edges (pruned 2,074, merged 3) - **pelican:** 1,552 nodes, 17,763 edges (pruned 4,275, merged 2) - **bountiful:** 1,723 nodes, 12,274 edges (pruned 13,824, merged 2) **Database stats:** - Active learnings: 259 (136 GATE, 123 REF).... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: 829d88b8-3e38-4b38-806e-19da01caf5bc] A cron job \"bountiful-learning-v2\" just completed successfully. Result: 🌱 **Learning Harvest v2 — Bountiful (4h window)** **Harvest Results:** - No new messages to classify (0 unclassified) - Skipped extraction stages (no work needed) - Maintenance completed across all brains **OpenClawBrain Maintenance:** - **main**: 5,594 nodes, 13,403 edges (no pruning) - **pelican**: 1,552 nodes, 17,238 edges (pruned 3,996, merged 2) - **bountiful**: 886 n.... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: assistant: Learning harvest ran cleanly in the last window. - Nothing new came in that needed classification, so no extraction work was needed. - Routine brain maintenance completed successfully. - The Bountiful brain got a good cleanup pass (a lot of extra connections pruned) — should keep retrieval snappy and the graph lean.. Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-4381a5768f5d9ace26cac5d03bf86cc40a6ef2e5d17ead68e9dd5bd2478f5349",
+      "eventExportDigest": "sha256-c4eb8d14f6861f7255f1cd3d280293597363dd59f3b9bd13930c3394a90c83ad",
       "expectedContextPhrases": [
         "/merged),"
       ],
@@ -82,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.463,
-        "routeSelectionMs": 5.675,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.786,
+        "totalMs": 8.739,
+        "routeSelectionMs": 5.667,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.07,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-15T03:43:34.542Z",
   "traceHash": "sha256-529373cf8f7314054ee5a9938b5133a303e70a9153c03b373cae4ff852f394c7",
   "fixtureHash": "sha256-c16690eb3752325552dd8dd957f6a57c852c3d697d1ce7463c9556556d92ca19",
-  "scoreHash": "sha256-5da40ab29069eeb25983211ad19a8d55e7c1406ed5b60d09cbff763e79f4354b",
+  "scoreHash": "sha256-aff3a4ba6bb22b86000fd61b9b836784f3cb4bb7de08eb75cd9037c821a3784e",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.037,
+            "totalMs": 0.034,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.037,
+            "otherMs": 0.034,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-782c05e2"
+          "pack-0714a465"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-594d122537d9e61fbfb6ef8a4896873f6e9b18ae60133392023e33b0008cfece"
+        "scoreHash": "sha256-c2d6e88db0a2a5973c444c025965cd1e8a6e300837d7ea2a54b5b250c1d57dae"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-782c05e2",
+          "activePackId": "pack-0714a465",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-c255e77146636ae050cee14e49480df4d3b1684544b6b2e49650f740e737f404",
+          "routerIdentity": "pack-0714a465:route_fn",
+          "selectionDigest": "sha256-af4eeae40722efb368a41cbfad15fe89059f3ba37573451e056043ff1c3c6eb9",
           "selectedContextIds": [
-            "pack-782c05e2:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:feedback",
-            "pack-782c05e2:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:feedback",
-            "pack-782c05e2:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-6:feedback"
+            "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:feedback",
+            "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:feedback",
+            "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 343. Work in /Users/guclaw/worktrees/quant-research/343. Goal: produce a concrete delete/fail-close inventory for the remaining dangerous legacy code paths. Focus on fixed-grid owner semantics, stale wrapper/status surfaces, rebuild broadening fallbacks, and implicit article-store compatibility guesses. Give a file-by-file hit list with delete vs hard-.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 343. Work in /Users/guclaw/worktrees/quant-research/343. Goal: produce a concrete delete/fail-close inventory for the remaining dangerous legacy code paths. Focus on fixed-grid owner semantics, stale wrapper/status surfaces, rebuild broadening fallbacks, and implicit article-store compatibility guesses. Give a file-by-file hit list with delete vs hard-.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:interaction.",
             "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: assistant: ## Summary I finished the lane-343 audit. The biggest remaining risks are not the canonical expiry-owner seams themselves, they are: 1. one surviving **broadening fallback** in `daily_data_refresh.py`, 2. several **shadow status/wrapper truth** paths that can mark bad state as okay, 3. a few **permissive compatibility/inference** layers that can hide drift. The fixed-grid / `target_dte` owner bridge is mostly already fail-closed now. The most dangerous paths that could silently drag Pelican b.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-9b9470741ff006aba226fa0964bf58c2d745911b7bc960723e5d4da9505d3075",
+          "eventExportDigest": "sha256-6413175bff82e905c8c71f2f8118b033da0c426148770bfbb7d0c59428606370",
           "expectedContextPhrases": [
             "code can reboot world",
             "around code can reboot",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.187,
-            "routeSelectionMs": 4.566,
+            "totalMs": 8.859,
+            "routeSelectionMs": 5.485,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.62,
+            "otherMs": 3.374,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-782c05e2"
+          "pack-0714a465"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-d9fcbdd08ccbf486cbebf537df5698b8c0259d81d5a3070a91036e57fc68c0f5"
+        "scoreHash": "sha256-8621518e9b8d56a89e34b9cc76ae5524d76042257772fb1f90daa00d3e5a02cc"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-782c05e2",
+          "activePackId": "pack-0714a465",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-a9fb9cb01126eb1ffd56d2efeed1321ae1358439f795e378e042f5e385d419b8",
+          "routerIdentity": "pack-0714a465:route_fn",
+          "selectionDigest": "sha256-e2d8b565c7838c9dd257d1729386ebeb3228567aa8f110f820b6364fa4e91657",
           "selectedContextIds": [
-            "pack-782c05e2:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:feedback",
-            "pack-782c05e2:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:feedback",
-            "pack-782c05e2:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:interaction"
+            "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:feedback",
+            "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:feedback",
+            "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 343. Work in /Users/guclaw/worktrees/quant-research/343. Goal: produce a concrete delete/fail-close inventory for the remaining dangerous legacy code paths. Focus on fixed-grid owner semantics, stale wrapper/status surfaces, rebuild broadening fallbacks, and implicit article-store compatibility guesses. Give a file-by-file hit list with delete vs hard-.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 343. Work in /Users/guclaw/worktrees/quant-research/343. Goal: produce a concrete delete/fail-close inventory for the remaining dangerous legacy code paths. Focus on fixed-grid owner semantics, stale wrapper/status surfaces, rebuild broadening fallbacks, and implicit article-store compatibility guesses. Give a file-by-file hit list with delete vs hard-.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:interaction.",
             "Interaction operator_override on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-e9e719281eb94041c889872a99c6537dcece1e2189438ba0e7b5ff969ba72766",
+          "eventExportDigest": "sha256-4bb0a2f2c99c745e6a9bc9dd1f4dd5aa65918bbba94020e6f2a9fd0ea52de3eb",
           "expectedContextPhrases": [
             "code can reboot world",
             "around code can reboot",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.155,
-            "routeSelectionMs": 4.51,
+            "totalMs": 8.655,
+            "routeSelectionMs": 5.336,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.644,
+            "otherMs": 3.318,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-29eb964d"
+          "pack-0714a465"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-29eb964d",
-        "frozenEvalRouterIdentity": "pack-29eb964d:route_fn",
+        "frozenEvalPackId": "pack-0714a465",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-4996667f9c80cd8ce0bc93e6801635b5b72d2ad3b07b94d0df2ccc1de741eaa9"
+        "scoreHash": "sha256-c67ced31a6d42599ea4e7e61e5b8a56c1aa35ced932ba4b3801c2d5919d15a51"
       },
       "turns": [
         {
@@ -405,24 +405,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-29eb964d",
+          "activePackId": "pack-0714a465",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-5bda4e5b08a0f8feef6f57078fa438f84568d6184c4462c4030b04682cda7a05",
+          "selectionDigest": "sha256-af4eeae40722efb368a41cbfad15fe89059f3ba37573451e056043ff1c3c6eb9",
           "selectedContextIds": [
-            "pack-29eb964d:workspace-init:16415817"
+            "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:feedback",
+            "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:feedback",
+            "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-6:feedback"
           ],
           "selectedContextTexts": [
-            "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=24). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
+            "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 343. Work in /Users/guclaw/worktrees/quant-research/343. Goal: produce a concrete delete/fail-close inventory for the remaining dangerous legacy code paths. Focus on fixed-grid owner semantics, stale wrapper/status surfaces, rebuild broadening fallbacks, and implicit article-store compatibility guesses. Give a file-by-file hit list with delete vs hard-.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 343. Work in /Users/guclaw/worktrees/quant-research/343. Goal: produce a concrete delete/fail-close inventory for the remaining dangerous legacy code paths. Focus on fixed-grid owner semantics, stale wrapper/status surfaces, rebuild broadening fallbacks, and implicit article-store compatibility guesses. Give a file-by-file hit list with delete vs hard-.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: assistant: ## Summary I finished the lane-343 audit. The biggest remaining risks are not the canonical expiry-owner seams themselves, they are: 1. one surviving **broadening fallback** in `daily_data_refresh.py`, 2. several **shadow status/wrapper truth** paths that can mark bad state as okay, 3. a few **permissive compatibility/inference** layers that can hide drift. The fixed-grid / `target_dte` owner bridge is mostly already fail-closed now. The most dangerous paths that could silently drag Pelican b.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-6:interaction."
           ],
-          "eventExportDigest": "sha256-eea0336658b34cbe2e6edd20a05dbc6126dfcbab0931ef12a0fcea2eef23e073",
+          "eventExportDigest": "sha256-a65575ebe3dcdd4ea8b4f0e72379cddf1855905f4c6777fd50d6c637377ce24e",
           "expectedContextPhrases": [
             "code can reboot world",
             "around code can reboot",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.756,
-            "routeSelectionMs": 5.487,
+            "totalMs": 7.569,
+            "routeSelectionMs": 4.738,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.267,
+            "otherMs": 2.83,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-9c3f5cbe037f59b73e9221e7952a37d10fca8636a68e07dbd204d7a9296258f4"
+  "bundleHash": "sha256-94877b882f73edca183a18181406f663fb89f72ef3a9d876b8e78fa4241786a7"
 }

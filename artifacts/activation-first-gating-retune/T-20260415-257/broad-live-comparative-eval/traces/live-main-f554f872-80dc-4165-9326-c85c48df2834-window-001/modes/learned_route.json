@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
       "pack-cf3e03df"
@@ -17,7 +17,7 @@
     "trainTurnCount": 0,
     "evalTurnCount": 1,
     "frozenEvalPackId": "pack-cf3e03df",
-    "frozenEvalRouterIdentity": "pack-cf3e03df:route_fn",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-3724e97ac284612b561a2f4fadf3ffd2297be4ae77ff134f2bef1dfcf3238091"
+    "scoreHash": "sha256-ce67e47f9f712fef5609019266ba77427b303817006db92b8642f5a3df93059b"
   },
   "turns": [
     {
@@ -55,20 +55,24 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-5f464e7a1c19bc48b277da3ac1ed004a9a797683d393fc05925d9fcb3dff1848",
+      "selectionDigest": "sha256-21347c4ec617435731590d243828d5969a2b8c560ef469b464fbf8079bfe2b4b",
       "selectedContextIds": [
-        "pack-cf3e03df:event:f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction"
+        "pack-cf3e03df:workspace",
+        "pack-cf3e03df:event:f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:feedback",
+        "pack-cf3e03df:feedback-scanner"
       ],
       "selectedContextTexts": [
-        "Interaction operator_override on live-session session f554f872-80dc-4165-9326-c85c48df2834-seed. Message: cue-1-seed-message."
+        "Workspace snapshot session-f554f872-80dc-4165-9326-c85c48df2834 for ws-main captured at 2026-04-03T16:07:51.092Z with revision f554f872-80dc-4165-9326-c85c48df2834.",
+        "Teaching feedback on live-session session f554f872-80dc-4165-9326-c85c48df2834-seed: assistant: ✅ New session started · model: openai-codex/gpt-5.4. Related interaction: f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction.",
+        "Always-on feedback scanner harvests human labels from local session logs with Ollama qwen3.5:9b-q4_K_M, checkpointed resumes, and deduplicated background scans."
       ],
-      "eventExportDigest": "sha256-f2d36bc531299ab4733371bee93d38ccd4adebd903a13e842fff41a623c8a483",
+      "eventExportDigest": "sha256-6b3900727b06e1831bb07d50af34d79b2db69bd579079f801d03370b73f5d016",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/BOOT.md\"}"
       ],
@@ -82,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 2.946,
-        "routeSelectionMs": 1.865,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 1.08,
+        "totalMs": 6.016,
+        "routeSelectionMs": 3.57,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.443,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

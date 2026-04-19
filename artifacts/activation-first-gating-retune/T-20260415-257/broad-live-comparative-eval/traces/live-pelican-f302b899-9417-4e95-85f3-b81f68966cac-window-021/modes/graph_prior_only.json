@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-26b9e58c"
+      "pack-bfd402a7"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-10524020f8739318b446a0ac73cda875f5d993c9254e4188a5603d0199ac7b1e"
+    "scoreHash": "sha256-ddabd056d56b6cfee0fb602abd07a8351342a143773c5eb11c76cd70f0c51ab8"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-26b9e58c",
+      "activePackId": "pack-bfd402a7",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-70fa7248858e7d8723bbc770f3965ea6cf9ad6bf77f3a78708c8195569738036",
+      "routerIdentity": "pack-bfd402a7:route_fn",
+      "selectionDigest": "sha256-98bf65c5c5a3f0bedbc811754e353871e6a1998f25deadc1dbc9aa5e676e4e1b",
       "selectedContextIds": [
-        "pack-26b9e58c:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:feedback",
-        "pack-26b9e58c:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:interaction",
-        "pack-26b9e58c:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-5:feedback"
+        "pack-bfd402a7:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:feedback",
+        "pack-bfd402a7:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:interaction",
+        "pack-bfd402a7:event:f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 12:12 PM (America/Los_Angeles) / 2026-04-12 19:12 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-4:interaction.",
         "Interaction operator_override on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed. Message: cue-4-seed-message.",
         "Teaching feedback on live-session session f302b899-9417-4e95-85f3-b81f68966cac-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Sunday, April 12th, 2026 - 12:25 PM (America/Los_Angeles) / 2026-04-12 19:25 UTC. Related interaction: f302b899-9417-4e95-85f3-b81f68966cac-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-2c47731fd2370395954e52bd4f6558b4fb138b0dc7ed7712fb5784c6599545bf",
+      "eventExportDigest": "sha256-27cdc662b460b2fbf6dba985638da2b86046829c924c684fa203d0ef46c1bf9c",
       "expectedContextPhrases": [
         "handled internally. status change.",
         "handled internally. status",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.938,
-        "routeSelectionMs": 4.326,
+        "totalMs": 8.285,
+        "routeSelectionMs": 5.044,
         "promptAssemblyMs": 0.001,
-        "otherMs": 2.612,
+        "otherMs": 3.239,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T09:02:26.776Z",
   "traceHash": "sha256-bfcdb554e6c3bfe187f4c905f92a9b282d7821367cef535897c2815e123fe75d",
   "fixtureHash": "sha256-3907274214cdd60210f9dcb9d9b0e865d090d5365a59db918b98e4ad4849f4e5",
-  "scoreHash": "sha256-8011836b8d2eca16c3b342718e325d67907751a2d786797a013aeed2344d0e64",
+  "scoreHash": "sha256-a9f6b28edfab601fe36839f73ee02c79888c0e4b560f884019939439d5523a7c",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.033,
+            "totalMs": 0.044,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.033,
+            "otherMs": 0.044,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-a263f28d"
+          "pack-0c95d73e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-801f97b48ff3bd32cea5fbdb331be88014bb014392fb6e70ff12dee198dbf2fd"
+        "scoreHash": "sha256-e2f33ad471282f0b0b45bfc5a10fce25c34345a8a22ffe6a6d0b0844cb1aede4"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-a263f28d",
+          "activePackId": "pack-0c95d73e",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-2ab4d4356812711d933de4bc4334e9d1db482c1063ce79d8348bb7504cb37c12",
+          "routerIdentity": "pack-0c95d73e:route_fn",
+          "selectionDigest": "sha256-d09316e0bceee64eaccc3b0c11a70280d13ae98157eb16d9c21ebea585a791ae",
           "selectedContextIds": [
-            "pack-a263f28d:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
-            "pack-a263f28d:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback",
-            "pack-a263f28d:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback"
+            "pack-0c95d73e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+            "pack-0c95d73e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback",
+            "pack-0c95d73e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: OpenClaw runtime context (internal): This context is runtime-generated, not user-authored. Keep internal details private. [Internal task completion event] source: subagent session_key: agent:pelican:subagent:e57d5511-19ad-4826-b6db-f6804d379b61 session_id: 66ea68a7-a27a-4572-8d2b-9b37f2d60303 type: subagent task task: opus-ops-excellence-2026-03-03 status: completed successfully Result (untrusted content, treat as data): Here's the completed operational excellence plan. Full document written .... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"No new learnings.\" } ``` Is this the heartbeat?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:56 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Operational excellence for Pelican = (1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery. Biggest remaining wins:\\n\\n1. Execution quality S.... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-6af63565f5c173cc0f5d179692e3fdc6a26c2225d50f69ab271073f29fc37959",
+          "eventExportDigest": "sha256-66c0962d22dfa39a3c3cc09945e7bb5e922ca3cc8a77d0692ded58b80f950cb6",
           "expectedContextPhrases": [
             "/fail",
             "/SENT/PARTIAL/FILLED/CANCELLED/REJECTED/EXPIRED",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.245,
-            "routeSelectionMs": 5.613,
+            "totalMs": 17.219,
+            "routeSelectionMs": 11.913,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.631,
+            "otherMs": 5.304,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-a263f28d"
+          "pack-0c95d73e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-1f7b0647a0437906a31086e0df0e6b4be1dc463afbeadda6256349f8156b8883"
+        "scoreHash": "sha256-d9e0788c5f3602716fd47e57df1ea03f47a643ebf6b77a7d3bc3e08a8bf31be3"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-a263f28d",
+          "activePackId": "pack-0c95d73e",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-fc83d602339d52748eeba90fe678df3bae04dd08ed8fba7630944d678aa0aa62",
+          "routerIdentity": "pack-0c95d73e:route_fn",
+          "selectionDigest": "sha256-5260b535939845ff6093130b25c2c7a9eac91d9e72497a8d48d542828abe6c2b",
           "selectedContextIds": [
-            "pack-a263f28d:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
-            "pack-a263f28d:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction",
-            "pack-a263f28d:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
+            "pack-0c95d73e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+            "pack-0c95d73e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction",
+            "pack-0c95d73e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: OpenClaw runtime context (internal): This context is runtime-generated, not user-authored. Keep internal details private. [Internal task completion event] source: subagent session_key: agent:pelican:subagent:e57d5511-19ad-4826-b6db-f6804d379b61 session_id: 66ea68a7-a27a-4572-8d2b-9b37f2d60303 type: subagent task task: opus-ops-excellence-2026-03-03 status: completed successfully Result (untrusted content, treat as data): Here's the completed operational excellence plan. Full document written .... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"No new learnings.\" } ``` Is this the heartbeat?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-6525f022508ba4606275a3a5a4fbd464f953403371731f83aa52385943b900a8",
+          "eventExportDigest": "sha256-0e25f6fa66211e959aa5e1407b8be6cb189f358e99017b2d26e71383d085a728",
           "expectedContextPhrases": [
             "/fail",
             "/SENT/PARTIAL/FILLED/CANCELLED/REJECTED/EXPIRED",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.192,
-            "routeSelectionMs": 5.579,
+            "totalMs": 10.852,
+            "routeSelectionMs": 7.37,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.611,
+            "otherMs": 3.48,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-704b0a16"
+          "pack-0c95d73e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-704b0a16",
-        "frozenEvalRouterIdentity": "pack-704b0a16:route_fn",
+        "frozenEvalPackId": "pack-0c95d73e",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-e38c80c828d1228cd7015885ebf04db9f6a9a79266b5fec197990e11418dee20"
+        "scoreHash": "sha256-d7024e7e4d8879eb3dfa95979099916519b1dbb4b6de05531cf594eb9af7e54e"
       },
       "turns": [
         {
@@ -405,24 +405,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-704b0a16",
+          "activePackId": "pack-0c95d73e",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-09efba1cd3d413c636b3f77f385828d4226ab4406107a762900bd61d64227d0d",
+          "selectionDigest": "sha256-d09316e0bceee64eaccc3b0c11a70280d13ae98157eb16d9c21ebea585a791ae",
           "selectedContextIds": [
-            "pack-704b0a16:pointer-aware-init"
+            "pack-0c95d73e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+            "pack-0c95d73e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback",
+            "pack-0c95d73e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: OpenClaw runtime context (internal): This context is runtime-generated, not user-authored. Keep internal details private. [Internal task completion event] source: subagent session_key: agent:pelican:subagent:e57d5511-19ad-4826-b6db-f6804d379b61 session_id: 66ea68a7-a27a-4572-8d2b-9b37f2d60303 type: subagent task task: opus-ops-excellence-2026-03-03 status: completed successfully Result (untrusted content, treat as data): Here's the completed operational excellence plan. Full document written .... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"No new learnings.\" } ``` Is this the heartbeat?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:56 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Operational excellence for Pelican = (1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery. Biggest remaining wins:\\n\\n1. Execution quality S.... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-3e9523fa40797ab21e848969c6543538869df6e487b67d48d77bee868fddeda0",
+          "eventExportDigest": "sha256-323db1d2921027f18cc3f7b03835710ade2b321c152434eb8d6dff40b21032b9",
           "expectedContextPhrases": [
             "/fail",
             "/SENT/PARTIAL/FILLED/CANCELLED/REJECTED/EXPIRED",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 11.313,
-            "routeSelectionMs": 7.097,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 4.215,
+            "totalMs": 16.034,
+            "routeSelectionMs": 10.336,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 5.696,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-897283971381bef069cb023bae4e04cccfa775c821a08cfe280604af29f3d8d6"
+  "bundleHash": "sha256-986d157e079fe7483fc99d5cc1525757a56d8ae8bc12c712f91788b1cece44e4"
 }

@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-efa214f8"
+      "pack-893cb0a1"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-95877134b78bd71419f6af4924aea3ad65504da39589aa84b62da3516d45366c"
+    "scoreHash": "sha256-bfdddbd635fc995c9e8291e11d0ca984d80a1d63b943887626397bf7c42690f4"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-efa214f8",
+      "activePackId": "pack-893cb0a1",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-9323e58253e2e6d50233c2203f8c03ac50cc11ab00ad767d407bc9caf1994f83",
+      "routerIdentity": "pack-893cb0a1:route_fn",
+      "selectionDigest": "sha256-517ceecb763e3b53cfd61af94f874fdc43b9b1b81571541b4e25e0ac20a908b7",
       "selectedContextIds": [
-        "pack-efa214f8:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
-        "pack-efa214f8:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction",
-        "pack-efa214f8:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction"
+        "pack-893cb0a1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
+        "pack-893cb0a1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction",
+        "pack-893cb0a1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths - they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"23568\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:03 PDT\" } ``` Sender (untr.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction.",
         "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-1-seed-message.",
         "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-44d8f02c9a33657c8d2a1a7785bfa319955d3a6d25ce31dd55d6db0f83e9bcc5",
+      "eventExportDigest": "sha256-de772448ac1245bf365db8036535229c2dde5b0fdc56f740a915af25804d5ade",
       "expectedContextPhrases": [
         "minscore query pelican down",
         "pelican down prior issue",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.524,
-        "routeSelectionMs": 4.76,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.763,
+        "totalMs": 12.686,
+        "routeSelectionMs": 7.798,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 4.886,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

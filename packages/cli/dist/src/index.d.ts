@@ -1434,15 +1434,27 @@ export interface RecordedSessionReplayProofBundleValidationV1 {
     scoreHashMatches: boolean;
     errors: string[];
 }
+export interface RecordedSessionReplayServedPackAdapterPrepareInputV1 {
+    activationRoot: string;
+    seedPackRoot: string;
+    fixture: RecordedSessionReplayFixtureV1;
+}
+export interface RecordedSessionReplayServedPackAdapterV1 {
+    /** @internal Replay-only served-pack adapter hook for authoritative candidate evaluation. */
+    prepare(input: RecordedSessionReplayServedPackAdapterPrepareInputV1): void;
+}
 export interface WriteRecordedSessionReplayProofBundleInputV1 {
     rootDir: string;
     trace: RecordedSessionTraceV1;
     scratchRootDir?: string | null;
     learnedRouteSelectionOverride?: LearnedRouteSelectionOverride | null;
+    learnedRouteServedPackAdapter?: RecordedSessionReplayServedPackAdapterV1 | null;
 }
 export interface RecordedSessionReplayOptionsV1 {
     /** @internal Replay-only learned-route selection override. */
     learnedRouteSelectionOverride?: LearnedRouteSelectionOverride | null;
+    /** @internal Replay-only served-pack adapter hook for authoritative candidate evaluation. */
+    learnedRouteServedPackAdapter?: RecordedSessionReplayServedPackAdapterV1 | null;
 }
 export declare function buildRecordedSessionReplayFixture(trace: RecordedSessionTraceV1): RecordedSessionReplayFixtureV1;
 export declare function runRecordedSessionReplay(rootDir: string, fixture: RecordedSessionReplayFixtureV1, options?: RecordedSessionReplayOptionsV1): RecordedSessionReplayBundleV1;

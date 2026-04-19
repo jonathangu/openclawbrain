@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-3f8aaed0"
+      "pack-54b65c8e"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-1e9b85dc9e0337bf45b4d4f14fa66e4f235743dbe3404ac3545682b7fc201d63"
+    "scoreHash": "sha256-27e67ac519f7d19360b858f9011761869487328c383d0b43e96e1e6a1971af10"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-3f8aaed0",
+      "activePackId": "pack-54b65c8e",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-7803e5783f89c34c4b635f4f350e9c1c81d557b85e21e183f587487277c3a44a",
+      "routerIdentity": "pack-54b65c8e:route_fn",
+      "selectionDigest": "sha256-9b46c406b4830945040379fc7652055ac828df4dac0f64ece1ec8a6f1595df43",
       "selectedContextIds": [
-        "pack-3f8aaed0:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
-        "pack-3f8aaed0:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:feedback",
-        "pack-3f8aaed0:pointer-aware-init"
+        "pack-54b65c8e:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
+        "pack-54b65c8e:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:feedback",
+        "pack-54b65c8e:pointer-aware-init"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Status: **fixed/proof-green** Commit: **181808d938c5a7e1376b34c289323aeaffbe0886** Message: `pelican: guard latest feature slice coverage` Exact proof: - Freshest slice in `full_feature_matrix_v4_refresh.parquet` is **2026-04-07 19:30:21** - That slice has **35 tickers**, not 36 - Missing core ticker: **TSM** - The immediately previous slice at **2026-04-07 19:30:20** has **36 tickers** - Big-date / earnings features in the latest 35-row slice are fully populated: - `days_to_earnings`: **35/3.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
         "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 forward feature-quality lane. Work in /Users/guclaw/worktrees/pelican/39 off fresh main. Do NOT edit TASKS.md. Goal: verify and harden the forward contract for recent core-36 feature coverage and fixed-time/big-date feature featurization. Use recent real artifacts, especially /Users/guclaw/.openclaw/pelican/runtime/quant-research/artifacts/coverage_rebuild/.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-e8cbe5ae0a8aec2b2b9c2925165a691d735c9f4c2adc1206318c4f703784e5b0",
+      "eventExportDigest": "sha256-39f4bb4527269b7b1500e0123dac75381db02f43950f487650fdab74cae413a6",
       "expectedContextPhrases": [
         "drift full core recent",
         "full core recent slice",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.949,
-        "routeSelectionMs": 4.386,
+        "totalMs": 11.367,
+        "routeSelectionMs": 7.013,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.561,
+        "otherMs": 4.352,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -5,11 +5,11 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 40,
+    "qualityScore": 60,
     "compileOkCount": 1,
-    "phraseHitCount": 0,
+    "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
       "pack-a99539c1"
@@ -17,7 +17,7 @@
     "trainTurnCount": 0,
     "evalTurnCount": 1,
     "frozenEvalPackId": "pack-a99539c1",
-    "frozenEvalRouterIdentity": "pack-a99539c1:route_fn",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-c0303089ead25e9b12234cc7d5bfc9a00c726b6e924679ab8707dc09fc2c0f64"
+    "scoreHash": "sha256-3cde3aac55f6ce063346fd5a3ae0803497721c1b8fd32b003a76d32252aa01e1"
   },
   "turns": [
     {
@@ -55,41 +55,46 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-d1f754631ec12b9c0785c3967a2d42dc5f7d62082ac9c1ce97d3b19860f8d3c9",
+      "selectionDigest": "sha256-3d7a8136cf00ad65bc45a7aba7b5803c78de2f40f05c671ccde74f95b7be11f2",
       "selectedContextIds": [
-        "pack-a99539c1:workspace-init:02e33be9"
+        "pack-a99539c1:event:9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-6:feedback",
+        "pack-a99539c1:event:9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-5:feedback",
+        "pack-a99539c1:event:9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
-        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Bountiful Use heartbeat to keep Bountiful moving without manual babysitting. 1. Reread TASKS.md from disk, then read only the relevant MEMORY.md snippets and project artifacts for the current live task. 2. Trust current file truth over chat or old summaries. 3. Treat only active tasks as live work. Trea…"
+        "Teaching feedback on live-session session 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed: user: [media attached 2/2: /Users/guclaw/.openclaw/media/inbound/file_323---0afb4efd-6159-4922-9db1-89a0cac69d45.jpg (image/jpeg) | /Users/guclaw/.openclaw/media/inbound/file_323---0afb4efd-6159-4922-9db1-89a0cac69d45.jpg] To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for secu.... Related interaction: 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8162\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-03 01:39 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true, \"has_forwarded_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Forwarded message context (untrusted metadata): ```json { \"from\": \"B (@bbounti.... Related interaction: 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8159\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-03 01:39 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Fix it all please. Deploy to prod. Related interaction: 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-05ef1321d0985e827e641c20fd3f0cf36add5179d91d187ec145cd86ed66815d",
+      "eventExportDigest": "sha256-87155d9f974f0eb6ffef0d69b21e6f6a83f806f372c5140cf314d315bf60d8d2",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/media/inbound/file_323---0afb4efd-6159-4922-9db1-89a0cac69d45.jpg\"}",
         "/Users/guclaw/.openclaw/media/inbound/file_324---bcef3666-6574-4750-bbb4-36075563cd13.jpg\"}",
         "0afb4efd"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [],
-      "missedPhrases": [
-        "/Users/guclaw/.openclaw/media/inbound/file_323---0afb4efd-6159-4922-9db1-89a0cac69d45.jpg\"}",
-        "/Users/guclaw/.openclaw/media/inbound/file_324---bcef3666-6574-4750-bbb4-36075563cd13.jpg\"}",
+      "phraseHits": [
         "0afb4efd"
       ],
-      "qualityScore": 40,
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/media/inbound/file_323---0afb4efd-6159-4922-9db1-89a0cac69d45.jpg\"}",
+        "/Users/guclaw/.openclaw/media/inbound/file_324---bcef3666-6574-4750-bbb4-36075563cd13.jpg\"}"
+      ],
+      "qualityScore": 60,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.248,
-        "routeSelectionMs": 5.884,
+        "totalMs": 8,
+        "routeSelectionMs": 5.047,
         "promptAssemblyMs": 0.003,
-        "otherMs": 3.361,
+        "otherMs": 2.95,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

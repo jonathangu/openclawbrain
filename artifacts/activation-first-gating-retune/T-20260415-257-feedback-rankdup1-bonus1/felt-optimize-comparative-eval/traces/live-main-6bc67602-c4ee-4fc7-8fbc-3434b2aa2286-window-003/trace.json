@@ -1,0 +1,92 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-06T15:49:28.338Z",
+  "bundleBuiltAt": "2026-04-06T15:52:38.789Z",
+  "agentId": "main",
+  "sessionId": "6bc67602-c4ee-4fc7-8fbc-3434b2aa2286",
+  "channel": "live-session",
+  "sourceStream": "live/main/session-window",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/6bc67602-c4ee-4fc7-8fbc-3434b2aa2286.jsonl"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-main",
+    "snapshotId": "session-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286",
+    "capturedAt": "2026-04-06T15:49:28.338Z",
+    "rootDir": "/Users/guclaw/.openclaw/workspace",
+    "revision": "6bc67602-c4ee-4fc7-8fbc-3434b2aa2286",
+    "labels": [
+      "live-history",
+      "main",
+      "interactive"
+    ]
+  },
+  "seedBuiltAt": "2026-04-06T15:49:29.491Z",
+  "seedActivatedAt": "2026-04-06T15:50:57.718Z",
+  "seedCues": [
+    {
+      "cueId": "cue-1",
+      "createdAt": "2026-04-06T15:49:29.491Z",
+      "content": "user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Final narrow cleanup lane for T-20260406-160. Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Current only known failing full-suite test after the latest rerun: test/brain-store/migrations.test.ts > runBrainMigrations usefulness schema > creates the teacher proposal persistence table with identity and replay indexes. The assertion expects indexes brain_tea...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-2",
+      "createdAt": "2026-04-06T15:50:24.409Z",
+      "content": "assistant: Restoring the two teacher-proposal replay/lifecycle indexes in the migration path and then re-running the focused migrations slice. ToolCall edit {\"edits\": [{\"newText\": \" CREATE INDEX IF NOT EXISTS brain_teacher_proposals_class_status_idx\\n ON brain_teacher_proposals(proposal_class, status, created_at DESC);\\n CREATE INDEX IF NOT EXISTS brain_teacher_proposals_kin",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-3",
+      "createdAt": "2026-04-06T15:50:24.451Z",
+      "content": "user: System: [2026-04-06 08:50:14 PDT] Exec failed (swift-fj, signal SIGKILL) Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/workspace/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Monday, April 6th, 2026 — 8:50 AM (America/Los_Angeles) / 2026-04-06 15:50 UTC",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-4",
+      "createdAt": "2026-04-06T15:50:48.811Z",
+      "content": "assistant: Focused verify on the migrations slice now that the index pair is restored. ToolCall exec {\"command\": \"npx vitest run test/brain-store/migrations.test.ts\", \"timeout\": 120, \"workdir\": \"/Users/guclaw/.openclaw/workspace/openclawbrain\", \"yieldMs\": 10000}",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-5",
+      "createdAt": "2026-04-06T15:50:53.509Z",
+      "content": "assistant: /brain-store ; /Users/guclaw/.openclaw/workspace/openclawbrain\",",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-6",
+      "createdAt": "2026-04-06T15:50:57.718Z",
+      "content": "assistant: /brain-store/teacher-v3-proposals.test.ts\", ; /Users/guclaw/.openclaw/workspace/openclawbrain\",",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "createdAt": "2026-04-06T15:52:07.233Z",
+      "deliveredAt": "2026-04-06T15:52:38.789Z",
+      "userMessage": "Continue where you left off. The previous model attempt failed or timed out.",
+      "runtimeHints": [
+        "continue",
+        "you",
+        "left",
+        "off.",
+        "previous",
+        "model"
+      ],
+      "expectedContextPhrases": [
+        "attempt failed timed out.",
+        "continue you left off.",
+        "left off. previous model"
+      ]
+    }
+  ]
+}

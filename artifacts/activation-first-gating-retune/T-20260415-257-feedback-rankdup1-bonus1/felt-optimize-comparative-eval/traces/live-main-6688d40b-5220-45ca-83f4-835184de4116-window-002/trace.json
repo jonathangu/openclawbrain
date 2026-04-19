@@ -1,0 +1,91 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-15T01:08:30.602Z",
+  "bundleBuiltAt": "2026-04-15T01:14:24.171Z",
+  "agentId": "main",
+  "sessionId": "6688d40b-5220-45ca-83f4-835184de4116",
+  "channel": "live-session",
+  "sourceStream": "live/main/session-window",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/6688d40b-5220-45ca-83f4-835184de4116.jsonl"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-main",
+    "snapshotId": "session-6688d40b-5220-45ca-83f4-835184de4116",
+    "capturedAt": "2026-04-15T01:08:30.602Z",
+    "rootDir": "/Users/guclaw/.openclaw/workspace",
+    "revision": "6688d40b-5220-45ca-83f4-835184de4116",
+    "labels": [
+      "live-history",
+      "main",
+      "interactive",
+      "tool-using-assistant"
+    ]
+  },
+  "seedBuiltAt": "2026-04-15T01:08:41.881Z",
+  "seedActivatedAt": "2026-04-15T01:11:52.898Z",
+  "seedCues": [
+    {
+      "cueId": "cue-1",
+      "createdAt": "2026-04-15T01:08:41.881Z",
+      "content": "user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths - they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"23568\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:03 PDT\" } ``` Sender (untr...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-2",
+      "createdAt": "2026-04-15T01:09:44.493Z",
+      "content": "assistant: I’m checking the Pelican session and delivery path now. ToolCall exec {\"command\": \"grep -Rnl 'Launch the swarm' /Users/guclaw/.openclaw/agents/pelican/sessions | tail -n 20\", \"timeout\": 120, \"workdir\": \"/Users/guclaw/.openclaw/workspace\", \"yieldMs\": 10000}",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-3",
+      "createdAt": "2026-04-15T01:11:41.413Z",
+      "content": "assistant: /error",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-4",
+      "createdAt": "2026-04-15T01:11:41.941Z",
+      "content": "assistant: I’m here. I dug into the silence. The issue was not Telegram delivery. Pelican got wedged in a long tool/error loop this morning, with context-overflow compaction plus repeated exec-preflight failures, so it kept working internally and never surfaced a clean reply. Current truth is narrower now: label single-truth is fixed, stale status-writer truth is fixed, and the remaining blocker is the embeddings coverage gap for canonical training-input readiness. I’m continuing on that exact seam.",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-5",
+      "createdAt": "2026-04-15T01:11:52.238Z",
+      "content": "assistant: Yep, I found it. Pelican did not lose Telegram. It got wedged in a long internal tool loop this morning, specifically context-overflow compaction plus repeated exec-preflight failures, so it kept grinding and never surfaced a clean chat reply. What I did: - confirmed Telegram/Pelican transport is healthy now - checked the Pelican session and gateway logs - sent a fresh reply into the Pelican chat just now Current Pelican truth: - label single-truth split is fixed - stale status-writer truth i...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-6",
+      "createdAt": "2026-04-15T01:11:52.898Z",
+      "content": "assistant: Yep, I found it. Pelican did not lose Telegram. It got wedged in a long internal tool loop this morning, specifically context-overflow compaction plus repeated exec-preflight failures, so it kept grinding and never surfaced a clean chat reply. What I did: - confirmed Telegram/Pelican transport is healthy now - checked the Pelican session and gateway logs - sent a fresh reply into the Pelican chat just now Current Pelican truth: - label single-truth split is fixed - stale status-writer truth i...",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "createdAt": "2026-04-15T01:14:09.900Z",
+      "deliveredAt": "2026-04-15T01:14:24.171Z",
+      "userMessage": "You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md 1. Read `TASKS.md`. 2. Confirm the principal orchestrator role; `TASKS.md` is single-writer. 3. Resume the highest-priority unfinished unblocked principal task. 4. Restore task state from `TASKS.md`, artifacts, status files, and repo/worktree state. 5. If retry is safe, relaunch stale work; otherwise record the blocker. 6. If merge, test, deploy, or closeout is the next ready phase, do it next. 7. Before editing `TASKS.md`, reread it from disk and recompute the change. 8. Keep chat brief: milestone, blocker, approval, or completion. If BOOT.md asks you to send a message, use the message tool (action=send with channel + target). Use the `target` field (not `to`) for message tool destinations. After sending with the message tool, reply with ONLY: NO_REPLY. If nothing needs attention, reply with ONLY: NO_REPLY.",
+      "runtimeHints": [
+        "/worktree",
+        "TASKS.md",
+        "target",
+        "to"
+      ],
+      "expectedContextPhrases": [
+        "T-20260414-244",
+        "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260414-244"
+      ]
+    }
+  ]
+}

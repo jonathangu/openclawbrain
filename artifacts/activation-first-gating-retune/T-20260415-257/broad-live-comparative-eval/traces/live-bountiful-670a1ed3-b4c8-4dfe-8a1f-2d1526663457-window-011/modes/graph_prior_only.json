@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-f296a7d1"
+      "pack-cf83dddd"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-1c9d55e409867eee6c3b4cb51395a8adf1a85c42c4e801c7f9813f77fb94d420"
+    "scoreHash": "sha256-da84568f3021db432348ce612b1e24340a0a3ea2183dfa282a99021a0a019132"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-f296a7d1",
+      "activePackId": "pack-cf83dddd",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-f018b8867fed291afa291d619fa40c15b4639d740105d9e2c3d17eccb24805e2",
+      "routerIdentity": "pack-cf83dddd:route_fn",
+      "selectionDigest": "sha256-9615dcf9460f7f42cc8225d7b27d88b5e6ee0b002feea64a2d947596417aaaa6",
       "selectedContextIds": [
-        "pack-f296a7d1:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback",
-        "pack-f296a7d1:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:interaction",
-        "pack-f296a7d1:pointer-aware-init"
+        "pack-cf83dddd:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback",
+        "pack-cf83dddd:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:interaction",
+        "pack-cf83dddd:pointer-aware-init"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Pre-compaction memory flush. Store durable memories now (use memory/2026-03-05.md; create memory/ if needed). IMPORTANT: If the file already exists, APPEND new content only and do not overwrite existing entries. If nothing to store, reply with NO_REPLY. Current time: Thursday, March 5th, 2026 — 8:10 AM (America/Los_Angeles). Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:interaction.",
         "Interaction operator_override on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed. Message: cue-4-seed-message.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-05-1953.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/archive/2026-03-05-1953.md, docs/jon-model.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-05-1953.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, memory/archive/2026-03-05-1953.md, +2 more, and passive expansion docs/training-launch-contract.md, STARTUP_READY.md, docs/jon-model.md, quant-research/docs/OPENCLAWBRAIN_OPS.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-946c3237e6946ff717d47f3078dc20f47d879b761ee8b594cf6ad4551981322f",
+      "eventExportDigest": "sha256-92c26de1c6924e3efd627490ea4af66f34aab3bfe4b0925c10d851e74b938f5b",
       "expectedContextPhrases": [
         "no_reply"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.813,
-        "routeSelectionMs": 4.938,
+        "totalMs": 9.06,
+        "routeSelectionMs": 5.554,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.871,
+        "otherMs": 3.503,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

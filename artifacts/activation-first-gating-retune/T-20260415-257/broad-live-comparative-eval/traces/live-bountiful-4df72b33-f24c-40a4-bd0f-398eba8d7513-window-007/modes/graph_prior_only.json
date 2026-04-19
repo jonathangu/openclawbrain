@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-afd1d984"
+      "pack-30680753"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-f14225561b38bbfbf7af9541f3905c39af45b86e143110cf5c017b3ba6fe0b70"
+    "scoreHash": "sha256-2b23593bf223b53e2bf3ef641b3b923020550b9da1eaffc2658114e2f26ac88c"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-afd1d984",
+      "activePackId": "pack-30680753",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-e0ebc8a4e22ff68884a58768411e0ff39a41dcc3f8127f1a4071bb2a415572b5",
+      "routerIdentity": "pack-30680753:route_fn",
+      "selectionDigest": "sha256-5c1b73dc48ca0a497a2dd99c20e876968e66df9f471f448e0800339ffffb29c9",
       "selectedContextIds": [
-        "pack-afd1d984:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
-        "pack-afd1d984:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction",
-        "pack-afd1d984:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback"
+        "pack-30680753:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
+        "pack-30680753:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction",
+        "pack-30680753:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8103\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 20:00 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` How's it going. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction.",
         "Interaction operator_override on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed. Message: cue-6-seed-message.",
-        "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:interaction."
+        "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8098\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Get rid of the term fruit in code I do not want to see any fruit mentioned as function names or db .... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-c3a62f8ab1bc0990a4c3d0c0cc0383506560998e25d34a781d0208009f1c5bb4",
+      "eventExportDigest": "sha256-4e76efaf27e4350947431ae691d566b67396775df43896ad675fa61170e18222",
       "expectedContextPhrases": [
         "toolcall",
         "process",
@@ -90,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.294,
-        "routeSelectionMs": 4.63,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 2.661,
+        "totalMs": 9,
+        "routeSelectionMs": 5.589,
+        "promptAssemblyMs": 0.004,
+        "otherMs": 3.407,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

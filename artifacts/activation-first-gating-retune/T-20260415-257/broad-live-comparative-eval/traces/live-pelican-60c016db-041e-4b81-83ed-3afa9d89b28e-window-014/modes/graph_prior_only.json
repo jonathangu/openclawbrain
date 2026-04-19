@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-32041aa3"
+      "pack-71f32012"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-133a5a2b9f4d8b0ba1abc17616b9cbef2fa4eade77ee98098c4a13ef51c0fec3"
+    "scoreHash": "sha256-007ee605a01ad0f910c7aeffc621800a1f3aa968ee8155b1b2461697a304ed40"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-32041aa3",
+      "activePackId": "pack-71f32012",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-545cb8c06bff5dc12f628d77123bdb107e24fe6e86d16b2e8f462a537262a736",
+      "routerIdentity": "pack-71f32012:route_fn",
+      "selectionDigest": "sha256-7dca7f3e0dc6320f28fda937c6525f8c28e10250489f3a138715ec38e53ef504",
       "selectedContextIds": [
-        "pack-32041aa3:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
-        "pack-32041aa3:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction",
-        "pack-32041aa3:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback"
+        "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+        "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction",
+        "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 02:12 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Ship it! Make sure everything is well documented!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
         "Interaction operator_override on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed. Message: cue-6-seed-message.",
         "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-5699b2891ff723d23508f8a866256c78fa0d5ba368edae7c2f83cd3c08243298",
+      "eventExportDigest": "sha256-70861ed49663271d6399e24a84f1f14e4b485442e4ed9a87e5d4ebd7c4729c57",
       "expectedContextPhrases": [
         "query matthew meeting evening",
         "matthew meeting evening",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.972,
-        "routeSelectionMs": 5.35,
+        "totalMs": 12.751,
+        "routeSelectionMs": 7.413,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.621,
+        "otherMs": 5.336,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

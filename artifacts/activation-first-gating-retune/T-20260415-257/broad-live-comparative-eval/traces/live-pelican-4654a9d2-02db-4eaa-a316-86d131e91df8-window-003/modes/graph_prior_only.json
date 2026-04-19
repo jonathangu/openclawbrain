@@ -5,14 +5,14 @@
     "activationStrategy": "seed_pack",
     "modeRequested": "heuristic",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 40,
+    "qualityScore": 70,
     "compileOkCount": 1,
-    "phraseHitCount": 0,
+    "phraseHitCount": 1,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-ae10a1b5"
+      "pack-53e75187"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-c103b8d08c639b872d2dcfc5fef1e6dd20ae58b22170a5a0f1e5d03570dcccda"
+    "scoreHash": "sha256-cc1d9d137c24a5c951555b8bc077a6e12c041a733b9b7be22ba859adece168f2"
   },
   "turns": [
     {
@@ -50,47 +50,48 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-ae10a1b5",
+      "activePackId": "pack-53e75187",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-bcc3f539465d51383d80a42dcc4924918c8905ad3d692eb9883b3d0ab314cac8",
+      "routerIdentity": "pack-53e75187:route_fn",
+      "selectionDigest": "sha256-ef511efb4b49b433c93acfb57e5b3a92fb77b66f37a512c0371583d93c286f7f",
       "selectedContextIds": [
-        "pack-ae10a1b5:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:feedback",
-        "pack-ae10a1b5:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:interaction",
-        "pack-ae10a1b5:pointer-aware-init"
+        "pack-53e75187:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:feedback",
+        "pack-53e75187:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:interaction",
+        "pack-53e75187:event:4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed: assistant: Good — neither feature is in the current production GBM model. They were already filtered out during the v4 embeddings-only training. This is a clean removal — no model retrain needed, just code cleanup. Spawning Codex to strip `has_news` and `news_missing` from all files. ToolCall read {\"limit\": 10, \"offset\": 1, \"path\": \"/Users/guclaw/.openclaw/workspace-pelican/TOOLS.md\"}. Related interaction: 4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-3:interaction.",
         "Interaction operator_override on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed. Message: cue-3-seed-message.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-aws-training.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session 4654a9d2-02db-4eaa-a316-86d131e91df8-seed: assistant: Got the full picture. ~13 files, ~70+ references. This is a solid Codex job — scoped removal across the codebase. Let me also check the config and feature matrix to understand if these are in the trained models. ToolCall exec {\"command\": \"grep -n \\\"has_news\\\\|news_missing\\\" /Users/guclaw/.openclaw/workspace/quant-research/.trigger_config.json 2>/dev/null; echo \\\"---\\\"; grep -n \\\"has_news\\\\|news_missing\\\" /Users/guclaw/.openclaw/workspace/quan. Related interaction: 4654a9d2-02db-4eaa-a316-86d131e91df8-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-ce2dd56e9b11a0033f977cc7237ad85fe335e156415b30c573edc727001d5ccd",
+      "eventExportDigest": "sha256-918a199f3e249b6475ef49319bc041f5bf684cf2c9a4b4013f3501a49c9dbd91",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research",
         "/dev/null\","
       ],
       "minimumPhraseHits": 2,
-      "phraseHits": [],
+      "phraseHits": [
+        "/Users/guclaw/.openclaw/workspace/quant-research"
+      ],
       "missedPhrases": [
-        "/Users/guclaw/.openclaw/workspace/quant-research",
         "/dev/null\","
       ],
-      "qualityScore": 40,
+      "qualityScore": 70,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.529,
-        "routeSelectionMs": 4.824,
+        "totalMs": 9.606,
+        "routeSelectionMs": 6.01,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.704,
+        "otherMs": 3.595,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

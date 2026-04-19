@@ -5,19 +5,19 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 40,
+    "qualityScore": 60,
     "compileOkCount": 1,
-    "phraseHitCount": 0,
+    "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-b8d649d2"
+      "pack-6aee58ea"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-b8d649d2",
-    "frozenEvalRouterIdentity": "pack-b8d649d2:route_fn",
+    "frozenEvalPackId": "pack-6aee58ea",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-c60bacb284670a2db0c39be9458a73129b857620988f0872ef9019fa85b9697b"
+    "scoreHash": "sha256-70c02e832132d7eca97e74f37a432b95987f8a165bfc514e64679fdf36e5b858"
   },
   "turns": [
     {
@@ -51,41 +51,50 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-b8d649d2",
+      "activePackId": "pack-6aee58ea",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-67e1b9ce4d4fae8fc21b748fe6fc8d2b3cc2a8502bc25f5a978619b9f757b1dd",
-      "selectedContextIds": [],
-      "selectedContextTexts": [],
-      "eventExportDigest": "sha256-290d556fe31fd4eff7d8b849eb04f842cc49f9abe8ac084eb38671f2fe9c6352",
+      "selectionDigest": "sha256-72a1e82411ae59a5f49efe036a79a33dbf357cc66d71f2fbed5c3598aa610e0d",
+      "selectedContextIds": [
+        "pack-6aee58ea:event:1de98d77-ea36-403b-b685-deef4d7a1723-seed:cue-1:feedback",
+        "pack-6aee58ea:event:1de98d77-ea36-403b-b685-deef4d7a1723-seed:cue-2:feedback",
+        "pack-6aee58ea:event:1de98d77-ea36-403b-b685-deef4d7a1723-seed:cue-3:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 1de98d77-ea36-403b-b685-deef4d7a1723-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"17982\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-04-13 00:33 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Hello?. Related interaction: 1de98d77-ea36-403b-b685-deef4d7a1723-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 1de98d77-ea36-403b-b685-deef4d7a1723-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"17984\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-04-13 00:33 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Go back and drastically simplify your heartbeat.md. Related interaction: 1de98d77-ea36-403b-b685-deef4d7a1723-seed:cue-2:interaction.",
+        "Teaching feedback on live-session session 1de98d77-ea36-403b-b685-deef4d7a1723-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"17985\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-04-13 00:33 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Also simplify your agents and tools and memories. Related interaction: 1de98d77-ea36-403b-b685-deef4d7a1723-seed:cue-3:interaction."
+      ],
+      "eventExportDigest": "sha256-e094ce99742a79373db2be705181aec9761c63e85a5b8cb0d46ee45692b390f7",
       "expectedContextPhrases": [
         "here.",
         "you",
         "want"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [],
+      "phraseHits": [
+        "you"
+      ],
       "missedPhrases": [
         "here.",
-        "you",
         "want"
       ],
-      "qualityScore": 40,
+      "qualityScore": 60,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.571,
-        "routeSelectionMs": 5.231,
+        "totalMs": 7.186,
+        "routeSelectionMs": 4.433,
         "promptAssemblyMs": 0.001,
-        "otherMs": 3.339,
+        "otherMs": 2.752,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

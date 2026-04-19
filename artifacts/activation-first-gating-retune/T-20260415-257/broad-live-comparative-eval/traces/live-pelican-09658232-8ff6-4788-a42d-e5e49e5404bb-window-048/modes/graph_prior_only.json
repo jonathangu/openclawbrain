@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-b99f0c6b"
+      "pack-ff8a65c5"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-1829c56bdb1e6020f90099167d945e55c21918504a603cb828940add487d6490"
+    "scoreHash": "sha256-a254173b067bff8ac939f0c1aca39c383c71f30d502e7b3371961b46e7d4e18f"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-b99f0c6b",
+      "activePackId": "pack-ff8a65c5",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-054f7b2ea81779f8ff3f6ed1536652fb81c3d4e8c351afb0b015f1483795efa3",
+      "routerIdentity": "pack-ff8a65c5:route_fn",
+      "selectionDigest": "sha256-9f6997195abc1a79c98be367734d163832224a087844f0bded3622610cd4c174",
       "selectedContextIds": [
-        "pack-b99f0c6b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
-        "pack-b99f0c6b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction",
-        "pack-b99f0c6b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction"
+        "pack-ff8a65c5:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
+        "pack-ff8a65c5:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction",
+        "pack-ff8a65c5:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Pipeline health check flagged 3 issues:\\n\\n1. Trigger config timeout — config read took >5s. Might just be a transient load issue.\\n2. has_news / news_missing features missing from matrix — expected. We removed these per your directive (embeddings carry the signal directly). The current v4 production models still reference th.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
         "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message.",
         "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-4493a88d9581be78ee29177cc2560e1950ca7cc702d2b7ce4f18e688c4b8a6c8",
+      "eventExportDigest": "sha256-32d5f6506cb5a6d0e5d60aed86ee3bd0e9c88b96551584c440a662d66c75dc56",
       "expectedContextPhrases": [
         "hyperparam_tuning.py"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.596,
-        "routeSelectionMs": 4.826,
+        "totalMs": 10.054,
+        "routeSelectionMs": 6.526,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.768,
+        "otherMs": 3.526,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

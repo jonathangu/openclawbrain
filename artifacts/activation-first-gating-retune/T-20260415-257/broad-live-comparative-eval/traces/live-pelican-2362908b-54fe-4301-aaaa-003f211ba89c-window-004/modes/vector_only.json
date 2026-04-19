@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-385390dc"
+      "pack-597fa1fe"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-f3d0e7a875bf8da667da716217e49d2874b1c39d4639430286b4b39bc91122fe"
+    "scoreHash": "sha256-84873f4588e9e58836c4605d3dc0729eccb207785fb8c6feb932067248951780"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-385390dc",
+      "activePackId": "pack-597fa1fe",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-b3b4d03fab2fb2e80cf5701254f67ce989bd0800e1ea3de193c689a38b6a3b09",
+      "routerIdentity": "pack-597fa1fe:route_fn",
+      "selectionDigest": "sha256-c74a170041f065a5275a942bcdf18cb632b24d8e82e2e3cd77a00749bdd48cff",
       "selectedContextIds": [
-        "pack-385390dc:event:2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-1:feedback",
-        "pack-385390dc:event:2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-3:feedback",
-        "pack-385390dc:event:2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-5:feedback"
+        "pack-597fa1fe:event:2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-1:feedback",
+        "pack-597fa1fe:event:2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-3:feedback",
+        "pack-597fa1fe:event:2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 2362908b-54fe-4301-aaaa-003f211ba89c-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"12078\", \"reply_to_id\": \"12075\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-31 14:10 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Also: lets check in again on the s3 files we are downloading. Recall th.... Related interaction: 2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 2362908b-54fe-4301-aaaa-003f211ba89c-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"12079\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-31 14:12 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` We are saving and logging these MTM numbers right? And they are off hotpath so that we don't block or slow down runtime latency!. Related interaction: 2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-3:interaction.",
         "Teaching feedback on live-session session 2362908b-54fe-4301-aaaa-003f211ba89c-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"12080\", \"reply_to_id\": \"12075\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-31 14:15 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Also: lets check in again on the s3 files we are downloading. Recall th.... Related interaction: 2362908b-54fe-4301-aaaa-003f211ba89c-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-872c068ea68dbc6d5fd7d0c51fc680946df41c12f22bde7a3eaa5d2b759e538e",
+      "eventExportDigest": "sha256-47671dac2de0d766a7f449f51131317c4a3139462c98e65c928dd2791ad24987",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\",",
         "/Users/guclaw/.openclaw/pelican/ops\","
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.18,
-        "routeSelectionMs": 4.493,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.685,
+        "totalMs": 13.47,
+        "routeSelectionMs": 8.605,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 4.861,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

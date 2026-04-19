@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-92c674c5"
+      "pack-37e33144"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-8226d764c5888ed93b25fe0e01a46b7bfd3861bcea96143ec505b13fd88bd3bd"
+    "scoreHash": "sha256-910819ee79b6e3a561e71e4332b70d17d84ae17a52ce696d7f5bc94949912b2a"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-92c674c5",
+      "activePackId": "pack-37e33144",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-f332d99c4fc2ddee13c9c079a33d2bbaa00245abf31d1b0efbea52956ca18f71",
+      "routerIdentity": "pack-37e33144:route_fn",
+      "selectionDigest": "sha256-98226463cfd297af033906f28cb54495a3936c78b2a52fa593c7168cb08de898",
       "selectedContextIds": [
-        "pack-92c674c5:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-        "pack-92c674c5:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback",
-        "pack-92c674c5:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:feedback"
+        "pack-37e33144:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
+        "pack-37e33144:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback",
+        "pack-37e33144:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19098\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:28 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Why not all four? Is there something structurally blocking us. Some calculation? Can you check logs. Is something broken. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:interaction.",
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19091\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 02:59 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Clean up tasks and context. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-d4655b207b5a197715d9be58b69bc834bca91a4bf2d8c478767af63e74a318cf",
+      "eventExportDigest": "sha256-58cdeafe2c64d26187d8083ef132fd253e93edebe6fe72c18b181b3a6b73adb2",
       "expectedContextPhrases": [
         "/config"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.073,
-        "routeSelectionMs": 4.439,
+        "totalMs": 8.633,
+        "routeSelectionMs": 5.244,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.632,
+        "otherMs": 3.388,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

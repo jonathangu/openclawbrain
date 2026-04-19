@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-373cc85c"
+      "pack-ca4e78bb"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-768fdcfff38fc902f1037729945884d32d78afb15358011bf10b2d0dca22390e"
+    "scoreHash": "sha256-d9086a128d1c333cc2420bd0ad58d3238df10a71e77641ce351450694bb6e133"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-373cc85c",
+      "activePackId": "pack-ca4e78bb",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-53d6ae7a9acadbad99fc248581a5abff1ef858b49dda9e7407712c4741de8089",
+      "routerIdentity": "pack-ca4e78bb:route_fn",
+      "selectionDigest": "sha256-49ab82fa521cc58165ea9e59d9422b7e3ee854439f63433bdc4d8dfab4d2d79c",
       "selectedContextIds": [
-        "pack-373cc85c:pointer-aware-init",
-        "pack-373cc85c:workspace-init:0d01dda4",
-        "pack-373cc85c:workspace-init:16415817"
+        "pack-ca4e78bb:pointer-aware-init",
+        "pack-ca4e78bb:workspace-init:0d01dda4",
+        "pack-ca4e78bb:workspace-init:16415817"
       ],
       "selectedContextTexts": [
         "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
         "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
         "Working-set input TASKS.md selected by pointer-aware init (inbound=6, outbound=19). Last ledger refresh: 2026-04-08 15:05 PT Status keys: active | parked | blocked | done Current queue: **T-117** Live truth - Active principal task: none - Highest-priority blocked principal task: **T-117 — App Store + Play Store launch master plan and execution track** - Canonical repo: /Users/guclaw/.openclaw/workspa…"
       ],
-      "eventExportDigest": "sha256-8ec9adac7d4ef2cb6841b2de4228f6c44fab00ebafc39e5712bb5eda072a13cc",
+      "eventExportDigest": "sha256-062b249186387472f1d5623501b4be7bdabfd0cb44af2ef9ee4d174ef1212f46",
       "expectedContextPhrases": [
         "toolcall",
         "process",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.634,
-        "routeSelectionMs": 5.926,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.705,
+        "totalMs": 15.296,
+        "routeSelectionMs": 9.164,
+        "promptAssemblyMs": 0.004,
+        "otherMs": 6.128,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

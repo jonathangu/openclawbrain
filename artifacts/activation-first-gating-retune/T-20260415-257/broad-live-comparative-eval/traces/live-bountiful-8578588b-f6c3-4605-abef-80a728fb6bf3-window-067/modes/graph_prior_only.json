@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-94b67fdc"
+      "pack-4c921c2d"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-a18fb58f18663f2b42a1ebacfcdbd63dbb4b40186e3e61f8dc69e8f12262e6c8"
+    "scoreHash": "sha256-ddb6b3fb17bb63bef4371f12603a6cfbacc1ec614c701c17a318214ea1cef55f"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-94b67fdc",
+      "activePackId": "pack-4c921c2d",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-a2ad5624179107cdf944686f727e82a42fa8759c93e33cec14a5d2db3f55313a",
+      "routerIdentity": "pack-4c921c2d:route_fn",
+      "selectionDigest": "sha256-ea4b54c4275a40d8883ac728433e8bb632951e23a6448f3016d28bfd77eb2c24",
       "selectedContextIds": [
-        "pack-94b67fdc:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
-        "pack-94b67fdc:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction",
-        "pack-94b67fdc:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:interaction"
+        "pack-4c921c2d:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
+        "pack-4c921c2d:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction",
+        "pack-4c921c2d:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-1:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction.",
         "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-2-seed-message.",
         "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-1-seed-message."
       ],
-      "eventExportDigest": "sha256-96d2dc350d965ed099f32fbb337e7caeb4720e0a18b86e73b8ed2beb41ee838b",
+      "eventExportDigest": "sha256-ec620cee980511e17226b508740d28f9afbd82fe2ec56fc71f0676222c40bbdf",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 3.378,
-        "routeSelectionMs": 2.099,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 1.277,
+        "totalMs": 7.165,
+        "routeSelectionMs": 4.571,
+        "promptAssemblyMs": 0.004,
+        "otherMs": 2.59,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

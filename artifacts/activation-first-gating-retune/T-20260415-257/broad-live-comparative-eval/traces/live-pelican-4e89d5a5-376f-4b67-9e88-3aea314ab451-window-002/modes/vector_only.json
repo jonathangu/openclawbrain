@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-ae530384"
+      "pack-d6fc07b5"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-d09d5623142393b10ec6cb8b5287ead2d57f9a56f0255857d9ddd7e01d7a3ac2"
+    "scoreHash": "sha256-5f2d922ecbba9d47f3cb359cd4f6e16b0199f6665fff1138ce36a0d948dfaeed"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-ae530384",
+      "activePackId": "pack-d6fc07b5",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-8f0134c9c1c049e247a6981e7715ec984ebbea2db6b30a0af10805e219d5609b",
+      "routerIdentity": "pack-d6fc07b5:route_fn",
+      "selectionDigest": "sha256-9f6f9b224f61c5bee2be363e83abc0f0d4a6d85129f7b2bbcbdc2840f4eea44a",
       "selectedContextIds": [
-        "pack-ae530384:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:feedback",
-        "pack-ae530384:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:feedback",
-        "pack-ae530384:pointer-aware-init"
+        "pack-d6fc07b5:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:feedback",
+        "pack-d6fc07b5:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:feedback",
+        "pack-d6fc07b5:pointer-aware-init"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/session-startup-ready-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:interaction.",
         "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/retrain-runtime-gate-swarm-2026-04-12.md\"} ; /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/weekly-retrain-launch-proof-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-17ead9ce9e60fa3853232c80e4b45343b0b8453150c2dcc323e70e0b250f5a0e",
+      "eventExportDigest": "sha256-2193e4b7714cbdb177ae70b9c09f301b78f588e6e4d5fd47c45b7a5377b0982e",
       "expectedContextPhrases": [
         "yep",
         "here.",
@@ -90,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.934,
-        "routeSelectionMs": 4.278,
+        "totalMs": 8.197,
+        "routeSelectionMs": 4.957,
         "promptAssemblyMs": 0.001,
-        "otherMs": 2.654,
+        "otherMs": 3.239,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

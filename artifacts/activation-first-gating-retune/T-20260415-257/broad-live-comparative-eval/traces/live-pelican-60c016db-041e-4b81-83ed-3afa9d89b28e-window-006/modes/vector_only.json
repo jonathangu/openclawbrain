@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-11a719b5"
+      "pack-5606aebc"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-d8244e5aea6f9ac8537d62c64e042c7fbc5a8c633899935ca66b443e5824a37f"
+    "scoreHash": "sha256-993b7e2c2469e28da390d81b93741922de803c40765ef2ff4710079e4f6a1506"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-11a719b5",
+      "activePackId": "pack-5606aebc",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-c45cf5b664fe9c2c470d7238213d07e5a0f4de12e8902e9607b30e560507734a",
+      "routerIdentity": "pack-5606aebc:route_fn",
+      "selectionDigest": "sha256-8983f5395cd37f0a15565a0fca662df4f975951313c861cc476d888fb252e40e",
       "selectedContextIds": [
-        "pack-11a719b5:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback",
-        "pack-11a719b5:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback",
-        "pack-11a719b5:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback"
+        "pack-5606aebc:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback",
+        "pack-5606aebc:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback",
+        "pack-5606aebc:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: assistant: Operational excellence for Pelican = **(1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery**. Biggest remaining wins: 1) **Execution quality SLOs + guardrails (slippage is still the boss)** - Track: fill-rate, cancel-rate, slippage by *ticker/structure/time/quote-age/spread-width*. - Hard gate: *don’t place/keep repricing* if quote is stale, spread too wide, or expected edge < expected slippage. - Auto-mitigation modes: “slippage-critical ⇒ cancel new entries for .... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction.",
         "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:56 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Operational excellence for Pelican = (1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery. Biggest remaining wins:\\n\\n1. Execution quality S.... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-dc69b1e5735df5292ae33f4364696e38b7748053538aa238c954507119e0a390",
+      "eventExportDigest": "sha256-b49e3add2709e6b042f3491a4678db888d4a4d6699c3187b24c95c0e3b31a808",
       "expectedContextPhrases": [
         "50d7e3fe",
         "27719eb876e4"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.648,
-        "routeSelectionMs": 5.034,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.613,
+        "totalMs": 15.701,
+        "routeSelectionMs": 10.626,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 5.072,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

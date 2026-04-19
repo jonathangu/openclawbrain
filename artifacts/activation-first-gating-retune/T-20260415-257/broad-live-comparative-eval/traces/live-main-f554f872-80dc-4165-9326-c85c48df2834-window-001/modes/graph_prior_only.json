@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-856b6272"
+      "pack-cf3e03df"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-f35bf4e1311e4682e82cf41d4b351b871a760b095f9453de7411d3ef098e8010"
+    "scoreHash": "sha256-aac90a97e883d178688a676a9863b8b3a2125893ebd5573c4bc433d750d9dcad"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-856b6272",
+      "activePackId": "pack-cf3e03df",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-1022b3a90b26da3d391d27ec8cfaba38bdb0fd19b557cbd8afc9bdceecc17a17",
+      "routerIdentity": "pack-cf3e03df:route_fn",
+      "selectionDigest": "sha256-d81fe0337483599ba111011ea68a3c9b2081c6ba84d5b02d1547005e26f2b9a3",
       "selectedContextIds": [
-        "pack-856b6272:workspace",
-        "pack-856b6272:event:f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:feedback",
-        "pack-856b6272:event:f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction"
+        "pack-cf3e03df:workspace",
+        "pack-cf3e03df:event:f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction",
+        "pack-cf3e03df:event:f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
         "Workspace snapshot session-f554f872-80dc-4165-9326-c85c48df2834 for ws-main captured at 2026-04-03T16:07:51.092Z with revision f554f872-80dc-4165-9326-c85c48df2834.",
-        "Teaching feedback on live-session session f554f872-80dc-4165-9326-c85c48df2834-seed: assistant: ✅ New session started · model: openai-codex/gpt-5.4. Related interaction: f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction.",
-        "Interaction operator_override on live-session session f554f872-80dc-4165-9326-c85c48df2834-seed. Message: cue-1-seed-message."
+        "Interaction operator_override on live-session session f554f872-80dc-4165-9326-c85c48df2834-seed. Message: cue-1-seed-message.",
+        "Teaching feedback on live-session session f554f872-80dc-4165-9326-c85c48df2834-seed: assistant: ✅ New session started · model: openai-codex/gpt-5.4. Related interaction: f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-1136ccb170bfaca43afc8766ba962f6eb9175781bab2bc2759b0e0259d5b77b6",
+      "eventExportDigest": "sha256-23f90114afd61859cd61440af5778090d1003713db1bb265cb363b3edcfcdb4e",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/BOOT.md\"}"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 2.449,
-        "routeSelectionMs": 1.574,
+        "totalMs": 4.599,
+        "routeSelectionMs": 2.86,
         "promptAssemblyMs": 0.002,
-        "otherMs": 0.873,
+        "otherMs": 1.737,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

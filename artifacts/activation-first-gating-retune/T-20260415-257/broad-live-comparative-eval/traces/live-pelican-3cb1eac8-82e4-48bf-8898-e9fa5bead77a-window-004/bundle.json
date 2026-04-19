@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-12T14:50:44.901Z",
   "traceHash": "sha256-79532f3b0ed4010e846f65618be48c2307af13b97dd581f294dd9d5e6325f8eb",
   "fixtureHash": "sha256-6cb2c0584a4478c43146057da013c5b788958c7763f4cd2e66653360656b5ed8",
-  "scoreHash": "sha256-8b714daed72371b0059c3c7daf6b46ee131c5a23e9929e2245785558de17037b",
+  "scoreHash": "sha256-97bdc46ad4ced429d97d211618ea3b6218ab8064935a925870eec13f71abd0be",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.035,
+            "totalMs": 0.028,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.035,
+            "otherMs": 0.028,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-8853d946"
+          "pack-5f21e8ff"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-ef57bdbc9f30f9224fdaca12e0da3dd7e4a6a11d86369f3e99875ce0723a4efa"
+        "scoreHash": "sha256-3d196d3728e23e5d7476c83886d9c60d5d2568290cc40b96c9744383a3a9f9f1"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-8853d946",
+          "activePackId": "pack-5f21e8ff",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-c642917b052a158134e7713d7907ef3df9ff59e673201fb1855e20b0096dc817",
+          "routerIdentity": "pack-5f21e8ff:route_fn",
+          "selectionDigest": "sha256-31b448736824bded2f26097f44a0b9583f411b4d9bc0ca48fe974655222f10a4",
           "selectedContextIds": [
-            "pack-8853d946:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
-            "pack-8853d946:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
-            "pack-8853d946:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-4:feedback"
+            "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
+            "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
+            "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction.",
             "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-40462928d6969152f24694927dc2c098ee9a816789139948e50fda5f82be63c1",
+          "eventExportDigest": "sha256-3532610682d0ab6b3b956bfbd7cb60fbb1260f56e23e7295208450e8af93a0bf",
           "expectedContextPhrases": [
             "next proof step against",
             "first smallest next proof",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.474,
-            "routeSelectionMs": 4.785,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.687,
+            "totalMs": 8.859,
+            "routeSelectionMs": 5.541,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.316,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-8853d946"
+          "pack-5f21e8ff"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-2a65857ac9c26f00e8aa4149667829f426291cf130343ae7e2a1f2c9e43ffbdc"
+        "scoreHash": "sha256-a4b97306d6e492f21b6ea8067db345ca44cadab4c6ff6f64cd02ff96648af610"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-8853d946",
+          "activePackId": "pack-5f21e8ff",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-20c415590c1f9cea3046d0f4e0902c762b5274d3340fdb0c72c9690789984959",
+          "routerIdentity": "pack-5f21e8ff:route_fn",
+          "selectionDigest": "sha256-f42ee0d2da85b1db53dd0fd88ce9b74619c312a81ed5eabe6e4aaaa2a001a88f",
           "selectedContextIds": [
-            "pack-8853d946:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
-            "pack-8853d946:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
-            "pack-8853d946:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction"
+            "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
+            "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
+            "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction.",
             "Interaction operator_override on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-a88858d87afc3e84aa0377c8f8f2854f5e68c5840bcf71e7409208bfb4235e1a",
+          "eventExportDigest": "sha256-d52136544810c2e8891aa39b25e97471b1546c2cdb35b663dfbab5409b24e8ae",
           "expectedContextPhrases": [
             "next proof step against",
             "first smallest next proof",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.321,
-            "routeSelectionMs": 4.658,
+            "totalMs": 8.804,
+            "routeSelectionMs": 5.487,
             "promptAssemblyMs": 0.001,
-            "otherMs": 2.662,
+            "otherMs": 3.315,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-b02088e7"
+          "pack-5f21e8ff"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-b02088e7",
-        "frozenEvalRouterIdentity": "pack-b02088e7:route_fn",
+        "frozenEvalPackId": "pack-5f21e8ff",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-729f190d7073a1d01c7ae8011de102e65fdcbf26c50f44751e0300b013fad9a6"
+        "scoreHash": "sha256-3bf8100c843a85709f054f31a65df3fb5bf9511cce3261eedb033a9864b14c04"
       },
       "turns": [
         {
@@ -405,24 +405,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-b02088e7",
+          "activePackId": "pack-5f21e8ff",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-c1e222b8550a77b00232772f95e940fa095c5dbcb52b80f89074fa88e3b11852",
+          "selectionDigest": "sha256-31b448736824bded2f26097f44a0b9583f411b4d9bc0ca48fe974655222f10a4",
           "selectedContextIds": [
-            "pack-b02088e7:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback"
+            "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
+            "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
+            "pack-5f21e8ff:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:interaction."
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-1c0c4fd1c4df3af8a63951be87c528a56a4f0bdeed361de37d41dd0a66567525",
+          "eventExportDigest": "sha256-2c84b18ed481c244a7e7a5405c335cbbc0cedce81dd0807d2bd524d4cbc99203",
           "expectedContextPhrases": [
             "next proof step against",
             "first smallest next proof",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.122,
-            "routeSelectionMs": 5.713,
+            "totalMs": 7.691,
+            "routeSelectionMs": 4.853,
             "promptAssemblyMs": 0.001,
-            "otherMs": 3.408,
+            "otherMs": 2.837,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-4575747324d0a9639a42f1bfeebb3e4bed75a39aea45f5de23e9486258eeae08"
+  "bundleHash": "sha256-0c54c50d198a658dc58fd41522b84ceb81db7b02c07b83aaf7d9543838612ca8"
 }

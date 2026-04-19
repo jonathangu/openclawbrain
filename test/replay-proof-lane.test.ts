@@ -446,21 +446,26 @@ describe("recorded session replay proof lane", () => {
       candidate_id: "pack:event:alpha:feedback",
       semantic_class: "feedback_context",
       token_cost: 64,
+      score_hint: 0.95,
     });
     expect(row?.candidate_set[1]).toMatchObject({
       candidate_id: "pack:event:alpha:interaction",
       semantic_class: "interaction_context",
       token_cost: 56,
+      score_hint: 0.55,
     });
     expect(row?.candidate_set[2]).toMatchObject({
       candidate_id: "pack:event:alpha",
       semantic_class: "event_context",
       token_cost: 48,
+      score_hint: 0.9,
     });
-    expect("score_hint" in (row?.candidate_set[0] ?? {})).toBe(false);
-    expect("score_hint" in (row?.candidate_set[1] ?? {})).toBe(false);
-    expect("score_hint" in (row?.candidate_set[2] ?? {})).toBe(false);
-    expect("score_hint" in (row?.candidate_set[3] ?? {})).toBe(false);
+    expect(row?.candidate_set[3]).toMatchObject({
+      candidate_id: "pack:pointer-aware-init",
+      semantic_class: "init_context",
+      token_cost: 48,
+      score_hint: 0.2,
+    });
   });
 
   it("writes stable aggregate artifacts under _lane with pairwise deltas and win-rate matrices", () => {
@@ -564,9 +569,11 @@ describe("recorded session replay proof lane", () => {
     const baselineBundle = loadRecordedSessionReplayProofBundle(path.join(baselineRoot, trace.traceId));
     const overrideBundle = loadRecordedSessionReplayProofBundle(path.join(overrideRoot, trace.traceId));
     const baselineLearnedRoute = baselineBundle.bundle.modes.find((mode) => mode.mode === "learned_route");
+    const baselineGraphPrior = baselineBundle.bundle.modes.find((mode) => mode.mode === "graph_prior_only");
     const overrideLearnedRoute = overrideBundle.bundle.modes.find((mode) => mode.mode === "learned_route");
 
     expect(baselineLearnedRoute).toBeDefined();
+    expect(baselineGraphPrior).toBeDefined();
     expect(overrideLearnedRoute).toBeDefined();
     expect(baselineLearnedRoute?.turns.some((turn) => turn.selectedContextIds.length > 0)).toBe(true);
     expect(overrideLearnedRoute?.summary.usedLearnedRouteTurnCount).toBe(0);
@@ -575,6 +582,9 @@ describe("recorded session replay proof lane", () => {
     expect(overrideLearnedRoute?.turns.every((turn) => turn.routerIdentity === candidateRouterIdentity)).toBe(true);
     expect(overrideLearnedRoute?.turns.map((turn) => turn.selectedContextIds)).toEqual([[], []]);
     expect(overrideLearnedRoute?.turns.every((turn) => turn.activationSource?.startsWith("learned_route_artifact:candidate_override:"))).toBe(true);
+    expect(overrideLearnedRoute?.turns.map((turn) => turn.activePackId)).toEqual(
+      baselineGraphPrior?.turns.map((turn) => turn.activePackId),
+    );
   });
 
   it("records a negative served-live-policy spike result explicitly when learned-route usage still stays false", () => {

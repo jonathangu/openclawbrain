@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-e4bf819b"
+      "pack-34d6579f"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-819c2ce63044d4decb13705514cd54b79ba440be8973257b566cba91800b5ab8"
+    "scoreHash": "sha256-4128cdefb6d5a8637a26f02f871b7d79f350adba270097b13a6e11c48ffb3d87"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-e4bf819b",
+      "activePackId": "pack-34d6579f",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-6e6be7530c346fe6f02859fd4c043a5b2cfa253fc78ca0125321af0018447771",
+      "routerIdentity": "pack-34d6579f:route_fn",
+      "selectionDigest": "sha256-08ca637c7fbb63ba717588570ece9d6ec7cf349ad657b1138d77a900103c65ab",
       "selectedContextIds": [
-        "pack-e4bf819b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback",
-        "pack-e4bf819b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction",
-        "pack-e4bf819b:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction"
+        "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+        "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
+        "pack-34d6579f:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: ✅ New session started · model: anthropic/claude-opus-4-6. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction.",
-        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message.",
-        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-2-seed-message."
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-4-seed-message.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: /Users/guclaw/.openclaw/workspace-pelican/memory/reflection-2026-02-27.md\"} ; /Users/guclaw/.openclaw/workspace-pelican/memory/reflection-2026-02-26.md\"}. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-55e3c464b7d16a91b3c716d4129b8fa8744845ddc917f2c06d0bf236beb171cb",
+      "eventExportDigest": "sha256-7100d3057b08cfc9a086c1955ff5e397d7824dc13319fe60710db976c9ab4a29",
       "expectedContextPhrases": [
         "hey",
         "jon."
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.116,
-        "routeSelectionMs": 4.424,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.69,
+        "totalMs": 9.19,
+        "routeSelectionMs": 5.436,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.753,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

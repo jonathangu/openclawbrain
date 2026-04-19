@@ -1,0 +1,115 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-4dfdb206"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-4dfdb206",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-09T14:38:24.302Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-e438a82de1f1e46e33f7f3edbec62ce84fe2e58deef9c50edc6101cb29c99a23"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-4dfdb206",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationConfidence": "high",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-b54740dda0ed057858d5e1bbd0edd6c3ff41ce5812ef49a1557a302007636d9b",
+      "selectedContextIds": [
+        "pack-4dfdb206:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
+        "pack-4dfdb206:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback",
+        "pack-4dfdb206:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: assistant: Work is continuing. I launched the 126a–126d blocker swarm from the retrain single-truth plan and updated `TASKS.md` to reflect that they’re now active. I also checked live market-hours truth on deployed head `d079a46`: the `10:30 ET` cycle processed successfully in explicit GBM-only fallback with no new hold and no TFT crash, so that crash seam is materially closed. Current live issue is narrower now: - latest processed snapshot: `data/2026/04/09/10-30-18.json` - `run_once.status=success` - .... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: System: [2026-04-09 07:02:47 PDT] Exec completed (briny-ne, code 0) :: e7_35.py M tests/test_native_remake_handoff_contract.py M tests/test_pelican_deep_health.py M tests/test_pipeline_health_check.py M tests/test_refresh_canonical_training_inputs.py… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Thursday, April 9.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-161a28effeeca50b24c5b0da61bf9f84c9b84c42018cad6c846839928d7b2e2a",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/126c-listener-scheduler-freshness-2026-04-09.md\"}",
+        "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/126c-listener-scheduler-freshness-2026-04-09.md\"}",
+        "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.61,
+        "routeSelectionMs": 6.15,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.458,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-09T14:38:24.302Z"
+      },
+      "warnings": []
+    }
+  ]
+}

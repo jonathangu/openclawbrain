@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-53d0f817"
+      "pack-1b3a05c4"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-0e3324d509a1fc91e9674ac20490ed8c84e78e287522e4c3a015a746afe4c717"
+    "scoreHash": "sha256-1ca939b13cc2e52c7734f8bd4342fa5664aed6ee086ac243226437b1bdaa82f4"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-53d0f817",
+      "activePackId": "pack-1b3a05c4",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-f1dd7163e49ed068788a9ff6f75cc4ffe88c426a8d4bc468310a8904eb0d0157",
+      "routerIdentity": "pack-1b3a05c4:route_fn",
+      "selectionDigest": "sha256-730adaf45f4cec435c539673b7e25d912317c2d63d1134fb9fe81eecba35af70",
       "selectedContextIds": [
-        "pack-53d0f817:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
-        "pack-53d0f817:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction",
-        "pack-53d0f817:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback"
+        "pack-1b3a05c4:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+        "pack-1b3a05c4:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction",
+        "pack-1b3a05c4:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15870\", \"reply_to_id\": \"15869\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-08 11:07 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"Blocker clarified and ledger updated.\\n\\nT-119 is still blocked, but the block.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
         "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-5-seed-message.",
         "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15873\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-08 11:07 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` What tasks are left to do?. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-6b68040bfe8a8b75638ae425ceb442a799ee812083ac3d0f7612066268965127",
+      "eventExportDigest": "sha256-5d715acae060edf16b5bd906ba785024b806cac639677b3ae53d622eb4f1136b",
       "expectedContextPhrases": [
         "cleanup real blockers t-119",
         "real blockers t-119 t-117",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 3.417,
-        "routeSelectionMs": 2.146,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 1.269,
+        "totalMs": 6.711,
+        "routeSelectionMs": 4.294,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.414,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

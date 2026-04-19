@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-c31f4cc3"
+      "pack-dacd81f0"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-07c9fa992065da03035ebdcb18722c1ee4091717a09f12a9bf1cc6281032aa24"
+    "scoreHash": "sha256-4b27d8134364ec28eb0bd8e40a8c92f135af072dff3f8a02c5ed798530a3f0d5"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-c31f4cc3",
+      "activePackId": "pack-dacd81f0",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-7d3685070083cc850b758d13fb480a7a803ea60a86b0ff3cc763ba5715216909",
+      "routerIdentity": "pack-dacd81f0:route_fn",
+      "selectionDigest": "sha256-599ac050a27ffdae459d67998c808077598243271bdfec619b13f6ea30b17511",
       "selectedContextIds": [
-        "pack-c31f4cc3:pointer-aware-init",
-        "pack-c31f4cc3:workspace",
-        "pack-c31f4cc3:event:1de98d77-ea36-403b-b685-deef4d7a1723-seed:cue-2:interaction"
+        "pack-dacd81f0:pointer-aware-init",
+        "pack-dacd81f0:workspace",
+        "pack-dacd81f0:event:1de98d77-ea36-403b-b685-deef4d7a1723-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph.",
         "Workspace snapshot session-1de98d77-ea36-403b-b685-deef4d7a1723 for ws-pelican captured at 2026-04-13T07:33:11.441Z with revision 1de98d77-ea36-403b-b685-deef4d7a1723.",
         "Interaction operator_override on live-session session 1de98d77-ea36-403b-b685-deef4d7a1723-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-c348c4e60a64097d74acaa2998a9502eb6827dfb9a2b954123dd1118f4b693f0",
+      "eventExportDigest": "sha256-17c884565e99eae43319afac199e6100171fc4647aa497908ead83dd8d2be3b5",
       "expectedContextPhrases": [
         "here.",
         "pelican",
@@ -90,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.339,
-        "routeSelectionMs": 3.922,
+        "totalMs": 6.692,
+        "routeSelectionMs": 4.099,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.416,
+        "otherMs": 2.591,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

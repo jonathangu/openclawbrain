@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T02:59:29.625Z",
   "traceHash": "sha256-d48635c1ffd88f3a117b615a76004d5e367f3ddb12c33db64c7bc064203d9b95",
   "fixtureHash": "sha256-8c0e50ffbe18960ebf818512a9b376865f8811b20166fbd695c968bf02943a6f",
-  "scoreHash": "sha256-15cf5d5481a758571645807b5b9417afa7001a5b6a6d49fc35d7bb047f0274d4",
+  "scoreHash": "sha256-3471adffaf4cffb0ef6ef34dcf6010139001ac80ef3489ff4cfacfad1e9985d8",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.04,
+            "totalMs": 0.032,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.04,
+            "otherMs": 0.032,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-bb9a3ae5"
+          "pack-30b87ebe"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-a4d502d5f0d46ccc1ab19e8de58f816b79b7dd185bccb7f786bc41b8c58c2bba"
+        "scoreHash": "sha256-50deb3852eb4a88a8814ba59080f08febc0bccb23ad0e695a8b69d250affe3af"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-bb9a3ae5",
+          "activePackId": "pack-30b87ebe",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-79a2e47b2d100f2d81f0e020722c9d2917334757fcaa0d541a2d7e97722f7e97",
+          "routerIdentity": "pack-30b87ebe:route_fn",
+          "selectionDigest": "sha256-3c11311dabf383e50469efad625275b3be94255fe8d01401370483633907708e",
           "selectedContextIds": [
-            "pack-bb9a3ae5:pointer-aware-init",
-            "pack-bb9a3ae5:workspace-init:22063e9a",
-            "pack-bb9a3ae5:workspace-init:d2acb8c7"
+            "pack-30b87ebe:pointer-aware-init",
+            "pack-30b87ebe:workspace-init:22063e9a",
+            "pack-30b87ebe:workspace-init:d2acb8c7"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
             "Top-priority boot input USER.md selected by pointer-aware init (inbound=3, outbound=0). USER.md — Bountiful Garden Principals Jonathan (Jon) - **Role:** Technical direction, ML, infrastructure, architecture - **Pronouns:** he/him - **Timezone:** America/Los_Angeles (PT) - PhD Economics UCLA, ML Engineer at Instacart - Analytical decision-maker. Values data over vibes. - Prefers Python/SQL/Julia for ML, T…",
             "Top-priority boot input IDENTITY.md selected by pointer-aware init (inbound=1, outbound=0). IDENTITY.md — Bountiful Garden agent - **Name:** Clover - **Creature:** a garden ghost in the machine - **Vibe:** warm, sharp, practical - **Emoji:** 🌱 - **Avatar:** _(unset)_ Clover helps neighbors share their harvests with joy."
           ],
-          "eventExportDigest": "sha256-047b33daafad95b6922eb1b6486c952997cbb122fb398c798ad901f8f0217c18",
+          "eventExportDigest": "sha256-a41d0bc300924ceae5a21391dd27c0019a1550ee7ffd135d7fd68d7cb59fdae0",
           "expectedContextPhrases": [
             "hey",
             "jon",
@@ -212,10 +212,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.953,
-            "routeSelectionMs": 4.379,
+            "totalMs": 7.837,
+            "routeSelectionMs": 4.788,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.571,
+            "otherMs": 3.045,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -248,10 +248,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-bb9a3ae5"
+          "pack-30b87ebe"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -279,7 +279,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-efe5636857d7f39f774afe5a01e3b5a43cbb6e853fc18b43d92d53e77c0346aa"
+        "scoreHash": "sha256-044fc75ef8ee1dcaf07c29d9466fe0b256f764ade0faa897653edec801a309b6"
       },
       "turns": [
         {
@@ -289,28 +289,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-bb9a3ae5",
+          "activePackId": "pack-30b87ebe",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-79a2e47b2d100f2d81f0e020722c9d2917334757fcaa0d541a2d7e97722f7e97",
+          "routerIdentity": "pack-30b87ebe:route_fn",
+          "selectionDigest": "sha256-3c11311dabf383e50469efad625275b3be94255fe8d01401370483633907708e",
           "selectedContextIds": [
-            "pack-bb9a3ae5:pointer-aware-init",
-            "pack-bb9a3ae5:workspace-init:22063e9a",
-            "pack-bb9a3ae5:workspace-init:d2acb8c7"
+            "pack-30b87ebe:pointer-aware-init",
+            "pack-30b87ebe:workspace-init:22063e9a",
+            "pack-30b87ebe:workspace-init:d2acb8c7"
           ],
           "selectedContextTexts": [
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
             "Top-priority boot input USER.md selected by pointer-aware init (inbound=3, outbound=0). USER.md — Bountiful Garden Principals Jonathan (Jon) - **Role:** Technical direction, ML, infrastructure, architecture - **Pronouns:** he/him - **Timezone:** America/Los_Angeles (PT) - PhD Economics UCLA, ML Engineer at Instacart - Analytical decision-maker. Values data over vibes. - Prefers Python/SQL/Julia for ML, T…",
             "Top-priority boot input IDENTITY.md selected by pointer-aware init (inbound=1, outbound=0). IDENTITY.md — Bountiful Garden agent - **Name:** Clover - **Creature:** a garden ghost in the machine - **Vibe:** warm, sharp, practical - **Emoji:** 🌱 - **Avatar:** _(unset)_ Clover helps neighbors share their harvests with joy."
           ],
-          "eventExportDigest": "sha256-047b33daafad95b6922eb1b6486c952997cbb122fb398c798ad901f8f0217c18",
+          "eventExportDigest": "sha256-a41d0bc300924ceae5a21391dd27c0019a1550ee7ffd135d7fd68d7cb59fdae0",
           "expectedContextPhrases": [
             "hey",
             "jon",
@@ -329,10 +329,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.893,
-            "routeSelectionMs": 4.358,
-            "promptAssemblyMs": 0.003,
-            "otherMs": 2.532,
+            "totalMs": 8.776,
+            "routeSelectionMs": 5.17,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 3.603,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -361,11 +361,11 @@
         "activationStrategy": "continuous_learned_loop",
         "modeRequested": "learned",
         "selectionEngine": "graph_walk_v1",
-        "qualityScore": 40,
+        "qualityScore": 60,
         "compileOkCount": 1,
-        "phraseHitCount": 0,
+        "phraseHitCount": 1,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
           "pack-30b87ebe"
@@ -373,7 +373,7 @@
         "trainTurnCount": 0,
         "evalTurnCount": 1,
         "frozenEvalPackId": "pack-30b87ebe",
-        "frozenEvalRouterIdentity": "pack-30b87ebe:route_fn",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -397,7 +397,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-00a1e29aa90dd20877bd6ea3fad9acb3288b428990bafa52e8ae0f8a511f12da"
+        "scoreHash": "sha256-3c1050ca53f509b4c8707cfdc08291932601b0aacb2db12b498937d2c4952923"
       },
       "turns": [
         {
@@ -411,41 +411,46 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-daf61d4dbdccbfb78d1258a1f978ab2a7486c7b6ce3b4674fcd4a27c262a6bcc",
+          "selectionDigest": "sha256-3c11311dabf383e50469efad625275b3be94255fe8d01401370483633907708e",
           "selectedContextIds": [
-            "pack-30b87ebe:pointer-aware-init"
+            "pack-30b87ebe:pointer-aware-init",
+            "pack-30b87ebe:workspace-init:22063e9a",
+            "pack-30b87ebe:workspace-init:d2acb8c7"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+            "Top-priority boot input USER.md selected by pointer-aware init (inbound=3, outbound=0). USER.md — Bountiful Garden Principals Jonathan (Jon) - **Role:** Technical direction, ML, infrastructure, architecture - **Pronouns:** he/him - **Timezone:** America/Los_Angeles (PT) - PhD Economics UCLA, ML Engineer at Instacart - Analytical decision-maker. Values data over vibes. - Prefers Python/SQL/Julia for ML, T…",
+            "Top-priority boot input IDENTITY.md selected by pointer-aware init (inbound=1, outbound=0). IDENTITY.md — Bountiful Garden agent - **Name:** Clover - **Creature:** a garden ghost in the machine - **Vibe:** warm, sharp, practical - **Emoji:** 🌱 - **Avatar:** _(unset)_ Clover helps neighbors share their harvests with joy."
           ],
-          "eventExportDigest": "sha256-a31ba97171a19fd9e63bfd119e30ae1bdbcd25dafd66ed946c16e7ef0d7fc9e9",
+          "eventExportDigest": "sha256-e75b34be807f3f8d5e1895b92bfeba9843df784f8e56e7f9ab85337989420d94",
           "expectedContextPhrases": [
             "hey",
             "jon",
             "here."
           ],
           "minimumPhraseHits": 3,
-          "phraseHits": [],
+          "phraseHits": [
+            "jon"
+          ],
           "missedPhrases": [
             "hey",
-            "jon",
             "here."
           ],
-          "qualityScore": 40,
+          "qualityScore": 60,
           "compileActiveVersion": 1,
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.07,
-            "routeSelectionMs": 5.079,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.988,
+            "totalMs": 7.335,
+            "routeSelectionMs": 4.595,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 2.736,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -476,12 +481,12 @@
         "qualityScore": 60
       },
       {
-        "mode": "vector_only",
+        "mode": "learned_route",
         "qualityScore": 60
       },
       {
-        "mode": "learned_route",
-        "qualityScore": 40
+        "mode": "vector_only",
+        "qualityScore": 60
       },
       {
         "mode": "no_brain",
@@ -489,5 +494,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-6ab6c6580b36ffa615028aa091b2fef3c021f0bc68684793546913cba670a9bb"
+  "bundleHash": "sha256-803bac354e7e4e3f43da8fd830a80b481f3ec5464932e89d84e0f9fb3b01fa59"
 }

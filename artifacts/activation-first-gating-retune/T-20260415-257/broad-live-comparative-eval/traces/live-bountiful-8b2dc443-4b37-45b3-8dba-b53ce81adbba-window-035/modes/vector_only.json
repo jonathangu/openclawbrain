@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-3d138266"
+      "pack-88798ac0"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-219272c9020fabfdffcdde5b389cfa65fdcc1dcfc7e5ad8921a7aee7b5b8d412"
+    "scoreHash": "sha256-2d7fa6668de36f8b47e259a37b629ee6f15d8e0559927397e3fe5da30a71f610"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-3d138266",
+      "activePackId": "pack-88798ac0",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-04c7952b7ef7d5856108da0fb7090ccfcbcf90100ea336c1b4a666a0f75ce260",
+      "routerIdentity": "pack-88798ac0:route_fn",
+      "selectionDigest": "sha256-ceb0c3ea4c37ff156f73ca45425e6302ae65b701618992a5443b93e86a78c8cd",
       "selectedContextIds": [
-        "pack-3d138266:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback",
-        "pack-3d138266:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback",
-        "pack-3d138266:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback"
+        "pack-88798ac0:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback",
+        "pack-88798ac0:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback",
+        "pack-88798ac0:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 23:48:08 PST] Exec completed (good-cor, code 0) :: ed total chip labeling: - Uses `Value` unless there are items on both sides. - Uses `Trade` when both sides have actual items. - `+ cash` chip unchanged. ### Verification - Ran: `… System: [2026-02-28 23:49:43 PST] Exec completed (kind-blo, code 0) :: Starting API server on :3001 (with auto-restart)... Watchdog PID: 45564 ⏳ Waiting for servers... ✅ API healthy ✅ Frontend healthy (served by Express) 🔧 Starting Cloudflare Tu.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:interaction.",
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 23:05:38 PST] Exec completed (glow-rid, code 0) :: s/trades/components/OwnerActionBar.tsx) - [TradeHeader.tsx](/Users/guclaw/worktrees/bountiful/3/apps/web/src/features/trades/components/TradeHeader.tsx) Verification: - Ran `pnpm … Conversation info (untrusted metadata): ```json { \"message_id\": \"7478\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrus.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:interaction.",
         "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7499\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` Discuss here. Get long term greedy. Deep and wide plan. Make codex implement it. You have my permission to deploy to prod. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-a4870169ae4170ca421147e16083edfcfdfd3ff33803f7acdbd6288689ad2ce5",
+      "eventExportDigest": "sha256-3a5118592a9537b74c054a415d5aad642cbc28b9bb87156ba35e0a44995e3cba",
       "expectedContextPhrases": [
         "//bountiful.garden/api/health",
         "/unlocks**.",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.413,
-        "routeSelectionMs": 4.745,
+        "totalMs": 9.456,
+        "routeSelectionMs": 5.875,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.665,
+        "otherMs": 3.578,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

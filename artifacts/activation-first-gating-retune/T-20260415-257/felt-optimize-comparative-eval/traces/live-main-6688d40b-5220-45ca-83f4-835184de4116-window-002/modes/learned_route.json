@@ -12,12 +12,12 @@
     "usedLearnedRouteTurnCount": 0,
     "promotionCount": 0,
     "packIds": [
-      "pack-fb7ccffe"
+      "pack-aea69270"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-fb7ccffe",
-    "frozenEvalRouterIdentity": "pack-fb7ccffe:route_fn",
+    "frozenEvalPackId": "pack-aea69270",
+    "frozenEvalRouterIdentity": "pack-aea69270:route_fn",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-c6e0c4ae6c02143e35c2432558db5223b1be02d5ee4bcae34c2b4b100e7cddc5"
+    "scoreHash": "sha256-47e3299559521682dac200f2d705183c2c9e69cfe1aaeefd889eee9a78fdf6f9"
   },
   "turns": [
     {
@@ -51,24 +51,24 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-fb7ccffe",
+      "activePackId": "pack-aea69270",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
       "usedLearnedRouteFn": false,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_artifact:candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-75bcf61b789bbacd2248bfb7948329b52362bfa41191021e721ae48e8afdb2ce",
+      "selectionDigest": "sha256-76734b3dae61077985ae2ee138af6fca67b13b061b3fa492a140672b9015410d",
       "selectedContextIds": [
-        "pack-fb7ccffe:workspace-init:16415817"
+        "pack-aea69270:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=107). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:35 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: assistant: I’m here. I dug into the silence. The issue was not Telegram delivery. Pelican got wedged in a long tool/error loop this morning, with context-overflow compaction plus repeated exec-preflight failures, so it kept working internally and never surfaced a clean reply. Current truth is narrower now: label single-truth is fixed, stale status-writer truth is fixed, and the remaining blocker is the embeddings coverage gap for canonical training-input readiness. I’m continuing on that exact seam.. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-26279445a80198e69b7028f0ce63dcf518385cd6b8525dfc79e82d887d44614a",
+      "eventExportDigest": "sha256-ca81fb8183a0c10cd0099246321b10589b2e604265c46bb2b6fd40f16d568524",
       "expectedContextPhrases": [
         "T-20260414-244",
         "/Users/guclaw/.openclaw/workspace/TASKS.md\"}",
@@ -86,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 11.433,
-        "routeSelectionMs": 7.186,
+        "totalMs": 11.461,
+        "routeSelectionMs": 7.624,
         "promptAssemblyMs": 0.004,
-        "otherMs": 4.243,
+        "otherMs": 3.833,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

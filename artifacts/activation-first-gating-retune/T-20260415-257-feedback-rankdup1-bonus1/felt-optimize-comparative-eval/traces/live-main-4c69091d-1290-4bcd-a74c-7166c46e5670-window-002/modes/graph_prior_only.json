@@ -1,0 +1,117 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-98152994"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-06T17:46:42.937Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-bd41852f2ee80e9e962e8d40d0f9fcb0229a45e62f1c27b11b9b85e2a3baa35f"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-98152994",
+      "modeRequested": "heuristic",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": "pack-98152994:route_fn",
+      "selectionDigest": "sha256-448c6c3f46f1a7dd30870fd443f0451bfb642334c9e64e8244db261c48a83851",
+      "selectedContextIds": [
+        "pack-98152994:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback",
+        "pack-98152994:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:interaction",
+        "pack-98152994:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-2:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260406-161 tool-action online symmetry — Lane B (online PG / tool-action priors). Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Read /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/launch-brief.md and /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-160/tool-action-symmetry-plan.md. Goal: make online updates for tool-action.... Related interaction: 4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:interaction.",
+        "Interaction operator_override on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed. Message: cue-1-seed-message.",
+        "Interaction operator_override on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed. Message: cue-2-seed-message."
+      ],
+      "eventExportDigest": "sha256-b05eeae5dfdf876540d39c577783fbdbc3c189322e8ec05d6e6512a1ec60185a",
+      "expectedContextPhrases": [
+        "T-20260406-161",
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-b-online-pg.md",
+        "/Users/guclaw/.openclaw/workspace/task-status/T-20260406-161/lane-b.json."
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "T-20260406-161"
+      ],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-b-online-pg.md",
+        "/Users/guclaw/.openclaw/workspace/task-status/T-20260406-161/lane-b.json."
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.72,
+        "routeSelectionMs": 6.098,
+        "promptAssemblyMs": 0.004,
+        "otherMs": 3.618,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-06T17:46:42.937Z"
+      },
+      "warnings": []
+    }
+  ]
+}

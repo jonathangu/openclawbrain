@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-43a3a1b1"
+      "pack-2ef9c3c9"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-43a3a1b1",
-    "frozenEvalRouterIdentity": "pack-43a3a1b1:route_fn",
+    "frozenEvalPackId": "pack-2ef9c3c9",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-8bd95804549d2e3aaaa82c8b3bf03754c84840745cf634d5612e7d0ee473dd63"
+    "scoreHash": "sha256-907aa9def3b9584bb3e108fd9435773f2c8cb88ed64060f5d730d66f34357504"
   },
   "turns": [
     {
@@ -51,24 +51,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-43a3a1b1",
+      "activePackId": "pack-2ef9c3c9",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-5efa614c23f86266e706db219f5695a449e5171c6f2777f098eeb4129f117d21",
+      "selectionDigest": "sha256-004f08364c948931241eab43550f15ddf7d3055a577fd673dd1e0c75aa82c397",
       "selectedContextIds": [
-        "pack-43a3a1b1:pointer-aware-init"
+        "pack-2ef9c3c9:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:feedback",
+        "pack-2ef9c3c9:pointer-aware-init",
+        "pack-2ef9c3c9:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19091\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 02:59 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Clean up tasks and context. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-3:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph.",
+        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: assistant: Done. - `TASKS.md` is clean again, no active principal tasks. - Added one canonical daily continuity note: `memory/2026-04-15.md`. - Moved 20 untracked residue files, including bulky PEL-087 scratch artifacts and transcript-style side-memory notes, to Trash. - Logged the cleanup in `task-artifacts/PEL-091/context-cleanup-2026-04-15.md`. - Workspace is committed and clean: `6e2138c` (`pelican: clean startup context surface`). We’re in a good cold-start state now.. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-234635f29553888ac31a723a6f092639731aa68cf631918e436fdd8eb6de5805",
+      "eventExportDigest": "sha256-50463f9c3ede1cdc202483e06e1ff1719d328fa6c15d2404e49eea684a127c9a",
       "expectedContextPhrases": [
         "/f"
       ],
@@ -82,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.806,
-        "routeSelectionMs": 5.436,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 3.368,
+        "totalMs": 7.421,
+        "routeSelectionMs": 4.61,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.809,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

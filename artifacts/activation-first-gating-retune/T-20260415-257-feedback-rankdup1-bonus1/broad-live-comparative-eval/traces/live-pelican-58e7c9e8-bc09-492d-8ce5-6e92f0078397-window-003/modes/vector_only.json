@@ -1,0 +1,116 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-cf93afa9"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-15T03:43:34.542Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-38b88cfff6c0036e6dd03e230a4167bcb5700f7212b72a29b54e8e52f11b2cb6"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-cf93afa9",
+      "modeRequested": "heuristic",
+      "modeEffective": "learned",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": "pack-cf93afa9:route_fn",
+      "selectionDigest": "sha256-348b96cd457dd7bcc65d96f00cbb72af5ab40ab508b531adddd1696c30f0efc7",
+      "selectedContextIds": [
+        "pack-cf93afa9:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:feedback",
+        "pack-cf93afa9:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:feedback",
+        "pack-cf93afa9:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-6:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 343. Work in /Users/guclaw/worktrees/quant-research/343. Goal: produce a concrete delete/fail-close inventory for the remaining dangerous legacy code paths. Focus on fixed-grid owner semantics, stale wrapper/status surfaces, rebuild broadening fallbacks, and implicit article-store compatibility guesses. Give a file-by-file hit list with delete vs hard-.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 343. Work in /Users/guclaw/worktrees/quant-research/343. Goal: produce a concrete delete/fail-close inventory for the remaining dangerous legacy code paths. Focus on fixed-grid owner semantics, stale wrapper/status surfaces, rebuild broadening fallbacks, and implicit article-store compatibility guesses. Give a file-by-file hit list with delete vs hard-.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:interaction.",
+        "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: assistant: ## Summary I finished the lane-343 audit. The biggest remaining risks are not the canonical expiry-owner seams themselves, they are: 1. one surviving **broadening fallback** in `daily_data_refresh.py`, 2. several **shadow status/wrapper truth** paths that can mark bad state as okay, 3. a few **permissive compatibility/inference** layers that can hide drift. The fixed-grid / `target_dte` owner bridge is mostly already fail-closed now. The most dangerous paths that could silently drag Pelican b.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-6:interaction."
+      ],
+      "eventExportDigest": "sha256-ec958d7cbb35085f95e26d7d4a4618280c19056253c85c2566eade53fa9e47b3",
+      "expectedContextPhrases": [
+        "code can reboot world",
+        "around code can reboot",
+        "can reboot world mutate"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "code can reboot world",
+        "around code can reboot",
+        "can reboot world mutate"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 10.233,
+        "routeSelectionMs": 6.343,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.888,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-15T03:43:34.542Z"
+      },
+      "warnings": []
+    }
+  ]
+}

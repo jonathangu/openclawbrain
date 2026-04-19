@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-bb9a3ae5"
+      "pack-30b87ebe"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-efe5636857d7f39f774afe5a01e3b5a43cbb6e853fc18b43d92d53e77c0346aa"
+    "scoreHash": "sha256-044fc75ef8ee1dcaf07c29d9466fe0b256f764ade0faa897653edec801a309b6"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-bb9a3ae5",
+      "activePackId": "pack-30b87ebe",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-79a2e47b2d100f2d81f0e020722c9d2917334757fcaa0d541a2d7e97722f7e97",
+      "routerIdentity": "pack-30b87ebe:route_fn",
+      "selectionDigest": "sha256-3c11311dabf383e50469efad625275b3be94255fe8d01401370483633907708e",
       "selectedContextIds": [
-        "pack-bb9a3ae5:pointer-aware-init",
-        "pack-bb9a3ae5:workspace-init:22063e9a",
-        "pack-bb9a3ae5:workspace-init:d2acb8c7"
+        "pack-30b87ebe:pointer-aware-init",
+        "pack-30b87ebe:workspace-init:22063e9a",
+        "pack-30b87ebe:workspace-init:d2acb8c7"
       ],
       "selectedContextTexts": [
         "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
         "Top-priority boot input USER.md selected by pointer-aware init (inbound=3, outbound=0). USER.md — Bountiful Garden Principals Jonathan (Jon) - **Role:** Technical direction, ML, infrastructure, architecture - **Pronouns:** he/him - **Timezone:** America/Los_Angeles (PT) - PhD Economics UCLA, ML Engineer at Instacart - Analytical decision-maker. Values data over vibes. - Prefers Python/SQL/Julia for ML, T…",
         "Top-priority boot input IDENTITY.md selected by pointer-aware init (inbound=1, outbound=0). IDENTITY.md — Bountiful Garden agent - **Name:** Clover - **Creature:** a garden ghost in the machine - **Vibe:** warm, sharp, practical - **Emoji:** 🌱 - **Avatar:** _(unset)_ Clover helps neighbors share their harvests with joy."
       ],
-      "eventExportDigest": "sha256-047b33daafad95b6922eb1b6486c952997cbb122fb398c798ad901f8f0217c18",
+      "eventExportDigest": "sha256-a41d0bc300924ceae5a21391dd27c0019a1550ee7ffd135d7fd68d7cb59fdae0",
       "expectedContextPhrases": [
         "hey",
         "jon",
@@ -90,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.893,
-        "routeSelectionMs": 4.358,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 2.532,
+        "totalMs": 8.776,
+        "routeSelectionMs": 5.17,
+        "promptAssemblyMs": 0.004,
+        "otherMs": 3.603,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

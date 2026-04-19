@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-0ef07c70"
+      "pack-43fa2071"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-1583fed77c911471fe47b4892048e679497bd405688feb34b8daa8bb55baf5a5"
+    "scoreHash": "sha256-eaee41bb68f01c8f7d13bc4af7c10112d5883223f2d29c52a513f36b6913f14b"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-0ef07c70",
+      "activePackId": "pack-43fa2071",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-f35bbd2363a3383d442a1915af1644b725a39846d9b36a5d4feecca4ba9b4329",
+      "routerIdentity": "pack-43fa2071:route_fn",
+      "selectionDigest": "sha256-dba63fca86711ee5fff7181e8bac3f84968ac16215838b341aa58c7bec104530",
       "selectedContextIds": [
-        "pack-0ef07c70:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:feedback",
-        "pack-0ef07c70:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:feedback",
-        "pack-0ef07c70:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:interaction"
+        "pack-43fa2071:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:feedback",
+        "pack-43fa2071:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:feedback",
+        "pack-43fa2071:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19103\", \"reply_to_id\": \"19101\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:31 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Yes. I found a real structural blocker.\\n\\nThis is the clean root cause:.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction.",
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19102\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:31 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make a deep and thorough engineering plan for everything!. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:interaction.",
         "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-1-seed-message."
       ],
-      "eventExportDigest": "sha256-6b2f778a021c9bed3daea995432f4958401afcb16d807497dc40d18ae922b239",
+      "eventExportDigest": "sha256-0dd5b67b0b7fd8d4ac50e878d1f411e0dba4320624c4380c7d853d20fb48a945",
       "expectedContextPhrases": [
         "execution plan driven end",
         "full execution plan driven",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.561,
-        "routeSelectionMs": 4.917,
+        "totalMs": 9.776,
+        "routeSelectionMs": 6.185,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.642,
+        "otherMs": 3.59,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

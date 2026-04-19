@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
       "pack-5a27d519"
@@ -17,7 +17,7 @@
     "trainTurnCount": 0,
     "evalTurnCount": 1,
     "frozenEvalPackId": "pack-5a27d519",
-    "frozenEvalRouterIdentity": "pack-5a27d519:route_fn",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-c50f1f0d72c37de71e3e2eef07e640282c17255e8a8ff1eedb628b73a7efdf12"
+    "scoreHash": "sha256-82bcf65934b085c45de0cd3a5a886e376c20f6d1a8b0345069cc54b458beb9bd"
   },
   "turns": [
     {
@@ -55,20 +55,24 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-fba665dce0f7fed70a0b0389894efba3f2e52ec136a0123fafa2c855100d08f8",
+      "selectionDigest": "sha256-6b580e125439b45d0ec19c8cd899f9a3a2c990c9d3f1815ae3f13143177ead88",
       "selectedContextIds": [
-        "pack-5a27d519:workspace-init:02e33be9"
+        "pack-5a27d519:event:9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-6:feedback",
+        "pack-5a27d519:event:9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-4:feedback",
+        "pack-5a27d519:event:9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
-        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Bountiful Use heartbeat to keep Bountiful moving without manual babysitting. 1. Reread TASKS.md from disk, then read only the relevant MEMORY.md snippets and project artifacts for the current live task. 2. Trust current file truth over chat or old summaries. 3. Treat only active tasks as live work. Trea…"
+        "Teaching feedback on live-session session 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8162\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-03 01:39 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true, \"has_forwarded_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Forwarded message context (untrusted metadata): ```json { \"from\": \"B (@bbounti.... Related interaction: 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8159\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-03 01:39 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Fix it all please. Deploy to prod. Related interaction: 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8157\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-03 01:38 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Hello?. Related interaction: 9fe29ce5-b989-46df-bb1c-d79eb7599c65-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-38b8bdc00aa1a11c20942e6fa4dceb83206e8451cd82da49b3afbe09e356335c",
+      "eventExportDigest": "sha256-c0af926196507d1816abb3eaec52f3ee848c3e5102aa7e1cbc07c52ad453e454",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/media/inbound/file_322---2bd600a4-de58-49ce-b7f4-4942706e9975.jpg\"}",
         "/Users/guclaw/.openclaw/media/inbound/file_323---0afb4efd-6159-4922-9db1-89a0cac69d45.jpg\"}",
@@ -86,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.301,
-        "routeSelectionMs": 5.898,
+        "totalMs": 8.989,
+        "routeSelectionMs": 5.98,
         "promptAssemblyMs": 0.003,
-        "otherMs": 3.401,
+        "otherMs": 3.006,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

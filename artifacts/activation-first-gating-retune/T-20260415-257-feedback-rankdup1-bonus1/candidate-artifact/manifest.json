@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "artifact_id": "router-artifact-t-20260415-257-activation-first-gating-only-v1",
+  "artifact_version": "0.0.1",
+  "pack_type": "base",
+  "base_model_ref": "base-model.json#sha256:146b79cc4b18a3cbf51d59f13e0c4d92eb95a3aa45b3faa111923bdcb97cf44d",
+  "weights_ref": "weights.json#sha256:d9e6b746222b6b5ffc131e6ee304abb323807c668f69ae01e6e63afb3efc3481",
+  "calibration_ref": "calibration.json#sha256:88dd7e5010a5bbfd7ea70071fb65a0fc6dd1bf62c4a8409542af36ae6ec3b34d",
+  "feature_normalizers_ref": "feature-normalizers.json#sha256:62abf8fe9eccc59db68fdcf65f5dfe64265858369fd205eca7df2b0c3e4f0ff4",
+  "source_priors_ref": "source-priors.json#sha256:cb3f620380426fbbc284ccdb064df1a6f583ed2a494478a3f30b67105376b259",
+  "safety_rules_ref": "safety-rules.json#sha256:3e86c657b9c16c674a88911ea6b8ef3cc6478a11597ec2f8ebf22fd1b3659708",
+  "compatible_runtime_version": "openclawbrain-runtime@0.4.43",
+  "training_data_refs": [
+    "activation-first-gating:T-20260415-257:felt_resume_25",
+    "activation-first-gating:T-20260415-257:must-fire-30",
+    "activation-first-gating:T-20260415-257:must-not-fire-100",
+    "activation-first-harness:../task-artifacts/T-20260415-257/activation-first-retune-harness/activation-first-retune-harness.json",
+    "activation-first-route-objective:../task-artifacts/T-20260415-257/activation-first-retune-harness/activation-first-route-objective-input.json",
+    "hotpotqa_v1",
+    "musique_v1"
+  ],
+  "replay_gate_refs": [
+    "replay:felt_resume_25",
+    "replay:must-fire-30",
+    "replay:must-not-fire-100",
+    "replay:real-approved-export:hotpotqa-musique-stoplocal-v3"
+  ],
+  "prior_base_artifact_id": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
+  "prior_base_artifact_checksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
+  "warm_start_applied": true,
+  "warm_start_from_artifact_id": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
+  "warm_start_from_artifact_checksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
+  "warm_start_summary": "warm-start continuation from router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3 applied 57 continuation rows on top of 44 prior used rows",
+  "created_at": "2026-04-18T22:34:15.033Z",
+  "router_identity": "router:T-20260415-257:activation-first-gating-only:v1",
+  "artifact_checksum": "sha256:6c955141b8561182fbb91d6c839eecb4a741dad0dc4d23079b8d6d273ca46e59"
+}

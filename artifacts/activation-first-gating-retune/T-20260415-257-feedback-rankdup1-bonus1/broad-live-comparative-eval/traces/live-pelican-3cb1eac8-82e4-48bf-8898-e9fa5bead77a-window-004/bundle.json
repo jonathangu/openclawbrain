@@ -1,0 +1,495 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-3cb1eac8-82e4-48bf-8898-e9fa5bead77a-window-004",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-12T14:14:37.029Z",
+  "generatedAt": "2026-04-12T14:50:44.901Z",
+  "traceHash": "sha256-79532f3b0ed4010e846f65618be48c2307af13b97dd581f294dd9d5e6325f8eb",
+  "fixtureHash": "sha256-6cb2c0584a4478c43146057da013c5b788958c7763f4cd2e66653360656b5ed8",
+  "scoreHash": "sha256-038c2aa554700e7fdc3a2735675bd3e8e849972eb95843fe9cf808a77a7065c0",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/3cb1eac8-82e4-48bf-8898-e9fa5bead77a.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-12T14:50:44.901Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-9133ee007dc762137868e0af1d2b1845ed239e3a386c6ccc9187f6b355e2ae22"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-9b3875f642f2e18b5bce145efa9c15ae88a5a9fda628af94abd4d45616625881",
+          "expectedContextPhrases": [
+            "next proof step against",
+            "first smallest next proof",
+            "no_same_day_embedding backfill exact-row repair"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "next proof step against",
+            "first smallest next proof",
+            "no_same_day_embedding backfill exact-row repair"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.036,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.036,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-12T14:50:44.901Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-55c8a243"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-12T14:50:44.901Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-718f880987f18041ba8fe297ea56fec3abb2042388ee86cae5d69f4153b78aa2"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-55c8a243",
+          "modeRequested": "heuristic",
+          "modeEffective": "learned",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": "pack-55c8a243:route_fn",
+          "selectionDigest": "sha256-02bad489de871bf94435ca44398c9da928ae5898581debcb72be825e2326b48f",
+          "selectedContextIds": [
+            "pack-55c8a243:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
+            "pack-55c8a243:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
+            "pack-55c8a243:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-f033a0fe780e4ff59ba9ab89d0d6761860126844f213a39493cd3f8f5d1ea6f8",
+          "expectedContextPhrases": [
+            "next proof step against",
+            "first smallest next proof",
+            "no_same_day_embedding backfill exact-row repair"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "next proof step against",
+            "first smallest next proof",
+            "no_same_day_embedding backfill exact-row repair"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.676,
+            "routeSelectionMs": 6.026,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.649,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-12T14:50:44.901Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-55c8a243"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-12T14:50:44.901Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-11216c91e4c92ce13f880ee4609760912b5b460fca7546076b0430b553506213"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-55c8a243",
+          "modeRequested": "heuristic",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": "pack-55c8a243:route_fn",
+          "selectionDigest": "sha256-6a4b619d2cc845458bc3352f43e9ded1a425194cd2213dddec3a2feabc871125",
+          "selectedContextIds": [
+            "pack-55c8a243:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
+            "pack-55c8a243:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
+            "pack-55c8a243:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction.",
+            "Interaction operator_override on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed. Message: cue-2-seed-message."
+          ],
+          "eventExportDigest": "sha256-0b82f2964738dc509d3af09214dfc7d1dec4927f9dac3cb252cc6c412131e412",
+          "expectedContextPhrases": [
+            "next proof step against",
+            "first smallest next proof",
+            "no_same_day_embedding backfill exact-row repair"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "next proof step against",
+            "first smallest next proof",
+            "no_same_day_embedding backfill exact-row repair"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 10.737,
+            "routeSelectionMs": 7.131,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 3.603,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-12T14:50:44.901Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-55c8a243"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-55c8a243",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-12T14:50:44.901Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-c4382f6d84d965b6bba8ec8fb8552d95a7711e4132ab41cb769ef1209dad4ecc"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-55c8a243",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationConfidence": "high",
+          "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+          "selectionDigest": "sha256-02bad489de871bf94435ca44398c9da928ae5898581debcb72be825e2326b48f",
+          "selectedContextIds": [
+            "pack-55c8a243:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:feedback",
+            "pack-55c8a243:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:feedback",
+            "pack-55c8a243:event:3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 219 follow-through. Current governing truth: - Runtime retrain gate is narrowed to 1955 required embedding-covered missing rows. - New owner classification artifact is in /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/runtime-required-embeddings-gap-classification-2026-04-12.md - Largest bucket is no_same_day_embedding=1153, then same_day_f.... Related interaction: 3cb1eac8-82e4-48bf-8898-e9fa5bead77a-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-064c71c8feee4437e16cdc9172c3577056d7abcd9df1f60422e91be51fde668d",
+          "expectedContextPhrases": [
+            "next proof step against",
+            "first smallest next proof",
+            "no_same_day_embedding backfill exact-row repair"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "next proof step against",
+            "first smallest next proof",
+            "no_same_day_embedding backfill exact-row repair"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.575,
+            "routeSelectionMs": 5.395,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.179,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-12T14:50:44.901Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-7c98c2bb5ae679c2d8d443e8eb4bff6e59a14104dc0fc465e9cbed2da30bd00b"
+}

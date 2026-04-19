@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-70dfbbd5"
+      "pack-c6588f03"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-cf1c0540ee821679b3ccdf68feec6e157849bbb46b71ebe66f924b08936388aa"
+    "scoreHash": "sha256-c2f5083496e517f943dc4e092fadbd3d6038a08d6c647630be7f795f8965aa71"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-70dfbbd5",
+      "activePackId": "pack-c6588f03",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-9e57f89e7b7252d13e0cb4a7a9b5bee3c0d68fe9876ef4a286454e4ae04ea420",
+      "routerIdentity": "pack-c6588f03:route_fn",
+      "selectionDigest": "sha256-886fb5a4993165153a8d89cbaa2b03a623c08aa0a47e6ae754d41e87eca5c918",
       "selectedContextIds": [
-        "pack-70dfbbd5:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
-        "pack-70dfbbd5:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction",
-        "pack-70dfbbd5:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback"
+        "pack-c6588f03:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
+        "pack-c6588f03:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction",
+        "pack-c6588f03:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
-        "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction.",
-        "Interaction operator_override on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed. Message: cue-4-seed-message.",
-        "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=e465c1e2-b1b2-43e6-a551-54e213ee37d8, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction."
+        "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=e465c1e2-b1b2-43e6-a551-54e213ee37d8, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
+        "Interaction operator_override on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed. Message: cue-6-seed-message.",
+        "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-7be7882d57b4d181b0e0684700597df895581285239fe9cb1465f39a5c6d3502",
+      "eventExportDigest": "sha256-1e2a93eb3bf2bec8940174144516f3eb6fc8f95bc2a41e2ce88e2c89d9657bc1",
       "expectedContextPhrases": [
         "/36**.",
         "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.752,
-        "routeSelectionMs": 5.088,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.663,
+        "totalMs": 13.156,
+        "routeSelectionMs": 8.556,
+        "promptAssemblyMs": 0.004,
+        "otherMs": 4.596,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

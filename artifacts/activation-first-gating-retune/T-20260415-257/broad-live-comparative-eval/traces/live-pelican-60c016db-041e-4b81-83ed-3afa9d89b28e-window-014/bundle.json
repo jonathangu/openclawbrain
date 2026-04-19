@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T10:15:20.011Z",
   "traceHash": "sha256-adbfb582784ce9c57067bcd682b42040f9ff5a4fc2a41a6b215fa1e5e63926e2",
   "fixtureHash": "sha256-1b81b9ebc5b6e57a68ac36d63b63963fa7e0e03c9b05269658a97fc89e8025b0",
-  "scoreHash": "sha256-26b275b9369d06515b2f5ed115390a45e36b1c906003695e5caa1fbc8088e71e",
+  "scoreHash": "sha256-e894b4359fa68410b14ea80e0464ff8d3564a617bb57e5098b0fb40e0f67adb3",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.031,
+            "totalMs": 0.041,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.031,
+            "otherMs": 0.041,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-32041aa3"
+          "pack-71f32012"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-fe90c785c4c67ce9a258b6339d3514f371594845216fabe4073e8f11240e4124"
+        "scoreHash": "sha256-5883580e85141faa0988f028202a9aa11d1f15a61e5631d9c270fdf098fbe5a3"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-32041aa3",
+          "activePackId": "pack-71f32012",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-2a0130f6cdc5896e342770aef99bba69cb337bfd9e640d354a5f88bb4d69086c",
+          "routerIdentity": "pack-71f32012:route_fn",
+          "selectionDigest": "sha256-7c5d02f842db0661a92f4648c0492ea0b7deabf19801f1aca8b33edb3f165fd7",
           "selectedContextIds": [
-            "pack-32041aa3:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
-            "pack-32041aa3:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback",
-            "pack-32041aa3:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
+            "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+            "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback",
+            "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 02:12 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Ship it! Make sure everything is well documented!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:08 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Do all improvements! Use codex. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-030f5d4326abf4fd22c449d6f31660b3c3ce687dde7a2b799f28ed3703f33410",
+          "eventExportDigest": "sha256-5b6c1b5100bc58ec82a82a638e8d81d20acd3684e032049653679c0c4aad45fa",
           "expectedContextPhrases": [
             "query matthew meeting evening",
             "matthew meeting evening",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.97,
-            "routeSelectionMs": 4.353,
+            "totalMs": 11.884,
+            "routeSelectionMs": 7.234,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.616,
+            "otherMs": 4.649,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-32041aa3"
+          "pack-71f32012"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-133a5a2b9f4d8b0ba1abc17616b9cbef2fa4eade77ee98098c4a13ef51c0fec3"
+        "scoreHash": "sha256-007ee605a01ad0f910c7aeffc621800a1f3aa968ee8155b1b2461697a304ed40"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-32041aa3",
+          "activePackId": "pack-71f32012",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-545cb8c06bff5dc12f628d77123bdb107e24fe6e86d16b2e8f462a537262a736",
+          "routerIdentity": "pack-71f32012:route_fn",
+          "selectionDigest": "sha256-7dca7f3e0dc6320f28fda937c6525f8c28e10250489f3a138715ec38e53ef504",
           "selectedContextIds": [
-            "pack-32041aa3:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
-            "pack-32041aa3:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction",
-            "pack-32041aa3:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback"
+            "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+            "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction",
+            "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 02:12 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Ship it! Make sure everything is well documented!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-5699b2891ff723d23508f8a866256c78fa0d5ba368edae7c2f83cd3c08243298",
+          "eventExportDigest": "sha256-70861ed49663271d6399e24a84f1f14e4b485442e4ed9a87e5d4ebd7c4729c57",
           "expectedContextPhrases": [
             "query matthew meeting evening",
             "matthew meeting evening",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.972,
-            "routeSelectionMs": 5.35,
+            "totalMs": 12.751,
+            "routeSelectionMs": 7.413,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.621,
+            "otherMs": 5.336,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-68d4d5ea"
+          "pack-71f32012"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-68d4d5ea",
-        "frozenEvalRouterIdentity": "pack-68d4d5ea:route_fn",
+        "frozenEvalPackId": "pack-71f32012",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-3d0b1d142712047ddddf77d6917878b0678b370fc9c72253db429bcb9500cc87"
+        "scoreHash": "sha256-f61331c7384c1001f4b6eab1bdf4581485753b3c96c209ec19c1e1f3ec41e5a7"
       },
       "turns": [
         {
@@ -405,24 +405,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-68d4d5ea",
+          "activePackId": "pack-71f32012",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-9a1590f83d86f2eb1876faa38ed0a735edd66dd12872a22cf795b5f45c56d9eb",
+          "selectionDigest": "sha256-7c5d02f842db0661a92f4648c0492ea0b7deabf19801f1aca8b33edb3f165fd7",
           "selectedContextIds": [
-            "pack-68d4d5ea:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback"
+            "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+            "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback",
+            "pack-71f32012:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction."
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 02:12 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Ship it! Make sure everything is well documented!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:08 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Do all improvements! Use codex. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-a92aeec20190cd0c3e110a4acecabe8a4f85a9f2f902e41f57239883ebeb63cc",
+          "eventExportDigest": "sha256-2879abc2ed349782ea39ad5c539662e4b02362023119490776a731fab612285a",
           "expectedContextPhrases": [
             "query matthew meeting evening",
             "matthew meeting evening",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.579,
-            "routeSelectionMs": 5.298,
+            "totalMs": 10.707,
+            "routeSelectionMs": 6.611,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.28,
+            "otherMs": 4.094,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-6b09bf62a5eebd6c8912fb803a4273d81750b3b00f817f2de8687ebb3463919f"
+  "bundleHash": "sha256-66a9a35eda15aac808907f6eca4646739c18d176e06e9965f7ad157ace664c4e"
 }

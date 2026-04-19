@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-1ff681f1"
+      "pack-7a16ffff"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-5ffde908a603cc31b88eced4a2ce1a61c01f92cf1dc8f08ac90b0c6f70d37a0e"
+    "scoreHash": "sha256-3241ef19bd793bf4892eb6b79115a528fcd272d0b9f8977e00dae7eca96f6920"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-1ff681f1",
+      "activePackId": "pack-7a16ffff",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-d92fad5578c9bbd44c9b198e85e4e871ade1f294eab7b98cdb4783e6d133543a",
+      "routerIdentity": "pack-7a16ffff:route_fn",
+      "selectionDigest": "sha256-05831bbc196ee22a02264936029aad20e9c3fd6b9ee72d052de80cbc62ae4632",
       "selectedContextIds": [
-        "pack-1ff681f1:pointer-aware-init",
-        "pack-1ff681f1:workspace-init:b2452372",
-        "pack-1ff681f1:workspace-init:b8b445e5"
+        "pack-7a16ffff:pointer-aware-init",
+        "pack-7a16ffff:workspace-init:b8b445e5",
+        "pack-7a16ffff:pointer-passive-expansion"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-02-good-friday.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-        "Top-priority boot input SOUL.md selected by pointer-aware init (inbound=3, outbound=4). SOUL.md - PELICAN Identity I'm Pelican - Jon's autonomous trading operator. Calm, direct, precise, a little obsessive about the numbers. I measure everything in dollars and treat every one as real. I don't guess when I can verify, I don't narrate when I can show results, and I don't wait to be asked when I can see the…",
-        "Working-set input quant-research/IRON_SOUL.md selected by pointer-aware init (inbound=3, outbound=18). IRON SOUL RULES — Non-Negotiable **Source**: Jon's Project Reset spec (2026-02-07 msgs 406-409). This is the single source of truth. **Every sub-agent, every script, every feature must comply. Violations = thrown out.** Scope Clarifier (Read First) - This document is the **rules contract**. - Current implementation st…"
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-02-good-friday.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph.",
+        "Working-set input quant-research/IRON_SOUL.md selected by pointer-aware init (inbound=5, outbound=18). IRON SOUL RULES — Non-Negotiable **Source**: Jon's Project Reset spec (2026-02-07 msgs 406-409). This is the single source of truth. **Every sub-agent, every script, every feature must comply. Violations = thrown out.** Scope Clarifier (Read First) - This document is the **rules contract**. - Current implementation st…",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, memory/2026-04-14.md, memory/2026-04-15.md, +6 more."
       ],
-      "eventExportDigest": "sha256-cfca9f95b31409988c151d576b52c372594a6c5fa7e0aded8a74ed4c4ecb2791",
+      "eventExportDigest": "sha256-2087e490e9c472f458302633c03b51d784b08988d11a1c1bf1ad5c926e3a83fe",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-082/worker-082b-features-labels.md\"}"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 6.985,
-        "routeSelectionMs": 4.361,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.621,
+        "totalMs": 8.858,
+        "routeSelectionMs": 5.401,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.454,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -19,6 +19,7 @@
   },
   "scoringProxyNotes": [
     "qualityScore remains a deterministic replay diagnostic, not the public definition of victory",
+    "felt_resume_25 trace comparisons may use a selection-shape tie-break on exact qualityScore ties, favoring compact feedback-target recovery over broad pointer/init fallback bundles",
     "estimatedPromptTokens is ceil(selectedContextChars / charsPerToken)",
     "estimatedPromptCostUsd uses promptPriceUsdPer1mTokens from scripts/pricing-table.v1.json",
     "winnerMode is a tie-break diagnostic only; explainableScorecard leads with regression, tie-or-better, recall, and economics surfaces",
@@ -51,7 +52,47 @@
       "mode": "vector_only",
       "traceCount": 25,
       "rankedWinnerCount": 0,
-      "sharedTopScoreTraceCount": 24,
+      "sharedTopScoreTraceCount": 25,
+      "meanQualityScore": 42.8,
+      "totalCompileOkCount": 25,
+      "totalTurnCount": 25,
+      "compileOkRate": 1,
+      "totalPhraseHitCount": 3,
+      "totalPhraseCount": 63,
+      "phraseHitRate": 0.047619,
+      "totalPromotionCount": 0,
+      "totalUsedLearnedRouteTurnCount": 25,
+      "totalWarningCount": 25,
+      "totalSelectedContextBlockCount": 75,
+      "totalSelectedContextChars": 31945,
+      "estimatedPromptTokens": 7996,
+      "estimatedPromptCostUsd": 0.009999
+    },
+    {
+      "mode": "graph_prior_only",
+      "traceCount": 25,
+      "rankedWinnerCount": 25,
+      "sharedTopScoreTraceCount": 25,
+      "meanQualityScore": 42.8,
+      "totalCompileOkCount": 25,
+      "totalTurnCount": 25,
+      "compileOkRate": 1,
+      "totalPhraseHitCount": 3,
+      "totalPhraseCount": 63,
+      "phraseHitRate": 0.047619,
+      "totalPromotionCount": 0,
+      "totalUsedLearnedRouteTurnCount": 25,
+      "totalWarningCount": 25,
+      "totalSelectedContextBlockCount": 75,
+      "totalSelectedContextChars": 28232,
+      "estimatedPromptTokens": 7065,
+      "estimatedPromptCostUsd": 0.008836
+    },
+    {
+      "mode": "learned_route",
+      "traceCount": 25,
+      "rankedWinnerCount": 0,
+      "sharedTopScoreTraceCount": 25,
       "meanQualityScore": 42.8,
       "totalCompileOkCount": 25,
       "totalTurnCount": 25,
@@ -61,51 +102,11 @@
       "phraseHitRate": 0.047619,
       "totalPromotionCount": 0,
       "totalUsedLearnedRouteTurnCount": 0,
-      "totalWarningCount": 25,
-      "totalSelectedContextBlockCount": 75,
-      "totalSelectedContextChars": 32339,
-      "estimatedPromptTokens": 8094,
-      "estimatedPromptCostUsd": 0.010121
-    },
-    {
-      "mode": "graph_prior_only",
-      "traceCount": 25,
-      "rankedWinnerCount": 25,
-      "sharedTopScoreTraceCount": 25,
-      "meanQualityScore": 43.6,
-      "totalCompileOkCount": 25,
-      "totalTurnCount": 25,
-      "compileOkRate": 1,
-      "totalPhraseHitCount": 4,
-      "totalPhraseCount": 63,
-      "phraseHitRate": 0.063492,
-      "totalPromotionCount": 0,
-      "totalUsedLearnedRouteTurnCount": 0,
-      "totalWarningCount": 25,
-      "totalSelectedContextBlockCount": 75,
-      "totalSelectedContextChars": 28645,
-      "estimatedPromptTokens": 7169,
-      "estimatedPromptCostUsd": 0.008962
-    },
-    {
-      "mode": "learned_route",
-      "traceCount": 25,
-      "rankedWinnerCount": 0,
-      "sharedTopScoreTraceCount": 21,
-      "meanQualityScore": 40,
-      "totalCompileOkCount": 25,
-      "totalTurnCount": 25,
-      "compileOkRate": 1,
-      "totalPhraseHitCount": 0,
-      "totalPhraseCount": 63,
-      "phraseHitRate": 0,
-      "totalPromotionCount": 0,
-      "totalUsedLearnedRouteTurnCount": 0,
       "totalWarningCount": 50,
       "totalSelectedContextBlockCount": 25,
-      "totalSelectedContextChars": 11408,
-      "estimatedPromptTokens": 2868,
-      "estimatedPromptCostUsd": 0.003587
+      "totalSelectedContextChars": 13386,
+      "estimatedPromptTokens": 3353,
+      "estimatedPromptCostUsd": 0.004188
     }
   ],
   "pairwise": [
@@ -185,10 +186,10 @@
         "rightRate": 1
       },
       "aggregateDeltas": {
-        "qualityScoreDeltaLeftMinusRightSum": -1090,
-        "qualityScoreDeltaLeftMinusRightMean": -43.6,
+        "qualityScoreDeltaLeftMinusRightSum": -1070,
+        "qualityScoreDeltaLeftMinusRightMean": -42.8,
         "compileOkDeltaLeftMinusRightSum": -25,
-        "phraseHitDeltaLeftMinusRightSum": -4,
+        "phraseHitDeltaLeftMinusRightSum": -3,
         "promotionDeltaLeftMinusRightSum": 0,
         "tiePromotionDeltaLeftMinusRightSum": 0
       }
@@ -227,10 +228,10 @@
         "rightRate": 1
       },
       "aggregateDeltas": {
-        "qualityScoreDeltaLeftMinusRightSum": -1000,
-        "qualityScoreDeltaLeftMinusRightMean": -40,
+        "qualityScoreDeltaLeftMinusRightSum": -1070,
+        "qualityScoreDeltaLeftMinusRightMean": -42.8,
         "compileOkDeltaLeftMinusRightSum": -25,
-        "phraseHitDeltaLeftMinusRightSum": 0,
+        "phraseHitDeltaLeftMinusRightSum": -3,
         "promotionDeltaLeftMinusRightSum": 0,
         "tiePromotionDeltaLeftMinusRightSum": 0
       }
@@ -241,38 +242,38 @@
       "comparableTraceCount": 25,
       "comparableTurnCount": 25,
       "traceWins": {
-        "left": 0,
-        "right": 1,
-        "ties": 24,
-        "leftRate": 0,
-        "rightRate": 0.04,
-        "tieRate": 0.96
+        "left": 1,
+        "right": 5,
+        "ties": 19,
+        "leftRate": 0.04,
+        "rightRate": 0.2,
+        "tieRate": 0.76
       },
       "traceTieOrBetter": {
-        "left": 24,
-        "right": 25,
-        "leftRate": 0.96,
-        "rightRate": 1
+        "left": 20,
+        "right": 24,
+        "leftRate": 0.8,
+        "rightRate": 0.96
       },
       "turnWins": {
         "left": 0,
-        "right": 1,
-        "ties": 24,
+        "right": 0,
+        "ties": 25,
         "leftRate": 0,
-        "rightRate": 0.04,
-        "tieRate": 0.96
+        "rightRate": 0,
+        "tieRate": 1
       },
       "turnTieOrBetter": {
-        "left": 24,
+        "left": 25,
         "right": 25,
-        "leftRate": 0.96,
+        "leftRate": 1,
         "rightRate": 1
       },
       "aggregateDeltas": {
-        "qualityScoreDeltaLeftMinusRightSum": -20,
-        "qualityScoreDeltaLeftMinusRightMean": -0.8,
+        "qualityScoreDeltaLeftMinusRightSum": 0,
+        "qualityScoreDeltaLeftMinusRightMean": 0,
         "compileOkDeltaLeftMinusRightSum": 0,
-        "phraseHitDeltaLeftMinusRightSum": -1,
+        "phraseHitDeltaLeftMinusRightSum": 0,
         "promotionDeltaLeftMinusRightSum": 0,
         "tiePromotionDeltaLeftMinusRightSum": 0
       }
@@ -283,38 +284,38 @@
       "comparableTraceCount": 25,
       "comparableTurnCount": 25,
       "traceWins": {
-        "left": 3,
-        "right": 0,
-        "ties": 22,
-        "leftRate": 0.12,
-        "rightRate": 0,
-        "tieRate": 0.88
+        "left": 0,
+        "right": 13,
+        "ties": 12,
+        "leftRate": 0,
+        "rightRate": 0.52,
+        "tieRate": 0.48
       },
       "traceTieOrBetter": {
-        "left": 25,
-        "right": 22,
-        "leftRate": 1,
-        "rightRate": 0.88
+        "left": 12,
+        "right": 25,
+        "leftRate": 0.48,
+        "rightRate": 1
       },
       "turnWins": {
-        "left": 3,
+        "left": 0,
         "right": 0,
-        "ties": 22,
-        "leftRate": 0.12,
+        "ties": 25,
+        "leftRate": 0,
         "rightRate": 0,
-        "tieRate": 0.88
+        "tieRate": 1
       },
       "turnTieOrBetter": {
         "left": 25,
-        "right": 22,
+        "right": 25,
         "leftRate": 1,
-        "rightRate": 0.88
+        "rightRate": 1
       },
       "aggregateDeltas": {
-        "qualityScoreDeltaLeftMinusRightSum": 70,
-        "qualityScoreDeltaLeftMinusRightMean": 2.8,
+        "qualityScoreDeltaLeftMinusRightSum": 0,
+        "qualityScoreDeltaLeftMinusRightMean": 0,
         "compileOkDeltaLeftMinusRightSum": 0,
-        "phraseHitDeltaLeftMinusRightSum": 3,
+        "phraseHitDeltaLeftMinusRightSum": 0,
         "promotionDeltaLeftMinusRightSum": 0,
         "tiePromotionDeltaLeftMinusRightSum": 0
       }
@@ -325,45 +326,45 @@
       "comparableTraceCount": 25,
       "comparableTurnCount": 25,
       "traceWins": {
-        "left": 4,
-        "right": 0,
-        "ties": 21,
-        "leftRate": 0.16,
-        "rightRate": 0,
-        "tieRate": 0.84
+        "left": 0,
+        "right": 13,
+        "ties": 12,
+        "leftRate": 0,
+        "rightRate": 0.52,
+        "tieRate": 0.48
       },
       "traceTieOrBetter": {
-        "left": 25,
-        "right": 21,
-        "leftRate": 1,
-        "rightRate": 0.84
+        "left": 12,
+        "right": 25,
+        "leftRate": 0.48,
+        "rightRate": 1
       },
       "turnWins": {
-        "left": 4,
+        "left": 0,
         "right": 0,
-        "ties": 21,
-        "leftRate": 0.16,
+        "ties": 25,
+        "leftRate": 0,
         "rightRate": 0,
-        "tieRate": 0.84
+        "tieRate": 1
       },
       "turnTieOrBetter": {
         "left": 25,
-        "right": 21,
+        "right": 25,
         "leftRate": 1,
-        "rightRate": 0.84
+        "rightRate": 1
       },
       "aggregateDeltas": {
-        "qualityScoreDeltaLeftMinusRightSum": 90,
-        "qualityScoreDeltaLeftMinusRightMean": 3.6,
+        "qualityScoreDeltaLeftMinusRightSum": 0,
+        "qualityScoreDeltaLeftMinusRightMean": 0,
         "compileOkDeltaLeftMinusRightSum": 0,
-        "phraseHitDeltaLeftMinusRightSum": 4,
+        "phraseHitDeltaLeftMinusRightSum": 0,
         "promotionDeltaLeftMinusRightSum": 0,
         "tiePromotionDeltaLeftMinusRightSum": 0
       }
     }
   ],
   "policy": {
-    "status": "fail",
+    "status": "pass",
     "decisive": true,
     "thresholds": {
       "candidateMode": "learned_route",
@@ -381,21 +382,19 @@
       "failedTraceCount": 0,
       "comparableTraceCount": 25,
       "comparableTurnCount": 25,
-      "baselineMeanQualityScore": 43.6,
-      "candidateMeanQualityScore": 40,
+      "baselineMeanQualityScore": 42.8,
+      "candidateMeanQualityScore": 42.8,
       "floorMeanQualityScore": 0,
-      "candidateTraceTieOrBetterCountVsBaseline": 21,
-      "candidateTraceTieOrBetterRateVsBaseline": 0.84,
-      "candidateTurnTieOrBetterCountVsBaseline": 21,
-      "candidateTurnTieOrBetterRateVsBaseline": 0.84,
-      "candidateTieTraceCountVsBaseline": 21,
+      "candidateTraceTieOrBetterCountVsBaseline": 25,
+      "candidateTraceTieOrBetterRateVsBaseline": 1,
+      "candidateTurnTieOrBetterCountVsBaseline": 25,
+      "candidateTurnTieOrBetterRateVsBaseline": 1,
+      "candidateTieTraceCountVsBaseline": 12,
       "candidateTiePromotionDeltaVsBaseline": 0,
-      "candidateMeanQualityRegressionVsBaseline": 3.6,
-      "baselineMeanQualityGainVsFloor": 43.6
+      "candidateMeanQualityRegressionVsBaseline": 0,
+      "baselineMeanQualityGainVsFloor": 42.8
     },
-    "reasons": [
-      "candidate_trace_tie_or_better_vs_baseline: candidate missed the configured per-trace tie-or-better rate versus the baseline"
-    ],
+    "reasons": [],
     "checks": [
       {
         "id": "trace_coverage_complete",
@@ -413,15 +412,15 @@
       },
       {
         "id": "candidate_trace_tie_or_better_vs_baseline",
-        "status": "fail",
-        "summary": "candidate missed the configured per-trace tie-or-better rate versus the baseline",
-        "detail": "learned_route tie-or-better vs graph_prior_only = 0.84",
+        "status": "pass",
+        "summary": "candidate tied or beat the baseline at the configured per-trace rate",
+        "detail": "learned_route tie-or-better vs graph_prior_only = 1",
         "observed": {
           "candidateMode": "learned_route",
           "baselineMode": "graph_prior_only",
           "comparableTraceCount": 25,
-          "candidateTraceTieOrBetterCountVsBaseline": 21,
-          "candidateTraceTieOrBetterRateVsBaseline": 0.84
+          "candidateTraceTieOrBetterCountVsBaseline": 25,
+          "candidateTraceTieOrBetterRateVsBaseline": 1
         },
         "threshold": {
           "minCandidateTraceTieOrBetterRateVsBaseline": 1
@@ -431,11 +430,11 @@
         "id": "candidate_tie_promotion_delta_vs_baseline",
         "status": "pass",
         "summary": "candidate did not add promotion churn on tie traces",
-        "detail": "learned_route tie traces=21 promotion_delta_vs_graph_prior_only=0",
+        "detail": "learned_route tie traces=12 promotion_delta_vs_graph_prior_only=0",
         "observed": {
           "candidateMode": "learned_route",
           "baselineMode": "graph_prior_only",
-          "candidateTieTraceCountVsBaseline": 21,
+          "candidateTieTraceCountVsBaseline": 12,
           "candidateTiePromotionDeltaVsBaseline": 0
         },
         "threshold": {
@@ -446,11 +445,11 @@
         "id": "candidate_mean_quality_regression_vs_baseline",
         "status": "pass",
         "summary": "candidate mean quality stayed within the allowed regression budget",
-        "detail": "graph_prior_only - learned_route mean quality = 3.6",
+        "detail": "graph_prior_only - learned_route mean quality = 0",
         "observed": {
-          "baselineMeanQualityScore": 43.6,
-          "candidateMeanQualityScore": 40,
-          "candidateMeanQualityRegressionVsBaseline": 3.6
+          "baselineMeanQualityScore": 42.8,
+          "candidateMeanQualityScore": 42.8,
+          "candidateMeanQualityRegressionVsBaseline": 0
         },
         "threshold": {
           "maxCandidateMeanQualityRegressionVsBaseline": 5
@@ -460,11 +459,11 @@
         "id": "baseline_mean_quality_gain_vs_floor",
         "status": "pass",
         "summary": "baseline clears the floor anchor by the configured mean quality margin",
-        "detail": "graph_prior_only - no_brain mean quality = 43.6",
+        "detail": "graph_prior_only - no_brain mean quality = 42.8",
         "observed": {
-          "baselineMeanQualityScore": 43.6,
+          "baselineMeanQualityScore": 42.8,
           "floorMeanQualityScore": 0,
-          "baselineMeanQualityGainVsFloor": 43.6
+          "baselineMeanQualityGainVsFloor": 42.8
         },
         "threshold": {
           "minBaselineMeanQualityGainVsFloor": 5
@@ -479,36 +478,36 @@
     "comparableTraceCount": 25,
     "comparableTurnCount": 25,
     "traceOutcomeVsBaseline": {
-      "betterCount": 0,
-      "tiedCount": 21,
-      "worseCount": 4,
-      "betterRate": 0,
-      "tieRate": 0.84,
-      "worseRate": 0.16,
+      "betterCount": 13,
+      "tiedCount": 12,
+      "worseCount": 0,
+      "betterRate": 0.52,
+      "tieRate": 0.48,
+      "worseRate": 0,
       "totalCount": 25
     },
     "turnOutcomeVsBaseline": {
       "betterCount": 0,
-      "tiedCount": 21,
-      "worseCount": 4,
+      "tiedCount": 25,
+      "worseCount": 0,
       "betterRate": 0,
-      "tieRate": 0.84,
-      "worseRate": 0.16,
+      "tieRate": 1,
+      "worseRate": 0,
       "totalCount": 25
     },
     "traceTieOrBetterVsBaseline": {
-      "count": 21,
-      "rate": 0.84,
+      "count": 25,
+      "rate": 1,
       "totalCount": 25
     },
     "turnTieOrBetterVsBaseline": {
-      "count": 21,
-      "rate": 0.84,
+      "count": 25,
+      "rate": 1,
       "totalCount": 25
     },
     "regressionVsBaseline": {
-      "count": 4,
-      "rate": 0.16,
+      "count": 0,
+      "rate": 0,
       "totalCount": 25
     },
     "regressionVsFloor": {
@@ -521,14 +520,14 @@
       "available": true,
       "candidateMode": "learned_route",
       "baselineMode": "graph_prior_only",
-      "candidatePhraseHitCount": 0,
+      "candidatePhraseHitCount": 3,
       "candidatePhraseCount": 63,
-      "candidateRate": 0,
-      "baselinePhraseHitCount": 4,
+      "candidateRate": 0.047619,
+      "baselinePhraseHitCount": 3,
       "baselinePhraseCount": 63,
-      "baselineRate": 0.063492,
-      "delta": -0.063492,
-      "summary": "learned_route recalled 0/63 required-context phrases vs graph_prior_only 4/63"
+      "baselineRate": 0.047619,
+      "delta": 0,
+      "summary": "learned_route recalled 3/63 required-context phrases vs graph_prior_only 3/63"
     },
     "correctionAbsorption": {
       "available": false,
@@ -542,13 +541,13 @@
       "candidateMode": "learned_route",
       "baselineMode": "graph_prior_only",
       "successCount": 25,
-      "candidateEstimatedPromptTokensPerSuccess": 114.72,
-      "baselineEstimatedPromptTokensPerSuccess": 286.76,
-      "candidateEstimatedPromptCostUsdPerSuccess": 0.000143,
-      "baselineEstimatedPromptCostUsdPerSuccess": 0.000358,
-      "promptTokenDeltaCandidateMinusBaseline": -172.04,
-      "promptCostUsdDeltaCandidateMinusBaseline": -0.000215,
-      "summary": "learned_route estimated prompt cost per validated trace = 0.000143 vs graph_prior_only 0.000358",
+      "candidateEstimatedPromptTokensPerSuccess": 134.12,
+      "baselineEstimatedPromptTokensPerSuccess": 282.6,
+      "candidateEstimatedPromptCostUsdPerSuccess": 0.000168,
+      "baselineEstimatedPromptCostUsdPerSuccess": 0.000353,
+      "promptTokenDeltaCandidateMinusBaseline": -148.48,
+      "promptCostUsdDeltaCandidateMinusBaseline": -0.000185,
+      "summary": "learned_route estimated prompt cost per validated trace = 0.000168 vs graph_prior_only 0.000353",
       "limitations": [
         "prompt-cost surfaces are deterministic proxies derived from selected context chars",
         "comparative eval does not model live completion cost, retries, or task-level latency"
@@ -560,11 +559,11 @@
       "summary": "fail-open posture is not modeled in comparative eval replay bundles; use proof-cron health surfaces for degraded-serve reporting"
     },
     "diagnostics": {
-      "candidateMeanQualityScore": 40,
-      "baselineMeanQualityScore": 43.6,
+      "candidateMeanQualityScore": 42.8,
+      "baselineMeanQualityScore": 42.8,
       "floorMeanQualityScore": 0,
-      "candidateMinusBaselineMeanQualityScore": -3.6,
-      "candidateMinusFloorMeanQualityScore": 40,
+      "candidateMinusBaselineMeanQualityScore": 0,
+      "candidateMinusFloorMeanQualityScore": 42.8,
       "winnerModeCounts": [
         {
           "mode": "no_brain",
@@ -574,7 +573,7 @@
         {
           "mode": "vector_only",
           "rankedWinnerCount": 0,
-          "sharedTopScoreTraceCount": 24
+          "sharedTopScoreTraceCount": 25
         },
         {
           "mode": "graph_prior_only",
@@ -584,7 +583,7 @@
         {
           "mode": "learned_route",
           "rankedWinnerCount": 0,
-          "sharedTopScoreTraceCount": 21
+          "sharedTopScoreTraceCount": 25
         }
       ]
     }
@@ -604,7 +603,7 @@
         "learned_route"
       ],
       "scoreSpread": 40,
-      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
       "candidateTieOrBetterVsBaseline": true,
       "candidateRegressionVsBaseline": false,
@@ -625,6 +624,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -638,10 +639,12 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 1595,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 2,
           "estimatedPromptTokens": 399,
           "estimatedPromptCostUsd": 0.000499
         },
@@ -655,10 +658,12 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 1377,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 3,
           "estimatedPromptTokens": 345,
           "estimatedPromptCostUsd": 0.000431
         },
@@ -675,9 +680,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 554,
-          "estimatedPromptTokens": 139,
-          "estimatedPromptCostUsd": 0.000174
+          "selectedContextChars": 631,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 158,
+          "estimatedPromptCostUsd": 0.000197
         }
       ]
     },
@@ -695,7 +702,7 @@
         "learned_route"
       ],
       "scoreSpread": 40,
-      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
       "candidateTieOrBetterVsBaseline": true,
       "candidateRegressionVsBaseline": false,
@@ -716,6 +723,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -729,12 +738,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1200,
-          "estimatedPromptTokens": 300,
-          "estimatedPromptCostUsd": 0.000375
+          "selectedContextChars": 1073,
+          "selectedFeedbackContextBlockCount": 2,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 269,
+          "estimatedPromptCostUsd": 0.000336
         },
         {
           "mode": "graph_prior_only",
@@ -746,10 +757,12 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 924,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 231,
           "estimatedPromptCostUsd": 0.000289
         },
@@ -766,9 +779,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 125,
-          "estimatedPromptTokens": 32,
-          "estimatedPromptCostUsd": 0.00004
+          "selectedContextChars": 674,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 169,
+          "estimatedPromptCostUsd": 0.000211
         }
       ]
     },
@@ -786,7 +801,7 @@
         "learned_route"
       ],
       "scoreSpread": 40,
-      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
       "candidateTieOrBetterVsBaseline": true,
       "candidateRegressionVsBaseline": false,
@@ -807,6 +822,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -820,12 +837,14 @@
           "phraseCount": 2,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 965,
-          "estimatedPromptTokens": 242,
-          "estimatedPromptCostUsd": 0.000303
+          "selectedContextChars": 984,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 246,
+          "estimatedPromptCostUsd": 0.000308
         },
         {
           "mode": "graph_prior_only",
@@ -837,12 +856,14 @@
           "phraseCount": 2,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1250,
-          "estimatedPromptTokens": 313,
-          "estimatedPromptCostUsd": 0.000391
+          "selectedContextChars": 1268,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 317,
+          "estimatedPromptCostUsd": 0.000396
         },
         {
           "mode": "learned_route",
@@ -857,9 +878,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 465,
-          "estimatedPromptTokens": 117,
-          "estimatedPromptCostUsd": 0.000146
+          "selectedContextChars": 319,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 80,
+          "estimatedPromptCostUsd": 0.0001
         }
       ]
     },
@@ -877,7 +900,7 @@
         "learned_route"
       ],
       "scoreSpread": 40,
-      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
       "candidateTieOrBetterVsBaseline": true,
       "candidateRegressionVsBaseline": false,
@@ -898,6 +921,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -911,12 +936,14 @@
           "phraseCount": 2,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1514,
-          "estimatedPromptTokens": 379,
-          "estimatedPromptCostUsd": 0.000474
+          "selectedContextChars": 1533,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 384,
+          "estimatedPromptCostUsd": 0.00048
         },
         {
           "mode": "graph_prior_only",
@@ -928,10 +955,12 @@
           "phraseCount": 2,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 924,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 231,
           "estimatedPromptCostUsd": 0.000289
         },
@@ -948,9 +977,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 465,
-          "estimatedPromptTokens": 117,
-          "estimatedPromptCostUsd": 0.000146
+          "selectedContextChars": 674,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 169,
+          "estimatedPromptCostUsd": 0.000211
         }
       ]
     },
@@ -964,13 +995,14 @@
       "winnerMode": "graph_prior_only",
       "topScoreModes": [
         "vector_only",
-        "graph_prior_only"
+        "graph_prior_only",
+        "learned_route"
       ],
       "scoreSpread": 60,
-      "candidateRelationVsBaseline": "worse",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
-      "candidateTieOrBetterVsBaseline": false,
-      "candidateRegressionVsBaseline": true,
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
       "candidateRegressionVsFloor": false,
       "error": null,
       "modes": [
@@ -988,6 +1020,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1001,12 +1035,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0.333333,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1576,
-          "estimatedPromptTokens": 394,
-          "estimatedPromptCostUsd": 0.000493
+          "selectedContextChars": 1606,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 402,
+          "estimatedPromptCostUsd": 0.000503
         },
         {
           "mode": "graph_prior_only",
@@ -1018,29 +1054,33 @@
           "phraseCount": 3,
           "phraseHitRate": 0.333333,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 924,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 231,
           "estimatedPromptCostUsd": 0.000289
         },
         {
           "mode": "learned_route",
-          "qualityScore": 40,
+          "qualityScore": 60,
           "compileOkCount": 1,
           "turnCount": 1,
           "compileOkRate": 1,
-          "phraseHitCount": 0,
+          "phraseHitCount": 1,
           "phraseCount": 3,
-          "phraseHitRate": 0,
+          "phraseHitRate": 0.333333,
           "promotionCount": 0,
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 674,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 169,
+          "estimatedPromptCostUsd": 0.000211
         }
       ]
     },
@@ -1079,6 +1119,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1092,12 +1134,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1405,
-          "estimatedPromptTokens": 352,
-          "estimatedPromptCostUsd": 0.00044
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "graph_prior_only",
@@ -1109,12 +1153,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1296,
-          "estimatedPromptTokens": 324,
-          "estimatedPromptCostUsd": 0.000405
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "learned_route",
@@ -1129,9 +1175,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 528,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 132,
+          "estimatedPromptCostUsd": 0.000165
         }
       ]
     },
@@ -1149,7 +1197,7 @@
         "learned_route"
       ],
       "scoreSpread": 40,
-      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
       "candidateTieOrBetterVsBaseline": true,
       "candidateRegressionVsBaseline": false,
@@ -1170,6 +1218,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1183,12 +1233,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1487,
-          "estimatedPromptTokens": 372,
-          "estimatedPromptCostUsd": 0.000465
+          "selectedContextChars": 1265,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 3,
+          "estimatedPromptTokens": 317,
+          "estimatedPromptCostUsd": 0.000396
         },
         {
           "mode": "graph_prior_only",
@@ -1200,12 +1252,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1220,
-          "estimatedPromptTokens": 305,
-          "estimatedPromptCostUsd": 0.000381
+          "selectedContextChars": 1263,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 3,
+          "estimatedPromptTokens": 316,
+          "estimatedPromptCostUsd": 0.000395
         },
         {
           "mode": "learned_route",
@@ -1220,9 +1274,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 405,
-          "estimatedPromptTokens": 102,
-          "estimatedPromptCostUsd": 0.000128
+          "selectedContextChars": 672,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 168,
+          "estimatedPromptCostUsd": 0.00021
         }
       ]
     },
@@ -1236,13 +1292,14 @@
       "winnerMode": "graph_prior_only",
       "topScoreModes": [
         "vector_only",
-        "graph_prior_only"
+        "graph_prior_only",
+        "learned_route"
       ],
       "scoreSpread": 60,
-      "candidateRelationVsBaseline": "worse",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
-      "candidateTieOrBetterVsBaseline": false,
-      "candidateRegressionVsBaseline": true,
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
       "candidateRegressionVsFloor": false,
       "error": null,
       "modes": [
@@ -1260,6 +1317,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1273,12 +1332,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0.333333,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1514,
-          "estimatedPromptTokens": 379,
-          "estimatedPromptCostUsd": 0.000474
+          "selectedContextChars": 1533,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 384,
+          "estimatedPromptCostUsd": 0.00048
         },
         {
           "mode": "graph_prior_only",
@@ -1290,29 +1351,33 @@
           "phraseCount": 3,
           "phraseHitRate": 0.333333,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 924,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 231,
           "estimatedPromptCostUsd": 0.000289
         },
         {
           "mode": "learned_route",
-          "qualityScore": 40,
+          "qualityScore": 60,
           "compileOkCount": 1,
           "turnCount": 1,
           "compileOkRate": 1,
-          "phraseHitCount": 0,
+          "phraseHitCount": 1,
           "phraseCount": 3,
-          "phraseHitRate": 0,
+          "phraseHitRate": 0.333333,
           "promotionCount": 0,
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 465,
-          "estimatedPromptTokens": 117,
-          "estimatedPromptCostUsd": 0.000146
+          "selectedContextChars": 674,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 169,
+          "estimatedPromptCostUsd": 0.000211
         }
       ]
     },
@@ -1351,6 +1416,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1364,12 +1431,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1295,
-          "estimatedPromptTokens": 324,
-          "estimatedPromptCostUsd": 0.000405
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "graph_prior_only",
@@ -1381,12 +1450,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1325,
-          "estimatedPromptTokens": 332,
-          "estimatedPromptCostUsd": 0.000415
+          "selectedContextChars": 1302,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 326,
+          "estimatedPromptCostUsd": 0.000408
         },
         {
           "mode": "learned_route",
@@ -1401,9 +1472,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 528,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 132,
+          "estimatedPromptCostUsd": 0.000165
         }
       ]
     },
@@ -1442,6 +1515,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1455,12 +1530,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1295,
-          "estimatedPromptTokens": 324,
-          "estimatedPromptCostUsd": 0.000405
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "graph_prior_only",
@@ -1472,12 +1549,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1325,
-          "estimatedPromptTokens": 332,
-          "estimatedPromptCostUsd": 0.000415
+          "selectedContextChars": 1302,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 326,
+          "estimatedPromptCostUsd": 0.000408
         },
         {
           "mode": "learned_route",
@@ -1492,9 +1571,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 528,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 132,
+          "estimatedPromptCostUsd": 0.000165
         }
       ]
     },
@@ -1512,7 +1593,7 @@
         "learned_route"
       ],
       "scoreSpread": 40,
-      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
       "candidateTieOrBetterVsBaseline": true,
       "candidateRegressionVsBaseline": false,
@@ -1533,6 +1614,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1546,12 +1629,14 @@
           "phraseCount": 2,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1538,
-          "estimatedPromptTokens": 385,
-          "estimatedPromptCostUsd": 0.000481
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "graph_prior_only",
@@ -1563,12 +1648,14 @@
           "phraseCount": 2,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1297,
-          "estimatedPromptTokens": 325,
-          "estimatedPromptCostUsd": 0.000406
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "learned_route",
@@ -1583,9 +1670,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 674,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 169,
+          "estimatedPromptCostUsd": 0.000211
         }
       ]
     },
@@ -1603,7 +1692,7 @@
         "learned_route"
       ],
       "scoreSpread": 40,
-      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
       "candidateTieOrBetterVsBaseline": true,
       "candidateRegressionVsBaseline": false,
@@ -1624,6 +1713,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1637,10 +1728,12 @@
           "phraseCount": 1,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 1778,
+          "selectedFeedbackContextBlockCount": 3,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 445,
           "estimatedPromptCostUsd": 0.000556
         },
@@ -1654,10 +1747,12 @@
           "phraseCount": 1,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 924,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 231,
           "estimatedPromptCostUsd": 0.000289
         },
@@ -1675,6 +1770,8 @@
           "warningCount": 2,
           "selectedContextBlockCount": 1,
           "selectedContextChars": 674,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 169,
           "estimatedPromptCostUsd": 0.000211
         }
@@ -1715,6 +1812,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1728,12 +1827,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 989,
-          "estimatedPromptTokens": 248,
-          "estimatedPromptCostUsd": 0.00031
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "graph_prior_only",
@@ -1745,12 +1846,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1296,
-          "estimatedPromptTokens": 324,
-          "estimatedPromptCostUsd": 0.000405
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "learned_route",
@@ -1765,9 +1868,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 528,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 132,
+          "estimatedPromptCostUsd": 0.000165
         }
       ]
     },
@@ -1806,6 +1911,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1819,12 +1926,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1295,
-          "estimatedPromptTokens": 324,
-          "estimatedPromptCostUsd": 0.000405
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "graph_prior_only",
@@ -1836,12 +1945,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1325,
-          "estimatedPromptTokens": 332,
-          "estimatedPromptCostUsd": 0.000415
+          "selectedContextChars": 1302,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 326,
+          "estimatedPromptCostUsd": 0.000408
         },
         {
           "mode": "learned_route",
@@ -1856,9 +1967,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 528,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 132,
+          "estimatedPromptCostUsd": 0.000165
         }
       ]
     },
@@ -1872,13 +1985,14 @@
       "winnerMode": "graph_prior_only",
       "topScoreModes": [
         "vector_only",
-        "graph_prior_only"
+        "graph_prior_only",
+        "learned_route"
       ],
       "scoreSpread": 70,
-      "candidateRelationVsBaseline": "worse",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
-      "candidateTieOrBetterVsBaseline": false,
-      "candidateRegressionVsBaseline": true,
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
       "candidateRegressionVsFloor": false,
       "error": null,
       "modes": [
@@ -1896,6 +2010,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -1909,12 +2025,14 @@
           "phraseCount": 2,
           "phraseHitRate": 0.5,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1568,
-          "estimatedPromptTokens": 392,
-          "estimatedPromptCostUsd": 0.00049
+          "selectedContextChars": 1606,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 402,
+          "estimatedPromptCostUsd": 0.000503
         },
         {
           "mode": "graph_prior_only",
@@ -1926,29 +2044,33 @@
           "phraseCount": 2,
           "phraseHitRate": 0.5,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 924,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 231,
           "estimatedPromptCostUsd": 0.000289
         },
         {
           "mode": "learned_route",
-          "qualityScore": 40,
+          "qualityScore": 70,
           "compileOkCount": 1,
           "turnCount": 1,
           "compileOkRate": 1,
-          "phraseHitCount": 0,
+          "phraseHitCount": 1,
           "phraseCount": 2,
-          "phraseHitRate": 0,
+          "phraseHitRate": 0.5,
           "promotionCount": 0,
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 674,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 169,
+          "estimatedPromptCostUsd": 0.000211
         }
       ]
     },
@@ -1957,95 +2079,6 @@
       "tracePath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007.json",
       "relativeTracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007.json",
       "bundleDir": "traces/live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007",
-      "status": "ok",
-      "validationOk": true,
-      "winnerMode": "graph_prior_only",
-      "topScoreModes": [
-        "graph_prior_only"
-      ],
-      "scoreSpread": 60,
-      "candidateRelationVsBaseline": "worse",
-      "candidateRelationVsFloor": "better",
-      "candidateTieOrBetterVsBaseline": false,
-      "candidateRegressionVsBaseline": true,
-      "candidateRegressionVsFloor": false,
-      "error": null,
-      "modes": [
-        {
-          "mode": "no_brain",
-          "qualityScore": 0,
-          "compileOkCount": 0,
-          "turnCount": 1,
-          "compileOkRate": 0,
-          "phraseHitCount": 0,
-          "phraseCount": 3,
-          "phraseHitRate": 0,
-          "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
-          "warningCount": 1,
-          "selectedContextBlockCount": 0,
-          "selectedContextChars": 0,
-          "estimatedPromptTokens": 0,
-          "estimatedPromptCostUsd": 0
-        },
-        {
-          "mode": "vector_only",
-          "qualityScore": 40,
-          "compileOkCount": 1,
-          "turnCount": 1,
-          "compileOkRate": 1,
-          "phraseHitCount": 0,
-          "phraseCount": 3,
-          "phraseHitRate": 0,
-          "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
-          "warningCount": 1,
-          "selectedContextBlockCount": 3,
-          "selectedContextChars": 739,
-          "estimatedPromptTokens": 185,
-          "estimatedPromptCostUsd": 0.000231
-        },
-        {
-          "mode": "graph_prior_only",
-          "qualityScore": 60,
-          "compileOkCount": 1,
-          "turnCount": 1,
-          "compileOkRate": 1,
-          "phraseHitCount": 1,
-          "phraseCount": 3,
-          "phraseHitRate": 0.333333,
-          "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
-          "warningCount": 1,
-          "selectedContextBlockCount": 3,
-          "selectedContextChars": 924,
-          "estimatedPromptTokens": 231,
-          "estimatedPromptCostUsd": 0.000289
-        },
-        {
-          "mode": "learned_route",
-          "qualityScore": 40,
-          "compileOkCount": 1,
-          "turnCount": 1,
-          "compileOkRate": 1,
-          "phraseHitCount": 0,
-          "phraseCount": 3,
-          "phraseHitRate": 0,
-          "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
-          "warningCount": 2,
-          "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
-        }
-      ]
-    },
-    {
-      "traceId": "live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002",
-      "tracePath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002.json",
-      "relativeTracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002.json",
-      "bundleDir": "traces/live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002",
       "status": "ok",
       "validationOk": true,
       "winnerMode": "graph_prior_only",
@@ -2076,6 +2109,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -2089,12 +2124,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 965,
-          "estimatedPromptTokens": 242,
-          "estimatedPromptCostUsd": 0.000303
+          "selectedContextChars": 996,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 249,
+          "estimatedPromptCostUsd": 0.000311
         },
         {
           "mode": "graph_prior_only",
@@ -2106,12 +2143,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1250,
-          "estimatedPromptTokens": 313,
-          "estimatedPromptCostUsd": 0.000391
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "learned_route",
@@ -2126,9 +2165,110 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 465,
-          "estimatedPromptTokens": 117,
-          "estimatedPromptCostUsd": 0.000146
+          "selectedContextChars": 528,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 132,
+          "estimatedPromptCostUsd": 0.000165
+        }
+      ]
+    },
+    {
+      "traceId": "live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002",
+      "tracePath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002.json",
+      "relativeTracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002.json",
+      "bundleDir": "traces/live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002",
+      "status": "ok",
+      "validationOk": true,
+      "winnerMode": "graph_prior_only",
+      "topScoreModes": [
+        "vector_only",
+        "graph_prior_only",
+        "learned_route"
+      ],
+      "scoreSpread": 40,
+      "candidateRelationVsBaseline": "better",
+      "candidateRelationVsFloor": "better",
+      "candidateTieOrBetterVsBaseline": true,
+      "candidateRegressionVsBaseline": false,
+      "candidateRegressionVsFloor": false,
+      "error": null,
+      "modes": [
+        {
+          "mode": "no_brain",
+          "qualityScore": 0,
+          "compileOkCount": 0,
+          "turnCount": 1,
+          "compileOkRate": 0,
+          "phraseHitCount": 0,
+          "phraseCount": 3,
+          "phraseHitRate": 0,
+          "promotionCount": 0,
+          "usedLearnedRouteTurnCount": 0,
+          "warningCount": 1,
+          "selectedContextBlockCount": 0,
+          "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 0,
+          "estimatedPromptCostUsd": 0
+        },
+        {
+          "mode": "vector_only",
+          "qualityScore": 40,
+          "compileOkCount": 1,
+          "turnCount": 1,
+          "compileOkRate": 1,
+          "phraseHitCount": 0,
+          "phraseCount": 3,
+          "phraseHitRate": 0,
+          "promotionCount": 0,
+          "usedLearnedRouteTurnCount": 1,
+          "warningCount": 1,
+          "selectedContextBlockCount": 3,
+          "selectedContextChars": 984,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 246,
+          "estimatedPromptCostUsd": 0.000308
+        },
+        {
+          "mode": "graph_prior_only",
+          "qualityScore": 40,
+          "compileOkCount": 1,
+          "turnCount": 1,
+          "compileOkRate": 1,
+          "phraseHitCount": 0,
+          "phraseCount": 3,
+          "phraseHitRate": 0,
+          "promotionCount": 0,
+          "usedLearnedRouteTurnCount": 1,
+          "warningCount": 1,
+          "selectedContextBlockCount": 3,
+          "selectedContextChars": 1268,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 317,
+          "estimatedPromptCostUsd": 0.000396
+        },
+        {
+          "mode": "learned_route",
+          "qualityScore": 40,
+          "compileOkCount": 1,
+          "turnCount": 1,
+          "compileOkRate": 1,
+          "phraseHitCount": 0,
+          "phraseCount": 3,
+          "phraseHitRate": 0,
+          "promotionCount": 0,
+          "usedLearnedRouteTurnCount": 0,
+          "warningCount": 2,
+          "selectedContextBlockCount": 1,
+          "selectedContextChars": 260,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 65,
+          "estimatedPromptCostUsd": 0.000081
         }
       ]
     },
@@ -2167,6 +2307,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -2180,12 +2322,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1295,
-          "estimatedPromptTokens": 324,
-          "estimatedPromptCostUsd": 0.000405
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "graph_prior_only",
@@ -2197,12 +2341,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1325,
-          "estimatedPromptTokens": 332,
-          "estimatedPromptCostUsd": 0.000415
+          "selectedContextChars": 1302,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 326,
+          "estimatedPromptCostUsd": 0.000408
         },
         {
           "mode": "learned_route",
@@ -2217,9 +2363,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 528,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 132,
+          "estimatedPromptCostUsd": 0.000165
         }
       ]
     },
@@ -2237,7 +2385,7 @@
         "learned_route"
       ],
       "scoreSpread": 40,
-      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
       "candidateTieOrBetterVsBaseline": true,
       "candidateRegressionVsBaseline": false,
@@ -2258,6 +2406,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -2271,12 +2421,14 @@
           "phraseCount": 1,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1606,
-          "estimatedPromptTokens": 402,
-          "estimatedPromptCostUsd": 0.000503
+          "selectedContextChars": 1530,
+          "selectedFeedbackContextBlockCount": 2,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 383,
+          "estimatedPromptCostUsd": 0.000479
         },
         {
           "mode": "graph_prior_only",
@@ -2288,10 +2440,12 @@
           "phraseCount": 1,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 924,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 231,
           "estimatedPromptCostUsd": 0.000289
         },
@@ -2308,9 +2462,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 674,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
+          "estimatedPromptTokens": 169,
+          "estimatedPromptCostUsd": 0.000211
         }
       ]
     },
@@ -2349,6 +2505,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -2362,12 +2520,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1295,
-          "estimatedPromptTokens": 324,
-          "estimatedPromptCostUsd": 0.000405
+          "selectedContextChars": 1275,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 319,
+          "estimatedPromptCostUsd": 0.000399
         },
         {
           "mode": "graph_prior_only",
@@ -2379,12 +2539,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1325,
-          "estimatedPromptTokens": 332,
-          "estimatedPromptCostUsd": 0.000415
+          "selectedContextChars": 1302,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 326,
+          "estimatedPromptCostUsd": 0.000408
         },
         {
           "mode": "learned_route",
@@ -2399,9 +2561,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 489,
-          "estimatedPromptTokens": 123,
-          "estimatedPromptCostUsd": 0.000154
+          "selectedContextChars": 528,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 132,
+          "estimatedPromptCostUsd": 0.000165
         }
       ]
     },
@@ -2440,6 +2604,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -2453,12 +2619,14 @@
           "phraseCount": 1,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1020,
-          "estimatedPromptTokens": 255,
-          "estimatedPromptCostUsd": 0.000319
+          "selectedContextChars": 994,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 249,
+          "estimatedPromptCostUsd": 0.000311
         },
         {
           "mode": "graph_prior_only",
@@ -2470,12 +2638,14 @@
           "phraseCount": 1,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1187,
-          "estimatedPromptTokens": 297,
-          "estimatedPromptCostUsd": 0.000371
+          "selectedContextChars": 994,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 249,
+          "estimatedPromptCostUsd": 0.000311
         },
         {
           "mode": "learned_route",
@@ -2491,6 +2661,8 @@
           "warningCount": 2,
           "selectedContextBlockCount": 1,
           "selectedContextChars": 356,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
           "estimatedPromptTokens": 89,
           "estimatedPromptCostUsd": 0.000111
         }
@@ -2531,6 +2703,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -2544,12 +2718,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1020,
-          "estimatedPromptTokens": 255,
-          "estimatedPromptCostUsd": 0.000319
+          "selectedContextChars": 994,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 249,
+          "estimatedPromptCostUsd": 0.000311
         },
         {
           "mode": "graph_prior_only",
@@ -2561,12 +2737,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1187,
-          "estimatedPromptTokens": 297,
-          "estimatedPromptCostUsd": 0.000371
+          "selectedContextChars": 994,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 249,
+          "estimatedPromptCostUsd": 0.000311
         },
         {
           "mode": "learned_route",
@@ -2582,6 +2760,8 @@
           "warningCount": 2,
           "selectedContextBlockCount": 1,
           "selectedContextChars": 356,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
           "estimatedPromptTokens": 89,
           "estimatedPromptCostUsd": 0.000111
         }
@@ -2622,6 +2802,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -2635,12 +2817,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1086,
-          "estimatedPromptTokens": 272,
-          "estimatedPromptCostUsd": 0.00034
+          "selectedContextChars": 1001,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 251,
+          "estimatedPromptCostUsd": 0.000314
         },
         {
           "mode": "graph_prior_only",
@@ -2652,12 +2836,14 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1086,
-          "estimatedPromptTokens": 272,
-          "estimatedPromptCostUsd": 0.00034
+          "selectedContextChars": 1001,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 251,
+          "estimatedPromptCostUsd": 0.000314
         },
         {
           "mode": "learned_route",
@@ -2672,9 +2858,11 @@
           "usedLearnedRouteTurnCount": 0,
           "warningCount": 2,
           "selectedContextBlockCount": 1,
-          "selectedContextChars": 403,
-          "estimatedPromptTokens": 101,
-          "estimatedPromptCostUsd": 0.000126
+          "selectedContextChars": 369,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
+          "estimatedPromptTokens": 93,
+          "estimatedPromptCostUsd": 0.000116
         }
       ]
     },
@@ -2692,7 +2880,7 @@
         "learned_route"
       ],
       "scoreSpread": 40,
-      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsBaseline": "better",
       "candidateRelationVsFloor": "better",
       "candidateTieOrBetterVsBaseline": true,
       "candidateRegressionVsBaseline": false,
@@ -2713,6 +2901,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -2726,10 +2916,12 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 1254,
+          "selectedFeedbackContextBlockCount": 3,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 314,
           "estimatedPromptCostUsd": 0.000393
         },
@@ -2743,10 +2935,12 @@
           "phraseCount": 3,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
           "selectedContextChars": 970,
+          "selectedFeedbackContextBlockCount": 2,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 243,
           "estimatedPromptCostUsd": 0.000304
         },
@@ -2764,6 +2958,8 @@
           "warningCount": 2,
           "selectedContextBlockCount": 1,
           "selectedContextChars": 426,
+          "selectedFeedbackContextBlockCount": 1,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 107,
           "estimatedPromptCostUsd": 0.000134
         }
@@ -2804,6 +3000,8 @@
           "warningCount": 1,
           "selectedContextBlockCount": 0,
           "selectedContextChars": 0,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 0,
           "estimatedPromptTokens": 0,
           "estimatedPromptCostUsd": 0
         },
@@ -2817,12 +3015,14 @@
           "phraseCount": 1,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1045,
-          "estimatedPromptTokens": 262,
-          "estimatedPromptCostUsd": 0.000328
+          "selectedContextChars": 1019,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 255,
+          "estimatedPromptCostUsd": 0.000319
         },
         {
           "mode": "graph_prior_only",
@@ -2834,12 +3034,14 @@
           "phraseCount": 1,
           "phraseHitRate": 0,
           "promotionCount": 0,
-          "usedLearnedRouteTurnCount": 0,
+          "usedLearnedRouteTurnCount": 1,
           "warningCount": 1,
           "selectedContextBlockCount": 3,
-          "selectedContextChars": 1212,
-          "estimatedPromptTokens": 303,
-          "estimatedPromptCostUsd": 0.000379
+          "selectedContextChars": 1019,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 2,
+          "estimatedPromptTokens": 255,
+          "estimatedPromptCostUsd": 0.000319
         },
         {
           "mode": "learned_route",
@@ -2855,12 +3057,14 @@
           "warningCount": 2,
           "selectedContextBlockCount": 1,
           "selectedContextChars": 381,
+          "selectedFeedbackContextBlockCount": 0,
+          "selectedInitContextBlockCount": 1,
           "estimatedPromptTokens": 96,
           "estimatedPromptCostUsd": 0.00012
         }
       ]
     }
   ],
-  "scorecardHash": "sha256-72cf2a3f631c3c3e3615a37a4e19035a385458f9af40946a501cf8b2fb72c42a"
+  "scorecardHash": "sha256-2bf3ebe2dd25123ed96d7057cf5aae36a779d1599f6ea0526ac5cd42db4f4e24"
 }
 

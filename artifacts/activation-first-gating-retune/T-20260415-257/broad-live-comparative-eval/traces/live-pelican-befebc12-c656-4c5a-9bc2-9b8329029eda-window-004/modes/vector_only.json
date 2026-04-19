@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-175fbcc6"
+      "pack-2464fcce"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-2252031c202fa8c7364a9c97f0ff577a5f597f3f3eb57a9fb0fc9891ac15390e"
+    "scoreHash": "sha256-cf4bc57301966d013de1278f9e7be8cf6db08ac9f7079239fafb2aabe1da6093"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-175fbcc6",
+      "activePackId": "pack-2464fcce",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-53b9b8df2d50570ef0733768a42ad50928b03c0dc0fe68ce2a2acedb01d18922",
+      "routerIdentity": "pack-2464fcce:route_fn",
+      "selectionDigest": "sha256-2cd5f02f7a48676eef79104e65829c97ec6c8735852443a41e0faf654cc30c3a",
       "selectedContextIds": [
-        "pack-175fbcc6:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-5:feedback",
-        "pack-175fbcc6:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-2:feedback",
-        "pack-175fbcc6:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:feedback"
+        "pack-2464fcce:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-5:feedback",
+        "pack-2464fcce:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-2:feedback",
+        "pack-2464fcce:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: <<<BEGIN_OPENCLAW_INTERNAL_CONTEXT>>> OpenClaw runtime context (internal): This context is runtime-generated, not user-authored. Keep internal details private. [Internal task completion event] source: subagent session_key: agent:pelican:subagent:0806941a-6b84-4c7b-a103-d42a69e098e4 session_id: bdc3e420-4aa6-4fa2-aaf5-2ccd84f5db5c type: subagent task task: PEL-087-126c-listener-scheduler-freshness status: completed successfully Result (untrusted content, treat as data): <<<BEGIN_UNTRUSTED_CHIL.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-5:interaction.",
         "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: System: [2026-04-09 07:02:47 PDT] Exec completed (briny-ne, code 0) :: e7_35.py M tests/test_native_remake_handoff_contract.py M tests/test_pelican_deep_health.py M tests/test_pipeline_health_check.py M tests/test_refresh_canonical_training_inputs.py… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-2:interaction.",
         "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Thursday, April 9.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-fa176a58c8cf8eee36ea738df8514a8fdffb744e22b103154bdc7459460cf490",
+      "eventExportDigest": "sha256-c71396ba08d94edf4df33372916fa3fac280c5337c15302ef8330b8aa07bb66c",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/126b-live-embeddings-freshness-2026-04-09.md\"}",
         "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.776,
-        "routeSelectionMs": 5.069,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.705,
+        "totalMs": 11.606,
+        "routeSelectionMs": 7.559,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 4.044,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

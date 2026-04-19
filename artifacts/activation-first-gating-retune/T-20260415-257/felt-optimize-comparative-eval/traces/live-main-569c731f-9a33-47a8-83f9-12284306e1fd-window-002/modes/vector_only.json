@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-4cb0755e"
+      "pack-e4a902de"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-68d5e578e4c5ae4cc03b669502125f551fdaddf1a402ff43f610e723b5147ffd"
+    "scoreHash": "sha256-d13f0486166cfd5c3c8da3886b8be045e9f967dcb1dfcb11f56783d8855493f1"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-4cb0755e",
+      "activePackId": "pack-e4a902de",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-a6575a2a34e37632db4e8dae51318e576abf80df7f1d08f3d12ac40271aaae7b",
+      "routerIdentity": "pack-e4a902de:route_fn",
+      "selectionDigest": "sha256-a50038e165bfe6a16b7ab21df7d3ebdfe98a811289a3517ea91613371335f0a4",
       "selectedContextIds": [
-        "pack-4cb0755e:pointer-aware-init",
-        "pack-4cb0755e:pointer-passive-expansion",
-        "pack-4cb0755e:event:569c731f-9a33-47a8-83f9-12284306e1fd-seed:cue-2:feedback"
+        "pack-e4a902de:pointer-aware-init",
+        "pack-e4a902de:pointer-passive-expansion",
+        "pack-e4a902de:workspace-init:16415817"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more.",
-        "Teaching feedback on live-session session 569c731f-9a33-47a8-83f9-12284306e1fd-seed: assistant: I’m checking the site repo and current release surfaces, then I’ll make the minimal honest copy/version update and validate it. ToolCall exec {\"command\": \"git -C /Users/guclaw/.openclaw/workspace rev-parse --show-toplevel && git -C /Users/guclaw/.openclaw/workspace status --short --branch && find /Users/guclaw/.openclaw/workspace -maxdepth 2 -type d -name .git. Related interaction: 569c731f-9a33-47a8-83f9-12284306e1fd-seed:cue-2:interaction."
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-08-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, BOOT.md, task-artifacts/T-20260415-257/task-list.md, +8 more from the MEMORY index graph.",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, BOOT.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, task-artifacts/T-20260415-257/master-plan.md, +6 more.",
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=7, outbound=17). TASKS.md — Canonical Task Ledger Last updated: 2026-04-18 5:40 PM PT Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator edits it. - Workers report only through announces, task-artifacts/<task-id>/, or task-status/<ta…"
       ],
-      "eventExportDigest": "sha256-34641929bd815aa441a203f7a6b3829a927b69d2a12615c0884194906f3e8f03",
+      "eventExportDigest": "sha256-8419cf4c6291c50e206f099d9f61e0ca2fffd14f544e692df41079e286e8123d",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/worktrees/t182-site/index.html')\\nfor",
         "/index.html','proof/index.html','how-it-works/index.html','upgrade/index.html']:\\n",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.52,
-        "routeSelectionMs": 4.815,
+        "totalMs": 9.077,
+        "routeSelectionMs": 5.55,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.702,
+        "otherMs": 3.524,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-d5344667"
+      "pack-30b36de3"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-684540c2796c129ef8137d4a719bdca4a8969dce0704f789d050d9a385de14ae"
+    "scoreHash": "sha256-b0af0523e4e4127eab4f69cc8816e1f0f2a49890bda5e7d8244d8c4b5ad60073"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-d5344667",
+      "activePackId": "pack-30b36de3",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-100410d76553d12cce71694ca01218fe2e7540714b58b0f8ab3c0fd66b1c12b3",
+      "routerIdentity": "pack-30b36de3:route_fn",
+      "selectionDigest": "sha256-51d827e7eb570df5042eadd787d45a36cebc0d46cffd622ffb0db151ed76a66a",
       "selectedContextIds": [
-        "pack-d5344667:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback",
-        "pack-d5344667:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:feedback",
-        "pack-d5344667:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-4:feedback"
+        "pack-30b36de3:pointer-aware-init",
+        "pack-30b36de3:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback",
+        "pack-30b36de3:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-07-context-cleanup.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, docs/training-launch-contract.md, STARTUP_READY.md, +2 more, and passive expansion docs/prediction_pipeline.md, docs/quant-lessons.md, memory/2026-04-08.md, memory/2026-04-14.md, +8 more from the MEMORY index graph.",
         "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:interaction.",
-        "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:interaction.",
-        "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Wednesday, April .... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-4:interaction."
+        "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-f766a4acc7b346539b9ed71ae8423c0c650f88cf6e50a5c4bf6d4147cc391d76",
+      "eventExportDigest": "sha256-f459b8c2f13eb4300165ffe60d4ecbada9a1547ead7c634e96bc5fd925b13e09",
       "expectedContextPhrases": [
         "handled",
         "internally."
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.187,
-        "routeSelectionMs": 4.496,
+        "totalMs": 9.48,
+        "routeSelectionMs": 6.066,
         "promptAssemblyMs": 0.001,
-        "otherMs": 2.689,
+        "otherMs": 3.413,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

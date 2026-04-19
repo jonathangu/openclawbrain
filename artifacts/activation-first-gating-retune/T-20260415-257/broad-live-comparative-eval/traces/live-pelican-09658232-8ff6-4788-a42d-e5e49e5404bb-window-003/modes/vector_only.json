@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-cd793b27"
+      "pack-860b2087"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-19c9394b194aa0838ea70ce134a2c30dc4ee82ffd965641022d705c0a3161e04"
+    "scoreHash": "sha256-530fb7bc88d6824db9e5a8c5491b4b36127ba5cde94f53f9bfa33c614a1194f9"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-cd793b27",
+      "activePackId": "pack-860b2087",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-9a1688ee01bd442db2b0fae78155c80a782a4fd9c5cc5fd960d684e89f80bf04",
+      "routerIdentity": "pack-860b2087:route_fn",
+      "selectionDigest": "sha256-c2d5c125e65c4449676f39ed7ffdc89fec8f07cdb89f26cdcad8dd1cd5be330d",
       "selectedContextIds": [
-        "pack-cd793b27:pointer-aware-init",
-        "pack-cd793b27:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
-        "pack-cd793b27:workspace-init:e490748e"
+        "pack-860b2087:pointer-aware-init",
+        "pack-860b2087:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+        "pack-860b2087:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, task-artifacts/guclaw-cleanup-2026-04-18/MEMORY.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, +8 more from the MEMORY index graph.",
         "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
-        "Working-set input AGENTS_ACTIVE.md selected by pointer-aware init (inbound=4, outbound=0). Active Gates (auto-generated) *Compiled 2026-04-12 08:06 UTC — no high-signal gates selected* No [GATE] candidates currently meet the active threshold for main. Run again after more signals, then review before any new behavior loop. *0 active entries*"
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: assistant: Friday afternoon, systems green, market closing soon. Here's where we stand: GBM v4 embeddings-only deployed yesterday, latency architecture fixes landed (220s → 18s first-run, pending Monday test), and the pipeline's been clean all day. Account at ~$189.5K with 9 open positions. What do you need, Jon?. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction."
       ],
-      "eventExportDigest": "sha256-5dffa5bfd43bc325116b4ebd00c3d604600bf502349e6cb7b5a172d26a1f25d4",
+      "eventExportDigest": "sha256-0d370a30cc7cc2d9e7a2ab3a84bdfb151ff153a8aa0170eef3e706d632e2a9d0",
       "expectedContextPhrases": [
         "/.ssh/guclaw-tft-v2.pem",
         "/train/retrain_gbm.log",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.863,
-        "routeSelectionMs": 5.31,
+        "totalMs": 9.92,
+        "routeSelectionMs": 6.499,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.551,
+        "otherMs": 3.419,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

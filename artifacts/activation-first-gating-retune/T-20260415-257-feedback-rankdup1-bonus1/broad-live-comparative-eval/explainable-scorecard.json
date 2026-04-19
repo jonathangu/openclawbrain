@@ -1,0 +1,977 @@
+{
+  "contract": "openclawbrain_explainable_eval_scorecard.v1",
+  "generatedAt": "2026-04-18T22:34:21.597Z",
+  "manifestId": "extracted-semantic-rich-live-535",
+  "manifestContract": "frozen_recorded_session_eval_manifest.v1",
+  "modeOrder": [
+    "no_brain",
+    "vector_only",
+    "graph_prior_only",
+    "learned_route"
+  ],
+  "requestedTraceCount": 403,
+  "successfulTraceCount": 403,
+  "failedTraceCount": 0,
+  "comparableTraceCount": 403,
+  "traceSuccessProxy": {
+    "id": "validated_replay_trace_success_proxy",
+    "label": "Validated replay trace success proxy",
+    "definition": "A trace counts as successful for a mode when every replay turn compiled and the mode missed no required context phrases on that trace.",
+    "formula": "compileOkCount == turnCount && phraseHitCount == phraseCount"
+  },
+  "headline": [
+    "learned_route was worse than graph_prior_only on 0/403 validated traces.",
+    "learned_route tied or beat graph_prior_only on 403/403 validated traces (better 9, tied 394, worse 0).",
+    "learned_route retrieved required replay phrases at 0.075721 recall versus 0.0625 for graph_prior_only.",
+    "learned_route used 0.001198 lower estimated prompt cost per replay-successful trace versus graph_prior_only.",
+    "Summary-routing telemetry for expand-before-assert is not available in this bundle."
+  ],
+  "failOpenLanguage": "Comparative replay does not prove live safe-fallback or worker-down serving. It does expose a no_brain floor anchor: 0/403 validated traces met the replay success proxy under no_brain.",
+  "diagnosticLanguage": "qualityScore and winnerMode are preserved only as internal deterministic replay diagnostics; they are not the public/operator definition of success.",
+  "publicOperatorMetrics": [
+    {
+      "id": "brain_on_regression_rate_vs_prior",
+      "label": "Brain-on regression rate vs prior",
+      "category": "regression_safety",
+      "audience": "public_operator",
+      "availability": "proxy",
+      "kind": "rate",
+      "unit": "rate",
+      "value": 0,
+      "leftMode": "learned_route",
+      "rightMode": "graph_prior_only",
+      "formula": {
+        "expression": "worseThanPriorCount / comparableTraceCount",
+        "components": [
+          {
+            "id": "worse_than_prior_count",
+            "label": "Traces where learned_route scored below graph_prior_only",
+            "role": "numerator",
+            "value": 0,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "comparable_trace_count",
+            "label": "Validated traces comparable across learned_route and graph_prior_only",
+            "role": "denominator",
+            "value": 403,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "learned_route was worse than graph_prior_only on 0/403 validated traces.",
+      "notes": [
+        "Uses deterministic replay trace quality ordering as the comparison surface.",
+        "This is a replay metric, not a live serve-path fail-open proof."
+      ]
+    },
+    {
+      "id": "brain_on_regression_rate_vs_no_brain",
+      "label": "Brain-on regression rate vs no-brain floor",
+      "category": "regression_safety",
+      "audience": "public_operator",
+      "availability": "proxy",
+      "kind": "rate",
+      "unit": "rate",
+      "value": 0,
+      "leftMode": "learned_route",
+      "rightMode": "no_brain",
+      "formula": {
+        "expression": "worseThanNoBrainCount / comparableTraceCount",
+        "components": [
+          {
+            "id": "worse_than_no_brain_count",
+            "label": "Traces where learned_route scored below no_brain",
+            "role": "numerator",
+            "value": 0,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "comparable_trace_count",
+            "label": "Validated traces comparable across learned_route and no_brain",
+            "role": "denominator",
+            "value": 403,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "learned_route was worse than no_brain on 0/403 validated traces.",
+      "notes": [
+        "The no_brain mode is a floor anchor, not proof of live fail-open behavior."
+      ]
+    },
+    {
+      "id": "critical_regression_rate_vs_prior",
+      "label": "Critical regression rate vs prior",
+      "category": "regression_safety",
+      "audience": "public_operator",
+      "availability": "proxy",
+      "kind": "rate",
+      "unit": "rate",
+      "value": 0,
+      "leftMode": "learned_route",
+      "rightMode": "graph_prior_only",
+      "formula": {
+        "expression": "criticalRegressionCount / comparableTraceCount",
+        "components": [
+          {
+            "id": "critical_regression_count",
+            "label": "Traces where learned_route lost compile-ok turns or required-context hits versus graph_prior_only",
+            "role": "numerator",
+            "value": 0,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "compile_regression_trace_count",
+            "label": "Traces where learned_route compiled fewer turns than graph_prior_only",
+            "role": "input",
+            "value": 0,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "required_context_regression_trace_count",
+            "label": "Traces where learned_route hit fewer required phrases than graph_prior_only",
+            "role": "input",
+            "value": 0,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "comparable_trace_count",
+            "label": "Validated traces comparable across learned_route and graph_prior_only",
+            "role": "denominator",
+            "value": 403,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "critical regressions were observed on 0/403 validated traces when compile coverage or required-context hits worsened versus graph_prior_only.",
+      "notes": [
+        "Critical here means a replay-observed drop in compile-ok coverage or required-context hits."
+      ]
+    },
+    {
+      "id": "tie_or_better_rate_vs_prior",
+      "label": "Tie-or-better rate vs prior",
+      "category": "comparison",
+      "audience": "public_operator",
+      "availability": "proxy",
+      "kind": "rate",
+      "unit": "rate",
+      "value": 1,
+      "leftMode": "learned_route",
+      "rightMode": "graph_prior_only",
+      "formula": {
+        "expression": "(betterThanPriorCount + tiedWithPriorCount) / comparableTraceCount",
+        "components": [
+          {
+            "id": "better_than_prior_count",
+            "label": "Traces where learned_route scored above graph_prior_only",
+            "role": "input",
+            "value": 9,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "tied_with_prior_count",
+            "label": "Traces where learned_route tied graph_prior_only",
+            "role": "input",
+            "value": 394,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "worse_than_prior_count",
+            "label": "Traces where learned_route scored below graph_prior_only",
+            "role": "input",
+            "value": 0,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "comparable_trace_count",
+            "label": "Validated traces comparable across learned_route and graph_prior_only",
+            "role": "denominator",
+            "value": 403,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "learned_route tied or beat graph_prior_only on 403/403 validated traces (better 9, tied 394, worse 0).",
+      "notes": [
+        "The strict better/tied/worse decomposition is surfaced directly instead of only reporting a winner mode."
+      ]
+    },
+    {
+      "id": "required_context_recall",
+      "label": "Required-context recall",
+      "category": "required_context",
+      "audience": "public_operator",
+      "availability": "measured",
+      "kind": "rate",
+      "unit": "rate",
+      "value": 0.075721,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "retrievedRequiredEvidenceCount / totalRequiredEvidenceCount",
+        "components": [
+          {
+            "id": "retrieved_required_evidence_count",
+            "label": "Required phrases hit by learned_route",
+            "role": "numerator",
+            "value": 63,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "total_required_evidence_count",
+            "label": "Required phrases requested by the validated replay traces",
+            "role": "denominator",
+            "value": 832,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "prior_required_context_recall",
+            "label": "Required-context recall for graph_prior_only",
+            "role": "input",
+            "value": 0.0625,
+            "unit": "rate",
+            "mode": "graph_prior_only"
+          }
+        ]
+      },
+      "language": "learned_route retrieved required replay phrases at 0.075721 recall versus 0.0625 for graph_prior_only.",
+      "notes": [
+        "Uses recorded-session expected context phrases as the required-evidence surface."
+      ]
+    },
+    {
+      "id": "missing_required_context_rate",
+      "label": "Missing required-context rate",
+      "category": "required_context",
+      "audience": "public_operator",
+      "availability": "measured",
+      "kind": "rate",
+      "unit": "rate",
+      "value": 0.924279,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "missingRequiredEvidenceCount / totalRequiredEvidenceCount",
+        "components": [
+          {
+            "id": "missing_required_evidence_count",
+            "label": "Required phrases missed by learned_route",
+            "role": "numerator",
+            "value": 769,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "total_required_evidence_count",
+            "label": "Required phrases requested by the validated replay traces",
+            "role": "denominator",
+            "value": 832,
+            "unit": "count",
+            "mode": "learned_route"
+          }
+        ]
+      },
+      "language": "learned_route missed 769/832 required replay phrases.",
+      "notes": [
+        "Lower is better."
+      ]
+    },
+    {
+      "id": "estimated_prompt_tokens_per_successful_trace_delta_vs_prior",
+      "label": "Estimated prompt tokens per successful trace delta vs prior",
+      "category": "economics",
+      "audience": "public_operator",
+      "availability": "proxy",
+      "kind": "delta",
+      "unit": "tokens",
+      "value": -962.9,
+      "leftMode": "learned_route",
+      "rightMode": "graph_prior_only",
+      "formula": {
+        "expression": "(candidatePromptTokens / candidateSuccessfulTraceProxyCount) - (priorPromptTokens / priorSuccessfulTraceProxyCount)",
+        "components": [
+          {
+            "id": "candidate_prompt_tokens",
+            "label": "Estimated prompt tokens for learned_route",
+            "role": "input",
+            "value": 168731,
+            "unit": "tokens",
+            "mode": "learned_route"
+          },
+          {
+            "id": "candidate_successful_trace_proxy_count",
+            "label": "Validated replay trace success proxy count for learned_route",
+            "role": "input",
+            "value": 10,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "prior_prompt_tokens",
+            "label": "Estimated prompt tokens for graph_prior_only",
+            "role": "input",
+            "value": 124852,
+            "unit": "tokens",
+            "mode": "graph_prior_only"
+          },
+          {
+            "id": "prior_successful_trace_proxy_count",
+            "label": "Validated replay trace success proxy count for graph_prior_only",
+            "role": "input",
+            "value": 7,
+            "unit": "count",
+            "mode": "graph_prior_only"
+          }
+        ]
+      },
+      "language": "learned_route used 962.9 lower estimated prompt tokens per replay-successful trace versus graph_prior_only.",
+      "notes": [
+        "Success is a replay success proxy: every turn compiled and no required phrase was missed on that trace.",
+        "Prompt tokens are a deterministic proxy derived from selected context chars."
+      ]
+    },
+    {
+      "id": "estimated_prompt_cost_per_successful_trace_delta_vs_prior",
+      "label": "Estimated prompt cost per successful trace delta vs prior",
+      "category": "economics",
+      "audience": "public_operator",
+      "availability": "proxy",
+      "kind": "delta",
+      "unit": "usd",
+      "value": -0.001198,
+      "leftMode": "learned_route",
+      "rightMode": "graph_prior_only",
+      "formula": {
+        "expression": "(candidatePromptCostUsd / candidateSuccessfulTraceProxyCount) - (priorPromptCostUsd / priorSuccessfulTraceProxyCount)",
+        "components": [
+          {
+            "id": "candidate_prompt_cost_usd",
+            "label": "Estimated prompt cost for learned_route",
+            "role": "input",
+            "value": 0.211004,
+            "unit": "usd",
+            "mode": "learned_route"
+          },
+          {
+            "id": "candidate_successful_trace_proxy_count",
+            "label": "Validated replay trace success proxy count for learned_route",
+            "role": "input",
+            "value": 10,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "prior_prompt_cost_usd",
+            "label": "Estimated prompt cost for graph_prior_only",
+            "role": "input",
+            "value": 0.156085,
+            "unit": "usd",
+            "mode": "graph_prior_only"
+          },
+          {
+            "id": "prior_successful_trace_proxy_count",
+            "label": "Validated replay trace success proxy count for graph_prior_only",
+            "role": "input",
+            "value": 7,
+            "unit": "count",
+            "mode": "graph_prior_only"
+          }
+        ]
+      },
+      "language": "learned_route used 0.001198 lower estimated prompt cost per replay-successful trace versus graph_prior_only.",
+      "notes": [
+        "Prompt cost is a deterministic proxy; this comparative replay does not measure end-to-end API or latency economics."
+      ]
+    },
+    {
+      "id": "estimated_prompt_tokens_per_successful_trace_delta_vs_no_brain",
+      "label": "Estimated prompt tokens per successful trace delta vs no-brain floor",
+      "category": "economics",
+      "audience": "public_operator",
+      "availability": "proxy",
+      "kind": "delta",
+      "unit": "tokens",
+      "value": null,
+      "leftMode": "learned_route",
+      "rightMode": "no_brain",
+      "formula": {
+        "expression": "(candidatePromptTokens / candidateSuccessfulTraceProxyCount) - (noBrainPromptTokens / noBrainSuccessfulTraceProxyCount)",
+        "components": [
+          {
+            "id": "candidate_prompt_tokens",
+            "label": "Estimated prompt tokens for learned_route",
+            "role": "input",
+            "value": 168731,
+            "unit": "tokens",
+            "mode": "learned_route"
+          },
+          {
+            "id": "candidate_successful_trace_proxy_count",
+            "label": "Validated replay trace success proxy count for learned_route",
+            "role": "input",
+            "value": 10,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "no_brain_prompt_tokens",
+            "label": "Estimated prompt tokens for no_brain",
+            "role": "input",
+            "value": 0,
+            "unit": "tokens",
+            "mode": "no_brain"
+          },
+          {
+            "id": "no_brain_successful_trace_proxy_count",
+            "label": "Validated replay trace success proxy count for no_brain",
+            "role": "input",
+            "value": 0,
+            "unit": "count",
+            "mode": "no_brain"
+          }
+        ]
+      },
+      "language": "learned_route used not available (estimated prompt tokens per replay-successful trace) versus no_brain.",
+      "notes": [
+        "The no_brain comparison is a floor anchor, not proof of live fail-open serving."
+      ]
+    },
+    {
+      "id": "estimated_prompt_cost_per_successful_trace_delta_vs_no_brain",
+      "label": "Estimated prompt cost per successful trace delta vs no-brain floor",
+      "category": "economics",
+      "audience": "public_operator",
+      "availability": "proxy",
+      "kind": "delta",
+      "unit": "usd",
+      "value": null,
+      "leftMode": "learned_route",
+      "rightMode": "no_brain",
+      "formula": {
+        "expression": "(candidatePromptCostUsd / candidateSuccessfulTraceProxyCount) - (noBrainPromptCostUsd / noBrainSuccessfulTraceProxyCount)",
+        "components": [
+          {
+            "id": "candidate_prompt_cost_usd",
+            "label": "Estimated prompt cost for learned_route",
+            "role": "input",
+            "value": 0.211004,
+            "unit": "usd",
+            "mode": "learned_route"
+          },
+          {
+            "id": "candidate_successful_trace_proxy_count",
+            "label": "Validated replay trace success proxy count for learned_route",
+            "role": "input",
+            "value": 10,
+            "unit": "count",
+            "mode": "learned_route"
+          },
+          {
+            "id": "no_brain_prompt_cost_usd",
+            "label": "Estimated prompt cost for no_brain",
+            "role": "input",
+            "value": 0,
+            "unit": "usd",
+            "mode": "no_brain"
+          },
+          {
+            "id": "no_brain_successful_trace_proxy_count",
+            "label": "Validated replay trace success proxy count for no_brain",
+            "role": "input",
+            "value": 0,
+            "unit": "count",
+            "mode": "no_brain"
+          }
+        ]
+      },
+      "language": "learned_route used not available (estimated prompt cost per replay-successful trace) versus no_brain.",
+      "notes": [
+        "This is a replay prompt-cost proxy rather than a full API or latency economics measure."
+      ]
+    },
+    {
+      "id": "expand_before_assert_rate",
+      "label": "Expand-before-assert rate",
+      "category": "diagnostic",
+      "audience": "public_operator",
+      "availability": "not_available",
+      "kind": "rate",
+      "unit": "rate",
+      "value": null,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "expandToSourceCount / summaryRoutingCount",
+        "components": [
+          {
+            "id": "expand_to_source_count",
+            "label": "Summary-routing decisions that expanded to source",
+            "role": "numerator",
+            "value": null,
+            "unit": "count"
+          },
+          {
+            "id": "summary_routing_count",
+            "label": "Summary-routing decisions with compacted history",
+            "role": "denominator",
+            "value": null,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "Summary-routing telemetry for expand-before-assert is not available in this bundle.",
+      "notes": [
+        "This is the first compact-health proxy for expand-before-assert guidance."
+      ]
+    },
+    {
+      "id": "branch_heavy_expand_to_source_rate",
+      "label": "Branch-heavy expand-to-source rate",
+      "category": "diagnostic",
+      "audience": "public_operator",
+      "availability": "not_available",
+      "kind": "rate",
+      "unit": "rate",
+      "value": null,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "branchHeavyExpandToSourceCount / branchHeavySummaryRoutingCount",
+        "components": [
+          {
+            "id": "branch_heavy_expand_to_source_count",
+            "label": "Branch-heavy summary-routing decisions that expanded to source",
+            "role": "numerator",
+            "value": null,
+            "unit": "count"
+          },
+          {
+            "id": "branch_heavy_summary_routing_count",
+            "label": "Branch-heavy summary-routing decisions",
+            "role": "denominator",
+            "value": null,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "Branch-heavy compact-history telemetry is not available in this bundle.",
+      "notes": [
+        "Branch-heavy turns are the clearest compact-history precision risk."
+      ]
+    },
+    {
+      "id": "non_fresh_summary_prevalence",
+      "label": "Non-fresh summary prevalence",
+      "category": "diagnostic",
+      "audience": "public_operator",
+      "availability": "not_available",
+      "kind": "rate",
+      "unit": "rate",
+      "value": null,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "nonFreshSummaryCount / summaryCount",
+        "components": [
+          {
+            "id": "non_fresh_summary_count",
+            "label": "Non-fresh summary items",
+            "role": "numerator",
+            "value": null,
+            "unit": "count"
+          },
+          {
+            "id": "summary_count",
+            "label": "Assembled summary items",
+            "role": "denominator",
+            "value": null,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "Non-fresh summary telemetry is not available in this bundle.",
+      "notes": [
+        "Non-fresh summaries should trigger expand-before-assert behavior in the runtime guidance layer."
+      ]
+    },
+    {
+      "id": "snapshot_vs_condense_share",
+      "label": "Snapshot vs condense share",
+      "category": "diagnostic",
+      "audience": "public_operator",
+      "availability": "not_available",
+      "kind": "rate",
+      "unit": "rate",
+      "value": null,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "snapshotPassCount / compactionPassCount",
+        "components": [
+          {
+            "id": "snapshot_pass_count",
+            "label": "Compaction passes that produced snapshots",
+            "role": "numerator",
+            "value": null,
+            "unit": "count"
+          },
+          {
+            "id": "compaction_pass_count",
+            "label": "Total compaction passes",
+            "role": "denominator",
+            "value": null,
+            "unit": "count"
+          },
+          {
+            "id": "condense_pass_count",
+            "label": "Compaction passes that condensed summaries",
+            "role": "input",
+            "value": null,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "Snapshot-versus-condense telemetry is not available in this bundle.",
+      "notes": [
+        "This is a compact-health proxy for branch snapshot prevalence."
+      ]
+    },
+    {
+      "id": "token_reduction_per_compaction_pass",
+      "label": "Token reduction per compaction pass",
+      "category": "economics",
+      "audience": "public_operator",
+      "availability": "not_available",
+      "kind": "delta",
+      "unit": "tokens",
+      "value": null,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "(tokensBefore - tokensAfter) / compactionPassCount",
+        "components": [
+          {
+            "id": "tokens_before",
+            "label": "Tokens before compaction",
+            "role": "input",
+            "value": null,
+            "unit": "tokens"
+          },
+          {
+            "id": "tokens_after",
+            "label": "Tokens after compaction",
+            "role": "input",
+            "value": null,
+            "unit": "tokens"
+          },
+          {
+            "id": "compaction_pass_count",
+            "label": "Compaction passes",
+            "role": "denominator",
+            "value": null,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "Compaction token-reduction telemetry is not available in this bundle.",
+      "notes": [
+        "This is the first compact-efficiency proxy, not a full token-economics model."
+      ]
+    },
+    {
+      "id": "safe_fallback_rate",
+      "label": "Safe fallback rate",
+      "category": "fail_open",
+      "audience": "public_operator",
+      "availability": "not_available",
+      "kind": "rate",
+      "unit": "rate",
+      "value": null,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "safeFallbackCount / degradedBrainInvocationCount",
+        "components": [
+          {
+            "id": "safe_fallback_count",
+            "label": "Served responses that degraded safely instead of hard-failing",
+            "role": "numerator",
+            "value": null,
+            "unit": "count"
+          },
+          {
+            "id": "degraded_brain_invocation_count",
+            "label": "Live invocations where the brain degraded or was unavailable",
+            "role": "denominator",
+            "value": null,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "Comparative replay does not observe live safe-fallback invocations, so safe fallback rate is not computed here.",
+      "notes": [
+        "Requires live serve-path instrumentation rather than recorded-session replay."
+      ]
+    },
+    {
+      "id": "worker_down_safe_serve_rate",
+      "label": "Worker-down safe serve rate",
+      "category": "fail_open",
+      "audience": "public_operator",
+      "availability": "not_available",
+      "kind": "rate",
+      "unit": "rate",
+      "value": null,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "workerDownSafeServeCount / workerDownInvocationCount",
+        "components": [
+          {
+            "id": "worker_down_safe_serve_count",
+            "label": "Served responses that stayed safe while the worker was down",
+            "role": "numerator",
+            "value": null,
+            "unit": "count"
+          },
+          {
+            "id": "worker_down_invocation_count",
+            "label": "Live invocations observed while the worker was down",
+            "role": "denominator",
+            "value": null,
+            "unit": "count"
+          }
+        ]
+      },
+      "language": "Comparative replay does not simulate worker-down serving, so worker-down safe serve rate is not computed here.",
+      "notes": [
+        "Requires live or dedicated fail-open probe evidence."
+      ]
+    },
+    {
+      "id": "brain_disabled_comparable_success_rate",
+      "label": "Brain-disabled comparable success rate",
+      "category": "fail_open",
+      "audience": "public_operator",
+      "availability": "proxy",
+      "kind": "rate",
+      "unit": "rate",
+      "value": 0,
+      "leftMode": "no_brain",
+      "rightMode": null,
+      "formula": {
+        "expression": "successfulBrainDisabledTasks / comparableBrainDisabledTasks",
+        "components": [
+          {
+            "id": "successful_brain_disabled_tasks",
+            "label": "Validated no_brain traces that met the replay success proxy",
+            "role": "numerator",
+            "value": 0,
+            "unit": "count",
+            "mode": "no_brain"
+          },
+          {
+            "id": "comparable_brain_disabled_tasks",
+            "label": "Validated traces comparable under the no_brain floor anchor",
+            "role": "denominator",
+            "value": 403,
+            "unit": "count",
+            "mode": "no_brain"
+          }
+        ]
+      },
+      "language": "the no_brain floor met the replay success proxy on 0/403 validated traces.",
+      "notes": [
+        "This is a no_brain replay proxy, not a live fail-open serve-path proof."
+      ]
+    }
+  ],
+  "internalMetrics": [
+    {
+      "id": "diagnostic_quality_score_mean_by_mode",
+      "label": "Diagnostic qualityScore mean by mode",
+      "category": "diagnostic",
+      "audience": "internal",
+      "availability": "proxy",
+      "kind": "scalar",
+      "unit": "score",
+      "value": 44.119107,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "mean(qualityScore) per mode over validated traces",
+        "components": [
+          {
+            "id": "no_brain_mean_quality_score",
+            "label": "Mean qualityScore for no_brain",
+            "role": "input",
+            "value": 0,
+            "unit": "score",
+            "mode": "no_brain"
+          },
+          {
+            "id": "vector_only_mean_quality_score",
+            "label": "Mean qualityScore for vector_only",
+            "role": "input",
+            "value": 43.995037,
+            "unit": "score",
+            "mode": "vector_only"
+          },
+          {
+            "id": "graph_prior_only_mean_quality_score",
+            "label": "Mean qualityScore for graph_prior_only",
+            "role": "input",
+            "value": 43.325062,
+            "unit": "score",
+            "mode": "graph_prior_only"
+          },
+          {
+            "id": "learned_route_mean_quality_score",
+            "label": "Mean qualityScore for learned_route",
+            "role": "input",
+            "value": 44.119107,
+            "unit": "score",
+            "mode": "learned_route"
+          }
+        ]
+      },
+      "language": "qualityScore remains an internal deterministic replay composite for smoke comparisons and tuning only.",
+      "notes": [
+        "Do not use qualityScore as the public definition of victory."
+      ]
+    },
+    {
+      "id": "diagnostic_ranked_winner_count_by_mode",
+      "label": "Diagnostic winnerMode count by mode",
+      "category": "diagnostic",
+      "audience": "internal",
+      "availability": "proxy",
+      "kind": "count",
+      "unit": "count",
+      "value": 9,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "sum(trace.winnerMode === mode) over validated traces",
+        "components": [
+          {
+            "id": "no_brain_ranked_winner_count",
+            "label": "Validated traces where no_brain ranked first by qualityScore",
+            "role": "input",
+            "value": 0,
+            "unit": "count",
+            "mode": "no_brain"
+          },
+          {
+            "id": "vector_only_ranked_winner_count",
+            "label": "Validated traces where vector_only ranked first by qualityScore",
+            "role": "input",
+            "value": 0,
+            "unit": "count",
+            "mode": "vector_only"
+          },
+          {
+            "id": "graph_prior_only_ranked_winner_count",
+            "label": "Validated traces where graph_prior_only ranked first by qualityScore",
+            "role": "input",
+            "value": 394,
+            "unit": "count",
+            "mode": "graph_prior_only"
+          },
+          {
+            "id": "learned_route_ranked_winner_count",
+            "label": "Validated traces where learned_route ranked first by qualityScore",
+            "role": "input",
+            "value": 9,
+            "unit": "count",
+            "mode": "learned_route"
+          }
+        ]
+      },
+      "language": "winnerMode is retained only as an internal tie-break and ranking surface.",
+      "notes": [
+        "Public/operator reporting should lead with strict better/tied/worse counts instead."
+      ]
+    },
+    {
+      "id": "diagnostic_shared_top_score_trace_count_by_mode",
+      "label": "Diagnostic shared-top trace count by mode",
+      "category": "diagnostic",
+      "audience": "internal",
+      "availability": "proxy",
+      "kind": "count",
+      "unit": "count",
+      "value": 403,
+      "leftMode": "learned_route",
+      "rightMode": null,
+      "formula": {
+        "expression": "sum(trace.topScoreModes includes mode) over validated traces",
+        "components": [
+          {
+            "id": "no_brain_shared_top_score_trace_count",
+            "label": "Validated traces where no_brain shared the top qualityScore",
+            "role": "input",
+            "value": 0,
+            "unit": "count",
+            "mode": "no_brain"
+          },
+          {
+            "id": "vector_only_shared_top_score_trace_count",
+            "label": "Validated traces where vector_only shared the top qualityScore",
+            "role": "input",
+            "value": 401,
+            "unit": "count",
+            "mode": "vector_only"
+          },
+          {
+            "id": "graph_prior_only_shared_top_score_trace_count",
+            "label": "Validated traces where graph_prior_only shared the top qualityScore",
+            "role": "input",
+            "value": 394,
+            "unit": "count",
+            "mode": "graph_prior_only"
+          },
+          {
+            "id": "learned_route_shared_top_score_trace_count",
+            "label": "Validated traces where learned_route shared the top qualityScore",
+            "role": "input",
+            "value": 403,
+            "unit": "count",
+            "mode": "learned_route"
+          }
+        ]
+      },
+      "language": "Shared-top counts remain an internal replay diagnostic for tie analysis.",
+      "notes": [
+        "They are useful for tuning but should not replace explainable public metrics."
+      ]
+    }
+  ],
+  "notes": [
+    "Validated replay trace success proxy means every replay turn compiled and no required context phrase was missed on that trace.",
+    "Success-adjusted economics in this artifact use prompt-token and prompt-cost proxies derived from replay context selection, not full API/tool/latency telemetry.",
+    "Compact-health metrics in this artifact are first-pass proxies derived from summary-routing and compaction telemetry, not a full dashboard.",
+    "Live fail-open-safe rates require runtime instrumentation and are intentionally left unavailable in comparative replay outputs.",
+    "qualityScore remains a deterministic replay diagnostic, not the public definition of victory",
+    "estimatedPromptTokens is ceil(selectedContextChars / charsPerToken)",
+    "estimatedPromptCostUsd uses promptPriceUsdPer1mTokens from scripts/pricing-table.v1.json",
+    "winnerMode is a tie-break diagnostic only; explainableScorecard leads with regression, tie-or-better, recall, and economics surfaces",
+    "pairwise tie-or-better rates compare deterministic qualityScore outcomes across the same validated traces and turns",
+    "correction absorption and fail-open remain placeholder surfaces unless a richer proof surface is wired in",
+    "the scorecard is observational scaffold output; it does not claim long-run task or API economics"
+  ],
+  "scorecardHash": "sha256-fd429da939f0b5b4221f7bfe32e17682b09866fdbee7b8276aae264c839ffada"
+}
+

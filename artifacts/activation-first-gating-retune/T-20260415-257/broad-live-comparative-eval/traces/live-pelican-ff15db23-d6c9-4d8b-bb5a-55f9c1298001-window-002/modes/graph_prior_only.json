@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-e86d9707"
+      "pack-2df7280b"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-880be0734ff79227640583ddefa4f52a9e67406949911aded6a747041ff11cd0"
+    "scoreHash": "sha256-4a29e0a091d7d4f0de87781feb75b6606dfcee54e80aeb9903839c5617b03705"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-e86d9707",
+      "activePackId": "pack-2df7280b",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-cf076f258a20fecc1d703a1ba7ab28884515344f4d5ad1b32ef8a1aead902d7b",
+      "routerIdentity": "pack-2df7280b:route_fn",
+      "selectionDigest": "sha256-32de99dd377f68ce067483f6b2c98b07536bac8e174f148209772fa3b39790e4",
       "selectedContextIds": [
-        "pack-e86d9707:pointer-aware-init",
-        "pack-e86d9707:workspace-init:51972c8c",
-        "pack-e86d9707:workspace-init:40c1c577"
+        "pack-2df7280b:pointer-aware-init",
+        "pack-2df7280b:workspace-init:51972c8c",
+        "pack-2df7280b:workspace-init:40c1c577"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph.",
         "Top-priority boot input memory/2026-02-26-crabpath-eval.md selected by pointer-aware init (inbound=0, outbound=2). CrabPath Installation & Evaluation — 2026-02-26 What Is It Graph-based memory architecture for agents. Documents = nodes, weighted edges, LLM activation function. Claims to learn retrieval paths via policy gradients and inhibitory edges. Installation - **Package:** crabpath v1.0.7 from PyPI - **Venv:** ~/.crabpath/ven…",
-        "Top-priority boot input AGENTS.md selected by pointer-aware init (inbound=2, outbound=11). AGENTS.md — Pelican Stable Operating Rules This file is stable policy only. Live task state belongs in TASKS.md. Startup 1. Read BOOT.md. 2. Read TASKS.md. 3. Read SOUL.md, USER.md, docs/tool-manifest.md, docs/secret-pointers.md, MEMORY.md, and memory/YYYY-MM-DD.md (today, then yesterday if needed). 4. Restore state f…"
+        "Top-priority boot input AGENTS.md selected by pointer-aware init (inbound=1, outbound=8). AGENTS.md — Pelican operating rules Stable policy only. Live task state belongs in TASKS.md. Startup 1. Read BOOT.md. 2. Read STARTUP_READY.md. 3. Read only the active section of TASKS.md plus the current top-priority in-progress task block. 4. Read SOUL.md, USER.md, and MEMORY.md. 5. Open deeper docs, artifacts, and…"
       ],
-      "eventExportDigest": "sha256-0cc061d07a875e1e33f799710e4829889f381c99fdfa53cf09ec567c058f48d0",
+      "eventExportDigest": "sha256-1ad0e19dbe04cd13a6dd14048b310e057658d39af1d889f3b0648f3058fdbd19",
       "expectedContextPhrases": [
         "hey",
         "jon."
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.402,
-        "routeSelectionMs": 4.672,
+        "totalMs": 9.406,
+        "routeSelectionMs": 5.698,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.728,
+        "otherMs": 3.706,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

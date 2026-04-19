@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-7ec622fe"
+      "pack-9aebdcc1"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-b75c40cd1711c556705ad85c60a8bdae0830ec40eded86db2ca0a1ba34e72d35"
+    "scoreHash": "sha256-94d95438a37247c791d5d058a29eb230e015d6a3bd33593b06697c5a1ccfc526"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-7ec622fe",
+      "activePackId": "pack-9aebdcc1",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-30d7facbe452958f06618531d0d96c6b82fc6128c7d7edcf30f3ed95c3a12cda",
+      "routerIdentity": "pack-9aebdcc1:route_fn",
+      "selectionDigest": "sha256-d83619aa0c9365cbcbf253fddede39bf26530cd80b8b587001700ce59f71245e",
       "selectedContextIds": [
-        "pack-7ec622fe:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
-        "pack-7ec622fe:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:feedback",
-        "pack-7ec622fe:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:feedback"
+        "pack-9aebdcc1:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
+        "pack-9aebdcc1:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:feedback",
+        "pack-9aebdcc1:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8108\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 20:02 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes repo-wide no fruit/fruits. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction.",
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8101\", \"reply_to_id\": \"8100\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true, \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:interaction.",
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8098\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Get rid of the term fruit in code I do not want to see any fruit mentioned as function names or db .... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-d06858db1111aa3b324671f10df4120b6f69a75ddaa42b89eeabfd2d3dc6bba0",
+      "eventExportDigest": "sha256-4d171916dcfdfc4dbf6fff3c0dad89e4f9fe50cb7215a72c5a074d3dec342d98",
       "expectedContextPhrases": [
         "codex pass exchange loop",
         "pass exchange loop migration",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.213,
-        "routeSelectionMs": 4.595,
+        "totalMs": 8.722,
+        "routeSelectionMs": 5.416,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.615,
+        "otherMs": 3.304,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

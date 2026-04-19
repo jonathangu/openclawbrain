@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-09T06:24:24.068Z",
   "traceHash": "sha256-4ecb7ad01ebf51dd3aeb7754e784e70eea9f4067a9392ad81778aff88de83b03",
   "fixtureHash": "sha256-ad7aadbe694390cc07af980435b05bd2086d5294c79bda5f4f75ff348a4a3b75",
-  "scoreHash": "sha256-cfa4d6742726896117d9856ea9eeeb1a3455da809053484368f78d3614403f53",
+  "scoreHash": "sha256-78f6d0758cc7f6a00eed1de1fe1641a2dcb5e1f99d0683f52b7322d1c9a84444",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.025,
+            "totalMs": 0.041,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.025,
+            "otherMs": 0.041,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-3f8aaed0"
+          "pack-54b65c8e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-1e9b85dc9e0337bf45b4d4f14fa66e4f235743dbe3404ac3545682b7fc201d63"
+        "scoreHash": "sha256-27e67ac519f7d19360b858f9011761869487328c383d0b43e96e1e6a1971af10"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-3f8aaed0",
+          "activePackId": "pack-54b65c8e",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-7803e5783f89c34c4b635f4f350e9c1c81d557b85e21e183f587487277c3a44a",
+          "routerIdentity": "pack-54b65c8e:route_fn",
+          "selectionDigest": "sha256-9b46c406b4830945040379fc7652055ac828df4dac0f64ece1ec8a6f1595df43",
           "selectedContextIds": [
-            "pack-3f8aaed0:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
-            "pack-3f8aaed0:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:feedback",
-            "pack-3f8aaed0:pointer-aware-init"
+            "pack-54b65c8e:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
+            "pack-54b65c8e:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:feedback",
+            "pack-54b65c8e:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Status: **fixed/proof-green** Commit: **181808d938c5a7e1376b34c289323aeaffbe0886** Message: `pelican: guard latest feature slice coverage` Exact proof: - Freshest slice in `full_feature_matrix_v4_refresh.parquet` is **2026-04-07 19:30:21** - That slice has **35 tickers**, not 36 - Missing core ticker: **TSM** - The immediately previous slice at **2026-04-07 19:30:20** has **36 tickers** - Big-date / earnings features in the latest 35-row slice are fully populated: - `days_to_earnings`: **35/3.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 forward feature-quality lane. Work in /Users/guclaw/worktrees/pelican/39 off fresh main. Do NOT edit TASKS.md. Goal: verify and harden the forward contract for recent core-36 feature coverage and fixed-time/big-date feature featurization. Use recent real artifacts, especially /Users/guclaw/.openclaw/pelican/runtime/quant-research/artifacts/coverage_rebuild/.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:interaction.",
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-e8cbe5ae0a8aec2b2b9c2925165a691d735c9f4c2adc1206318c4f703784e5b0",
+          "eventExportDigest": "sha256-39f4bb4527269b7b1500e0123dac75381db02f43950f487650fdab74cae413a6",
           "expectedContextPhrases": [
             "drift full core recent",
             "full core recent slice",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 6.949,
-            "routeSelectionMs": 4.386,
+            "totalMs": 11.367,
+            "routeSelectionMs": 7.013,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.561,
+            "otherMs": 4.352,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-3f8aaed0"
+          "pack-54b65c8e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-99306c825eea8b2266b1d1900fda76be07491f89cb78d55548d78195084e0156"
+        "scoreHash": "sha256-3aa2f2b092e7c0e871a84819a3a07d83189edf97dbf44cd6ae1d1b06b5e9b20f"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-3f8aaed0",
+          "activePackId": "pack-54b65c8e",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-1f56513a4bf677eaa9f8eb24ff76110984490a309d9b68d189aec4792fb9b439",
+          "routerIdentity": "pack-54b65c8e:route_fn",
+          "selectionDigest": "sha256-04a5eb3db1cdc93297b1636b0242529dc058db042bf3cc1a652966946dc80bfb",
           "selectedContextIds": [
-            "pack-3f8aaed0:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
-            "pack-3f8aaed0:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction",
-            "pack-3f8aaed0:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:feedback"
+            "pack-54b65c8e:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
+            "pack-54b65c8e:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction",
+            "pack-54b65c8e:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Status: **fixed/proof-green** Commit: **181808d938c5a7e1376b34c289323aeaffbe0886** Message: `pelican: guard latest feature slice coverage` Exact proof: - Freshest slice in `full_feature_matrix_v4_refresh.parquet` is **2026-04-07 19:30:21** - That slice has **35 tickers**, not 36 - Missing core ticker: **TSM** - The immediately previous slice at **2026-04-07 19:30:20** has **36 tickers** - Big-date / earnings features in the latest 35-row slice are fully populated: - `days_to_earnings`: **35/3.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
             "Interaction operator_override on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed. Message: cue-6-seed-message.",
             "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 forward feature-quality lane. Work in /Users/guclaw/worktrees/pelican/39 off fresh main. Do NOT edit TASKS.md. Goal: verify and harden the forward contract for recent core-36 feature coverage and fixed-time/big-date feature featurization. Use recent real artifacts, especially /Users/guclaw/.openclaw/pelican/runtime/quant-research/artifacts/coverage_rebuild/.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-5ec9e4ef667f5124133c88b98913bb9cc832ac87adb10cff9d3f0e669365e70f",
+          "eventExportDigest": "sha256-45360bdaa7b49e99f3fcd95324f176e3b7f999f13ebc00ead65192e3e427f06a",
           "expectedContextPhrases": [
             "drift full core recent",
             "full core recent slice",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.119,
-            "routeSelectionMs": 4.46,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.657,
+            "totalMs": 11.399,
+            "routeSelectionMs": 7.029,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.367,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,15 +363,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-df7cce03"
+          "pack-54b65c8e"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-df7cce03",
-        "frozenEvalRouterIdentity": "pack-df7cce03:route_fn",
+        "frozenEvalPackId": "pack-54b65c8e",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-23655b5710a647b502a5e61ce238a1acf71c8c78c7f24eab3890dc1cd6159d23"
+        "scoreHash": "sha256-655b6f0e76c441f8acc501978622e6e1cbc1d25b71196bc87efe4947caf0d1f9"
       },
       "turns": [
         {
@@ -405,24 +405,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-df7cce03",
+          "activePackId": "pack-54b65c8e",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-83ef7bad4bfc4ba5a34f5047d278a22cefe7c36ee326b028c20088421bb2db31",
+          "selectionDigest": "sha256-9b46c406b4830945040379fc7652055ac828df4dac0f64ece1ec8a6f1595df43",
           "selectedContextIds": [
-            "pack-df7cce03:pointer-aware-init"
+            "pack-54b65c8e:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
+            "pack-54b65c8e:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:feedback",
+            "pack-54b65c8e:pointer-aware-init"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Status: **fixed/proof-green** Commit: **181808d938c5a7e1376b34c289323aeaffbe0886** Message: `pelican: guard latest feature slice coverage` Exact proof: - Freshest slice in `full_feature_matrix_v4_refresh.parquet` is **2026-04-07 19:30:21** - That slice has **35 tickers**, not 36 - Missing core ticker: **TSM** - The immediately previous slice at **2026-04-07 19:30:20** has **36 tickers** - Big-date / earnings features in the latest 35-row slice are fully populated: - `days_to_earnings`: **35/3.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 forward feature-quality lane. Work in /Users/guclaw/worktrees/pelican/39 off fresh main. Do NOT edit TASKS.md. Goal: verify and harden the forward contract for recent core-36 feature coverage and fixed-time/big-date feature featurization. Use recent real artifacts, especially /Users/guclaw/.openclaw/pelican/runtime/quant-research/artifacts/coverage_rebuild/.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-1:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-307fd91c50ce43e21d9f1d63cea4f1b84781d7d256ef0ef0e0840762849fc41b",
+          "eventExportDigest": "sha256-2687791d27a7390ccecc08d3c447782c7d4dce8e73a9ab4a01622f090874b336",
           "expectedContextPhrases": [
             "drift full core recent",
             "full core recent slice",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.717,
-            "routeSelectionMs": 5.436,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.281,
+            "totalMs": 10.031,
+            "routeSelectionMs": 6.289,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.741,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-b9a9d5205b2f982a5a25dc490df648a1b29780279644b58582c09bd74f2bdae9"
+  "bundleHash": "sha256-5a5f639ad7ba23be5eb35641c46d9e650d8b805f75e929ca00158f1c0d52d467"
 }

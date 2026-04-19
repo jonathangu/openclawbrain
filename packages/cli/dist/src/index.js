@@ -5039,7 +5039,7 @@ function prepareReplayModeRoot(rootDir, mode) {
     mkdirSync(modeRoot, { recursive: true });
     return modeRoot;
 }
-function prepareSeedActivation(rootDir, fixture, learnedRouting = false) {
+function prepareSeedActivation(rootDir, fixture, learnedRouting = false, options = {}) {
     const activationRoot = path.join(rootDir, "activation");
     const seedPackRoot = path.join(rootDir, "seed-pack");
     const seedPack = materializeCandidatePackFromNormalizedEventExport(seedPackRoot, {
@@ -5056,12 +5056,20 @@ function prepareSeedActivation(rootDir, fixture, learnedRouting = false) {
             connect: 1
         }
     });
+    if (typeof options.prepareSeedPack === "function") {
+        options.prepareSeedPack({
+            activationRoot,
+            seedPackRoot,
+            fixture
+        });
+    }
     activatePack(activationRoot, seedPackRoot, {
         updatedAt: fixture.seedActivatedAt,
         reason: "recorded_session_seed_activate"
     });
     return {
         activationRoot,
+        seedPackRoot,
         seedPackId: seedPack.manifest.packId
     };
 }
@@ -5083,7 +5091,7 @@ function runRecordedSessionNoBrainMode(rootDir, fixture) {
 }
 function runRecordedSessionSeededComparativeMode(rootDir, fixture, replayMode) {
     const modeRoot = prepareReplayModeRoot(rootDir, replayMode);
-    const { activationRoot } = prepareSeedActivation(modeRoot, fixture, false);
+    const { activationRoot } = prepareSeedActivation(modeRoot, fixture, true);
     const turns = fixture.turns.map((turnFixture) => {
         const result = runRuntimeTurn(buildRecordedSessionReplayTurnInput(turnFixture, modeRoot, replayMode), {
             activationRoot,
@@ -5099,9 +5107,14 @@ function runRecordedSessionSeededComparativeMode(rootDir, fixture, replayMode) {
 }
 function runRecordedSessionLearnedRouteMode(rootDir, fixture, options = {}) {
     const modeRoot = prepareReplayModeRoot(rootDir, "learned_route");
-    const { activationRoot } = prepareSeedActivation(modeRoot, fixture, true);
     const learnedRouteSelectionOverride = options.learnedRouteSelectionOverride ?? null;
-    if (learnedRouteSelectionOverride !== null) {
+    const learnedRouteServedPackAdapter = options.learnedRouteServedPackAdapter ?? null;
+    const { activationRoot } = prepareSeedActivation(modeRoot, fixture, true, {
+        ...(learnedRouteServedPackAdapter === null || learnedRouteServedPackAdapter === undefined
+            ? {}
+            : { prepareSeedPack: learnedRouteServedPackAdapter.prepare })
+    });
+    if (learnedRouteSelectionOverride !== null || learnedRouteServedPackAdapter !== null) {
         const frozenEvalIdentity = readRecordedSessionReplayFrozenEvalIdentity(activationRoot);
         const turns = fixture.turns.map((turnFixture) => {
             const result = runRuntimeTurn({
@@ -5111,7 +5124,7 @@ function runRecordedSessionLearnedRouteMode(rootDir, fixture, options = {}) {
                 activationRoot,
                 failOpen: false,
                 ...(frozenEvalIdentity === null ? {} : { _frozenReplayEvalIdentity: frozenEvalIdentity }),
-                _learnedRouteSelectionOverride: learnedRouteSelectionOverride
+                ...(learnedRouteSelectionOverride === null ? {} : { _learnedRouteSelectionOverride: learnedRouteSelectionOverride })
             });
             return buildRecordedSessionTurnReport("learned_route", turnFixture, result, {
                 phase: "eval",
@@ -5789,7 +5802,8 @@ export function writeRecordedSessionReplayProofBundle(input) {
     let bundle;
     try {
         bundle = runRecordedSessionReplay(scratchRoot, fixture, {
-            ...(input.learnedRouteSelectionOverride == null ? {} : { learnedRouteSelectionOverride: input.learnedRouteSelectionOverride })
+            ...(input.learnedRouteSelectionOverride == null ? {} : { learnedRouteSelectionOverride: input.learnedRouteSelectionOverride }),
+            ...(input.learnedRouteServedPackAdapter == null ? {} : { learnedRouteServedPackAdapter: input.learnedRouteServedPackAdapter })
         });
     }
     finally {

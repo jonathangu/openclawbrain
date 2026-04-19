@@ -10,8 +10,10 @@ import {
   COMPARATIVE_EVAL_SCORECARD_CONTRACT,
   COMPARATIVE_EVAL_RUNNER_REPORT_CONTRACT,
   FROZEN_RECORDED_SESSION_EVAL_MANIFEST_CONTRACT,
+  compareTraceModeRowsForOutcomeV1,
   runComparativeEval,
   type CanonicalRecordedSessionTraceSetManifestV1,
+  type ComparativeEvalTraceModeScorecardRowV1,
   type FrozenRecordedSessionEvalManifestV1,
 } from "../../src/eval/comparative-eval-runner.js";
 import { OPENCLAWBRAIN_EXPLAINABLE_EVAL_SCORECARD_CONTRACT } from "../../src/eval/openclawbrain-explainable-scorecard.js";
@@ -382,7 +384,98 @@ function writeFrozenManifest(
   return manifestPath;
 }
 
+function makeTraceModeRowFixture(params: Partial<ComparativeEvalTraceModeScorecardRowV1>): ComparativeEvalTraceModeScorecardRowV1 {
+  return {
+    mode: "learned_route",
+    qualityScore: 40,
+    compileOkCount: 1,
+    turnCount: 1,
+    compileOkRate: 1,
+    phraseHitCount: 0,
+    phraseCount: 1,
+    phraseHitRate: 0,
+    promotionCount: 0,
+    usedLearnedRouteTurnCount: 0,
+    warningCount: 0,
+    selectedContextBlockCount: 1,
+    selectedContextChars: 100,
+    selectedFeedbackContextBlockCount: 0,
+    selectedInitContextBlockCount: 0,
+    estimatedPromptTokens: 25,
+    estimatedPromptCostUsd: 0.0001,
+    ...params,
+  };
+}
+
 describe("comparative eval runner", () => {
+  it("breaks exact felt quality ties toward compact feedback-target recovery", () => {
+    const learned = makeTraceModeRowFixture({
+      mode: "learned_route",
+      selectedContextBlockCount: 1,
+      selectedFeedbackContextBlockCount: 1,
+      selectedInitContextBlockCount: 0,
+    });
+    const baseline = makeTraceModeRowFixture({
+      mode: "graph_prior_only",
+      selectedContextBlockCount: 3,
+      selectedFeedbackContextBlockCount: 1,
+      selectedInitContextBlockCount: 0,
+    });
+
+    expect(compareTraceModeRowsForOutcomeV1({
+      left: learned,
+      right: baseline,
+      manifestId: "felt_resume_25-eval",
+    })).toBe("better");
+    expect(compareTraceModeRowsForOutcomeV1({
+      left: baseline,
+      right: learned,
+      manifestId: "felt_resume_25-eval",
+    })).toBe("worse");
+  });
+
+  it("keeps init-only compactness from winning felt ties without a feedback anchor", () => {
+    const learned = makeTraceModeRowFixture({
+      mode: "learned_route",
+      selectedContextBlockCount: 1,
+      selectedFeedbackContextBlockCount: 0,
+      selectedInitContextBlockCount: 1,
+    });
+    const baseline = makeTraceModeRowFixture({
+      mode: "graph_prior_only",
+      selectedContextBlockCount: 3,
+      selectedFeedbackContextBlockCount: 0,
+      selectedInitContextBlockCount: 1,
+    });
+
+    expect(compareTraceModeRowsForOutcomeV1({
+      left: learned,
+      right: baseline,
+      manifestId: "felt_resume_25-eval",
+    })).toBe("tied");
+  });
+
+  it("does not apply the felt tie-break outside the felt optimize manifest", () => {
+    const learned = makeTraceModeRowFixture({
+      mode: "learned_route",
+      selectedContextBlockCount: 1,
+      selectedFeedbackContextBlockCount: 1,
+      selectedInitContextBlockCount: 0,
+    });
+    const baseline = makeTraceModeRowFixture({
+      mode: "graph_prior_only",
+      selectedContextBlockCount: 3,
+      selectedFeedbackContextBlockCount: 0,
+      selectedInitContextBlockCount: 1,
+    });
+
+    expect(compareTraceModeRowsForOutcomeV1({
+      left: learned,
+      right: baseline,
+      manifestId: "canonical-eval",
+    })).toBe("tied");
+  });
+
   it("runs the canonical manifest contract and writes a deterministic scorecard with a passing policy verdict", () => {
     const rootDir = createTempRoot("comparative-eval-runner");
     const outputDir = path.join(rootDir, "output");
@@ -555,6 +648,46 @@ describe("comparative eval runner", () => {
     expect(learnedRouteMode?.turns.every((turn) => turn.activationTaken === true)).toBe(true);
     expect(learnedRouteMode?.turns.every((turn) => turn.routerIdentity === candidateRouterIdentity)).toBe(true);
     expect(learnedRouteMode?.turns.map((turn) => turn.selectedContextIds)).toEqual([[], []]);
+  });
+
+  it("describes served-pack adapter candidate replay as authoritative-ready", () => {
+    const rootDir = createTempRoot("comparative-eval-runner-served-pack-adapter");
+    const outputDir = path.join(rootDir, "output");
+    const candidateArtifactDir = path.join(rootDir, "candidate-artifact");
+    const candidateRouterIdentity = "router:comparative-eval-served-pack-stop";
+    const comparativeTrace = writeTrace(rootDir, buildComparativeTrace(rootDir, "served-pack-a"));
+    const manifestPath = writeFrozenManifest(rootDir, "served-pack-eval", [comparativeTrace]);
+
+    trainReplayStopArtifact(candidateArtifactDir, candidateRouterIdentity);
+
+    const descriptor = runComparativeEval({
+      manifestPath,
+      outputDir,
+      scratchRootDir: rootDir,
+      learnedRouteCandidateArtifactDir: candidateArtifactDir,
+      learnedRouteCandidateArtifactMode: "served_pack_adapter",
+      policy: {
+        maxCandidateTiePromotionDeltaVsBaseline: 2,
+      },
+    });
+
+    const proofBundle = loadRecordedSessionReplayProofBundle(path.join(outputDir, "traces", comparativeTrace.traceId));
+    const learnedRouteMode = proofBundle.bundle.modes.find((mode) => mode.mode === "learned_route");
+
+    expect(descriptor.report.notes).toContain(`learned_route candidate artifact: ${candidateArtifactDir}`);
+    expect(descriptor.report.notes).toContain(
+      "candidate replay stages a temporary served pack so learned_route runs through the served router hotpath instead of replay override mode",
+    );
+    expect(descriptor.report.notes).not.toContain(
+      "candidate override runs are non-authoritative for served learned-route hotpath truth because replay override keeps usedLearnedRouteFn=false by construction",
+    );
+    expect(descriptor.report.assumptions).toContain(
+      "served-pack adapter replay binds the candidate as the served learned-route router, so broad-live verdicts can be authoritative when the replay proof surface confirms the binding",
+    );
+    expect(learnedRouteMode).toBeDefined();
+    expect(learnedRouteMode?.summary.usedLearnedRouteTurnCount).toBeGreaterThan(0);
+    expect(learnedRouteMode?.turns.every((turn) => turn.usedLearnedRouteFn === true)).toBe(true);
+    expect(learnedRouteMode?.turns.every((turn) => turn.routerIdentity === candidateRouterIdentity)).toBe(true);
   });
 
   it("fails the gate when learned routing adds promotion churn on tie traces", () => {

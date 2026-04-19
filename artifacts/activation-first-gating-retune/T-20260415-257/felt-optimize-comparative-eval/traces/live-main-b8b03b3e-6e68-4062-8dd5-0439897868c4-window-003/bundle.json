@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-06T22:08:00.072Z",
   "traceHash": "sha256-9a2590462dc987ced28ec91e593a00f4b408387f6ec40a92d626a6087fcbd75f",
   "fixtureHash": "sha256-aace8a3fe4087409ebd528569ab1ac34f47ecd7317117709f7ec2907eaa6127c",
-  "scoreHash": "sha256-3aa9f5db4ecb70ecc82be89ff623e4206e3bf4f1475b79a8d3ef635de54677e0",
+  "scoreHash": "sha256-24650187595a1c6869f70944eb92b5326e6f1c963cf069041c55be218bbad0fe",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.033,
+            "totalMs": 0.027,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.033,
+            "otherMs": 0.027,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -127,10 +127,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-6b48bffb"
+          "pack-3cc5e175"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-f62260d1a5da1f3a7e85db6ef1c367a9fdfcff0f4178ea9e0d7fb4a3f730c466"
+        "scoreHash": "sha256-3bb9368f09fa3dbe1441c8a98ff8dda5fd651621476bc4b1f9a2bd3c51b2da6e"
       },
       "turns": [
         {
@@ -168,28 +168,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-6b48bffb",
+          "activePackId": "pack-3cc5e175",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-5001779d175d416398eabbd8cdb78faf7b0ac2a835bd6e53e3d1bd31227b08a8",
+          "routerIdentity": "pack-3cc5e175:route_fn",
+          "selectionDigest": "sha256-89d9f2b5ef73eb0ad277c973e96f2d352593758cef5646e9bd3f35aa3078bb43",
           "selectedContextIds": [
-            "pack-6b48bffb:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:feedback",
-            "pack-6b48bffb:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-3:feedback",
-            "pack-6b48bffb:pointer-aware-init"
+            "pack-3cc5e175:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:feedback",
+            "pack-3cc5e175:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-3:feedback",
+            "pack-3cc5e175:workspace-init:02e33be9"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session b8b03b3e-6e68-4062-8dd5-0439897868c4-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Final remaining-work swarm for T-20260406-161 — narrow runtime scoring / tool-instance binding lane. Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Read /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-160/tool-action-symmetry-plan.md, /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-a-capability-instance.md, /Users/guclaw/..... Related interaction: b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:interaction.",
             "Teaching feedback on live-session session b8b03b3e-6e68-4062-8dd5-0439897868c4-seed: assistant: I’m reading the lane docs and the current policy seam first, then I’ll make the smallest scoring/binding change and verify it with focused tests. ToolCall read {\"path\": \"/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-160/tool-action-symmetry-plan.md\"}. Related interaction: b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-3:interaction.",
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=1). HEARTBEAT.md - Read TASKS.md active section first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…"
           ],
-          "eventExportDigest": "sha256-f2ba71a04ec205bcee429bb736cbec557d1ef4fad21a8248d6b4902d28f26c39",
+          "eventExportDigest": "sha256-c0d401dacbb7c9da1cce0c22072419a4b53d5a7e394d7f3fb81650fa82689b9b",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-core/policy.ts\"}"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.479,
-            "routeSelectionMs": 5.579,
+            "totalMs": 9.497,
+            "routeSelectionMs": 6.044,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.897,
+            "otherMs": 3.45,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -239,10 +239,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-6b48bffb"
+          "pack-3cc5e175"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-f35a15ff9af7aa3c562081161312730d0efd0ed3fedd08fe928d7b4200b4abd4"
+        "scoreHash": "sha256-051a39f80c4c6c62044f274c3dc1ba50fdb4d6ce3fd2a48184970a3d16445936"
       },
       "turns": [
         {
@@ -280,28 +280,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-6b48bffb",
+          "activePackId": "pack-3cc5e175",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-8b387a8f974e450322e4fb9e7431e4f062deed7a9d666554e632bf608c432967",
+          "routerIdentity": "pack-3cc5e175:route_fn",
+          "selectionDigest": "sha256-615b64757ede06d0055bd6de007a040d3322ef954357166a9a8fd68b83f3f27f",
           "selectedContextIds": [
-            "pack-6b48bffb:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:feedback",
-            "pack-6b48bffb:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:interaction",
-            "pack-6b48bffb:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-2:interaction"
+            "pack-3cc5e175:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:feedback",
+            "pack-3cc5e175:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:interaction",
+            "pack-3cc5e175:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session b8b03b3e-6e68-4062-8dd5-0439897868c4-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Final remaining-work swarm for T-20260406-161 — narrow runtime scoring / tool-instance binding lane. Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Read /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-160/tool-action-symmetry-plan.md, /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-a-capability-instance.md, /Users/guclaw/..... Related interaction: b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:interaction.",
             "Interaction operator_override on live-session session b8b03b3e-6e68-4062-8dd5-0439897868c4-seed. Message: cue-1-seed-message.",
             "Interaction operator_override on live-session session b8b03b3e-6e68-4062-8dd5-0439897868c4-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-38c9f872346e4f839c136715c4e52cddcc785109c0d192de8dda8f00dfc8eb1f",
+          "eventExportDigest": "sha256-a7780c575dbcb8ec735f6c27b3075503400af8bfc052210ab548d6b0ea3ceed9",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-core/policy.ts\"}"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.691,
-            "routeSelectionMs": 4.952,
+            "totalMs": 9.377,
+            "routeSelectionMs": 5.9,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.736,
+            "otherMs": 3.473,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -354,12 +354,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-4ae08042"
+          "pack-3cc5e175"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-4ae08042",
-        "frozenEvalRouterIdentity": "pack-4ae08042:route_fn",
+        "frozenEvalPackId": "pack-3cc5e175",
+        "frozenEvalRouterIdentity": "pack-3cc5e175:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-0b815c3634a6a07d4b06bbff6bd60c271e89ed6c302d043210cc1b97af83e549"
+        "scoreHash": "sha256-e2342a5d8d6fdf6985c01467d65da145edfadf0d2fa3164a92dc415a47343f64"
       },
       "turns": [
         {
@@ -393,24 +393,24 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-4ae08042",
+          "activePackId": "pack-3cc5e175",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
           "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_artifact:candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-36598fa628476113a1bdede8b82f0b79b363c35a9b4cf5f016adaa4818a16f3b",
+          "selectionDigest": "sha256-be81f5ec817729b77641e50b05c5fff7e5774a83d0b0790f3e8c75337ce67b02",
           "selectedContextIds": [
-            "pack-4ae08042:pointer-aware-init"
+            "pack-3cc5e175:event:b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+            "Teaching feedback on live-session session b8b03b3e-6e68-4062-8dd5-0439897868c4-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Final remaining-work swarm for T-20260406-161 — narrow runtime scoring / tool-instance binding lane. Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Read /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-160/tool-action-symmetry-plan.md, /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-a-capability-instance.md, /Users/guclaw/..... Related interaction: b8b03b3e-6e68-4062-8dd5-0439897868c4-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-18f57192594507cddde96d4a20d001e65681fc2319bd502443c81f1158577dad",
+          "eventExportDigest": "sha256-868207134a938b47cf6139f289258c890f50885ebe0e8d2298176c0874212503",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace/openclawbrain/src/brain-core/policy.ts\"}"
           ],
@@ -424,10 +424,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.768,
-            "routeSelectionMs": 6.253,
+            "totalMs": 10.139,
+            "routeSelectionMs": 6.629,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.513,
+            "otherMs": 3.507,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +471,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-e4f04609fe5ac5fa3b3fb7fe2999e029cee284844966b814e717a79630f9deac"
+  "bundleHash": "sha256-c0464d6154f03d0b83707288c02c4adbb8917a6c2d44e9e345ad806e7b71c7cb"
 }

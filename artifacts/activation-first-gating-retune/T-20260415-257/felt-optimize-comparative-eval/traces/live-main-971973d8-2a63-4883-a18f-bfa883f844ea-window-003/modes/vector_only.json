@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-60ea22cb"
+      "pack-fbda24cb"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-27514c0dfae38ba568b3aac7c9fcf45570ebb8fc43c37c595b23c5866039d9ed"
+    "scoreHash": "sha256-46da1ba9aa72eb9ca7274ac58377d44c697799ab0df040f9a21da69588033dc6"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-60ea22cb",
+      "activePackId": "pack-fbda24cb",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-5848cf0e94b5ea11498cbf078131cceff624ca0b8bf01c7696cd7e03eb067466",
+      "routerIdentity": "pack-fbda24cb:route_fn",
+      "selectionDigest": "sha256-6ae7974564a9e5f7b7c0b974bf34595c0946652bd1f7e775ca168079c7b2a8ba",
       "selectedContextIds": [
-        "pack-60ea22cb:event:971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:feedback",
-        "pack-60ea22cb:pointer-aware-init",
-        "pack-60ea22cb:workspace-init:16415817"
+        "pack-fbda24cb:event:971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:feedback",
+        "pack-fbda24cb:pointer-aware-init",
+        "pack-fbda24cb:workspace-init:16415817"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 971973d8-2a63-4883-a18f-bfa883f844ea-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260406-161 tool-action online symmetry — Lane A (capability vs instance action representation). Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Read /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/launch-brief.md and /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-160/tool-action-symmetry-plan.md. Goal: implement or tighten .... Related interaction: 971973d8-2a63-4883-a18f-bfa883f844ea-seed:cue-1:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=5, outbound=107). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 3:35 PM PT — 1 active unblocked principal task Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they report…"
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, BOOT.md, task-artifacts/T-20260415-257/task-list.md, +8 more from the MEMORY index graph.",
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=7, outbound=17). TASKS.md — Canonical Task Ledger Last updated: 2026-04-18 5:40 PM PT Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator edits it. - Workers report only through announces, task-artifacts/<task-id>/, or task-status/<ta…"
       ],
-      "eventExportDigest": "sha256-09cdb5c5b2cf901fcbd3533f441857031d3d6f3f9abd36817a215676df30225f",
+      "eventExportDigest": "sha256-f15ee6ec57d6f3639092c692881593c1aab10877f3d440593a876806e6046b7d",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/openclawbrain/package.json\"}",
         "/Users/guclaw/.openclaw/workspace/openclawbrain"
@@ -88,10 +88,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.604,
-        "routeSelectionMs": 4.882,
+        "totalMs": 9.239,
+        "routeSelectionMs": 5.786,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.718,
+        "otherMs": 3.45,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -12,6 +12,7 @@ import type {
 import {
   buildColdStartRouterLivePolicyInitializerV1,
   COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1,
+  deriveColdStartRouterSourceNodeIdV1,
   materializeColdStartRouterLivePolicyGraphV1,
   type ColdStartRouterLivePolicyInitializerV1,
 } from "./graph.js";
@@ -481,8 +482,11 @@ function toRowWeight(
   return clampFinite(magnitude + activationFirstRowBonus(row), 0.25, MAX_TRAINING_ROW_WEIGHT);
 }
 
-function routeRowSourceNodeId(row: Pick<RouteDecisionRowV1, "cursor_path">): string {
-  return normalizeText(row.cursor_path[row.cursor_path.length - 1] ?? "", "__START__");
+function routeRowSourceNodeId(
+  row: RouteDecisionRowV1,
+  applyResumeGateReplaySemanticFallbackBoost: boolean,
+): string {
+  return deriveColdStartRouterSourceNodeIdV1({ row, applyResumeGateReplaySemanticFallbackBoost });
 }
 
 function stopTrainingBucketsForRouteRow(
@@ -1447,6 +1451,12 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     ? requestedPriorBaseArtifactChecksum
     : warmStart?.bundle.manifest.artifact_checksum;
   const createdAt = params.createdAt ?? new Date().toISOString();
+  const calibration = mergeCalibration({
+    priorCalibration: warmStart?.bundle.model.calibration ?? null,
+    interventionHead: params.interventionHead,
+    calibrationOverrides: params.calibrationOverrides,
+  });
+  const applyResumeGateReplaySemanticFallbackBoost = calibration.interventionHead.featureProfile === "resume_gate_v1";
   const registryByDataset = new Map(params.registryEntries.map((entry) => [entry.dataset_id, entry] as const));
   const usedDatasetIds = new Set<string>(warmStart?.bundle.model.training.usedDatasetIds ?? []);
   const usedRouteRows: RouteDecisionRowV1[] = [];
@@ -1502,7 +1512,7 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     const positiveIds = resolvePositiveCandidateIds(row);
     const canTrainRanking = positiveIds.size > 0;
     const toolCandidates = row.candidate_set.filter((candidate) => candidate.candidate_type === "tool");
-    const sourceNodeId = routeRowSourceNodeId(row);
+    const sourceNodeId = routeRowSourceNodeId(row, applyResumeGateReplaySemanticFallbackBoost);
     const toolActionSet = toolCandidates.length > 0
       ? (toolActionSets.get(sourceNodeId) ?? {
           rowIds: new Set<string>(),
@@ -1577,7 +1587,7 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     const gatingExample: ColdStartRouterPolicyGatingExampleV1 = {
       policyRowId: policyRow.policyRowId,
       routeRowId: policyRow.routeRowId,
-      sourceNodeId: routeRowSourceNodeId(linkedRouteRow),
+      sourceNodeId: routeRowSourceNodeId(linkedRouteRow, applyResumeGateReplaySemanticFallbackBoost),
       stopLabel: policyRow.stopLabel,
       weight: policyRow.weight,
     };
@@ -1589,11 +1599,6 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
   }
 
   const skippedRowDetails = createSkippedRowDetails(skippedRows);
-  const calibration = mergeCalibration({
-    priorCalibration: warmStart?.bundle.model.calibration ?? null,
-    interventionHead: params.interventionHead,
-    calibrationOverrides: params.calibrationOverrides,
-  });
   const featureWeightMap = normalizeFeatureWeights(
     featureCounts,
     calibration.smoothing,
@@ -1658,6 +1663,7 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
       routeRows: usedRouteRows,
       warmStartInitializer: warmStart?.bundle.model.livePolicyInitializer,
       warmStartStopLabelCounts: warmStart?.bundle.model.stopLabelCounts,
+      applyResumeGateReplaySemanticFallbackBoost,
     }),
     stopLabelCounts,
     policyExamples: policyGatingExamples,

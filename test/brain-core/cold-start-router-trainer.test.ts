@@ -189,6 +189,53 @@ function makeGreedyThresholdRouteRow(datasetId: string): RouteDecisionRowV1 {
   };
 }
 
+function makeReplayScopedFeltRouteRow(datasetId: string): RouteDecisionRowV1 {
+  return {
+    row_id: "row_replay_scoped_felt_training",
+    dataset_id: datasetId,
+    query: "Prefer the replay feedback block over the replay interaction block",
+    cursor_path: ["felt_resume_25"],
+    candidate_set: [
+      {
+        candidate_id: "pack-runtime:event:alpha:feedback",
+        candidate_type: "graph_node",
+        semantic_class: "feedback_context",
+        authority: "recorded_session_replay",
+        freshness: "replay_eval",
+        token_cost: 64,
+        score_hint: 0.3,
+      },
+      {
+        candidate_id: "pack-runtime:event:alpha:interaction",
+        candidate_type: "graph_node",
+        semantic_class: "interaction_context",
+        authority: "recorded_session_replay",
+        freshness: "replay_eval",
+        token_cost: 56,
+        score_hint: 0.45,
+      },
+    ],
+    teacher_action: { kind: "traverse", target_ids: ["pack-runtime:event:alpha:feedback"] },
+    stop_label: "CONTINUE",
+    evidence_spans: [
+      { source_ref: "replay:evidence:0", start: 0, end: 39, excerpt: "Need the replay feedback block, not the cue." },
+    ],
+    hard_negatives: ["pack-runtime:event:alpha:interaction"],
+    outcome_gain: 1,
+    provenance: {
+      dataset: datasetId,
+      source_license: "internal_local_only",
+      source_family: "agent_traces",
+      source_snapshot_ref: `snapshot:${datasetId}@sha256:replay-scoped-felt-training`,
+      recorded_by: "test",
+      recorded_at: "2026-04-18T16:20:00Z",
+      review_status: "approved_train",
+    },
+    split_tag: "train",
+    created_at: "2026-04-18T16:20:00Z",
+  };
+}
+
 function makePolicySupervisionRowFixture(params: {
   rowId: string;
   traceId: string;
@@ -660,6 +707,113 @@ describe("cold-start router trainer", () => {
     expect(restrainedScoring.decisionSummary.stopReason).toBe("abstention_threshold_met");
   });
 
+  it("trains scoped felt replay source ids into the live policy initializer for resume-gate candidates", () => {
+    const datasetId = "dataset_activation_first_scoped_felt_training";
+    const replayRow = makeReplayScopedFeltRouteRow(datasetId);
+    const trained = trainColdStartRouterArtifactV1({
+      artifactId: `router-artifact-${datasetId}`,
+      artifactVersion: "0.0.1",
+      packType: "base",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+      registryEntries: [makeActivationFirstRegistryEntry(datasetId)],
+      routeRows: [replayRow],
+      outputDir: createTempRoot("cold-start-router-scoped-felt-training"),
+      routerIdentity: `router:${datasetId}`,
+      createdAt: "2026-04-18T16:21:00Z",
+      trainingDataRefs: [datasetId],
+      replayGateRefs: [`replay:${datasetId}`],
+      interventionHead: {
+        decisionPolicyMode: "gating_only_v1",
+        freezeCandidateSelection: true,
+        freezeStopLocal: true,
+        featureProfile: "resume_gate_v1",
+      },
+    });
+
+    expect(trained.model.livePolicyInitializer.stopLocalWeights).toContainEqual(
+      expect.objectContaining({ sourceNodeId: "felt_resume_25:source:pack-runtime:event:alpha:feedback" }),
+    );
+    expect(trained.model.livePolicyInitializer.stopLocalWeights.some((entry) => entry.sourceNodeId === "felt_resume_25")).toBe(false);
+    expect(trained.model.livePolicyInitializer.edgeWeights).toContainEqual(
+      expect.objectContaining({
+        sourceNodeId: "felt_resume_25:source:pack-runtime:event:alpha:feedback",
+        targetNodeId: "pack-runtime:event:alpha:feedback",
+      }),
+    );
+
+    const scoring = scoreColdStartRouteRowV1({ model: trained.model, row: replayRow });
+    expect(scoring.rankedCandidates[0]?.candidate.candidate_id).toBe("pack-runtime:event:alpha:feedback");
+  });
+
+  it("lands felt policy supervision on the scoped replay source instead of the shared felt bucket", () => {
+    const datasetId = "dataset_activation_first_scoped_felt_policy";
+    const replayRow = makeReplayScopedFeltRouteRow(datasetId);
+    const baseline = trainColdStartRouterArtifactV1({
+      artifactId: `router-artifact-${datasetId}-baseline`,
+      artifactVersion: "0.0.1",
+      packType: "base",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+      registryEntries: [makeActivationFirstRegistryEntry(datasetId)],
+      routeRows: [replayRow],
+      outputDir: createTempRoot("cold-start-router-scoped-felt-policy-baseline"),
+      routerIdentity: `router:${datasetId}:baseline`,
+      createdAt: "2026-04-18T16:22:00Z",
+      trainingDataRefs: [datasetId],
+      replayGateRefs: [`replay:${datasetId}`],
+      interventionHead: {
+        decisionPolicyMode: "gating_only_v1",
+        freezeCandidateSelection: true,
+        freezeStopLocal: true,
+        featureProfile: "resume_gate_v1",
+      },
+    });
+    const weighted = trainColdStartRouterArtifactV1({
+      artifactId: `router-artifact-${datasetId}-weighted`,
+      artifactVersion: "0.0.1",
+      packType: "base",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+      registryEntries: [makeActivationFirstRegistryEntry(datasetId)],
+      routeRows: [replayRow],
+      policySupervisionRows: [
+        makePolicySupervisionRowFixture({
+          rowId: "ps_scoped_felt_activate",
+          traceId: "trace_scoped_felt_activate",
+          routeRowId: replayRow.row_id,
+          rowType: "activate",
+          focusLane: "felt_resume_25",
+          rowWeight: 2,
+          oracleBestMode: "learned_route",
+        }),
+      ],
+      focusLaneWeights: { felt_resume_25: 4 },
+      rowTypeWeights: { activate: 2 },
+      outputDir: createTempRoot("cold-start-router-scoped-felt-policy-weighted"),
+      routerIdentity: `router:${datasetId}:weighted`,
+      createdAt: "2026-04-18T16:23:00Z",
+      trainingDataRefs: [datasetId],
+      replayGateRefs: [`replay:${datasetId}`],
+      interventionHead: {
+        decisionPolicyMode: "gating_only_v1",
+        freezeCandidateSelection: true,
+        freezeStopLocal: true,
+        featureProfile: "resume_gate_v1",
+      },
+    });
+
+    const baselineScoped = baseline.model.livePolicyInitializer.stopLocalWeights.find(
+      (entry) => entry.sourceNodeId === "felt_resume_25:source:pack-runtime:event:alpha:feedback",
+    );
+    const weightedScoped = weighted.model.livePolicyInitializer.stopLocalWeights.find(
+      (entry) => entry.sourceNodeId === "felt_resume_25:source:pack-runtime:event:alpha:feedback",
+    );
+
+    expect(baselineScoped).toBeDefined();
+    expect(weightedScoped).toBeDefined();
+    expect(weightedScoped!.negative).toBeGreaterThan(baselineScoped!.negative);
+    expect(weightedScoped!.support).toBeGreaterThan(baselineScoped!.support);
+    expect(weighted.model.livePolicyInitializer.stopLocalWeights.some((entry) => entry.sourceNodeId === "felt_resume_25")).toBe(false);
+  });
+
   it("activates a near-threshold must-fire row once it enters the greedy activation lane", () => {
     const outputDir = createTempRoot("cold-start-router-greedy-lane");
     const trained = trainActivationFirstFixture(outputDir, "dataset_activation_first_greedy_lane");
@@ -1035,6 +1189,217 @@ describe("cold-start router trainer", () => {
     });
     expect(boosted.graph.getEdge("felt_resume_25", "pack-runtime:event:alpha:interaction")?.weight).toBe(0.22);
     expect(boosted.graph.getEdge("felt_resume_25", "pack-runtime:event:alpha:interaction")?.metadata).not.toHaveProperty("fallbackExperiment");
+  });
+
+  it("reuses exact scoped felt source ids at scoring time when replay rows have one anchored feedback target", () => {
+    const outputDir = createTempRoot("cold-start-router-scoped-felt-source-materialization");
+    const trained = trainActivationFirstFixture(outputDir, "dataset_activation_first_scoped_felt_source_materialization");
+    const initializer = {
+      ...trained.model.livePolicyInitializer,
+      seedWeights: [],
+      semanticClassSeedWeights: [],
+      stopLocalWeights: [
+        {
+          sourceNodeId: "felt_resume_25:source:pack-runtime:event:alpha:feedback",
+          positive: 0,
+          negative: 4,
+          support: 4,
+          weight: -0.4,
+        },
+      ],
+      edgeWeights: [
+        {
+          sourceNodeId: "felt_resume_25:source:pack-runtime:event:alpha:feedback",
+          targetNodeId: "pack-runtime:event:alpha:feedback",
+          positive: 4,
+          negative: 0,
+          support: 4,
+          prior: 1,
+          weight: 0.7,
+        },
+      ],
+      semanticClassEdgeWeights: [
+        {
+          sourceBindingKey: "resume_replay_context",
+          targetSemanticClass: "feedback_context",
+          positive: 0,
+          negative: 0,
+          support: 0,
+          prior: 1,
+          weight: 0,
+        },
+        {
+          sourceBindingKey: "resume_replay_context",
+          targetSemanticClass: "interaction_context",
+          positive: 4,
+          negative: 0,
+          support: 4,
+          prior: 1,
+          weight: 0.25,
+        },
+      ],
+      toolActionPriors: [],
+      toolActionSets: [],
+    };
+    const row: RouteDecisionRowV1 = {
+      row_id: "row_scoped_felt_source_materialization",
+      dataset_id: "dataset_activation_first_scoped_felt_source_materialization",
+      query: "Use the replay feedback target, not the generic interaction chunk.",
+      cursor_path: ["felt_resume_25"],
+      candidate_set: [
+        {
+          candidate_id: "pack-runtime:event:alpha:feedback",
+          candidate_type: "graph_node",
+          semantic_class: "feedback_context",
+          authority: "recorded_session_replay",
+          freshness: "replay_eval",
+          token_cost: 64,
+          score_hint: 0.31,
+        },
+        {
+          candidate_id: "pack-runtime:event:alpha:interaction",
+          candidate_type: "graph_node",
+          semantic_class: "interaction_context",
+          authority: "recorded_session_replay",
+          freshness: "replay_eval",
+          token_cost: 48,
+          score_hint: 0.45,
+        },
+      ],
+      teacher_action: { kind: "traverse", target_ids: ["pack-runtime:event:alpha:feedback"] },
+      stop_label: "CONTINUE",
+      evidence_spans: [
+        { source_ref: "replay:evidence:0", start: 0, end: 38, excerpt: "Need the replay feedback target." },
+      ],
+      hard_negatives: ["pack-runtime:event:alpha:interaction"],
+      outcome_gain: 1,
+      provenance: {
+        dataset: "dataset_activation_first_scoped_felt_source_materialization",
+        source_license: "internal_local_only",
+        source_family: "agent_traces",
+        source_snapshot_ref: "snapshot:scoped-felt-source-materialization",
+        recorded_by: "test",
+        recorded_at: "2026-04-18T15:55:00Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-18T15:55:00Z",
+    };
+
+    const materialized = materializeColdStartRouterLivePolicyGraphV1({
+      initializer,
+      row,
+      applyResumeGateReplaySemanticFallbackBoost: true,
+    });
+
+    expect(materialized.sourceNodeId).toBe("felt_resume_25:source:pack-runtime:event:alpha:feedback");
+    expect(materialized.graph.getEdge(
+      "felt_resume_25:source:pack-runtime:event:alpha:feedback",
+      "pack-runtime:event:alpha:feedback",
+    )?.weight).toBe(0.7);
+
+    const model: ColdStartRouterModelV1 = {
+      ...trained.model,
+      calibration: {
+        ...trained.model.calibration,
+        interventionHead: {
+          decisionPolicyMode: "gating_only_v1",
+          freezeCandidateSelection: true,
+          freezeStopLocal: true,
+          featureProfile: "resume_gate_v1",
+        },
+      },
+      livePolicyInitializer: initializer,
+    };
+    const scoring = scoreColdStartRouteRowV1({ model, row });
+
+    expect(scoring.rankedCandidates[0]?.candidate.candidate_id).toBe("pack-runtime:event:alpha:feedback");
+  });
+
+  it("keeps shared felt source binding when replay rows do not have exactly one scoped anchor", () => {
+    const outputDir = createTempRoot("cold-start-router-scoped-felt-source-ambiguous");
+    const trained = trainActivationFirstFixture(outputDir, "dataset_activation_first_scoped_felt_source_ambiguous");
+    const initializer = {
+      ...trained.model.livePolicyInitializer,
+      seedWeights: [],
+      semanticClassSeedWeights: [],
+      stopLocalWeights: [
+        {
+          sourceNodeId: "felt_resume_25:source:pack-runtime:event:alpha:feedback",
+          positive: 0,
+          negative: 4,
+          support: 4,
+          weight: -0.4,
+        },
+      ],
+      edgeWeights: [
+        {
+          sourceNodeId: "felt_resume_25:source:pack-runtime:event:alpha:feedback",
+          targetNodeId: "pack-runtime:event:alpha:feedback",
+          positive: 4,
+          negative: 0,
+          support: 4,
+          prior: 1,
+          weight: 0.7,
+        },
+      ],
+      semanticClassEdgeWeights: [],
+      toolActionPriors: [],
+      toolActionSets: [],
+    };
+    const row: RouteDecisionRowV1 = {
+      row_id: "row_scoped_felt_source_ambiguous",
+      dataset_id: "dataset_activation_first_scoped_felt_source_ambiguous",
+      query: "Two replay anchors are present, so keep the shared binding.",
+      cursor_path: ["felt_resume_25"],
+      candidate_set: [
+        {
+          candidate_id: "pack-runtime:event:alpha:feedback",
+          candidate_type: "graph_node",
+          semantic_class: "feedback_context",
+          authority: "recorded_session_replay",
+          freshness: "replay_eval",
+          token_cost: 64,
+          score_hint: 0.31,
+        },
+        {
+          candidate_id: "pack-runtime:event:beta:feedback",
+          candidate_type: "graph_node",
+          semantic_class: "feedback_context",
+          authority: "recorded_session_replay",
+          freshness: "replay_eval",
+          token_cost: 60,
+          score_hint: 0.29,
+        },
+      ],
+      teacher_action: { kind: "traverse", target_ids: ["pack-runtime:event:alpha:feedback"] },
+      stop_label: "CONTINUE",
+      evidence_spans: [
+        { source_ref: "replay:evidence:0", start: 0, end: 30, excerpt: "Ambiguous replay anchors." },
+      ],
+      hard_negatives: ["pack-runtime:event:beta:feedback"],
+      outcome_gain: 1,
+      provenance: {
+        dataset: "dataset_activation_first_scoped_felt_source_ambiguous",
+        source_license: "internal_local_only",
+        source_family: "agent_traces",
+        source_snapshot_ref: "snapshot:scoped-felt-source-ambiguous",
+        recorded_by: "test",
+        recorded_at: "2026-04-18T15:56:00Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-18T15:56:00Z",
+    };
+
+    const materialized = materializeColdStartRouterLivePolicyGraphV1({
+      initializer,
+      row,
+      applyResumeGateReplaySemanticFallbackBoost: true,
+    });
+
+    expect(materialized.sourceNodeId).toBe("felt_resume_25");
+    expect(materialized.graph.getEdge("felt_resume_25", "pack-runtime:event:alpha:feedback")).toBeUndefined();
   });
 
   it("uses the resume-gate fallback floor to flip replay ranking without touching non-replay rows", () => {

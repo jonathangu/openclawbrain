@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-aea9e734"
+      "pack-188b46cd"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-7d0772135a51930e79e254e9541d62bf50c12f89e3794cf2282a82fd8f27efcd"
+    "scoreHash": "sha256-326f79f0e07e8cad7bbcdde8714bb5b27f9e56f5c02e043aee3cdd781dbd910b"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-aea9e734",
+      "activePackId": "pack-188b46cd",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-0cf034632b10e8ac2f0af8b82e1db26ceb4c55b6d7813d071738a54b553f83e0",
+      "routerIdentity": "pack-188b46cd:route_fn",
+      "selectionDigest": "sha256-36b6dff4d11635f6475f9e8c0aae973457ce901fd86c6dd180f071b2233a996b",
       "selectedContextIds": [
-        "pack-aea9e734:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:feedback",
-        "pack-aea9e734:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:interaction",
-        "pack-aea9e734:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-2:interaction"
+        "pack-188b46cd:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:feedback",
+        "pack-188b46cd:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:interaction",
+        "pack-188b46cd:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260409-192 lane C. Map the exact install/build/promotion code paths for the live router and determine whether the live learned route function is literally initialized from approved cold-start prior parameters or only same-family generically. Propose the exact contract/schema/promotion/status changes needed to enforce literal cold-start-rooted lineage for every .... Related interaction: 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:interaction.",
         "Interaction operator_override on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed. Message: cue-1-seed-message.",
         "Interaction operator_override on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-a57d7633bd7966936640f06cf872546d3ea340accb49ed13fc3a92eb47ba6a3b",
+      "eventExportDigest": "sha256-80fa8de10d0525510eed7813d4bad0539d3b06d718a739819183bd6a50dd9527",
       "expectedContextPhrases": [
         "/src",
         "route_fn"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.979,
-        "routeSelectionMs": 5.291,
+        "totalMs": 9.157,
+        "routeSelectionMs": 5.852,
         "promptAssemblyMs": 0.002,
-        "otherMs": 2.685,
+        "otherMs": 3.303,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-6ea78158"
+      "pack-16132b46"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-a2f2524fc20a15f6228682083ba01c0fc6ab782e9cdc59e52c5222d49cb37c07"
+    "scoreHash": "sha256-46b41d35981ec6315a182fa1c621979de8d4ad12388d4ce0ab360fdfebdc4d06"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-6ea78158",
+      "activePackId": "pack-16132b46",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-feb37c16b23d5fd94d6e17d36dbcd4afafd169db1bf05af9d56c9bf57e95a335",
+      "routerIdentity": "pack-16132b46:route_fn",
+      "selectionDigest": "sha256-03a1d128f4f880dd604ecdced067df576bb49c832c918dc7d9f173ae84b1192d",
       "selectedContextIds": [
-        "pack-6ea78158:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:feedback",
-        "pack-6ea78158:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:interaction",
-        "pack-6ea78158:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:feedback"
+        "pack-16132b46:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:feedback",
+        "pack-16132b46:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:interaction",
+        "pack-16132b46:event:aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session aba6eef9-56f5-4609-aed4-3859e5ad2833-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"22357\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-04-06 02:10 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Are we able to install the latest openclawbrain? Is the cold start prior working? Are we able to \"rebase\"?. Related interaction: aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-4:interaction.",
         "Interaction operator_override on live-session session aba6eef9-56f5-4609-aed4-3859e5ad2833-seed. Message: cue-4-seed-message.",
         "Teaching feedback on live-session session aba6eef9-56f5-4609-aed4-3859e5ad2833-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"22355\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-04-06 02:07 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Harvest all good stuff. Clean up. Related interaction: aba6eef9-56f5-4609-aed4-3859e5ad2833-seed:cue-2:interaction."
       ],
-      "eventExportDigest": "sha256-318c4cb359e7ee3f38c6ee0223f0d9d1752b493658f81eb6458b92dbc97e8e67",
+      "eventExportDigest": "sha256-a91c31866a8ad9a26a4a23b4d761421e3c33cdc828afc3a5cbc6a1bcce792cbd",
       "expectedContextPhrases": [
         "T-20260406-150",
         "T-20260406-153",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.117,
-        "routeSelectionMs": 4.494,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.622,
+        "totalMs": 11.468,
+        "routeSelectionMs": 7.05,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 4.416,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

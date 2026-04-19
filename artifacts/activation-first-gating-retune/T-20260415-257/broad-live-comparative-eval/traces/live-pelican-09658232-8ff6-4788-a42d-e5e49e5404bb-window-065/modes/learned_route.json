@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-dbfec6ec"
+      "pack-a4792427"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-dbfec6ec",
-    "frozenEvalRouterIdentity": "pack-dbfec6ec:route_fn",
+    "frozenEvalPackId": "pack-a4792427",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-f44ce8e41c16ccf753304a84eacca5f2f183e1327bea9d64e1764fcc5863a0ec"
+    "scoreHash": "sha256-0727e2c7d7ab1873f7166a06ecaac06c347b2681ac4c80e6632c10451627bbdf"
   },
   "turns": [
     {
@@ -51,24 +51,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-dbfec6ec",
+      "activePackId": "pack-a4792427",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-00300028a135c69fcf888a12d2f80cc5caf996730c6a781b5e232744701a7fab",
+      "selectionDigest": "sha256-7100fab166e993086e0faad39b5bf82d27eb3a368b2eb0d1274c7e58ea8c9e83",
       "selectedContextIds": [
-        "pack-dbfec6ec:pointer-aware-init"
+        "pack-a4792427:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
+        "pack-a4792427:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+        "pack-a4792427:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: e36799be-585c-4f29-a86a-2e84e09fee99] A cron job \"v6-slim-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 1m57s • tokens 4.3k (in 19 / out 4.3k) • prompt/cache 26.8k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system me.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 1m33s • tokens 35.8k (in 31.0k / out 4.8k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim. Reply ONLY: NO_REPLY if this exact result was alr.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 18:27:57 PST] Exec completed (good-dun, code 0) :: 9_deee615_320224fb S3 run prefix: s3://polygon-data-collection/pelican/training/runs/v6_20260228_022729_deee615_320224fb Inputs + checksums: s3://polygon-data-collection/pelican/t… System: [2026-02-27 18:29:45 PST] Exec completed (neat-nud, code 0) :: .. . | | B =++. o | |o + + + | | . o.o S . | |.. = * o | |. + = o | | o o = | | +.. o | +----[SHA256]-----+ Cloud-init v. 25.2-0ubuntu1~22.04.1 running 'modules:config' at Sa.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-6c944fe5b63cfbd622c60b8332c2c2c2b5588587a9ab15e7c5b3fcd37f7e7edf",
+      "eventExportDigest": "sha256-c59a8a0e9945ec38784ffbfdb0d1b8b43f6fb54af2c7ea422068979f6721bbaf",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research/retrain_tft_production.py\"}",
         "days_to_exp",
@@ -86,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.745,
-        "routeSelectionMs": 6.288,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 3.456,
+        "totalMs": 9.149,
+        "routeSelectionMs": 5.9,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.246,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

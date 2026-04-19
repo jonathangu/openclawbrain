@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-9b2a810f"
+      "pack-c86fce94"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-2094a489d37d16d27e45a03bf95e4e1f48ae2d2eda93174876c571e2622d9a18"
+    "scoreHash": "sha256-56d5338c96f9ed363ff06c18ab91a4ed6fb2634d9ec0cb74535e8d4fda080d11"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-9b2a810f",
+      "activePackId": "pack-c86fce94",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-2b44469ba6704b449b77e892228b6da7c0a84167083254b5657d6b00dce48e5b",
+      "routerIdentity": "pack-c86fce94:route_fn",
+      "selectionDigest": "sha256-6a288bc13cdaf26df3ad175e3c935ba0ab52242d6cba8b8f3da386f8b8bc29c6",
       "selectedContextIds": [
-        "pack-9b2a810f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
-        "pack-9b2a810f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction",
-        "pack-9b2a810f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback"
+        "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:feedback",
+        "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction",
+        "pack-c86fce94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-5:interaction.",
         "Interaction operator_override on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed. Message: cue-5-seed-message.",
         "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8095\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:25 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Hello?. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-c8740b639175f748e25da6e223b29713c819147ce6661380db304dac33f0d68c",
+      "eventExportDigest": "sha256-d1680c4e18daf485b033dcd42c1689faa3bc6fde8267bce41fdce37a206190ff",
       "expectedContextPhrases": [
         "toolcall",
         "process",
@@ -90,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.299,
-        "routeSelectionMs": 4.647,
+        "totalMs": 8.879,
+        "routeSelectionMs": 5.484,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.649,
+        "otherMs": 3.392,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

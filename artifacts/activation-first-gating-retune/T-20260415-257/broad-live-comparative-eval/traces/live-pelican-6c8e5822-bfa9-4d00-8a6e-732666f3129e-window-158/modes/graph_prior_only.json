@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-849d4d10"
+      "pack-3efc9c63"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-969526ce3204f5787f7e4f6839b4a8d587ee68526c39ece67f2502080c397e5a"
+    "scoreHash": "sha256-2dfebe7447805aa381e61430b07b4d426748f05a0f93a2fbc2bf0bbb2494c789"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-849d4d10",
+      "activePackId": "pack-3efc9c63",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-4550e4c74379557815c69f8d175ba39b39ce8b67e938ce0e8f23b3ecdd4bba3c",
+      "routerIdentity": "pack-3efc9c63:route_fn",
+      "selectionDigest": "sha256-1a49388330860bfa6c1964d15611b7d75c9b6c3591a5e51c9705290409f33389",
       "selectedContextIds": [
-        "pack-849d4d10:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback",
-        "pack-849d4d10:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:feedback",
-        "pack-849d4d10:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:interaction"
+        "pack-3efc9c63:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:feedback",
+        "pack-3efc9c63:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:feedback",
+        "pack-3efc9c63:event:6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Saturday, April 11th, 2026 - 5:00 PM (America/Los_Angeles) / 2026-04-12 00:00 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-2:interaction.",
         "Teaching feedback on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Please relay the command output to the user in a helpful way. If the command succeeded, share the relevant output. If it failed, explain what went wrong. Current time: Saturday, April 11th, 2026 - 4:53 PM (America/Los_Angeles) / 2026-04-11 23:53 UTC. Related interaction: 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed:cue-1:interaction.",
         "Interaction operator_override on live-session session 6c8e5822-bfa9-4d00-8a6e-732666f3129e-seed. Message: cue-1-seed-message."
       ],
-      "eventExportDigest": "sha256-8773b6028d9348bda589edd05ced2bf7be9ba5f4c407bfe85fa82920a29a127a",
+      "eventExportDigest": "sha256-c318f2cd6501c21c039bdfd4ebf50ec05a124b7dafca65beb470ef004075fa70",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/ops\","
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.29,
-        "routeSelectionMs": 4.589,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.7,
+        "totalMs": 10.099,
+        "routeSelectionMs": 6.116,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.982,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

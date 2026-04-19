@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-aea9e734"
+      "pack-188b46cd"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-ad8e9876792ae6331da8841e52bed364fa4c762dc17b4317855220b429460014"
+    "scoreHash": "sha256-1b4f1daec4c05ebdb585e87f863056f57b3771c3953d4dbefe082be3e75d5abd"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-aea9e734",
+      "activePackId": "pack-188b46cd",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-c1de8efcc557a24853a3c660c640e9e1ff14a7f207380cd970c6067b22f7df9b",
+      "routerIdentity": "pack-188b46cd:route_fn",
+      "selectionDigest": "sha256-d74f866f41621a69b41edf90e14c74a39c70d28bd8fca729faef4e4fd3a5cd62",
       "selectedContextIds": [
-        "pack-aea9e734:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:feedback",
-        "pack-aea9e734:pointer-aware-init",
-        "pack-aea9e734:pointer-passive-expansion"
+        "pack-188b46cd:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:feedback",
+        "pack-188b46cd:pointer-aware-init",
+        "pack-188b46cd:pointer-passive-expansion"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260409-192 lane C. Map the exact install/build/promotion code paths for the live router and determine whether the live learned route function is literally initialized from approved cold-start prior parameters or only same-family generically. Propose the exact contract/schema/promotion/status changes needed to enforce literal cold-start-rooted lineage for every .... Related interaction: 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, task-artifacts/guclaw-cleanup-2026-04-18/MEMORY.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, +8 more from the MEMORY index graph.",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, task-artifacts/T-20260415-257/master-plan.md, STARTUP_READY.md, +6 more."
       ],
-      "eventExportDigest": "sha256-63e3f3ee281bd03865f86b8d06d5f00495be1d6cd997ba11cfcdcbcf57d73f80",
+      "eventExportDigest": "sha256-5b30c2c2593c52c0052d6864e38f09ac0803b7ae420cc6becb75c09150195057",
       "expectedContextPhrases": [
         "/src",
         "route_fn"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.251,
-        "routeSelectionMs": 4.59,
+        "totalMs": 9.031,
+        "routeSelectionMs": 5.678,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.658,
+        "otherMs": 3.351,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 1,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-b41efd45"
+      "pack-9eade00b"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-9654c56ab1a195138e5b93fb272503df006166ea9c1626e722c9bd4530e0024f"
+    "scoreHash": "sha256-ba713d514b74a17a554ef76c20a988bee5415db44afb3b18f3642c680eb899ff"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-b41efd45",
+      "activePackId": "pack-9eade00b",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-13b55d16c8d98e4f14c3af72693381e575ba3d6ed5c990ebc2918180b8eb0e82",
+      "routerIdentity": "pack-9eade00b:route_fn",
+      "selectionDigest": "sha256-12250ee58496901d81cea5933753e276284ba1c5077cac1b1391f4f24c8a9fc1",
       "selectedContextIds": [
-        "pack-b41efd45:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback",
-        "pack-b41efd45:pointer-aware-init",
-        "pack-b41efd45:workspace-init:02e33be9"
+        "pack-9eade00b:event:4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:feedback",
+        "pack-9eade00b:workspace-init:16415817",
+        "pack-9eade00b:pointer-aware-init"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 4c69091d-1290-4bcd-a74c-7166c46e5670-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260406-161 tool-action online symmetry — Lane B (online PG / tool-action priors). Work in /Users/guclaw/.openclaw/workspace/openclawbrain. Read /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/launch-brief.md and /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-160/tool-action-symmetry-plan.md. Goal: make online updates for tool-action.... Related interaction: 4c69091d-1290-4bcd-a74c-7166c46e5670-seed:cue-1:interaction.",
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=2, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…"
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=7, outbound=17). TASKS.md — Canonical Task Ledger Last updated: 2026-04-18 5:40 PM PT Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator edits it. - Workers report only through announces, task-artifacts/<task-id>/, or task-status/<ta…",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, BOOT.md, task-artifacts/T-20260415-257/task-list.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-dd78f080f2284358c4151605acb05b01127c6349c7e4b4097f78e5e162b15f21",
+      "eventExportDigest": "sha256-35b38db714ae1b577f26c0d07a4bf75e0b06ff6f1664c4b3ac080a455aee249f",
       "expectedContextPhrases": [
         "T-20260406-161",
         "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260406-161/lane-b-online-pg.md",
@@ -90,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.868,
-        "routeSelectionMs": 5.057,
-        "promptAssemblyMs": 0.003,
-        "otherMs": 2.808,
+        "totalMs": 9.713,
+        "routeSelectionMs": 6.177,
+        "promptAssemblyMs": 0.004,
+        "otherMs": 3.532,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

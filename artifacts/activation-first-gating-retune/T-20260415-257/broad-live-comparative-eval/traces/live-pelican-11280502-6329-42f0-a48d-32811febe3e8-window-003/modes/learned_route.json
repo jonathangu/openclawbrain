@@ -9,7 +9,7 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
       "pack-bc17c331"
@@ -17,7 +17,7 @@
     "trainTurnCount": 0,
     "evalTurnCount": 1,
     "frozenEvalPackId": "pack-bc17c331",
-    "frozenEvalRouterIdentity": "pack-bc17c331:route_fn",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-5ac08d857d9a55fbcf244d898bc2e8a3008f09c1114dec31dfd23779ba12f5a8"
+    "scoreHash": "sha256-af8faaec34ccb88b5c94d5ba0868548cfa8cd0132349c16da8a3a2cb316600f6"
   },
   "turns": [
     {
@@ -55,20 +55,24 @@
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-cbd7fbde3a6577c8d942376b1283b35dd78cba8a6fbf93bdea811993eeb00207",
+      "selectionDigest": "sha256-e36c712da2c3ce69b02c8c8fd9b5f2793cba07a4c6b59d57d90d956466e223a7",
       "selectedContextIds": [
-        "pack-bc17c331:pointer-aware-init"
+        "pack-bc17c331:pointer-aware-init",
+        "pack-bc17c331:workspace-init:0e569182",
+        "pack-bc17c331:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-3:feedback"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+        "Working-set input task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md selected by pointer-aware init (inbound=1, outbound=51). Last ledger refresh: 2026-03-30 16:02 PT Status keys: active | parked | blocked | done Current queue: **(none)** Master-plan snapshot for the next cold start: - Active principal task: **none**. - Canonical repo truth: /Users/guclaw/.openclaw/workspace/backyard-ripe on main at 9689ffa2, clean, synced with origin/main a…",
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: assistant: I’m Pelican—calm, precise, and obsessed with the dollars. What do you want to do right now: pipeline health check, daily refresh performance audit, or verify exit-monitor/trade-guard behavior end-to-end?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-3:interaction."
       ],
-      "eventExportDigest": "sha256-da9d16d799b54e71768803fa536c106abc713df72a5b54f9b558771efaf775c4",
+      "eventExportDigest": "sha256-1bb9a169ec67cd5d2caf6c5d1f6dfa90e717f4a6508cfe7ae3891df834b063b3",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/workspace/quant-research\\n\\n#"
       ],
@@ -82,10 +86,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.864,
-        "routeSelectionMs": 5.45,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 3.413,
+        "totalMs": 9.389,
+        "routeSelectionMs": 5.879,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.508,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

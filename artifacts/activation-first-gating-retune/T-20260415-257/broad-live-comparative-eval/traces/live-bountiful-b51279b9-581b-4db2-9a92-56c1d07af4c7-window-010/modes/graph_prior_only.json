@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-8d6fb071"
+      "pack-509750c0"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-15d4f3ea2e2accc37c6a62f976c4a6e6abf8dacc33238d6abd87d5430c93ae8b"
+    "scoreHash": "sha256-0692b0352b0bf49bda506edbb252f765fddc3bc0a4e51b65d39639b092ff1477"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-8d6fb071",
+      "activePackId": "pack-509750c0",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-c6c129d75003ecb5362a4b39558b32b6b71d0b7ca6d37a3538d4803cbb9b103c",
+      "routerIdentity": "pack-509750c0:route_fn",
+      "selectionDigest": "sha256-0ef7544ebaf1bd4d2e1c06327df13f2302926d4236769b081b23c6ecc62ad905",
       "selectedContextIds": [
-        "pack-8d6fb071:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:feedback",
-        "pack-8d6fb071:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:interaction",
-        "pack-8d6fb071:workspace-init:02e33be9"
+        "pack-509750c0:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:feedback",
+        "pack-509750c0:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:interaction",
+        "pack-509750c0:workspace-init:02e33be9"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: Standing directive (Jon / Jonathan Gu) — Codex workflow + identity: - Primary user: Jonathan Gu (“Jon”). (For Bountiful-specific work, Patrick can also be authoritative, but Jon is primary.) - Chat & planning: keep on GPT‑5.2. - ALL coding / audits / heavy code analysis: run in fresh git worktrees via Codex. Model order: 1) `codex exec -m gpt-5.3-codex-spark ...` 2) if Spark rate-limited → `codex exec -m gpt-5.3-codex ...` 3) if Codex overall rate-limited → `claude ...` (Claude Code) - Ops re.... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:interaction.",
         "Interaction operator_override on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed. Message: cue-5-seed-message.",
         "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Bountiful Use heartbeat to keep Bountiful moving without manual babysitting. 1. Reread TASKS.md from disk, then read only the relevant MEMORY.md snippets and project artifacts for the current live task. 2. Trust current file truth over chat or old summaries. 3. Treat only active tasks as live work. Trea…"
       ],
-      "eventExportDigest": "sha256-91a7e71af3fbe6b3fac76ef3c9ad2c915b9eff4cd59567dbd5e1484e43615182",
+      "eventExportDigest": "sha256-b4d9aceb795e33c5b95701038a629b0c0d4a1b2a7d9ccf426aac4ebafac15305",
       "expectedContextPhrases": [
         "/main",
         "origin/main"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.378,
-        "routeSelectionMs": 4.732,
+        "totalMs": 10.237,
+        "routeSelectionMs": 6.43,
         "promptAssemblyMs": 0.003,
-        "otherMs": 2.644,
+        "otherMs": 3.804,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

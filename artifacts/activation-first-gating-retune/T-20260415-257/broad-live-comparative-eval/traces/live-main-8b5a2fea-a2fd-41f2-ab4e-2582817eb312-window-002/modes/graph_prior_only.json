@@ -5,14 +5,14 @@
     "activationStrategy": "seed_pack",
     "modeRequested": "heuristic",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 40,
+    "qualityScore": 80,
     "compileOkCount": 1,
-    "phraseHitCount": 0,
+    "phraseHitCount": 2,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-fe7c8f72"
+      "pack-66fd9085"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-fb061b4f2dd9092402b84c1bd8c754a311244c8c1432639712b4cce69e1f7361"
+    "scoreHash": "sha256-88d1880f1cf98602452a8b3549d1d35b935791da0cdb5ca89ce4da18a80d7267"
   },
   "turns": [
     {
@@ -50,49 +50,50 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-fe7c8f72",
+      "activePackId": "pack-66fd9085",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-cceb7b3f264790d6eb830e9488ac1eb92a83e495a73057e5e7b87eda6bde3514",
+      "routerIdentity": "pack-66fd9085:route_fn",
+      "selectionDigest": "sha256-258487be9bf408944917a7597d63ffb7b2164d8e79823a1a4617cacd6c908b0b",
       "selectedContextIds": [
-        "pack-fe7c8f72:pointer-aware-init",
-        "pack-fe7c8f72:workspace-init:48025857",
-        "pack-fe7c8f72:pointer-passive-expansion"
+        "pack-66fd9085:event:8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-1:feedback",
+        "pack-66fd9085:event:8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-1:interaction",
+        "pack-66fd9085:event:8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-        "Working-set input scripts/openclawbrain_replay_aggregate.py selected by pointer-aware init (inbound=5, outbound=0). #!/usr/bin/env python3 \"\"\"Aggregate recorded-session replay proof bundles already on disk. This is intentionally tiny and dependency-free: - scans the live replay-bundle roots for recorded_session_replay_proof_manifest.v1 bundles - groups them by trace id - computes bundle-level and pairwise mode stats - writes a JSON…",
-        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more."
+        "Teaching feedback on live-session session 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 3 lane B for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate3b on branch t129-gate3b-replay-shadow. Mission: implement replay over real candidate state for shadow-only Teacher v3 proposal classes: mutation and forgetting. Build the narrowest real replay path and class-specific replay summaries that keep mutation/forgetting sha.... Related interaction: 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-1:interaction.",
+        "Interaction operator_override on live-session session 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed. Message: cue-1-seed-message.",
+        "Interaction operator_override on live-session session 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-7945f56314b92644a05ac225f53ab2fa51f555bffd7f4099c194bc24f29a5fae",
+      "eventExportDigest": "sha256-e59725b17dcbb35b96b2d60293ea822792ba4982795e15218dab5356ed97b50c",
       "expectedContextPhrases": [
         "T-20260403-129",
         "/T-20260403-129/lane-gate3b-replay-shadow.md",
         "/forgetting"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [],
-      "missedPhrases": [
+      "phraseHits": [
         "T-20260403-129",
-        "/T-20260403-129/lane-gate3b-replay-shadow.md",
         "/forgetting"
       ],
-      "qualityScore": 40,
+      "missedPhrases": [
+        "/T-20260403-129/lane-gate3b-replay-shadow.md"
+      ],
+      "qualityScore": 80,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.712,
-        "routeSelectionMs": 5.016,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.694,
+        "totalMs": 14.905,
+        "routeSelectionMs": 9.629,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 5.274,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

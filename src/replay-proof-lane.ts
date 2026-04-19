@@ -42,6 +42,7 @@ import type {
 import {
   loadColdStartRouterArtifactBundleV1,
   selectColdStartRouteCandidateIdsFromArtifactBundleV1,
+  scoreColdStartRouteRowFromArtifactBundleV1,
   summarizeColdStartRouterArtifactBundleRuntimeTruthV1,
 } from "./brain-core/cold-start-router-runtime.ts";
 
@@ -108,7 +109,8 @@ export interface RecordedSessionReplayProofLaneTraceInputV1 {
 
 export interface LearnedRouteCandidateArtifactOverrideV1 {
   artifactDir: string;
-  mode?: "selection_override" | "served_live_policy_spike" | "served_pack_adapter";
+  mode?: "selection_override" | "graph_walk_score_boost" | "served_live_policy_spike" | "served_pack_adapter";
+  replayCursorPath?: string[];
 }
 
 export interface WriteRecordedSessionReplayProofLaneInputV1 {
@@ -748,9 +750,28 @@ function replayCandidateSemanticClass(blockId: string): string {
   return "other_context";
 }
 
+function replayTransferScoreHint(blockId: string, index: number): number {
+  const semanticClass = replayCandidateSemanticClass(blockId);
+  const value = semanticClass === "feedback_context"
+    ? 0.95
+    : semanticClass === "event_context"
+      ? 0.9
+      : semanticClass === "phrase_context"
+        ? 0.65
+        : semanticClass === "interaction_context"
+          ? 0.55
+          : semanticClass === "cue_context"
+            ? 0.45
+            : semanticClass === "init_context"
+              ? 0.2
+              : Math.max(0.15, 0.45 - (index * 0.05));
+  return Number(value.toFixed(2));
+}
+
 export function buildReplayLearnedRouteDecisionRowV1(params: {
   artifactDatasetId: string;
   input: LearnedRouteSelectionOverrideInput;
+  cursorPath?: string[];
 }): ColdStartRouteDecisionRowV1 | null {
   if (params.input.maxBlocks <= 0 || params.input.ranked.length === 0) {
     return null;
@@ -763,12 +784,13 @@ export function buildReplayLearnedRouteDecisionRowV1(params: {
   // Do not copy raw replay compile scores into score_hint here. Those magnitudes come from the
   // existing runtime ranking surface and can overwhelm the candidate artifact's transferable
   // semantic/live-prior signals, which defeats the point of the replay override experiment.
-  const candidateSet: RouteCandidateV1[] = replayCandidates.map((entry) => ({
+  const candidateSet: RouteCandidateV1[] = replayCandidates.map((entry, index) => ({
     candidate_id: entry.blockId,
     candidate_type: "graph_node",
     semantic_class: replayCandidateSemanticClass(entry.blockId),
     authority: "recorded_session_replay",
     freshness: "replay_eval",
+    score_hint: replayTransferScoreHint(entry.blockId, index),
     ...(typeof entry.tokenCount === "number" && Number.isFinite(entry.tokenCount)
       ? { token_cost: Math.max(0, Math.round(entry.tokenCount)) }
       : {}),
@@ -793,7 +815,7 @@ export function buildReplayLearnedRouteDecisionRowV1(params: {
     row_id: `recorded-session-replay-override:${rowDigest}`,
     dataset_id: params.artifactDatasetId,
     query,
-    cursor_path: ["recorded_session_replay"],
+    cursor_path: params.cursorPath ?? ["recorded_session_replay"],
     candidate_set: candidateSet,
     teacher_action: {
       kind: "tool",
@@ -832,13 +854,20 @@ function createLearnedRouteSelectionOverride(
   const authoritativeUsedLearnedRouteFn = overrideMode === "served_live_policy_spike";
   const evidenceSource = authoritativeUsedLearnedRouteFn
     ? `candidate_override_live_policy:${artifactTruth.artifactId}@${artifactTruth.artifactVersion}`
-    : `candidate_override:${artifactTruth.artifactId}@${artifactTruth.artifactVersion}`;
+    : overrideMode === "graph_walk_score_boost"
+      ? `candidate_override_graph_walk_score_boost:${artifactTruth.artifactId}@${artifactTruth.artifactVersion}`
+      : `candidate_override:${artifactTruth.artifactId}@${artifactTruth.artifactVersion}`;
+
+  const replayCursorPath = overrideMode === "graph_walk_score_boost" && input.replayCursorPath?.length
+    ? input.replayCursorPath
+    : undefined;
 
   return {
     select(selectionInput) {
       const row = buildReplayLearnedRouteDecisionRowV1({
         artifactDatasetId,
         input: selectionInput,
+        cursorPath: replayCursorPath,
       });
       if (row === null) {
         return {
@@ -846,6 +875,31 @@ function createLearnedRouteSelectionOverride(
           routerIdentity: artifactTruth.routerIdentity,
           evidenceSource,
           authoritativeUsedLearnedRouteFn,
+        };
+      }
+      if (overrideMode === "graph_walk_score_boost") {
+        const scoring = scoreColdStartRouteRowFromArtifactBundleV1({
+          artifactBundle,
+          row,
+        });
+        const meanScore = scoring.rankedCandidates.length > 0
+          ? scoring.rankedCandidates.reduce((sum, entry) => sum + entry.score, 0) / scoring.rankedCandidates.length
+          : 0;
+        const scoreBoostsByBlockId = Object.fromEntries(
+          scoring.policyDistribution.actions
+            .filter((entry) => entry.action.type === "traverse")
+            .map((entry) => [
+              entry.action.targetNodeId,
+              Number(Math.max(-5, Math.min(5, (entry.score - meanScore) * 2)).toFixed(3)),
+            ]),
+        );
+        return {
+          selectedBlockIds: scoring.rankedCandidates.slice(0, 1).map((entry) => entry.candidate.candidate_id),
+          routerIdentity: artifactTruth.routerIdentity,
+          evidenceSource,
+          authoritativeUsedLearnedRouteFn,
+          selectionMode: "graph_walk_score_boost",
+          scoreBoostsByBlockId,
         };
       }
       const selection = selectColdStartRouteCandidateIdsFromArtifactBundleV1({

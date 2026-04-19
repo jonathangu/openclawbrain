@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-55518928"
+      "pack-ff2c7351"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-51bfacd17586e8ed244814dbbbb39a2f5ae27a8b4539f41162990eaa12c8634d"
+    "scoreHash": "sha256-f0ce012abaae5b60c3a7881cfd35e75266d9ee660f7463c5ac3f7f0b45a53c01"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-55518928",
+      "activePackId": "pack-ff2c7351",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-8a9c62bc1a5befd892a432fe193f6741c2830dfa0549e4f9075bf0f51656f5d9",
+      "routerIdentity": "pack-ff2c7351:route_fn",
+      "selectionDigest": "sha256-363b740eddb23b970d89884905855af0a300129ab6552c19aaef4d34646b0dee",
       "selectedContextIds": [
-        "pack-55518928:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
-        "pack-55518928:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction",
-        "pack-55518928:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback"
+        "pack-ff2c7351:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:feedback",
+        "pack-ff2c7351:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction",
+        "pack-ff2c7351:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19095\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:22 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Tell me about our execution. Did we trade all four kinds of structures yesterday? Will we do it today? Check everything. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-4:interaction.",
         "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-4-seed-message.",
         "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19098\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:28 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Why not all four? Is there something structurally blocking us. Some calculation? Can you check logs. Is something broken. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-4c8ebc6cdb91a024ede173c8f8deb9a9042f389fdf511f92eed655cbf7e859e8",
+      "eventExportDigest": "sha256-a4f9f48a91c103d4693a25d028d1a45af29e03a0a52cf43a5df1c0270285ea22",
       "expectedContextPhrases": [
         "durable engineering master plan",
         "engineering master plan artifact",
@@ -89,10 +89,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.165,
-        "routeSelectionMs": 5.539,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.624,
+        "totalMs": 8.594,
+        "routeSelectionMs": 5.241,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.352,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

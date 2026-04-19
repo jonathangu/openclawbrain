@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 2,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-bc49e4ab"
+      "pack-abbb915b"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-7c0b1baa40fb8712454189b3359fde8c742769ddb02c6ee5984925671aaaba7c"
+    "scoreHash": "sha256-040773264be213a03d0df7ccda0ab2d618473b509a15d4061ecfeb4e9f6939e6"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-bc49e4ab",
+      "activePackId": "pack-abbb915b",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-4466328bb6008684a26826d02787d4b911587b96963e7060b1d50ff8f91725ac",
+      "routerIdentity": "pack-abbb915b:route_fn",
+      "selectionDigest": "sha256-e6a9c96f9983a04312a02d1d9aa30ab7f46dbdee08370987dd41dea6875cf898",
       "selectedContextIds": [
-        "pack-bc49e4ab:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
-        "pack-bc49e4ab:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback",
-        "pack-bc49e4ab:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:feedback"
+        "pack-abbb915b:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:feedback",
+        "pack-abbb915b:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:feedback",
+        "pack-abbb915b:event:befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: assistant: Work is continuing. I launched the 126a–126d blocker swarm from the retrain single-truth plan and updated `TASKS.md` to reflect that they’re now active. I also checked live market-hours truth on deployed head `d079a46`: the `10:30 ET` cycle processed successfully in explicit GBM-only fallback with no new hold and no TFT crash, so that crash seam is materially closed. Current live issue is narrower now: - latest processed snapshot: `data/2026/04/09/10-30-18.json` - `run_once.status=success` - .... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-6:interaction.",
         "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: System: [2026-04-09 07:02:47 PDT] Exec completed (briny-ne, code 0) :: e7_35.py M tests/test_native_remake_handoff_contract.py M tests/test_pelican_deep_health.py M tests/test_pipeline_health_check.py M tests/test_refresh_canonical_training_inputs.py… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-4:interaction.",
         "Teaching feedback on live-session session befebc12-c656-4c5a-9bc2-9b8329029eda-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Thursday, April 9.... Related interaction: befebc12-c656-4c5a-9bc2-9b8329029eda-seed:cue-1:interaction."
       ],
-      "eventExportDigest": "sha256-a1f1c5ba791657c019b65c88b7d1927292a7dc2dcd46b0d36b4efa54c5dab99e",
+      "eventExportDigest": "sha256-4f9b943aa340094345bb57d85b1e98a20063844591bbb6a2fd3b2db446d804ed",
       "expectedContextPhrases": [
         "/Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/126c-listener-scheduler-freshness-2026-04-09.md\"}",
         "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
@@ -87,10 +87,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.911,
-        "routeSelectionMs": 5.173,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 2.737,
+        "totalMs": 13.351,
+        "routeSelectionMs": 8.434,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 4.914,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

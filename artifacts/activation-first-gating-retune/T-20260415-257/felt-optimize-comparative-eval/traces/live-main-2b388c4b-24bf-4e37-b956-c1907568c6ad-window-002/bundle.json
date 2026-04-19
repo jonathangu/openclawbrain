@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-09T14:02:47.860Z",
   "traceHash": "sha256-a7dfee8569cbeebae47062b33f26bd559b44ab7e32ac7a65f3d53fcd4f9d6446",
   "fixtureHash": "sha256-bf2c49e43d0148934d94e443780f19f84be1befb9f46554500ee32090d69fd0f",
-  "scoreHash": "sha256-d27cf9cf246688c329ed06e9441a423adb466e5bbdf9b8e0120adbd2069cc727",
+  "scoreHash": "sha256-9d889d7f8d6005886f00f448d764b5fbc2ad65604cd2ebd260506ba8d87a0e70",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.031,
+            "totalMs": 0.025,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.031,
+            "otherMs": 0.025,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -129,10 +129,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-aea9e734"
+          "pack-188b46cd"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-ad8e9876792ae6331da8841e52bed364fa4c762dc17b4317855220b429460014"
+        "scoreHash": "sha256-1b4f1daec4c05ebdb585e87f863056f57b3771c3953d4dbefe082be3e75d5abd"
       },
       "turns": [
         {
@@ -170,28 +170,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-aea9e734",
+          "activePackId": "pack-188b46cd",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-c1de8efcc557a24853a3c660c640e9e1ff14a7f207380cd970c6067b22f7df9b",
+          "routerIdentity": "pack-188b46cd:route_fn",
+          "selectionDigest": "sha256-d74f866f41621a69b41edf90e14c74a39c70d28bd8fca729faef4e4fd3a5cd62",
           "selectedContextIds": [
-            "pack-aea9e734:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:feedback",
-            "pack-aea9e734:pointer-aware-init",
-            "pack-aea9e734:pointer-passive-expansion"
+            "pack-188b46cd:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:feedback",
+            "pack-188b46cd:pointer-aware-init",
+            "pack-188b46cd:pointer-passive-expansion"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260409-192 lane C. Map the exact install/build/promotion code paths for the live router and determine whether the live learned route function is literally initialized from approved cold-start prior parameters or only same-family generically. Propose the exact contract/schema/promotion/status changes needed to enforce literal cold-start-rooted lineage for every .... Related interaction: 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:interaction.",
-            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
-            "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, learning/scripts/harvest.sh, scripts/openclawbrain-sync.py, +6 more."
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, task-artifacts/guclaw-cleanup-2026-04-18/MEMORY.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, +8 more from the MEMORY index graph.",
+            "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/guclaw-cleanup-2026-04-18/USER.md, TASKS.md, task-artifacts/T-20260415-257/task-list.md, task-artifacts/T-20260415-257/felt-results-plan.md, task-artifacts/T-20260415-257/master-plan.md, STARTUP_READY.md, +6 more."
           ],
-          "eventExportDigest": "sha256-63e3f3ee281bd03865f86b8d06d5f00495be1d6cd997ba11cfcdcbcf57d73f80",
+          "eventExportDigest": "sha256-5b30c2c2593c52c0052d6864e38f09ac0803b7ae420cc6becb75c09150195057",
           "expectedContextPhrases": [
             "/src",
             "route_fn"
@@ -207,10 +207,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.251,
-            "routeSelectionMs": 4.59,
+            "totalMs": 9.031,
+            "routeSelectionMs": 5.678,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.658,
+            "otherMs": 3.351,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -243,10 +243,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-aea9e734"
+          "pack-188b46cd"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -274,7 +274,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-7d0772135a51930e79e254e9541d62bf50c12f89e3794cf2282a82fd8f27efcd"
+        "scoreHash": "sha256-326f79f0e07e8cad7bbcdde8714bb5b27f9e56f5c02e043aee3cdd781dbd910b"
       },
       "turns": [
         {
@@ -284,28 +284,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-aea9e734",
+          "activePackId": "pack-188b46cd",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-0cf034632b10e8ac2f0af8b82e1db26ceb4c55b6d7813d071738a54b553f83e0",
+          "routerIdentity": "pack-188b46cd:route_fn",
+          "selectionDigest": "sha256-36b6dff4d11635f6475f9e8c0aae973457ce901fd86c6dd180f071b2233a996b",
           "selectedContextIds": [
-            "pack-aea9e734:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:feedback",
-            "pack-aea9e734:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:interaction",
-            "pack-aea9e734:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-2:interaction"
+            "pack-188b46cd:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:feedback",
+            "pack-188b46cd:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:interaction",
+            "pack-188b46cd:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260409-192 lane C. Map the exact install/build/promotion code paths for the live router and determine whether the live learned route function is literally initialized from approved cold-start prior parameters or only same-family generically. Propose the exact contract/schema/promotion/status changes needed to enforce literal cold-start-rooted lineage for every .... Related interaction: 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:interaction.",
             "Interaction operator_override on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed. Message: cue-1-seed-message.",
             "Interaction operator_override on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-a57d7633bd7966936640f06cf872546d3ea340accb49ed13fc3a92eb47ba6a3b",
+          "eventExportDigest": "sha256-80fa8de10d0525510eed7813d4bad0539d3b06d718a739819183bd6a50dd9527",
           "expectedContextPhrases": [
             "/src",
             "route_fn"
@@ -321,10 +321,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.979,
-            "routeSelectionMs": 5.291,
+            "totalMs": 9.157,
+            "routeSelectionMs": 5.852,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.685,
+            "otherMs": 3.303,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -360,12 +360,12 @@
         "usedLearnedRouteTurnCount": 0,
         "promotionCount": 0,
         "packIds": [
-          "pack-015e3fe5"
+          "pack-188b46cd"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-015e3fe5",
-        "frozenEvalRouterIdentity": "pack-015e3fe5:route_fn",
+        "frozenEvalPackId": "pack-188b46cd",
+        "frozenEvalRouterIdentity": "pack-188b46cd:route_fn",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -389,7 +389,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-1a888109a79638b933b91d316b19933de7aed5d157bb12af49cfe7083e59489d"
+        "scoreHash": "sha256-d9fb23bc6b111fa9ac9ee004296001a2b0f8bd9cfd1ae90aac2716f284945f51"
       },
       "turns": [
         {
@@ -399,24 +399,24 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-015e3fe5",
+          "activePackId": "pack-188b46cd",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
           "usedLearnedRouteFn": false,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_artifact:candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
+          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override_graph_walk_score_boost:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-e1d4f719186655cf8d84eb7b257bc6d5c2e93ba96d7f5096d4a6d144e30c9670",
+          "selectionDigest": "sha256-973722839a130d9505b7a8b1603472ba5aebb43cf87c23473b56e6a2f4e3eed9",
           "selectedContextIds": [
-            "pack-015e3fe5:pointer-aware-init"
+            "pack-188b46cd:event:2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+            "Teaching feedback on live-session session 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: T-20260409-192 lane C. Map the exact install/build/promotion code paths for the live router and determine whether the live learned route function is literally initialized from approved cold-start prior parameters or only same-family generically. Propose the exact contract/schema/promotion/status changes needed to enforce literal cold-start-rooted lineage for every .... Related interaction: 2b388c4b-24bf-4e37-b956-c1907568c6ad-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-99a671c8d26cbf6484edf513f1470e80c7629eaaeaa627c2e081f99fd9e4bd6b",
+          "eventExportDigest": "sha256-25e168dec91ac6c38e47f0023f296cdd3d7c7e1f98a187c6812dfb6b9911096d",
           "expectedContextPhrases": [
             "/src",
             "route_fn"
@@ -432,10 +432,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.318,
-            "routeSelectionMs": 5.958,
+            "totalMs": 8.676,
+            "routeSelectionMs": 5.409,
             "promptAssemblyMs": 0.002,
-            "otherMs": 3.358,
+            "otherMs": 3.265,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -479,5 +479,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-b83bd0659e8f08f4f189f44bc253aa7d1ee6a811d77d3a6aa079c7bde35558a8"
+  "bundleHash": "sha256-bff36b56aded34f1316330a346ab2e78a11db9b9bd70c9d7deb78a4d345149c1"
 }

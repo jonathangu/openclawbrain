@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-11T22:23:33.751Z",
   "traceHash": "sha256-c65984dab810fcd56a73ba24f7e48a3de3329e9e72c9abc055205970cf393432",
   "fixtureHash": "sha256-6edadb4cb34df6bab57971cb77cafbb8b923e3e92f73e144950ce412708011f4",
-  "scoreHash": "sha256-5235af6c877a4fff324b3430c6ae45d6a7883ade45223bd4b13cd52b24ae7c0e",
+  "scoreHash": "sha256-aface03cec178f9c23c9b1a0d3caa1c9a330581be8c331987e862e46afa166a3",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.027,
+            "totalMs": 0.034,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.027,
+            "otherMs": 0.034,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -127,10 +127,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-e1775aae"
+          "pack-fd195cf1"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-bd52abca703b642cc39fa471250da918e487b530ed7516c53b66061570a33e53"
+        "scoreHash": "sha256-e36033689ff3bc03c11cbb759ba1e15b179a742438f65f6847c667f3567a8416"
       },
       "turns": [
         {
@@ -168,28 +168,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e1775aae",
+          "activePackId": "pack-fd195cf1",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-cae61cdead4e82dfb6bada83f791af8c72a873e3b6a3bc3271e37afa54a3be41",
+          "routerIdentity": "pack-fd195cf1:route_fn",
+          "selectionDigest": "sha256-68bcd0ac0cd7d6cca076780704ed082edd40e6c03583d81cec0c7554653874ba",
           "selectedContextIds": [
-            "pack-e1775aae:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
-            "pack-e1775aae:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
-            "pack-e1775aae:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-4:feedback"
+            "pack-fd195cf1:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
+            "pack-fd195cf1:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
+            "pack-fd195cf1:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: Important contract clarification from Jon for the multi-horizon training lane. Use this three-surface model explicitly: 1. snapshot features = facts known at snapshot time and shared across horizons 2. labels = realized future outcomes 3. known-future horizon-attached features = values that are deterministic once you choose the target horizon / attached label row, e.g. target_dte and horizon-relative event semantics like time-until-earnings/FOMC/CPI/NFP and crossing flags Critical rule: - do .... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction.",
             "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-B training-contract multi-horizon lane in /Users/guclaw/worktrees/quant-research/202-mh1b-training. Goal: - make GBM/TFT consume multi-horizon rows explicitly - ensure target_dte is active in training/panel paths and artifact/reporting surfaces - keep actual_exp_dte and dte_gap_abs out of model feature inputs - run focused tests for retrai.... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction.",
             "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: assistant: I’m tightening the contract wording in code now so the three surfaces are explicit, not just implied by exclusion rules. ToolCall exec {\"command\": \"grep -Rni \\\"known_future\\\\|snapshot features\\\\|horizon-attached\\\\|three-surface\\\\|surface\\\" /Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py /Users/guclaw/worktrees/quant-research/202-mh1b-train. Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-8a35c883745c3782e54f21ad039db0b701a11cd782a1e271cd2b4cd455a02d40",
+          "eventExportDigest": "sha256-e149ef4c55fa9529de64f41ee5116e8583e4c785484646f7ef370420a7f988a7",
           "expectedContextPhrases": [
             "/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.488,
-            "routeSelectionMs": 4.767,
+            "totalMs": 10.523,
+            "routeSelectionMs": 6.536,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.718,
+            "otherMs": 3.984,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -239,10 +239,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-e1775aae"
+          "pack-fd195cf1"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-eb18a6f18dba190988d8d6af206ad3f5c7673bfa8b75a97375acc7afce6dcd95"
+        "scoreHash": "sha256-e39946314adc9b3a602b9b520f5ba28dcd1c71811d5f5c5d130c2caff0382dd0"
       },
       "turns": [
         {
@@ -280,28 +280,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e1775aae",
+          "activePackId": "pack-fd195cf1",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-a87eb6dd0c68915d7a68b3b03c01c8fe7519486aa1341b03504d4e1538c4769e",
+          "routerIdentity": "pack-fd195cf1:route_fn",
+          "selectionDigest": "sha256-c6e65095e3ec0cde9d2c24b664569fb53f8bc8c52e852ca5412e4af75689e227",
           "selectedContextIds": [
-            "pack-e1775aae:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
-            "pack-e1775aae:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction",
-            "pack-e1775aae:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback"
+            "pack-fd195cf1:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
+            "pack-fd195cf1:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction",
+            "pack-fd195cf1:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: Important contract clarification from Jon for the multi-horizon training lane. Use this three-surface model explicitly: 1. snapshot features = facts known at snapshot time and shared across horizons 2. labels = realized future outcomes 3. known-future horizon-attached features = values that are deterministic once you choose the target horizon / attached label row, e.g. target_dte and horizon-relative event semantics like time-until-earnings/FOMC/CPI/NFP and crossing flags Critical rule: - do .... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction.",
             "Interaction operator_override on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed. Message: cue-3-seed-message.",
             "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-B training-contract multi-horizon lane in /Users/guclaw/worktrees/quant-research/202-mh1b-training. Goal: - make GBM/TFT consume multi-horizon rows explicitly - ensure target_dte is active in training/panel paths and artifact/reporting surfaces - keep actual_exp_dte and dte_gap_abs out of model feature inputs - run focused tests for retrai.... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction."
           ],
-          "eventExportDigest": "sha256-4f6e8866bfd70ab2b1bf154410418583a70ed15eef2bcf125f12ff8cbb8e6b33",
+          "eventExportDigest": "sha256-78281b3bdbfa2edeedba2d531aa4b8028422642617441d21c93ca1ac73b082bf",
           "expectedContextPhrases": [
             "/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.353,
-            "routeSelectionMs": 5.652,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 2.699,
+            "totalMs": 11.112,
+            "routeSelectionMs": 7.014,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 4.096,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -351,15 +351,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-9137fac1"
+          "pack-fd195cf1"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-9137fac1",
-        "frozenEvalRouterIdentity": "pack-9137fac1:route_fn",
+        "frozenEvalPackId": "pack-fd195cf1",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-ddb394d6b8e2091badc3c4c40a84ec5f97b1e5ea808acaacbfef85e817d44913"
+        "scoreHash": "sha256-6d292df9229fe5b1c152a2e7264368efc0faa7c12b365d551bb97040c530dea6"
       },
       "turns": [
         {
@@ -393,24 +393,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-9137fac1",
+          "activePackId": "pack-fd195cf1",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-1218d4e7c61b6fff48b774af109bedf804b513a37210a61ddd18b5cd45cf2455",
+          "selectionDigest": "sha256-68bcd0ac0cd7d6cca076780704ed082edd40e6c03583d81cec0c7554653874ba",
           "selectedContextIds": [
-            "pack-9137fac1:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback"
+            "pack-fd195cf1:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
+            "pack-fd195cf1:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
+            "pack-fd195cf1:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-4:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: Important contract clarification from Jon for the multi-horizon training lane. Use this three-surface model explicitly: 1. snapshot features = facts known at snapshot time and shared across horizons 2. labels = realized future outcomes 3. known-future horizon-attached features = values that are deterministic once you choose the target horizon / attached label row, e.g. target_dte and horizon-relative event semantics like time-until-earnings/FOMC/CPI/NFP and crossing flags Critical rule: - do .... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction."
+            "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: Important contract clarification from Jon for the multi-horizon training lane. Use this three-surface model explicitly: 1. snapshot features = facts known at snapshot time and shared across horizons 2. labels = realized future outcomes 3. known-future horizon-attached features = values that are deterministic once you choose the target horizon / attached label row, e.g. target_dte and horizon-relative event semantics like time-until-earnings/FOMC/CPI/NFP and crossing flags Critical rule: - do .... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-B training-contract multi-horizon lane in /Users/guclaw/worktrees/quant-research/202-mh1b-training. Goal: - make GBM/TFT consume multi-horizon rows explicitly - ensure target_dte is active in training/panel paths and artifact/reporting surfaces - keep actual_exp_dte and dte_gap_abs out of model feature inputs - run focused tests for retrai.... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: assistant: I’m tightening the contract wording in code now so the three surfaces are explicit, not just implied by exclusion rules. ToolCall exec {\"command\": \"grep -Rni \\\"known_future\\\\|snapshot features\\\\|horizon-attached\\\\|three-surface\\\\|surface\\\" /Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py /Users/guclaw/worktrees/quant-research/202-mh1b-train. Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-4:interaction."
           ],
-          "eventExportDigest": "sha256-c7b4c3b8dedcd1b5d48febdea294e59fd7c6b612993bb41fc03e9f3c834a19e5",
+          "eventExportDigest": "sha256-0aab810a0f110c813b3ff56c5e42d62707ce32b463f38e9e478f50735a2c29b8",
           "expectedContextPhrases": [
             "/openclaw/skills/coding-agent/SKILL.md\"}"
           ],
@@ -424,10 +428,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.398,
-            "routeSelectionMs": 5.851,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.546,
+            "totalMs": 9.035,
+            "routeSelectionMs": 5.893,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.14,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +475,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-c32ad48bd360a0bb2cf1b66e677b94227f29b175431ce8d3b45b6538b550422b"
+  "bundleHash": "sha256-eee03c6b11444d4be0d2b6c4b6d1dc7335e2f2780fa9deb9f0e34733e6cdb4f5"
 }

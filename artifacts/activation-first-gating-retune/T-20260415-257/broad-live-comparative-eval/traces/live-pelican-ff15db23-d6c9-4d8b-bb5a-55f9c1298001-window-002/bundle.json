@@ -6,7 +6,7 @@
   "generatedAt": "2026-02-26T17:21:33.153Z",
   "traceHash": "sha256-d9abdc2f8435606514daaaad4927f60e901a9d2b092eb5d39df77887ebe5a304",
   "fixtureHash": "sha256-6e857ab9cb3ba1ec3e0f72cceabb24485f23daf6db41d61af726b2888aeb0f66",
-  "scoreHash": "sha256-03fef889ac87e6d76c29c30473fef04cdda6e8ec107fff8d7e0df140abc216ca",
+  "scoreHash": "sha256-5dc6f468722ece9715b1f395a55f39c4d88f1a9d8532bdb74ef8b1be8ed5f7b3",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -94,10 +94,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.048,
+            "totalMs": 0.028,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.048,
+            "otherMs": 0.028,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -129,10 +129,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-e86d9707"
+          "pack-2df7280b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -160,7 +160,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-8e3b58d9cdbdc8c6678c9fa61baabd54d0570ec242666d2968400161dfacfc9c"
+        "scoreHash": "sha256-5f7576c387357d2d554daa6bd3e0f4227be416b0c89c5f6ac5a6806b3684bad3"
       },
       "turns": [
         {
@@ -170,28 +170,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e86d9707",
+          "activePackId": "pack-2df7280b",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-39a3ebd4dd226bb35ad3f8d05e4411441c9ed28ec308a9b0df22e4f8d34c6bc3",
+          "routerIdentity": "pack-2df7280b:route_fn",
+          "selectionDigest": "sha256-f0f0056e7fd782be088911b2f9e6c335a73b53d13d5fe26397308d8e9c9cb661",
           "selectedContextIds": [
-            "pack-e86d9707:pointer-aware-init",
-            "pack-e86d9707:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:feedback",
-            "pack-e86d9707:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-3:feedback"
+            "pack-2df7280b:pointer-aware-init",
+            "pack-2df7280b:workspace-init:51972c8c",
+            "pack-2df7280b:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:feedback"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
-            "Teaching feedback on live-session session ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed: assistant: Bootstrap worked. 214 nodes, 1214 edges from 47 files. Now let me try `install-hook` to wire it into my workspace, then test a query. ToolCall exec {\"command\": \"source ~/.crabpath/venv/bin/activate && source /Users/guclaw/.openclaw/workspace/quant-research/.env 2>/dev/null; export OPENAI_API_KEY; crabpath install-hook --help 2>&1\", \"timeout\": 10}. Related interaction: ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:interaction.",
-            "Teaching feedback on live-session session ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed: assistant: Dry run says it would add a block to AGENTS.md. Let me skip the hook for now (I don't want to auto-modify AGENTS.md without understanding what it writes) and instead test the actual query pipeline. ToolCall exec {\"command\": \"source ~/.crabpath/venv/bin/activate && source /Users/guclaw/.openclaw/workspace/quant-research/.env 2>/dev/null; export OPENAI_API_KEY; crabpath query \\\"how does the exit monitor work\\\" --graph ~/.crabpath/. Related interaction: ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-3:interaction."
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph.",
+            "Top-priority boot input memory/2026-02-26-crabpath-eval.md selected by pointer-aware init (inbound=0, outbound=2). CrabPath Installation & Evaluation — 2026-02-26 What Is It Graph-based memory architecture for agents. Documents = nodes, weighted edges, LLM activation function. Claims to learn retrieval paths via policy gradients and inhibitory edges. Installation - **Package:** crabpath v1.0.7 from PyPI - **Venv:** ~/.crabpath/ven…",
+            "Teaching feedback on live-session session ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed: assistant: Bootstrap worked. 214 nodes, 1214 edges from 47 files. Now let me try `install-hook` to wire it into my workspace, then test a query. ToolCall exec {\"command\": \"source ~/.crabpath/venv/bin/activate && source /Users/guclaw/.openclaw/workspace/quant-research/.env 2>/dev/null; export OPENAI_API_KEY; crabpath install-hook --help 2>&1\", \"timeout\": 10}. Related interaction: ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:interaction."
           ],
-          "eventExportDigest": "sha256-c8099617f4ce16be2da7582ce7106d3f665aa799a65de6c520dee81cfeec3351",
+          "eventExportDigest": "sha256-403606c707029491e025b77d219f109c30e77fe9ca3b40cb71fe0f77bf65e1a9",
           "expectedContextPhrases": [
             "hey",
             "jon."
@@ -207,10 +207,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.37,
-            "routeSelectionMs": 4.619,
+            "totalMs": 9.513,
+            "routeSelectionMs": 5.783,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.75,
+            "otherMs": 3.728,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -243,10 +243,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-e86d9707"
+          "pack-2df7280b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -274,7 +274,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-880be0734ff79227640583ddefa4f52a9e67406949911aded6a747041ff11cd0"
+        "scoreHash": "sha256-4a29e0a091d7d4f0de87781feb75b6606dfcee54e80aeb9903839c5617b03705"
       },
       "turns": [
         {
@@ -284,28 +284,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-e86d9707",
+          "activePackId": "pack-2df7280b",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-cf076f258a20fecc1d703a1ba7ab28884515344f4d5ad1b32ef8a1aead902d7b",
+          "routerIdentity": "pack-2df7280b:route_fn",
+          "selectionDigest": "sha256-32de99dd377f68ce067483f6b2c98b07536bac8e174f148209772fa3b39790e4",
           "selectedContextIds": [
-            "pack-e86d9707:pointer-aware-init",
-            "pack-e86d9707:workspace-init:51972c8c",
-            "pack-e86d9707:workspace-init:40c1c577"
+            "pack-2df7280b:pointer-aware-init",
+            "pack-2df7280b:workspace-init:51972c8c",
+            "pack-2df7280b:workspace-init:40c1c577"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set quant-research/CANONICAL.md, quant-research/IRON_SOUL.md, TASKS.md, quant-research/README.md, +2 more, and passive expansion BOOT.md, docs/jon-model.md, docs/prediction_pipeline.md, docs/quant-lessons.md, +8 more from the MEMORY index graph.",
             "Top-priority boot input memory/2026-02-26-crabpath-eval.md selected by pointer-aware init (inbound=0, outbound=2). CrabPath Installation & Evaluation — 2026-02-26 What Is It Graph-based memory architecture for agents. Documents = nodes, weighted edges, LLM activation function. Claims to learn retrieval paths via policy gradients and inhibitory edges. Installation - **Package:** crabpath v1.0.7 from PyPI - **Venv:** ~/.crabpath/ven…",
-            "Top-priority boot input AGENTS.md selected by pointer-aware init (inbound=2, outbound=11). AGENTS.md — Pelican Stable Operating Rules This file is stable policy only. Live task state belongs in TASKS.md. Startup 1. Read BOOT.md. 2. Read TASKS.md. 3. Read SOUL.md, USER.md, docs/tool-manifest.md, docs/secret-pointers.md, MEMORY.md, and memory/YYYY-MM-DD.md (today, then yesterday if needed). 4. Restore state f…"
+            "Top-priority boot input AGENTS.md selected by pointer-aware init (inbound=1, outbound=8). AGENTS.md — Pelican operating rules Stable policy only. Live task state belongs in TASKS.md. Startup 1. Read BOOT.md. 2. Read STARTUP_READY.md. 3. Read only the active section of TASKS.md plus the current top-priority in-progress task block. 4. Read SOUL.md, USER.md, and MEMORY.md. 5. Open deeper docs, artifacts, and…"
           ],
-          "eventExportDigest": "sha256-0cc061d07a875e1e33f799710e4829889f381c99fdfa53cf09ec567c058f48d0",
+          "eventExportDigest": "sha256-1ad0e19dbe04cd13a6dd14048b310e057658d39af1d889f3b0648f3058fdbd19",
           "expectedContextPhrases": [
             "hey",
             "jon."
@@ -321,10 +321,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.402,
-            "routeSelectionMs": 4.672,
+            "totalMs": 9.406,
+            "routeSelectionMs": 5.698,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.728,
+            "otherMs": 3.706,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -357,15 +357,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 2,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-78a6ac76"
+          "pack-2df7280b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-78a6ac76",
-        "frozenEvalRouterIdentity": "pack-78a6ac76:route_fn",
+        "frozenEvalPackId": "pack-2df7280b",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -389,7 +389,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-34adc1efd9ac99caf0d9e5bfb6c3ff7e104ba3dc5543833951113e11de839395"
+        "scoreHash": "sha256-97372bbe3928acc910fc0bf03494de200b545a783fac6066e1a54d9642b69995"
       },
       "turns": [
         {
@@ -399,24 +399,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-78a6ac76",
+          "activePackId": "pack-2df7280b",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-b2b3b3c9922cacb62fd799e8d4f8394c38a1375c1f941cd33d9e3fe153146b26",
+          "selectionDigest": "sha256-1f0475e813b8878e5be9cac5f05ffaad4a48581eb9d59085344483008b760971",
           "selectedContextIds": [
-            "pack-78a6ac76:pointer-aware-init"
+            "pack-2df7280b:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:feedback",
+            "pack-2df7280b:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-1:interaction",
+            "pack-2df7280b:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
-            "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+            "Teaching feedback on live-session session ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed: assistant: Bootstrap worked. 214 nodes, 1214 edges from 47 files. Now let me try `install-hook` to wire it into my workspace, then test a query. ToolCall exec {\"command\": \"source ~/.crabpath/venv/bin/activate && source /Users/guclaw/.openclaw/workspace/quant-research/.env 2>/dev/null; export OPENAI_API_KEY; crabpath install-hook --help 2>&1\", \"timeout\": 10}. Related interaction: ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:interaction.",
+            "Interaction operator_override on live-session session ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed. Message: cue-1-seed-message.",
+            "Interaction operator_override on live-session session ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-a58719a1ed7f0213512b304f794a094866008d1067f803a96a7dcdbb284533db",
+          "eventExportDigest": "sha256-38589793d873cb86effe0a5a82e57a96edb8369f45d577ddf0f0b8b4284a097a",
           "expectedContextPhrases": [
             "hey",
             "jon."
@@ -432,10 +436,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 8.89,
-            "routeSelectionMs": 5.426,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.463,
+            "totalMs": 7.974,
+            "routeSelectionMs": 4.972,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.001,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -479,5 +483,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-e66acd7796207f2c12f2454382cca1f230449f4b3f92f44dda57846cf4f055a5"
+  "bundleHash": "sha256-113bfb6a07339f015c8e067f951b89fbcec432dfbce365fae6c97c69bf7a6c11"
 }

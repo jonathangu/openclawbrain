@@ -9,15 +9,15 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-29eb964d"
+      "pack-0714a465"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-29eb964d",
-    "frozenEvalRouterIdentity": "pack-29eb964d:route_fn",
+    "frozenEvalPackId": "pack-0714a465",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-4996667f9c80cd8ce0bc93e6801635b5b72d2ad3b07b94d0df2ccc1de741eaa9"
+    "scoreHash": "sha256-c67ced31a6d42599ea4e7e61e5b8a56c1aa35ced932ba4b3801c2d5919d15a51"
   },
   "turns": [
     {
@@ -51,24 +51,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-29eb964d",
+      "activePackId": "pack-0714a465",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-5bda4e5b08a0f8feef6f57078fa438f84568d6184c4462c4030b04682cda7a05",
+      "selectionDigest": "sha256-af4eeae40722efb368a41cbfad15fe89059f3ba37573451e056043ff1c3c6eb9",
       "selectedContextIds": [
-        "pack-29eb964d:workspace-init:16415817"
+        "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:feedback",
+        "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:feedback",
+        "pack-0714a465:event:58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-6:feedback"
       ],
       "selectedContextTexts": [
-        "Working-set input TASKS.md selected by pointer-aware init (inbound=8, outbound=24). TASKS.md - Pelican Canonical Task Ledger Files are the source of truth. TASKS.md is the only live task ledger. TASKS.md is single-writer: only the current orchestrator may edit it. Detailed history lives in task-artifacts/; keep this file lean enough for cold starts. Active Principal Tasks - **finish-line handoff arti…"
+        "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 343. Work in /Users/guclaw/worktrees/quant-research/343. Goal: produce a concrete delete/fail-close inventory for the remaining dangerous legacy code paths. Focus on fixed-grid owner semantics, stale wrapper/status surfaces, rebuild broadening fallbacks, and implicit article-store compatibility guesses. Give a file-by-file hit list with delete vs hard-.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-087 lane 343. Work in /Users/guclaw/worktrees/quant-research/343. Goal: produce a concrete delete/fail-close inventory for the remaining dangerous legacy code paths. Focus on fixed-grid owner semantics, stale wrapper/status surfaces, rebuild broadening fallbacks, and implicit article-store compatibility guesses. Give a file-by-file hit list with delete vs hard-.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-2:interaction.",
+        "Teaching feedback on live-session session 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed: assistant: ## Summary I finished the lane-343 audit. The biggest remaining risks are not the canonical expiry-owner seams themselves, they are: 1. one surviving **broadening fallback** in `daily_data_refresh.py`, 2. several **shadow status/wrapper truth** paths that can mark bad state as okay, 3. a few **permissive compatibility/inference** layers that can hide drift. The fixed-grid / `target_dte` owner bridge is mostly already fail-closed now. The most dangerous paths that could silently drag Pelican b.... Related interaction: 58e7c9e8-bc09-492d-8ce5-6e92f0078397-seed:cue-6:interaction."
       ],
-      "eventExportDigest": "sha256-eea0336658b34cbe2e6edd20a05dbc6126dfcbab0931ef12a0fcea2eef23e073",
+      "eventExportDigest": "sha256-a65575ebe3dcdd4ea8b4f0e72379cddf1855905f4c6777fd50d6c637377ce24e",
       "expectedContextPhrases": [
         "code can reboot world",
         "around code can reboot",
@@ -86,10 +90,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 8.756,
-        "routeSelectionMs": 5.487,
+        "totalMs": 7.569,
+        "routeSelectionMs": 4.738,
         "promptAssemblyMs": 0.001,
-        "otherMs": 3.267,
+        "otherMs": 2.83,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

@@ -1,0 +1,118 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 80,
+    "compileOkCount": 1,
+    "phraseHitCount": 2,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-f2341fee"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-f2341fee",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-04T02:04:28.205Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-08352c13101852c8594931d603a12fc6c3a66ff69a6d1b42c7823d396f45c51b"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-f2341fee",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationConfidence": "high",
+      "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
+      "selectionDigest": "sha256-82222e5f07ed21f31efe76830c460ce6704eaa0e369f9af63d051fc016fad4c1",
+      "selectedContextIds": [
+        "pack-f2341fee:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:feedback",
+        "pack-f2341fee:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:feedback",
+        "pack-f2341fee:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: Done. What I added: - A target-state compiled-artifact fixture pack at `artifacts/fixtures/compiled-artifacts/target-state-scaffold/` - Three example artifacts: - concept page - map-of-territory page - provenance-gap report - A pack README and manifest tying the examples together What it shows: - markdown + sidecar artifact shape - explicit evidence/provenance fields - clear separation between derived scaffolding and live truth Validation: - Parsed all new JSON files successfully - Verified a.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: I'm adding a small target-state fixture pack under `artifacts/fixtures/compiled-artifacts/` with three example compiled artifacts: a concept page, a map-of-territory page, and a provenance-gap report. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\nimport hashlib\\nimport json\\n\\nbase = Path('/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/fixtures/compiled-artifacts/target-state-scaffold')\\nartifacts. Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:interaction.",
+        "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Worker I for task T-20260403-126 in /Users/guclaw/.openclaw/workspace. Goal: make compiled artifacts tangible with examples/fixtures in /Users/guclaw/.openclaw/workspace/openclawbrain. Read first: /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-126/wave2-board.md and docs/architecture/compiled-artifacts.md. Then add a small set of example compil.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-e5e951d458ae3d73b379c8e97a7affcf9e6a42cca70e95edee50ffe814e573f5",
+      "expectedContextPhrases": [
+        "/fixtures/compiled-artifacts/target-state-scaffold/",
+        "a2a53360c1fc902dd4f610d53983747ea2775303",
+        "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "/fixtures/compiled-artifacts/target-state-scaffold/",
+        "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
+      ],
+      "missedPhrases": [
+        "a2a53360c1fc902dd4f610d53983747ea2775303"
+      ],
+      "qualityScore": 80,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 10.199,
+        "routeSelectionMs": 6.463,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.735,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-04T02:04:28.205Z"
+      },
+      "warnings": []
+    }
+  ]
+}

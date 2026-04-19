@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-531e2678"
+      "pack-a29903e1"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-64317ee0a975de97d2bf6038f74ff4daa2b7d2dc8f10aac03318d2485264ba6f"
+    "scoreHash": "sha256-fbed97b9e1c0a856c6a2e1d75e9cbee53f5c4768ba4ab7f48935dad54c63b058"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-531e2678",
+      "activePackId": "pack-a29903e1",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "flat_rank_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-4d74a9ad885bb125354c73bb82965f88c8faa57537dea7a20dca7f8aa87376e2",
+      "routerIdentity": "pack-a29903e1:route_fn",
+      "selectionDigest": "sha256-76a7a48725be4fb698f5c224ec59d902d6ba197933a2336422f4a4546da54419",
       "selectedContextIds": [
-        "pack-531e2678:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback",
-        "pack-531e2678:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-4:feedback",
-        "pack-531e2678:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:feedback"
+        "pack-a29903e1:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:feedback",
+        "pack-a29903e1:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-4:feedback",
+        "pack-a29903e1:event:c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:feedback"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-1:interaction.",
         "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-4:interaction.",
         "Teaching feedback on live-session session c1be6f8d-22af-4aac-9f32-234846a9ef57-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach.... Related interaction: c1be6f8d-22af-4aac-9f32-234846a9ef57-seed:cue-5:interaction."
       ],
-      "eventExportDigest": "sha256-8823009ab0c47b550114150a5d9524bc431a6b9918301cf5085b7ee26385ba97",
+      "eventExportDigest": "sha256-d2db6e9af9bed3002c886063e92e3b4fea5ebe8df3a7ee08ea9e4bc038ad7367",
       "expectedContextPhrases": [
         "/Users/guclaw/worktrees/quant-research/203-mh1c-proof/training_input_freshness.py\"}"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.228,
-        "routeSelectionMs": 4.584,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.643,
+        "totalMs": 10.443,
+        "routeSelectionMs": 6.472,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.969,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

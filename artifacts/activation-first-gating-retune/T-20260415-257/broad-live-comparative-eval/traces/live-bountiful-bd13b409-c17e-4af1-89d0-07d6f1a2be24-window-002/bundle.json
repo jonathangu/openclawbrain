@@ -6,7 +6,7 @@
   "generatedAt": "2026-03-03T22:19:24.329Z",
   "traceHash": "sha256-84f2bc85f266bfd29b006c2dc6ef93b9e165e29f55fc2011158e761c60436082",
   "fixtureHash": "sha256-810d1c824da649ceb29c027b026aba0238fc9fe617410c118b1a8cf769536f9f",
-  "scoreHash": "sha256-e206ba9245762a7dfd0c81efc9e7560855cc5537b2328bf74c4d1ed8cfff95b3",
+  "scoreHash": "sha256-d9d0298131534afaab7a189450da2aaac99b78ee1657de92d07165e4129ebb57",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -96,10 +96,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.033,
+            "totalMs": 0.028,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.033,
+            "otherMs": 0.028,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -131,10 +131,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-7950411d"
+          "pack-153f294a"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -162,7 +162,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-a278629a2a6cb3a4af22752ddde37bf5375deb71fe531917a58fcc9c804a3707"
+        "scoreHash": "sha256-8e93e2d931d7e0115fcfe3beb0e64ea071f19a3dee6ea7885b3d974d6dfd6835"
       },
       "turns": [
         {
@@ -172,28 +172,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-7950411d",
+          "activePackId": "pack-153f294a",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-60ac17e80ec4d01da9395db740148edb84d1e9fc02a4aee729d39152587018b3",
+          "routerIdentity": "pack-153f294a:route_fn",
+          "selectionDigest": "sha256-a8e355973eaa90e5a97457a037e0af42e479c55aa076e8e268323a5948be6702",
           "selectedContextIds": [
-            "pack-7950411d:event:bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-1:feedback",
-            "pack-7950411d:workspace-init:02e33be9",
-            "pack-7950411d:pointer-aware-init"
+            "pack-153f294a:event:bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-1:feedback",
+            "pack-153f294a:workspace-init:02e33be9",
+            "pack-153f294a:pointer-aware-init"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8324\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-03 13:36 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` We need way more green for everything that can be green. To make every park-ish thing read “lush green” in Ma.... Related interaction: bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-1:interaction.",
             "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Bountiful Use heartbeat to keep Bountiful moving without manual babysitting. 1. Reread TASKS.md from disk, then read only the relevant MEMORY.md snippets and project artifacts for the current live task. 2. Trust current file truth over chat or old summaries. 3. Treat only active tasks as live work. Trea…",
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-b7dfcbfc3876a82d1bbbb8d936393ea880583c4ae9c36b2640fbd53da5c521fc",
+          "eventExportDigest": "sha256-dea529863920a4dc15a1a3bedaa2003e0784e848b59df24fc7f822ccfecba220",
           "expectedContextPhrases": [
             "/landcover",
             "/labels:",
@@ -211,10 +211,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.899,
-            "routeSelectionMs": 5.221,
+            "totalMs": 9.873,
+            "routeSelectionMs": 6.45,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.675,
+            "otherMs": 3.42,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -247,10 +247,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-7950411d"
+          "pack-153f294a"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -278,7 +278,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-4d1d97edda6d5534c5073e26dee753a3f1ebd9de603178306e9082653db9508b"
+        "scoreHash": "sha256-dce5375e87443dbbe1e5d84b98f099b7be8510f698b8a968d21cdbbe17c5d4fc"
       },
       "turns": [
         {
@@ -288,28 +288,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-7950411d",
+          "activePackId": "pack-153f294a",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-1fe978e7c3c611a13d309abcc3ed6ec2506a62dedce58c9a32dc06c6dd85075a",
+          "routerIdentity": "pack-153f294a:route_fn",
+          "selectionDigest": "sha256-8db4f0952072c6cb0a1f74925c2ad33b62137cf06a3be28644631ed1bec3f205",
           "selectedContextIds": [
-            "pack-7950411d:event:bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-1:feedback",
-            "pack-7950411d:event:bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-1:interaction",
-            "pack-7950411d:event:bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-2:interaction"
+            "pack-153f294a:event:bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-1:feedback",
+            "pack-153f294a:event:bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-1:interaction",
+            "pack-153f294a:event:bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8324\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-03 13:36 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` We need way more green for everything that can be green. To make every park-ish thing read “lush green” in Ma.... Related interaction: bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-1:interaction.",
             "Interaction operator_override on live-session session bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed. Message: cue-1-seed-message.",
             "Interaction operator_override on live-session session bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-badabe3ef50ae38fd0b2242859e81ed55bd3c44c3e223eaa6daaeb02f757dba5",
+          "eventExportDigest": "sha256-30516b7731cf94f33e55fe6397a1a4d899ee749fb46deeab3876c298e8713c83",
           "expectedContextPhrases": [
             "/landcover",
             "/labels:",
@@ -327,10 +327,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.84,
-            "routeSelectionMs": 5.191,
+            "totalMs": 9.566,
+            "routeSelectionMs": 6.196,
             "promptAssemblyMs": 0.003,
-            "otherMs": 2.646,
+            "otherMs": 3.368,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -363,7 +363,7 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 3,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
           "pack-153f294a"
@@ -371,7 +371,7 @@
         "trainTurnCount": 0,
         "evalTurnCount": 1,
         "frozenEvalPackId": "pack-153f294a",
-        "frozenEvalRouterIdentity": "pack-153f294a:route_fn",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -395,7 +395,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-815ea956440879cf4ff3e0381e4aeebecac5e8cb05873f7b5c51289c8b42224d"
+        "scoreHash": "sha256-c34620bdd8e30085fa9fdf5df7746d5cec3207e695f9adb5223b8e515ece25d6"
       },
       "turns": [
         {
@@ -409,20 +409,24 @@
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-2f2fa1176612b718eae3628391a7b56af3da93644a3f4da7621e6a931a09c2d2",
+          "selectionDigest": "sha256-a8e355973eaa90e5a97457a037e0af42e479c55aa076e8e268323a5948be6702",
           "selectedContextIds": [
+            "pack-153f294a:event:bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-1:feedback",
+            "pack-153f294a:workspace-init:02e33be9",
             "pack-153f294a:pointer-aware-init"
           ],
           "selectedContextTexts": [
+            "Teaching feedback on live-session session bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8324\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-03-03 13:36 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` We need way more green for everything that can be green. To make every park-ish thing read “lush green” in Ma.... Related interaction: bd13b409-c17e-4af1-89d0-07d6f1a2be24-seed:cue-1:interaction.",
+            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Bountiful Use heartbeat to keep Bountiful moving without manual babysitting. 1. Reread TASKS.md from disk, then read only the relevant MEMORY.md snippets and project artifacts for the current live task. 2. Trust current file truth over chat or old summaries. 3. Treat only active tasks as live work. Trea…",
             "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph."
           ],
-          "eventExportDigest": "sha256-3ebb55f50fc954097c63a324c92df7f423d31b6b995d57d66e575f49e1138039",
+          "eventExportDigest": "sha256-8b155e2c7aae9f78dc3d41bd55080efc4c755474a639520e955120f62feb3706",
           "expectedContextPhrases": [
             "/landcover",
             "/labels:",
@@ -440,10 +444,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.841,
-            "routeSelectionMs": 6.537,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 3.301,
+            "totalMs": 10.056,
+            "routeSelectionMs": 6.629,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 3.424,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -487,5 +491,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-24d3e41b2e37cff9ae99a05b8c8096a3013ab5fb7fe0b9dbbd413f0293a785cb"
+  "bundleHash": "sha256-3af3f9188548e4ff553c206b3e57fc2a038bc0058523b938c23d566d446e4bc2"
 }

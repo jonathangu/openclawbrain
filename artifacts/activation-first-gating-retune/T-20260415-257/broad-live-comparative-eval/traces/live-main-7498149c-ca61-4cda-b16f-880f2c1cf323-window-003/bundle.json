@@ -6,7 +6,7 @@
   "generatedAt": "2026-04-11T09:16:03.981Z",
   "traceHash": "sha256-e725d27535b9af2607edfc55a55297b3d0ba2750ec3f143ed7ff11bf77f51432",
   "fixtureHash": "sha256-ad7016b7c1b3014d2314a0a7c149b979d45fc36075f6fdac2c19edc868ece1f9",
-  "scoreHash": "sha256-a8de3e1e3dc7456a265fc0791f6e929e4e7294b82d7c1f19d7ee5fc668de2480",
+  "scoreHash": "sha256-9a2090834ad2b0fafc9a5d1e296e26aa6767bc0ac09729855f9e36b3924fe1e7",
   "privacy": {
     "sanitized": true,
     "notes": [
@@ -92,10 +92,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 0.031,
+            "totalMs": 0.04,
             "routeSelectionMs": null,
             "promptAssemblyMs": null,
-            "otherMs": 0.031,
+            "otherMs": 0.04,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -127,10 +127,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-54671da2"
+          "pack-81062d7b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -158,7 +158,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-5c4373f8699259d61fed6d524145f5734236b091df14d002224a0c178d97af95"
+        "scoreHash": "sha256-8c5eb36a7942cc42b5783db540adb706168090bd9007e085df7173b4f0f19567"
       },
       "turns": [
         {
@@ -168,28 +168,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-54671da2",
+          "activePackId": "pack-81062d7b",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "flat_rank_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-8a9239aa82f488e17e0f4062b4e0ae33d402fa8aad5fb95670d5530b20fd0b05",
+          "routerIdentity": "pack-81062d7b:route_fn",
+          "selectionDigest": "sha256-41b1117555710f5561e2ea4479f8a6168a100c26ffb5bfd2698155745150ff30",
           "selectedContextIds": [
-            "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
-            "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:feedback",
-            "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:feedback"
+            "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
+            "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:feedback",
+            "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction.",
             "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I’m loading the requested artifacts/tests first, then I’ll reproduce the failures and fix the real behavior on this branch. ToolCall read {\"path\": \"/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/final-replay-eval-swarm-board.md\"}. Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:interaction.",
             "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I found the real regression: this branch’s clean-install path resolves `@openclawbrain/*` to the lightweight local bridge packages added in Lane C, while the passing `main` checkout was still picking up richer nested package installs under `packages/cli/node_modules`. The bridge versions are too weak for replay/eval runtime use. I’m tightening the local `contracts` and `event-export` bridges so clean installs behave like the real packages instead of degrading to partial/blocked. ToolCall edit.... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-04cfa9a8483970b3f4c2b29e1ad9fe7090ea431767df62250b13c08e19dd89b5",
+          "eventExportDigest": "sha256-b7c96d394054abd2c66c8c101cc9b04558ba2f8b208f2b24e683053a1e11c195",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
           ],
@@ -203,10 +203,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.864,
-            "routeSelectionMs": 5.106,
-            "promptAssemblyMs": 0.002,
-            "otherMs": 2.757,
+            "totalMs": 14.688,
+            "routeSelectionMs": 9.312,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 5.372,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -239,10 +239,10 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-54671da2"
+          "pack-81062d7b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
@@ -270,7 +270,7 @@
             "human_labels_missing"
           ]
         },
-        "scoreHash": "sha256-819fcff1c2477d520d807edae765d86c07e7030bf1ef4672bbfb97c96d16e7ef"
+        "scoreHash": "sha256-cdee4c4a06901bb1558959ab501ed7d4cec9e87e2524a02077123b2b87370930"
       },
       "turns": [
         {
@@ -280,28 +280,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-54671da2",
+          "activePackId": "pack-81062d7b",
           "modeRequested": "heuristic",
-          "modeEffective": "heuristic",
+          "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": null,
           "activationSource": null,
           "activationReason": null,
           "activationConfidence": null,
-          "routerIdentity": null,
-          "selectionDigest": "sha256-50e6656aa6fc3ad541eda4ae0d6136377d0a0c6cef6bf44a52dd9266c867b116",
+          "routerIdentity": "pack-81062d7b:route_fn",
+          "selectionDigest": "sha256-ae267ee7979d88c547f7dcbc5e897cd5e6fd36f64416930689f373eb281e652e",
           "selectedContextIds": [
-            "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
-            "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction",
-            "pack-54671da2:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-2:interaction"
+            "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
+            "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction",
+            "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-2:interaction"
           ],
           "selectedContextTexts": [
             "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction.",
             "Interaction operator_override on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed. Message: cue-1-seed-message.",
             "Interaction operator_override on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed. Message: cue-2-seed-message."
           ],
-          "eventExportDigest": "sha256-023639af5109441a1dfdc5d11aaf50541c62de9352c0702ff0f5a548de1605a3",
+          "eventExportDigest": "sha256-7be3fe7eb191ddc0da59b57e65abf67cfa9368aa4a0de0463757ca1917ea2c1e",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
           ],
@@ -315,10 +315,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 7.895,
-            "routeSelectionMs": 5.104,
+            "totalMs": 14.955,
+            "routeSelectionMs": 9.24,
             "promptAssemblyMs": 0.002,
-            "otherMs": 2.79,
+            "otherMs": 5.713,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -351,15 +351,15 @@
         "compileOkCount": 1,
         "phraseHitCount": 0,
         "phraseCount": 1,
-        "usedLearnedRouteTurnCount": 0,
+        "usedLearnedRouteTurnCount": 1,
         "promotionCount": 0,
         "packIds": [
-          "pack-c000f177"
+          "pack-81062d7b"
         ],
         "trainTurnCount": 0,
         "evalTurnCount": 1,
-        "frozenEvalPackId": "pack-c000f177",
-        "frozenEvalRouterIdentity": "pack-c000f177:route_fn",
+        "frozenEvalPackId": "pack-81062d7b",
+        "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
         "scannerEvidence": {
           "exportTurnCount": 1,
           "scanPolicy": "always_on",
@@ -383,7 +383,7 @@
             "active_pack_never_moved"
           ]
         },
-        "scoreHash": "sha256-9cb1f52ee3fb044e7cdb07704c6c1d36da9a9024e61f4acbc43d42f5d05f92b6"
+        "scoreHash": "sha256-9600fa7993ea3ff119706d416e37de385b13af2ea21d8afc6ef0d07fc2085b1b"
       },
       "turns": [
         {
@@ -393,24 +393,28 @@
           "compileOk": true,
           "fallbackToStaticContext": false,
           "hardRequirementViolated": false,
-          "activePackId": "pack-c000f177",
+          "activePackId": "pack-81062d7b",
           "modeRequested": "learned",
           "modeEffective": "learned",
           "selectionEngine": "graph_walk_v1",
-          "usedLearnedRouteFn": false,
+          "usedLearnedRouteFn": true,
           "activationTaken": true,
-          "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-          "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
           "activationConfidence": "high",
           "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-          "selectionDigest": "sha256-2a845c2e3640e98a7ff47c4e1a908cd57d225df526069f679cafb6dcc5f7d850",
+          "selectionDigest": "sha256-41b1117555710f5561e2ea4479f8a6168a100c26ffb5bfd2698155745150ff30",
           "selectedContextIds": [
-            "pack-c000f177:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback"
+            "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
+            "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:feedback",
+            "pack-81062d7b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:feedback"
           ],
           "selectedContextTexts": [
-            "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction."
+            "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I’m loading the requested artifacts/tests first, then I’ll reproduce the failures and fix the real behavior on this branch. ToolCall read {\"path\": \"/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/final-replay-eval-swarm-board.md\"}. Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I found the real regression: this branch’s clean-install path resolves `@openclawbrain/*` to the lightweight local bridge packages added in Lane C, while the passing `main` checkout was still picking up richer nested package installs under `packages/cli/node_modules`. The bridge versions are too weak for replay/eval runtime use. I’m tightening the local `contracts` and `event-export` bridges so clean installs behave like the real packages instead of degrading to partial/blocked. ToolCall edit.... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:interaction."
           ],
-          "eventExportDigest": "sha256-69598e2a5f7d68ec118bc73a35b09ec7b3b3ff113a577cd4e8d4671cf9bc183e",
+          "eventExportDigest": "sha256-b229179ec56998892944a29c5660aa4fdf21a0aca8bb5210bd73f9b7a429c96b",
           "expectedContextPhrases": [
             "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
           ],
@@ -424,10 +428,10 @@
           "promoted": false,
           "timing": {
             "scope": "brain_serve_hot_path_only",
-            "totalMs": 9.818,
-            "routeSelectionMs": 6.31,
-            "promptAssemblyMs": 0.001,
-            "otherMs": 3.506,
+            "totalMs": 12.211,
+            "routeSelectionMs": 7.721,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 4.487,
             "backgroundWorkIncluded": false,
             "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
           },
@@ -471,5 +475,5 @@
       }
     ]
   },
-  "bundleHash": "sha256-1cb848e7274755fc7770bc5286113c8625e8d90e9eafb89b0341397c92b58b5c"
+  "bundleHash": "sha256-2e6fbf56ad6b2cdc97fdbd9aa87b080c454ab1ad5cdd039af9f96b070e67b6d4"
 }

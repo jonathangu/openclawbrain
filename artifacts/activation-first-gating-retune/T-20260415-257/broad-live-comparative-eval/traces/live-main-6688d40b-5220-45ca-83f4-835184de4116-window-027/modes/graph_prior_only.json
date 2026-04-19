@@ -9,10 +9,10 @@
     "compileOkCount": 1,
     "phraseHitCount": 0,
     "phraseCount": 1,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-fd2102fc"
+      "pack-5cc6cddb"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
@@ -40,7 +40,7 @@
         "human_labels_missing"
       ]
     },
-    "scoreHash": "sha256-6978d04acfd64cbc553f1b8607101e0488ad5fe56074b77b17a3ff3862e6808e"
+    "scoreHash": "sha256-f7e5241b97e655f5df37dd9e5a18ae6c417836be314346eee864c7d72f4880cb"
   },
   "turns": [
     {
@@ -50,28 +50,28 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-fd2102fc",
+      "activePackId": "pack-5cc6cddb",
       "modeRequested": "heuristic",
-      "modeEffective": "heuristic",
+      "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": null,
       "activationSource": null,
       "activationReason": null,
       "activationConfidence": null,
-      "routerIdentity": null,
-      "selectionDigest": "sha256-297d2028d9caec9227fcc6528f83caeef1d67d4ca3091e9a0c4c4b3c69dd7439",
+      "routerIdentity": "pack-5cc6cddb:route_fn",
+      "selectionDigest": "sha256-e3bcdd2f97a111603687d0ed85ff404d24b41c82bd7459e3616c304d0276053a",
       "selectedContextIds": [
-        "pack-fd2102fc:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
-        "pack-fd2102fc:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction",
-        "pack-fd2102fc:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction"
+        "pack-5cc6cddb:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
+        "pack-5cc6cddb:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction",
+        "pack-5cc6cddb:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction"
       ],
       "selectedContextTexts": [
         "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23603\", \"reply_to_id\": \"23602\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 23:01 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Milestone: I refreshed the main Pelican task truth from the latest Pelica.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction.",
         "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-1-seed-message.",
         "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-2-seed-message."
       ],
-      "eventExportDigest": "sha256-5d7c5571e5258f05e770adf91eb46633e57d45b034fee785950d0a359844f15f",
+      "eventExportDigest": "sha256-6c28283a02fd2ed8864f63f3c942f514c557f1170923c31b2f6a5e0d196c0842",
       "expectedContextPhrases": [
         "/proof"
       ],
@@ -85,10 +85,10 @@
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 7.642,
-        "routeSelectionMs": 4.917,
-        "promptAssemblyMs": 0.001,
-        "otherMs": 2.723,
+        "totalMs": 15.037,
+        "routeSelectionMs": 9.731,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 5.304,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },

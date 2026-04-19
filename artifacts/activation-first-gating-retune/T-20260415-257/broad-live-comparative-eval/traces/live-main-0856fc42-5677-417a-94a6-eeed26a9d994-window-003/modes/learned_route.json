@@ -5,19 +5,19 @@
     "activationStrategy": "continuous_learned_loop",
     "modeRequested": "learned",
     "selectionEngine": "graph_walk_v1",
-    "qualityScore": 40,
+    "qualityScore": 100,
     "compileOkCount": 1,
-    "phraseHitCount": 0,
+    "phraseHitCount": 3,
     "phraseCount": 3,
-    "usedLearnedRouteTurnCount": 0,
+    "usedLearnedRouteTurnCount": 1,
     "promotionCount": 0,
     "packIds": [
-      "pack-5a38d2a3"
+      "pack-d5eabf0d"
     ],
     "trainTurnCount": 0,
     "evalTurnCount": 1,
-    "frozenEvalPackId": "pack-5a38d2a3",
-    "frozenEvalRouterIdentity": "pack-5a38d2a3:route_fn",
+    "frozenEvalPackId": "pack-d5eabf0d",
+    "frozenEvalRouterIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
     "scannerEvidence": {
       "exportTurnCount": 1,
       "scanPolicy": "always_on",
@@ -41,7 +41,7 @@
         "active_pack_never_moved"
       ]
     },
-    "scoreHash": "sha256-3a2d3f1d6efa741fe9e2e1669e658184ff497ac07b4acca9923e03b44d906c58"
+    "scoreHash": "sha256-e0aba334f54e68cd93658d381dbbb9ee8fd706a41744eaa801aa3657098f0347"
   },
   "turns": [
     {
@@ -51,45 +51,49 @@
       "compileOk": true,
       "fallbackToStaticContext": false,
       "hardRequirementViolated": false,
-      "activePackId": "pack-5a38d2a3",
+      "activePackId": "pack-d5eabf0d",
       "modeRequested": "learned",
       "modeEffective": "learned",
       "selectionEngine": "graph_walk_v1",
-      "usedLearnedRouteFn": false,
+      "usedLearnedRouteFn": true,
       "activationTaken": true,
-      "activationSource": "learned_route_artifact:candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1",
-      "activationReason": "usedLearnedRouteFn=false; learnedRouteEvidence=candidate_override:router-artifact-t-20260415-257-activation-first-gating-only-v1@0.0.1; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=router:T-20260415-257:activation-first-gating-only:v1",
       "activationConfidence": "high",
       "routerIdentity": "router:T-20260415-257:activation-first-gating-only:v1",
-      "selectionDigest": "sha256-8c70fef1a6327d328e1d7f363f53d7a483a9a6d097a0449595315b8361f62f6b",
+      "selectionDigest": "sha256-cd9d172f1736971b64b16fff7b09e6f184b1d685f52618d8afb55fe84be1c8e9",
       "selectedContextIds": [
-        "pack-5a38d2a3:pointer-aware-init"
+        "pack-d5eabf0d:event:0856fc42-5677-417a-94a6-eeed26a9d994-seed:cue-6:feedback",
+        "pack-d5eabf0d:event:0856fc42-5677-417a-94a6-eeed26a9d994-seed:cue-1:feedback",
+        "pack-d5eabf0d:pointer-aware-init"
       ],
       "selectedContextTexts": [
-        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+        "Teaching feedback on live-session session 0856fc42-5677-417a-94a6-eeed26a9d994-seed: assistant: Done. - Added `scripts/teacher-v3-proof-bundle.mjs` to build and write the bounded Teacher v3 proof bundle: - `summary.md` - `status.json` - `surface-map.json` - `proposal-report.json` - `verdict.json` - Wired `scripts/capture-openclawbrain-operator-proof.mjs` to emit that bundle from live runtime/proof/docs inputs. - Added focused tests for bundle structure and output-dir resolution. - Commit: `632e2eac34fcd73a3695d8ac26e0de3014b07483` - Lane report written to: - `/Users/guclaw/.openclaw/wor.... Related interaction: 0856fc42-5677-417a-94a6-eeed26a9d994-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 0856fc42-5677-417a-94a6-eeed26a9d994-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are lane Gate 2 for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate2 on branch t129-gate2-proof. Mission: implement the proof-bundle writer and runtime-emission plumbing for Teacher v3 runtime/proof adoption. Target emitted files: summary.md, status.json, surface-map.json, proposal-report.json, verdict.json. Use real runtime/proof data.... Related interaction: 0856fc42-5677-417a-94a6-eeed26a9d994-seed:cue-1:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set task-artifacts/guclaw-cleanup-2026-04-18/TASKS.md, TASKS.md, task-artifacts/guclaw-cleanup-2026-04-18/AGENTS.md, task-artifacts/guclaw-cleanup-2026-04-18/HEARTBEAT.md, +2 more, and passive expansion task-artifacts/guclaw-cleanup-2026-04-18/TOOLS.md, task-artifacts/guclaw-cleanup-2026-04-18/USER.md, BOOT.md, task-artifacts/T-20260415-257/task-list.md, +8 more from the MEMORY index graph."
       ],
-      "eventExportDigest": "sha256-ebc4b7e6e205b54f0a1c4725ca4c0a56a1117261f9511cd9f7fe993db02c46a0",
+      "eventExportDigest": "sha256-06d8dda070b27678b4c88c4d049a4f758ea81a06d067ab435c80c37b3893c7c5",
       "expectedContextPhrases": [
         "T-20260403-129",
         "/capture-openclawbrain-operator-proof.mjs",
         "/proof/docs"
       ],
       "minimumPhraseHits": 3,
-      "phraseHits": [],
-      "missedPhrases": [
+      "phraseHits": [
         "T-20260403-129",
         "/capture-openclawbrain-operator-proof.mjs",
         "/proof/docs"
       ],
-      "qualityScore": 40,
+      "missedPhrases": [],
+      "qualityScore": 100,
       "compileActiveVersion": 1,
       "promoted": false,
       "timing": {
         "scope": "brain_serve_hot_path_only",
-        "totalMs": 9.571,
-        "routeSelectionMs": 6.225,
-        "promptAssemblyMs": 0.002,
-        "otherMs": 3.343,
+        "totalMs": 17.344,
+        "routeSelectionMs": 10.954,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 6.386,
         "backgroundWorkIncluded": false,
         "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
       },
