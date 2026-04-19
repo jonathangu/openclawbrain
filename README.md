@@ -4,7 +4,7 @@ Stop reteaching your agent the same things.
 
 OpenClawBrain gives OpenClaw a useful memory. It carries forward corrections, preferences, and successful past work so your agent can improve over time without turning every prompt into a giant transcript dump.
 
-OpenClawBrain is now shipping checked wins, not just architecture. The latest public tranche turned a reviewed must-fire lane from `0/10` to `10/10` while the checked restraint bundle stayed clean, and the proof surfaces are published so you can inspect the claim instead of taking it on faith.
+OpenClawBrain is now shipping measured improvements, not just architecture. In the latest public update, it went from missing every reviewed case where memory should have been used to catching all `10/10`, without adding extra false positives. And the proof is published, so you can inspect the claim instead of taking it on faith.
 
 Current version: **0.4.44** · [Changelog](CHANGELOG.md)
 
@@ -42,14 +42,14 @@ That means the agent gets continuity without turning every prompt into a giant h
 
 ## Latest shipped win
 
-The newest published update is intentionally bounded, but it is a real shipped win, not a vague benchmark story.
+The newest published update is intentionally bounded, but it is a real shipped improvement, not a vague benchmark story.
 
-- On the reviewed frozen binary-gate v2 cohort, lowering `activationThreshold` from `0.38` to `0.21` moved merged `must_fire_binary_gate_v2` from `0/10` to `10/10`.
-- The checked restraint bundle stayed clean at the same time: unnecessary activations `0/65`, must-not-fire failures `0/69`, broad-live regressions `0/403`.
-- Proof surfaces now expose route-decision summaries and compact runtime-mode tables with the familiar `no_brain`, `vector_only`, `graph_prior_only`, and `learned_route` vocabulary.
-- The new teacher/compiler proposal lane is report-only and reviewable. It adds evidence refs, replay hooks, proof linkage, and rollback linkage without claiming live teacher-driven mutation.
+- On a reviewed frozen test set, OpenClawBrain went from catching `0/10` of the cases where memory should have helped to catching all `10/10`.
+- At the same time, it stayed disciplined: `0/65` unnecessary activations, `0/69` must-not-fire failures, and `0/403` broad-live regressions on the checked bundle.
+- The product now makes it easier to inspect what happened and why, instead of hiding the result behind internal-only artifacts.
+- We also tightened the internal safety and review path so improvements are easier to verify and harder to ship by accident.
 
-Honest boundary: this is stronger proof packaging and promotion hardening on checked bundles, not a broad online-proof claim.
+Honest boundary: this is a real measured improvement on checked bundles. It is not a claim that every live task is already solved.
 
 ## What is different from simple retrieval
 
