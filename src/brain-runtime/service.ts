@@ -63,7 +63,12 @@ import { buildContinuousLearningOperatorStatus, continuousLearningControlDir } f
 import { buildRouteQualitySummaryV1, type RouteQualitySummaryRoutingModeV1 } from "./route-quality-summary.js";
 import { summarizeAttributionTruth, summarizeOperatorHealth } from "../live-runtime-audit.js";
 import { evaluateContextUsefulness } from "../brain-core/usefulness.js";
-import { materializeRouteDecisionEventFromTraceV1, type RouteDecisionEventV1 } from "../brain-core/route-decision-event.js";
+import {
+  buildRecentRouteDecisionSummaryV1,
+  DEFAULT_ROUTE_DECISION_SUMMARY_WINDOW_SIZE_V1,
+  materializeRouteDecisionEventFromTraceV1,
+  type RouteDecisionEventV1,
+} from "../brain-core/route-decision-event.js";
 import {
   buildEpisodeResolutionEventV1,
   buildRetryOrInterventionEventV1,
@@ -2385,6 +2390,11 @@ export class BrainService {
     );
     const recentTraces = this.store.getRecentTraces(5);
     const recentDecisionSummary = this.store.getRecentDecisionSummary(25);
+    const recentRouteDecisionEvents = this.store.getTrainingStateJson<unknown[]>("recent_route_decision_events_json") ?? [];
+    const routeDecisionSummary = buildRecentRouteDecisionSummaryV1(
+      recentRouteDecisionEvents,
+      DEFAULT_ROUTE_DECISION_SUMMARY_WINDOW_SIZE_V1,
+    );
     const recentPrefetchSummary = this.getRecentPrefetchSummary(25);
     const workerState = readWorkerRuntimeState(this.store, this.config);
     const contextFeedback = this.store.getContextFeedbackSummary();
@@ -2566,6 +2576,7 @@ export class BrainService {
       seedLearningEnabled: this.mutableGraph.hasSeedWeights(),
       routeTraceCount,
       supervisionCount,
+      routeDecisionSummary,
       lastPgCandidatePackVersion: Number.isFinite(lastPgCandidatePackVersion ?? NaN)
         ? lastPgCandidatePackVersion
         : null,

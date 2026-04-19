@@ -12,6 +12,10 @@ import type {
   MutationBundleRecord,
   ReplayGateVerdict,
 } from "./brain-core/types.js";
+import {
+  buildRecentRouteDecisionSummaryV1,
+  DEFAULT_ROUTE_DECISION_SUMMARY_WINDOW_SIZE_V1,
+} from "./brain-core/route-decision-event.js";
 import { summarizeRecentPrefetchDecisions } from "./brain-core/trace.js";
 import { BrainStore } from "./brain-store/store.js";
 import { runBrainMigrations } from "./brain-store/migrations.js";
@@ -325,6 +329,11 @@ function commandStatus(): void {
     teacherArtifactCount: null,
   });
   const recentDecisionSummary = store.getRecentDecisionSummary(25);
+  const recentRouteDecisionEvents = store.getTrainingStateJson<unknown[]>("recent_route_decision_events_json") ?? [];
+  const routeDecisionSummary = buildRecentRouteDecisionSummaryV1(
+    recentRouteDecisionEvents,
+    DEFAULT_ROUTE_DECISION_SUMMARY_WINDOW_SIZE_V1,
+  );
   const recentMutationBundles = store.getRecentMutationBundles(5);
   const lastReplayGateVerdict = store.getTrainingStateJson<ReplayGateVerdict>("last_replay_gate_verdict_json") ?? null;
   const learningHealth = buildLearningHealthSummary({
@@ -425,6 +434,7 @@ function commandStatus(): void {
     contextUsefulness,
     routeOutcomeTruth,
     learningHealth,
+    routeDecisionSummary,
     routeQuality,
     continuousLearning,
     pendingLabels: store.getPendingLabels().length,

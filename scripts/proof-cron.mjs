@@ -1366,6 +1366,46 @@ function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
   };
 }
 
+function readRouteDecisionSummary(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const sampleSize = Number(value.sampleSize ?? Number.NaN);
+  return Number.isFinite(sampleSize) && sampleSize >= 0 ? value : null;
+}
+
+function resolveRouteDecisionSurface({
+  primarySummary,
+  primarySource,
+  primaryPath = null,
+  fallbackSummary = null,
+  fallbackPath = null,
+}) {
+  const preferred = readRouteDecisionSummary(primarySummary);
+  if (preferred) {
+    return {
+      source: primarySource,
+      relativePath: primaryPath,
+      summary: preferred,
+    };
+  }
+
+  const fallback = readRouteDecisionSummary(fallbackSummary);
+  if (fallback) {
+    return {
+      source: "latest_host_evidence",
+      relativePath: fallbackPath,
+      summary: fallback,
+    };
+  }
+
+  return {
+    source: null,
+    relativePath: null,
+    summary: null,
+  };
+}
+
 function summarizeHostBundle(bundlePath, workspaceRoot) {
   const files = collectFiles(bundlePath);
   const fileStats = files.map((filePath) => {
@@ -1386,6 +1426,7 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
   const securitySummary = status?.securityAudit?.summary ?? null;
   const recentSession = status?.sessions?.recent?.[0] ?? null;
   const decisionSummary = status?.recentDecisionSummary ?? null;
+  const routeDecisionSummary = readRouteDecisionSummary(status?.routeDecisionSummary ?? null);
   const promotionSummary = status?.promotionStory?.summary ?? null;
   const feedbackTruth = buildThinFeedbackTruthFromStatusPayload(status, "latest_host_evidence");
   const attributionCoverageTruth = buildThinAttributionCoverageTruthFromStatusPayload(status, "latest_host_evidence");
@@ -1406,6 +1447,7 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
     operatorHealth,
     feedbackTruth,
     attributionCoverageTruth,
+    routeDecisionSummary,
     statusSummary: status
       ? {
           runtimeVersion: status.runtimeVersion ?? null,
@@ -1421,6 +1463,7 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
           decisionSampleSize: status.recentDecisionSummary?.sampleSize ?? null,
           clipRate: status.recentDecisionSummary?.clipRate?.rate ?? null,
           failOpenRate: status.recentDecisionSummary?.failOpenRate?.rate ?? null,
+          routeDecisionSummary,
           boundedAnytimePosture: boundedAnytimeSummary?.latest?.posture ?? null,
           boundedAnytimeDeadlinePosture: boundedAnytimeSummary?.defaultDeadlinePosture ?? null,
           boundedAnytimeDeadlineMs: boundedAnytimeSummary?.configuredCompileDeadlineMs ?? null,
@@ -1443,6 +1486,10 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
       clipRate: decisionSummary?.clipRate?.rate ?? null,
       failOpenRate: decisionSummary?.failOpenRate?.rate ?? null,
       decisionSampleSize: decisionSummary?.sampleSize ?? null,
+      routeDecisionSampleSize: routeDecisionSummary?.sampleSize ?? null,
+      routeDecisionActivationRate: routeDecisionSummary?.activation?.activationRate ?? null,
+      routeDecisionPredictedUtilityCoverageRate: routeDecisionSummary?.coverage?.predictedUtility?.observedRate ?? null,
+      routeDecisionSelectedContextCountMean: routeDecisionSummary?.selectedContextCount?.mean ?? null,
       boundedAnytimePosture: boundedAnytimeSummary?.latest?.posture ?? null,
       boundedAnytimeDeadlinePosture: boundedAnytimeSummary?.defaultDeadlinePosture ?? null,
       boundedAnytimeDeadlineMs: boundedAnytimeSummary?.configuredCompileDeadlineMs ?? null,
@@ -1791,6 +1838,7 @@ function summarizeStatus(statusProbe) {
     mutationBacklog: status.mutationBacklog ?? null,
     recentMutationBundles: Array.isArray(status.recentMutationBundles) ? status.recentMutationBundles.length : null,
     decisionSummary: status.recentDecisionSummary ?? status.decisionSummary ?? null,
+    routeDecisionSummary: readRouteDecisionSummary(status.routeDecisionSummary ?? null),
     promotionStory: status.promotionStory ?? null,
     feedbackTruth: buildThinFeedbackTruthFromStatusPayload(status, "live_status"),
     attributionCoverageTruth: buildThinAttributionCoverageTruthFromStatusPayload(status, "live_status"),
@@ -2150,6 +2198,13 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
     healthFreshnessDays,
     freshnessThresholdDays,
   });
+  const routeDecisionSurface = resolveRouteDecisionSurface({
+    primarySummary: status.routeDecisionSummary,
+    primarySource: "live_status",
+    primaryPath: null,
+    fallbackSummary: latestHost?.routeDecisionSummary ?? null,
+    fallbackPath: latestHost?.relativePath ?? null,
+  });
 
   const bundleFreshness = [latestOperator, latestReplay, latestHost]
     .filter(Boolean)
@@ -2201,6 +2256,9 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
     feedbackTruth,
     attributionCoverageTruth,
     replayFreshnessTruth,
+    routeDecisionSummary: routeDecisionSurface.summary,
+    routeDecisionSummarySource: routeDecisionSurface.source,
+    routeDecisionSummaryPath: routeDecisionSurface.relativePath,
     performance,
     costProxy,
     replaySavings: latestReplay?.metrics?.savingsByMode ?? [],
@@ -2334,6 +2392,13 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
     bundles,
     healthFreshnessDays,
     freshnessThresholdDays,
+  });
+  const routeDecisionSurface = resolveRouteDecisionSurface({
+    primarySummary: status?.routeDecisionSummary ?? null,
+    primarySource: "live_status",
+    primaryPath: null,
+    fallbackSummary: latestHost?.routeDecisionSummary ?? null,
+    fallbackPath: latestHost?.relativePath ?? null,
   });
 
   const aggregate = {
@@ -2519,6 +2584,9 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
     feedbackTruth,
     attributionCoverageTruth,
     replayFreshnessTruth,
+    routeDecisionSummary: routeDecisionSurface.summary,
+    routeDecisionSummarySource: routeDecisionSurface.source,
+    routeDecisionSummaryPath: routeDecisionSurface.relativePath,
     latestOperatorHealth: status?.operatorHealth ?? latestHost?.operatorHealth ?? null,
     performance: {
       scanMs: scanDurationMs,
@@ -2578,6 +2646,46 @@ function formatUsd(amount) {
   return `$${rounded.toFixed(6)}`;
 }
 
+function formatObservedRateSummary(summary, sampleSize) {
+  if (!summary || sampleSize === null || sampleSize === undefined) {
+    return "n/a";
+  }
+  const observedCount = Number(summary.observedCount ?? 0);
+  const observedRate = Number(summary.observedRate ?? Number.NaN);
+  return `${observedCount}/${sampleSize}${Number.isFinite(observedRate) ? ` (${observedRate})` : ""}`;
+}
+
+function formatStopReasonCounts(summary) {
+  const counts = summary?.stopReasonCounts ?? {};
+  return [
+    `budget_exhausted=${counts.budget_exhausted ?? 0}`,
+    `stop_local=${counts.stop_local ?? 0}`,
+    `stop_global=${counts.stop_global ?? 0}`,
+    `no_candidates=${counts.no_candidates ?? 0}`,
+    `activation_threshold_not_met=${counts.activation_threshold_not_met ?? 0}`,
+  ].join(" ");
+}
+
+function appendRouteDecisionSurfaceMarkdown(lines, routeDecisionSummary, source, relativePath) {
+  lines.push("## Route decision surface");
+  if (!routeDecisionSummary) {
+    lines.push("- route-decision summary: unavailable");
+    return;
+  }
+
+  const sampleSize = routeDecisionSummary.sampleSize ?? 0;
+  lines.push(`- source: ${source ?? "unknown"}${relativePath ? ` (${relativePath})` : ""}`);
+  lines.push(`- sample size: ${sampleSize}/${routeDecisionSummary.windowSize ?? "n/a"}`);
+  lines.push(`- detail: ${routeDecisionSummary.detail ?? "n/a"}`);
+  lines.push(`- activation rate: ${routeDecisionSummary.activation?.activationRate ?? "n/a"} (${routeDecisionSummary.activation?.activatedCount ?? 0}/${sampleSize})`);
+  lines.push(`- confidence coverage: ${formatObservedRateSummary(routeDecisionSummary.coverage?.confidence, sampleSize)}`);
+  lines.push(`- predicted utility coverage: ${formatObservedRateSummary(routeDecisionSummary.coverage?.predictedUtility, sampleSize)}`);
+  lines.push(`- selected context mean/max: ${routeDecisionSummary.selectedContextCount?.mean ?? "n/a"} / ${routeDecisionSummary.selectedContextCount?.max ?? "n/a"}`);
+  lines.push(`- decision points mean/max: ${routeDecisionSummary.decisionPointCount?.mean ?? "n/a"} / ${routeDecisionSummary.decisionPointCount?.max ?? "n/a"}`);
+  lines.push(`- cost estimate ms mean/max: ${routeDecisionSummary.costEstimateMs?.mean ?? "n/a"} / ${routeDecisionSummary.costEstimateMs?.max ?? "n/a"}`);
+  lines.push(`- stop reasons: ${formatStopReasonCounts(routeDecisionSummary)}`);
+}
+
 function formatHealthMarkdown(snapshot) {
   const lines = [];
   lines.push("# OpenClawBrain proof health snapshot");
@@ -2624,6 +2732,13 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- feedback: ${snapshot.feedbackTruth?.line ?? "unavailable"}${snapshot.feedbackTruth?.source ? ` (source=${snapshot.feedbackTruth.source})` : ""}`);
   lines.push(`- attribution coverage: ${snapshot.attributionCoverageTruth?.line ?? "unavailable"}${snapshot.attributionCoverageTruth?.source ? ` (source=${snapshot.attributionCoverageTruth.source})` : ""}`);
   lines.push(`- replay freshness: ${snapshot.replayFreshnessTruth?.line ?? "unavailable"}`);
+  lines.push("");
+  appendRouteDecisionSurfaceMarkdown(
+    lines,
+    snapshot.routeDecisionSummary ?? null,
+    snapshot.routeDecisionSummarySource ?? null,
+    snapshot.routeDecisionSummaryPath ?? null,
+  );
   lines.push("");
   lines.push("## Operator health");
   lines.push(`- operator health: ${snapshot.operatorHealth.status}`);
@@ -2712,6 +2827,13 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- feedback: ${aggregate.feedbackTruth?.line ?? "unavailable"}${aggregate.feedbackTruth?.source ? ` (source=${aggregate.feedbackTruth.source})` : ""}`);
   lines.push(`- attribution coverage: ${aggregate.attributionCoverageTruth?.line ?? "unavailable"}${aggregate.attributionCoverageTruth?.source ? ` (source=${aggregate.attributionCoverageTruth.source})` : ""}`);
   lines.push(`- replay freshness: ${aggregate.replayFreshnessTruth?.line ?? "unavailable"}`);
+  lines.push("");
+  appendRouteDecisionSurfaceMarkdown(
+    lines,
+    aggregate.routeDecisionSummary ?? null,
+    aggregate.routeDecisionSummarySource ?? null,
+    aggregate.routeDecisionSummaryPath ?? null,
+  );
   lines.push("");
   const replayFocus = aggregate.replayMetrics.focus ?? null;
   const replayFocusCounts = replayFocus?.candidateUtilityVsBaselineCounts ?? aggregate.replayMetrics.candidateUtilityVsBaselineCounts ?? {};

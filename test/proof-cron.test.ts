@@ -2,6 +2,10 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { describe, expect, it } from "vitest";
+import {
+  buildRecentRouteDecisionSummaryV1,
+  buildRouteDecisionEventV1,
+} from "../src/brain-core/route-decision-event.js";
 import { summarizeOperatorHealth } from "../src/live-runtime-audit.js";
 // @ts-ignore runtime script module has no checked-in typed surface yet
 import {
@@ -32,6 +36,41 @@ function writeJson(filePath: string, value: unknown) {
 
 function readText(rootDir: string, relativePath: string) {
   return readFileSync(path.join(rootDir, relativePath), "utf8");
+}
+
+function buildRouteDecisionSummaryFixture() {
+  return buildRecentRouteDecisionSummaryV1([
+    buildRouteDecisionEventV1({
+      traceId: "trace-route-a",
+      episodeId: "episode-route-a",
+      routeFnVersion: "brain-graph-traverse.v2",
+      activated: true,
+      confidence: 0.91,
+      predictedUtility: 0.42,
+      predictedRegretOfAbstaining: 0.11,
+      selectedContextCount: 2,
+      selectedTokenBudget: 256,
+      decisionPointCount: 3,
+      activationThreshold: 0.55,
+      costEstimateMs: 12,
+      timestamp: "2026-03-31T12:00:00.000Z",
+    }),
+    buildRouteDecisionEventV1({
+      traceId: "trace-route-b",
+      episodeId: "episode-route-b",
+      routeFnVersion: "brain-graph-traverse.v2",
+      activated: false,
+      confidence: 0.39,
+      predictedRegretOfAbstaining: 0.03,
+      selectedContextCount: 0,
+      selectedTokenBudget: 256,
+      stopReason: "no_candidates",
+      decisionPointCount: 1,
+      activationThreshold: 0.55,
+      costEstimateMs: 7,
+      timestamp: "2026-03-31T12:01:00.000Z",
+    }),
+  ], 25);
 }
 
 describe("proof cron bundle scanning", () => {
@@ -273,6 +312,7 @@ describe("proof cron bundle scanning", () => {
         clipRate: { rate: 0.1 },
         failOpenRate: { rate: 0.05 },
       },
+      routeDecisionSummary: buildRouteDecisionSummaryFixture(),
       securityAudit: { summary: { critical: 1, warn: 2 } },
       sessions: { count: 1, recent: [{ percentUsed: 12 }] },
       memory: { files: 4, chunks: 8 },
@@ -350,6 +390,16 @@ describe("proof cron bundle scanning", () => {
       supervisedTraceCount: 4,
       routeTraceCount: 5,
       latestAgentIdentity: "operator/proof-summary",
+    });
+    expect(hostBundle?.routeDecisionSummary).toMatchObject({
+      sampleSize: 2,
+      activation: {
+        activatedCount: 1,
+        activationRate: 0.5,
+      },
+      selectedContextCount: {
+        mean: 1,
+      },
     });
     expect(hostBundle?.attributionCoverageTruth).toMatchObject({
       visible: true,
@@ -970,6 +1020,7 @@ describe("proof cron metric surfaces", () => {
           clipRate: { rate: 0.25 },
           failOpenRate: { rate: 0.1 },
         },
+        routeDecisionSummary: buildRouteDecisionSummaryFixture(),
         securityAudit: { summary: { critical: 1, warn: 2 } },
       },
     };
@@ -1163,6 +1214,7 @@ describe("proof cron metric surfaces", () => {
         fileCount: 4,
         artifactBytes: 1000,
         validationOk: true,
+        routeDecisionSummary: buildRouteDecisionSummaryFixture(),
       metrics: {
         securityCriticalCount: 1,
         securityWarnCount: 2,
@@ -1184,6 +1236,14 @@ describe("proof cron metric surfaces", () => {
     expect(health.performance.operatorStepMsTotal).toBe(1500);
     expect(health.costProxy.artifactBytes).toBe(7000);
     expect(health.latestBundles.map((bundle: any) => bundle.kind)).toEqual(["operator-proof", "recorded-session-replay", "host-evidence"]);
+    expect(health.routeDecisionSummary).toMatchObject({
+      sampleSize: 2,
+      activation: {
+        activatedCount: 1,
+        activationRate: 0.5,
+      },
+    });
+    expect(health.routeDecisionSummarySource).toBe("live_status");
     expect(health.effectivenessReadout).toMatchObject({
       helping: "replay_backed_only",
     });
@@ -1193,6 +1253,10 @@ describe("proof cron metric surfaces", () => {
     expect(formatHealthMarkdown(health)).toContain("latest replay proof is healthy, but live helpful/irrelevant/harmful context feedback is not visible here");
     expect(formatHealthMarkdown(health)).toContain("serve state: serving_active_pack");
     expect(formatHealthMarkdown(health)).toContain("clip rate: 0.25");
+    expect(formatHealthMarkdown(health)).toContain("## Route decision surface");
+    expect(formatHealthMarkdown(health)).toContain("source: live_status");
+    expect(formatHealthMarkdown(health)).toContain("activation rate: 0.5 (1/2)");
+    expect(formatHealthMarkdown(health)).toContain("predicted utility coverage: 1/2 (0.5)");
     expect(formatHealthMarkdown(health)).toContain("replay context chars total");
     expect(formatHealthMarkdown(health)).toContain("replay completion chars total");
     expect(formatHealthMarkdown(health)).toContain("replay estimated completion tokens total");
@@ -1231,7 +1295,18 @@ describe("proof cron metric surfaces", () => {
     expect(aggregate.replayMetrics.savingsByMode[3].retrievalToolHopCount).toBe(3);
     expect(aggregate.operatorMetrics.stepMsTotal).toBe(1500);
     expect(aggregate.costProxy.bundleCount).toBe(3);
+    expect(aggregate.routeDecisionSummary).toMatchObject({
+      sampleSize: 2,
+      activation: {
+        activatedCount: 1,
+        activationRate: 0.5,
+      },
+    });
+    expect(aggregate.routeDecisionSummarySource).toBe("latest_host_evidence");
     expect(formatNightlyMarkdown(aggregate)).toContain("## Replay optimize-over metrics");
+    expect(formatNightlyMarkdown(aggregate)).toContain("## Route decision surface");
+    expect(formatNightlyMarkdown(aggregate)).toContain("source: latest_host_evidence");
+    expect(formatNightlyMarkdown(aggregate)).toContain("activation rate: 0.5 (1/2)");
     expect(formatNightlyMarkdown(aggregate)).toContain("optimize-over learned_route vs graph_prior_only: better=1 tied=0 worse=0");
     expect(formatNightlyMarkdown(aggregate)).toContain("optimize-over regression rate: 0");
     expect(formatNightlyMarkdown(aggregate)).toContain("diagnostic unique top-rank modes");

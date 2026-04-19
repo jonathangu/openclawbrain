@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DecisionTrace } from "../../src/brain-core/types.js";
 import {
+  buildRecentRouteDecisionSummaryV1,
   buildRouteDecisionEventV1,
   materializeRouteDecisionEventFromTraceV1,
   summarizeRouteDecisionEventV1,
@@ -120,5 +121,115 @@ describe("route decision event", () => {
       stop_reason: "no_candidates",
       decision_point_count: 1,
     });
+  });
+
+  it("builds a bounded recent route-decision summary from the latest valid events", () => {
+    const summary = buildRecentRouteDecisionSummaryV1([
+      buildRouteDecisionEventV1({
+        traceId: "trace_old",
+        episodeId: "episode_old",
+        routeFnVersion: "brain-graph-traverse.v2",
+        activated: false,
+        confidence: 0.2,
+        predictedRegretOfAbstaining: 0.01,
+        selectedContextCount: 0,
+        selectedTokenBudget: 128,
+        stopReason: "activation_threshold_not_met",
+        decisionPointCount: 1,
+        activationThreshold: 0.6,
+        costEstimateMs: 4,
+        timestamp: "2026-04-16T02:19:00.000Z",
+      }),
+      buildRouteDecisionEventV1({
+        traceId: "trace_a",
+        episodeId: "episode_a",
+        routeFnVersion: "brain-graph-traverse.v2",
+        activated: true,
+        confidence: 0.92,
+        predictedUtility: 0.48,
+        predictedRegretOfAbstaining: 0.12,
+        selectedContextCount: 2,
+        selectedTokenBudget: 256,
+        decisionPointCount: 3,
+        activationThreshold: 0.55,
+        costEstimateMs: 12,
+        timestamp: "2026-04-16T02:20:00.000Z",
+      }),
+      buildRouteDecisionEventV1({
+        traceId: "trace_b",
+        episodeId: "episode_b",
+        routeFnVersion: "brain-graph-traverse.v2",
+        activated: false,
+        confidence: 0.41,
+        predictedUtility: -0.08,
+        predictedRegretOfAbstaining: 0.03,
+        selectedContextCount: 0,
+        selectedTokenBudget: 256,
+        stopReason: "no_candidates",
+        decisionPointCount: 2,
+        activationThreshold: 0.55,
+        costEstimateMs: 7,
+        timestamp: "2026-04-16T02:21:00.000Z",
+      }),
+      {
+        contract: "ocb.route_decision.v1",
+        invalid: true,
+      },
+    ], 3);
+
+    expect(summary).toMatchObject({
+      contract: "openclawbrain_recent_route_decision_summary.v1",
+      windowSize: 3,
+      sampleSize: 2,
+      activation: {
+        activatedCount: 1,
+        nonActivatedCount: 1,
+        activationRate: 0.5,
+      },
+      coverage: {
+        confidence: {
+          observedCount: 2,
+          observedRate: 1,
+        },
+        predictedUtility: {
+          observedCount: 2,
+          observedRate: 1,
+        },
+      },
+      selectedContextCount: {
+        observedCount: 2,
+        total: 2,
+        mean: 1,
+        max: 2,
+      },
+      decisionPointCount: {
+        observedCount: 2,
+        total: 5,
+        mean: 2.5,
+        max: 3,
+      },
+      costEstimateMs: {
+        observedCount: 2,
+        total: 19,
+        mean: 9.5,
+        max: 12,
+      },
+      predictedUtility: {
+        observedCount: 2,
+        observedRate: 1,
+        mean: 0.2,
+        positiveCount: 1,
+        nonPositiveCount: 1,
+      },
+      stopReasonCounts: {
+        budget_exhausted: 0,
+        stop_local: 0,
+        stop_global: 0,
+        no_candidates: 1,
+        activation_threshold_not_met: 0,
+      },
+    });
+    expect(summary.detail).toContain("1/2 activated");
+    expect(summary.detail).toContain("topStop=no_candidates=1");
   });
 });

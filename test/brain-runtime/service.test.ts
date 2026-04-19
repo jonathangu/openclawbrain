@@ -393,6 +393,28 @@ describe("BrainService", () => {
         detail: expect.stringContaining("recent branches continued"),
       }),
     }));
+    expect(status.routeDecisionSummary).toEqual(expect.objectContaining({
+      contract: "openclawbrain_recent_route_decision_summary.v1",
+      windowSize: 25,
+      sampleSize: 0,
+      activation: expect.objectContaining({
+        activatedCount: 0,
+        nonActivatedCount: 0,
+        activationRate: null,
+      }),
+      selectedContextCount: expect.objectContaining({
+        observedCount: 0,
+        total: null,
+        mean: null,
+      }),
+      coverage: expect.objectContaining({
+        confidence: expect.objectContaining({
+          observedCount: 0,
+          observedRate: null,
+        }),
+      }),
+      detail: "no recent route-decision events captured in the current window",
+    }));
     expect(status.boundedAnytimeSummary).toEqual(expect.objectContaining({
       defaultDeadlinePosture: "off_by_default",
       configuredCompileDeadlineMs: null,
@@ -1437,6 +1459,28 @@ describe("BrainService", () => {
           resolution_class: "completed",
           resolved: true,
         }),
+      },
+    });
+    expect(status.routeDecisionSummary).toMatchObject({
+      contract: "openclawbrain_recent_route_decision_summary.v1",
+      windowSize: 25,
+      sampleSize: 1,
+      activation: {
+        activatedCount: 1,
+        nonActivatedCount: 0,
+        activationRate: 1,
+      },
+      selectedContextCount: expect.objectContaining({
+        observedCount: 1,
+        total: expect.any(Number),
+        mean: expect.any(Number),
+        max: expect.any(Number),
+      }),
+      coverage: {
+        confidence: {
+          observedCount: 1,
+          observedRate: 1,
+        },
       },
     });
     expect(status.attributionTruth).toMatchObject({

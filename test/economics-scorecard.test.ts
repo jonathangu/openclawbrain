@@ -3,6 +3,10 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  buildRecentRouteDecisionSummaryV1,
+  buildRouteDecisionEventV1,
+} from "../src/brain-core/route-decision-event.js";
+import {
   PROOF_CRON_MANIFEST_LAYOUT,
   buildHealthSnapshot,
   buildNightlyAggregate,
@@ -37,6 +41,40 @@ function readText(filePath: string) {
 
 function readJson(filePath: string) {
   return JSON.parse(readText(filePath));
+}
+
+function buildRouteDecisionSummaryFixture() {
+  return buildRecentRouteDecisionSummaryV1([
+    buildRouteDecisionEventV1({
+      traceId: "trace-route-a",
+      episodeId: "episode-route-a",
+      routeFnVersion: "brain-graph-traverse.v2",
+      activated: true,
+      confidence: 0.88,
+      predictedUtility: 0.31,
+      predictedRegretOfAbstaining: 0.09,
+      selectedContextCount: 2,
+      selectedTokenBudget: 256,
+      decisionPointCount: 3,
+      activationThreshold: 0.55,
+      costEstimateMs: 10,
+      timestamp: "2026-04-07T17:58:00.000Z",
+    }),
+    buildRouteDecisionEventV1({
+      traceId: "trace-route-b",
+      episodeId: "episode-route-b",
+      routeFnVersion: "brain-graph-traverse.v2",
+      activated: false,
+      confidence: 0.34,
+      selectedContextCount: 0,
+      selectedTokenBudget: 256,
+      stopReason: "no_candidates",
+      decisionPointCount: 1,
+      activationThreshold: 0.55,
+      costEstimateMs: 6,
+      timestamp: "2026-04-07T17:59:00.000Z",
+    }),
+  ], 25);
 }
 
 function buildBundles() {
@@ -124,6 +162,7 @@ function buildBundles() {
       fileCount: 4,
       artifactBytes: 900,
       validationOk: true,
+      routeDecisionSummary: buildRouteDecisionSummaryFixture(),
       metrics: {
         securityCriticalCount: 0,
         securityWarnCount: 1,
@@ -168,6 +207,7 @@ function buildStatusProbe() {
       },
       workerHealthy: true,
       workerMode: "child",
+      routeDecisionSummary: buildRouteDecisionSummaryFixture(),
     },
   };
 }
@@ -202,12 +242,15 @@ describe("economics scorecard contract", () => {
       "scan_duration_ms",
       "bundle_count",
       "artifact_bytes_scanned",
+      "route_decision_sample_size",
     ]));
     expect(healthScorecard.derived.map((entry: any) => entry.metric)).toEqual(expect.arrayContaining([
       "operator_step_ms_total",
       "replay_context_chars_total",
       "replay_estimated_prompt_tokens_total",
       "replay_retrieval_tool_hop_count_total",
+      "route_decision_activation_rate",
+      "route_decision_selected_context_count_mean",
     ]));
     expect(healthScorecard.proxy.map((entry: any) => entry.metric)).toEqual(expect.arrayContaining([
       "proof_minutes_proxy",
@@ -218,6 +261,7 @@ describe("economics scorecard contract", () => {
     expect(buildEconomicsScorecardMarkdown(healthScorecard)).toContain("labels: measured / derived / proxy");
     expect(buildEconomicsScorecardMarkdown(healthScorecard)).toContain("## Measured");
     expect(buildEconomicsScorecardMarkdown(healthScorecard)).toContain("status_probe_duration_ms");
+    expect(buildEconomicsScorecardMarkdown(healthScorecard)).toContain("route_decision_sample_size");
     expect(buildEconomicsScorecardMarkdown(healthScorecard)).toContain("proof_minutes_proxy");
 
     const nightlyAggregate = buildNightlyAggregate({
@@ -235,11 +279,13 @@ describe("economics scorecard contract", () => {
       "operator_proof_count",
       "recorded_session_replay_count",
       "host_evidence_count",
+      "route_decision_sample_size",
+      "route_decision_activated_count",
     ]));
     expect(nightlyScorecard.derived.map((entry: any) => entry.metric)).toEqual(expect.arrayContaining([
-      "replay_winner_score_mean",
+      "replay_focus_better_count",
+      "replay_focus_tie_or_better_rate",
       "replay_context_chars_total",
-      "replay_estimated_prompt_tokens_total",
     ]));
     expect(nightlyScorecard.proxy.map((entry: any) => entry.metric)).toEqual(expect.arrayContaining([
       "proof_minutes_proxy",
@@ -247,6 +293,7 @@ describe("economics scorecard contract", () => {
     ]));
     expect(buildEconomicsScorecardMarkdown(nightlyScorecard)).toContain("## Proxy");
     expect(buildEconomicsScorecardMarkdown(nightlyScorecard)).toContain("recorded_session_replay_count");
+    expect(buildEconomicsScorecardMarkdown(nightlyScorecard)).toContain("route_decision_activated_count");
   });
 
   it("writes the bounded economics artifacts into the proof-cron health and nightly surfaces", () => {
@@ -288,9 +335,11 @@ describe("economics scorecard contract", () => {
 
     expect(healthEconomics.contract).toBe(ECONOMICS_SCORECARD_CONTRACT);
     expect(healthEconomics.scope).toBe("health");
+    expect(healthEconomics.measured.map((entry: any) => entry.metric)).toContain("route_decision_sample_size");
     expect(healthEconomicsMarkdown).toContain("## Measured");
     expect(healthEconomicsMarkdown).toContain("## Proxy");
     expect(healthEconomicsMarkdown).toContain("labels: measured / derived / proxy");
+    expect(healthEconomicsMarkdown).toContain("route_decision_activation_rate");
     expect(healthManifest.output.supporting.map((item: any) => item.path)).toEqual(expect.arrayContaining([
       "summary.md",
       ECONOMICS_SCORECARD_JSON_FILE,
@@ -301,7 +350,9 @@ describe("economics scorecard contract", () => {
 
     expect(nightlyEconomics.contract).toBe(ECONOMICS_SCORECARD_CONTRACT);
     expect(nightlyEconomics.scope).toBe("nightly");
+    expect(nightlyEconomics.measured.map((entry: any) => entry.metric)).toContain("route_decision_activated_count");
     expect(nightlyEconomicsMarkdown).toContain("## Derived");
+    expect(nightlyEconomicsMarkdown).toContain("route_decision_sample_size");
     expect(nightlyEconomicsMarkdown).toContain("replay_total_cost_usd_proxy");
     expect(nightlyManifest.output.supporting.map((item: any) => item.path)).toEqual(expect.arrayContaining([
       "summary.md",

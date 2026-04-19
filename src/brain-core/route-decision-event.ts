@@ -5,6 +5,8 @@ import type { DecisionTrace, TrajectoryStopReason } from "./types.js";
 
 export const ROUTE_DECISION_EVENT_VERSION_V1 = 1 as const;
 export const ROUTE_DECISION_EVENT_CONTRACT_V1 = "ocb.route_decision.v1";
+export const RECENT_ROUTE_DECISION_SUMMARY_CONTRACT_V1 = "openclawbrain_recent_route_decision_summary.v1";
+export const DEFAULT_ROUTE_DECISION_SUMMARY_WINDOW_SIZE_V1 = 25 as const;
 
 const STOP_REASONS = [
   "budget_exhausted",
@@ -147,6 +149,223 @@ export function summarizeRouteDecisionEventV1(event: RouteDecisionEventV1): Rout
     selectedContextCount: event.selected_context_count,
     decisionPointCount: event.decision_point_count,
     stopReason: event.stop_reason,
+  };
+}
+
+export interface RouteDecisionCoverageSummaryV1 {
+  observedCount: number;
+  observedRate: number | null;
+}
+
+export interface RouteDecisionNumericAggregateSummaryV1 {
+  observedCount: number;
+  total: number | null;
+  mean: number | null;
+  max: number | null;
+}
+
+export interface RecentRouteDecisionSummaryV1 {
+  contract: typeof RECENT_ROUTE_DECISION_SUMMARY_CONTRACT_V1;
+  windowSize: number;
+  sampleSize: number;
+  activation: {
+    activatedCount: number;
+    nonActivatedCount: number;
+    activationRate: number | null;
+  };
+  coverage: {
+    confidence: RouteDecisionCoverageSummaryV1;
+    predictedUtility: RouteDecisionCoverageSummaryV1;
+    predictedRegretOfAbstaining: RouteDecisionCoverageSummaryV1;
+    selectedTokenBudget: RouteDecisionCoverageSummaryV1;
+    activationThreshold: RouteDecisionCoverageSummaryV1;
+    costEstimateMs: RouteDecisionCoverageSummaryV1;
+  };
+  selectedContextCount: RouteDecisionNumericAggregateSummaryV1;
+  decisionPointCount: RouteDecisionNumericAggregateSummaryV1;
+  selectedTokenBudget: RouteDecisionNumericAggregateSummaryV1;
+  costEstimateMs: RouteDecisionNumericAggregateSummaryV1;
+  confidence: {
+    observedCount: number;
+    observedRate: number | null;
+    mean: number | null;
+  };
+  predictedUtility: {
+    observedCount: number;
+    observedRate: number | null;
+    mean: number | null;
+    positiveCount: number;
+    nonPositiveCount: number;
+  };
+  predictedRegretOfAbstaining: {
+    observedCount: number;
+    observedRate: number | null;
+    mean: number | null;
+    positiveCount: number;
+  };
+  stopReasonCounts: Record<RouteDecisionStopReason, number>;
+  detail: string;
+}
+
+function round(value: number, digits = 4): number | null {
+  if (!Number.isFinite(value)) {
+    return null;
+  }
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+}
+
+function rateSummary(observedCount: number, sampleSize: number): RouteDecisionCoverageSummaryV1 {
+  return {
+    observedCount,
+    observedRate: sampleSize > 0 ? round(observedCount / sampleSize, 4) : null,
+  };
+}
+
+function numericAggregateSummary(values: number[], digits = 2): RouteDecisionNumericAggregateSummaryV1 {
+  if (values.length === 0) {
+    return {
+      observedCount: 0,
+      total: null,
+      mean: null,
+      max: null,
+    };
+  }
+
+  const total = values.reduce((sum, value) => sum + value, 0);
+  return {
+    observedCount: values.length,
+    total: round(total, digits),
+    mean: round(total / values.length, digits),
+    max: round(Math.max(...values), digits),
+  };
+}
+
+function formatSummaryScalar(value: number | null): string {
+  if (value === null) {
+    return "n/a";
+  }
+  return String(value);
+}
+
+function buildRecentRouteDecisionDetail(summary: Omit<RecentRouteDecisionSummaryV1, "detail">): string {
+  if (summary.sampleSize === 0) {
+    return "no recent route-decision events captured in the current window";
+  }
+
+  const topStop = Object.entries(summary.stopReasonCounts)
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))[0];
+  const topStopSummary = topStop && topStop[1] > 0 ? `${topStop[0]}=${topStop[1]}` : "none";
+
+  return [
+    `${summary.activation.activatedCount}/${summary.sampleSize} activated`,
+    `confidence ${summary.coverage.confidence.observedCount}/${summary.sampleSize}`,
+    `predictedUtility ${summary.coverage.predictedUtility.observedCount}/${summary.sampleSize}`,
+    `selectedContext mean=${formatSummaryScalar(summary.selectedContextCount.mean)}`,
+    `decisionPoints mean=${formatSummaryScalar(summary.decisionPointCount.mean)}`,
+    `topStop=${topStopSummary}`,
+  ].join("; ");
+}
+
+export function buildRecentRouteDecisionSummaryV1(
+  events: unknown[],
+  windowSize = DEFAULT_ROUTE_DECISION_SUMMARY_WINDOW_SIZE_V1,
+): RecentRouteDecisionSummaryV1 {
+  const boundedWindowSize = Number.isFinite(windowSize) && windowSize > 0
+    ? Math.floor(windowSize)
+    : DEFAULT_ROUTE_DECISION_SUMMARY_WINDOW_SIZE_V1;
+  const recent = Array.isArray(events) ? events.slice(-boundedWindowSize) : [];
+  const validEvents = recent.filter((value): value is RouteDecisionEventV1 => validateRouteDecisionEventV1(value).valid);
+  const sampleSize = validEvents.length;
+  const activatedCount = validEvents.filter((event) => event.activated).length;
+  const nonActivatedCount = sampleSize - activatedCount;
+
+  const confidenceValues = validEvents
+    .map((event) => event.confidence)
+    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const predictedUtilityValues = validEvents
+    .map((event) => event.predicted_utility)
+    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const predictedRegretValues = validEvents
+    .map((event) => event.predicted_regret_of_abstaining)
+    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const selectedTokenBudgetValues = validEvents
+    .map((event) => event.selected_token_budget)
+    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const activationThresholdValues = validEvents
+    .map((event) => event.activation_threshold)
+    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const costEstimateValues = validEvents
+    .map((event) => event.cost_estimate_ms)
+    .filter((value): value is number => value !== null && Number.isFinite(value));
+  const selectedContextCountValues = validEvents.map((event) => event.selected_context_count);
+  const decisionPointCountValues = validEvents.map((event) => event.decision_point_count);
+
+  const stopReasonCounts = STOP_REASONS.reduce<Record<RouteDecisionStopReason, number>>(
+    (counts, reason) => {
+      counts[reason] = 0;
+      return counts;
+    },
+    {} as Record<RouteDecisionStopReason, number>,
+  );
+
+  for (const event of validEvents) {
+    if (!event.activated && event.stop_reason) {
+      stopReasonCounts[event.stop_reason] += 1;
+    }
+  }
+
+  const summaryWithoutDetail: Omit<RecentRouteDecisionSummaryV1, "detail"> = {
+    contract: RECENT_ROUTE_DECISION_SUMMARY_CONTRACT_V1,
+    windowSize: boundedWindowSize,
+    sampleSize,
+    activation: {
+      activatedCount,
+      nonActivatedCount,
+      activationRate: sampleSize > 0 ? round(activatedCount / sampleSize, 4) : null,
+    },
+    coverage: {
+      confidence: rateSummary(confidenceValues.length, sampleSize),
+      predictedUtility: rateSummary(predictedUtilityValues.length, sampleSize),
+      predictedRegretOfAbstaining: rateSummary(predictedRegretValues.length, sampleSize),
+      selectedTokenBudget: rateSummary(selectedTokenBudgetValues.length, sampleSize),
+      activationThreshold: rateSummary(activationThresholdValues.length, sampleSize),
+      costEstimateMs: rateSummary(costEstimateValues.length, sampleSize),
+    },
+    selectedContextCount: numericAggregateSummary(selectedContextCountValues, 2),
+    decisionPointCount: numericAggregateSummary(decisionPointCountValues, 2),
+    selectedTokenBudget: numericAggregateSummary(selectedTokenBudgetValues, 2),
+    costEstimateMs: numericAggregateSummary(costEstimateValues, 2),
+    confidence: {
+      observedCount: confidenceValues.length,
+      observedRate: sampleSize > 0 ? round(confidenceValues.length / sampleSize, 4) : null,
+      mean: confidenceValues.length > 0
+        ? round(confidenceValues.reduce((sum, value) => sum + value, 0) / confidenceValues.length, 4)
+        : null,
+    },
+    predictedUtility: {
+      observedCount: predictedUtilityValues.length,
+      observedRate: sampleSize > 0 ? round(predictedUtilityValues.length / sampleSize, 4) : null,
+      mean: predictedUtilityValues.length > 0
+        ? round(predictedUtilityValues.reduce((sum, value) => sum + value, 0) / predictedUtilityValues.length, 4)
+        : null,
+      positiveCount: predictedUtilityValues.filter((value) => value > 0).length,
+      nonPositiveCount: predictedUtilityValues.filter((value) => value <= 0).length,
+    },
+    predictedRegretOfAbstaining: {
+      observedCount: predictedRegretValues.length,
+      observedRate: sampleSize > 0 ? round(predictedRegretValues.length / sampleSize, 4) : null,
+      mean: predictedRegretValues.length > 0
+        ? round(predictedRegretValues.reduce((sum, value) => sum + value, 0) / predictedRegretValues.length, 4)
+        : null,
+      positiveCount: predictedRegretValues.filter((value) => value > 0).length,
+    },
+    stopReasonCounts,
+  };
+
+  return {
+    ...summaryWithoutDetail,
+    detail: buildRecentRouteDecisionDetail(summaryWithoutDetail),
   };
 }
 

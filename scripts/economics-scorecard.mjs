@@ -97,6 +97,8 @@ function buildSourcesFromSnapshot(snapshot) {
     latestOperatorProofPath: normalizeText(latestOperatorProof?.relativePath),
     latestReplayProofPath: normalizeText(latestReplayProof?.relativePath),
     latestHostEvidencePath: normalizeText(latestHostEvidence?.relativePath),
+    routeDecisionSummarySource: normalizeText(snapshot?.routeDecisionSummarySource),
+    routeDecisionSummaryPath: normalizeText(snapshot?.routeDecisionSummaryPath),
     replayPricingTableVersion: normalizeText(snapshot?.replayCostProxy?.pricingTableVersion),
     replayPricingTablePath: normalizeText(snapshot?.replayCostProxy?.pricingTablePath),
   };
@@ -116,6 +118,8 @@ function buildSourcesFromAggregate(aggregate) {
     latestReplayProofPath: normalizeText(latestReplayProof?.relativePath),
     replayFocusManifestId: normalizeText(aggregate?.replayMetrics?.focus?.sourceManifestId),
     latestHostEvidencePath: normalizeText(latestHostEvidence?.relativePath),
+    routeDecisionSummarySource: normalizeText(aggregate?.routeDecisionSummarySource),
+    routeDecisionSummaryPath: normalizeText(aggregate?.routeDecisionSummaryPath),
     replayPricingTableVersion: normalizeText(aggregate?.replayMetrics?.pricingTableVersion),
     replayPricingTablePath: normalizeText(aggregate?.replayMetrics?.pricingTablePath),
   };
@@ -221,6 +225,15 @@ export function buildEconomicsScorecardFromHealthSnapshot(snapshot) {
       "snapshot.proofInventory.hostEvidenceCount",
       "Host evidence bundles visible in the scan.",
     ),
+    buildEntry(
+      "measured",
+      "route_decision_sample_size",
+      "route-decision sample size",
+      normalizeNumber(snapshot?.routeDecisionSummary?.sampleSize),
+      "count",
+      "snapshot.routeDecisionSummary.sampleSize",
+      "Recent route-decision events observed in the bounded status window.",
+    ),
   ]);
 
   const derived = compactEntries([
@@ -277,6 +290,24 @@ export function buildEconomicsScorecardFromHealthSnapshot(snapshot) {
       "count",
       "snapshot.replaySavings[].retrievalToolHopCount",
       "Retrieval/tool-hop proxy count summed across replay bundles.",
+    ),
+    buildEntry(
+      "derived",
+      "route_decision_activation_rate",
+      "route-decision activation rate",
+      normalizeNumber(snapshot?.routeDecisionSummary?.activation?.activationRate),
+      "ratio",
+      "snapshot.routeDecisionSummary.activation.activationRate",
+      "Activation share across the recent bounded route-decision window.",
+    ),
+    buildEntry(
+      "derived",
+      "route_decision_selected_context_count_mean",
+      "route-decision selected-context count mean",
+      normalizeNumber(snapshot?.routeDecisionSummary?.selectedContextCount?.mean),
+      "count",
+      "snapshot.routeDecisionSummary.selectedContextCount.mean",
+      "Mean selected-context count across the recent bounded route-decision window.",
     ),
   ]);
 
@@ -394,6 +425,24 @@ export function buildEconomicsScorecardFromNightlyAggregate(aggregate) {
       "count",
       "aggregate.validationCounts.fail",
       "Bundles that failed validation.",
+    ),
+    buildEntry(
+      "measured",
+      "route_decision_sample_size",
+      "route-decision sample size",
+      normalizeNumber(aggregate?.routeDecisionSummary?.sampleSize),
+      "count",
+      "aggregate.routeDecisionSummary.sampleSize",
+      "Recent route-decision events visible in the latest bounded proof surface.",
+    ),
+    buildEntry(
+      "measured",
+      "route_decision_activated_count",
+      "route-decision activated count",
+      normalizeNumber(aggregate?.routeDecisionSummary?.activation?.activatedCount),
+      "count",
+      "aggregate.routeDecisionSummary.activation.activatedCount",
+      "Activated route decisions observed in the latest bounded proof surface.",
     ),
   ]);
 
@@ -570,6 +619,8 @@ function renderSourcesMarkdown(sources) {
     `- latest replay proof path: ${sources.latestReplayProofPath ?? "n/a"}`,
     `- replay focus manifest id: ${sources.replayFocusManifestId ?? "n/a"}`,
     `- latest host evidence path: ${sources.latestHostEvidencePath ?? "n/a"}`,
+    `- route-decision summary source: ${sources.routeDecisionSummarySource ?? "n/a"}`,
+    `- route-decision summary path: ${sources.routeDecisionSummaryPath ?? "n/a"}`,
     `- replay pricing table version: ${sources.replayPricingTableVersion ?? "n/a"}`,
     `- replay pricing table path: ${sources.replayPricingTablePath ?? "n/a"}`,
   ];
