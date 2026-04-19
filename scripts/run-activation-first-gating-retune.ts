@@ -123,6 +123,7 @@ interface ParsedArgs {
   warmStartArtifactDir: string;
   includeMustFire: boolean;
   generatedAt: string;
+  activationThreshold: number;
 }
 
 interface ActivationFirstHarnessLaneV1 {
@@ -426,6 +427,7 @@ function usage(): void {
       "  --include-must-fire           Include must-fire-30 as secondary training input (default)",
       "  --no-must-fire                Exclude must-fire-30 from training input",
       "  --generated-at <iso>          Override generated timestamp",
+      `  --activation-threshold <n>    Defaults to ${ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1.activationThreshold}`,
       "  --help                        Show this help",
     ].join("\n") + "\n",
   );
@@ -451,6 +453,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     warmStartArtifactDir: DEFAULT_WARM_START_ARTIFACT_DIR,
     includeMustFire: true,
     generatedAt: new Date().toISOString(),
+    activationThreshold: ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1.activationThreshold,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -482,6 +485,16 @@ function parseArgs(argv: string[]): ParsedArgs {
         parsed.generatedAt = normalizeCliString(argv[index + 1]) ?? parsed.generatedAt;
         index += 1;
         break;
+      case "--activation-threshold": {
+        const rawValue = normalizeCliString(argv[index + 1]);
+        const parsedValue = rawValue === null ? Number.NaN : Number(rawValue);
+        if (!Number.isFinite(parsedValue)) {
+          throw new Error("--activation-threshold must be a finite number");
+        }
+        parsed.activationThreshold = parsedValue;
+        index += 1;
+        break;
+      }
       case "--help":
       case "-h":
         usage();
@@ -1967,7 +1980,10 @@ async function main(): Promise<void> {
     focusLaneWeights: harness.suggestedTrainingConfig.focusLaneWeights,
     rowTypeWeights: harness.suggestedTrainingConfig.rowTypeWeights,
     interventionHead: ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1,
-    calibrationOverrides: ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1,
+    calibrationOverrides: {
+      ...ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1,
+      activationThreshold: args.activationThreshold,
+    },
     outputDir: artifacts.candidateArtifactDir,
     routerIdentity: candidateRouterIdentity,
     createdAt: args.generatedAt,
@@ -2063,6 +2079,7 @@ async function main(): Promise<void> {
     harnessPath,
     routeObjectiveInputPath,
     warmStartArtifactDir: args.warmStartArtifactDir,
+    activationThreshold: args.activationThreshold,
     candidateArtifact: {
       outputDir: artifacts.candidateArtifactDir,
       artifactId: candidate.manifest.artifact_id,

@@ -1,0 +1,219 @@
+{
+  "contract": "frozen_recorded_session_eval_manifest.v1",
+  "manifestId": "felt_resume_25-eval",
+  "generatedAt": "2026-04-19T14:32:12.884Z",
+  "expectedTraceCount": 25,
+  "notes": [
+    "Primary felt optimize lane for session continuity / task resume wins where learned_route should recover recent task state and produce a materially better continuation than graph_prior_only.",
+    "This felt lane is intentionally concrete: it is built from real resume and continuity prompts where the current turn alone is too thin to pick the right next action.",
+    "The tranche is complete at 25 anchors so the next harness / proof loops can treat it as the headline optimize lane instead of a partial placeholder.",
+    "selection rule: Trace must be a real resume, continue, handoff, or boot-recovery turn where the current prompt is materially under-specified without recent task state.",
+    "selection rule: Prefer traces where the right continuation depends on active task, blocker, deliverable, or runtime state rather than wording polish.",
+    "selection rule: Exclude trivial wrappers that are pure boilerplate and do not require recovering a concrete prior workstream.",
+    "selection rule: Include a mix of fresh-session boot resumes, interrupted coding resumes, narrowed-scope continuations, and operator keep-going turns.",
+    "selection rule: Measure success as materially better continuation choice, not tie-heavy restatement."
+  ],
+  "traces": [
+    {
+      "traceId": "live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002.json",
+      "notes": [
+        "bucket: boot_resume",
+        "Fresh-session boot check requires recovering the active principal task, blocker, and next action from prior state rather than the prompt alone."
+      ]
+    },
+    {
+      "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/bountiful/live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-002.json",
+      "notes": [
+        "bucket: boot_resume",
+        "Sub-agent boot resume depends on task ledger and live artifact truth that are not restated in-turn."
+      ]
+    },
+    {
+      "traceId": "live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-7498149c-ca61-4cda-b16f-880f2c1cf323-window-003.json",
+      "notes": [
+        "bucket: gateway_reload_resume",
+        "Gateway-reload continuation only succeeds if the assistant reconstructs the original task, blocker, and worktree context."
+      ]
+    },
+    {
+      "traceId": "live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002.json",
+      "notes": [
+        "bucket: narrowed_scope_resume",
+        "Narrow-scope continuation needs the prior lane deliverable and risk boundary to choose the right smallest next step."
+      ]
+    },
+    {
+      "traceId": "live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-003.json",
+      "notes": [
+        "bucket: narrowed_scope_resume",
+        "Usable-lane continuation depends on the already-open lane context and minimum deliverable boundary."
+      ]
+    },
+    {
+      "traceId": "live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-003.json",
+      "notes": [
+        "bucket: narrowed_scope_resume",
+        "Smallest-deliverable continuation requires recent lane findings and explicit scope cuts that are not self-contained in the user turn."
+      ]
+    },
+    {
+      "traceId": "live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-1f25d4e1-770f-4106-a3d1-14910d8fde3d-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Generic resume after timeout only works if the assistant recovers the previous unfinished code/debug state."
+      ]
+    },
+    {
+      "traceId": "live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-2b388c4b-24bf-4e37-b956-c1907568c6ad-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Resume request is underspecified without the immediately prior lane context."
+      ]
+    },
+    {
+      "traceId": "live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-569c731f-9a33-47a8-83f9-12284306e1fd-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Resume message is too thin without retrieving the last unfinished step and artifact state."
+      ]
+    },
+    {
+      "traceId": "live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-685b2c1a-b082-4f5a-a284-ff9623440da6-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Continuation needs prior task state to avoid repeating discovery or taking the wrong next action."
+      ]
+    },
+    {
+      "traceId": "live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-6bc67602-c4ee-4fc7-8fbc-3434b2aa2286-window-003.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Resume-after-timeout turn is memory dependent because the real deliverable lives in prior state."
+      ]
+    },
+    {
+      "traceId": "live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-6fc9b209-69a7-4584-9093-cbfb2cfb69af-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Thin continuation request requires reconstructing previous code and proof context."
+      ]
+    },
+    {
+      "traceId": "live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-716b770f-85c9-4b7e-ab26-cfe2594bb715-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "The prompt only says to continue, so the value comes from restoring exact prior lane state."
+      ]
+    },
+    {
+      "traceId": "live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-94879cd8-58fe-4b9d-a303-388308f858ce-window-003.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Resume success depends on pulling the unfinished task state from recent history."
+      ]
+    },
+    {
+      "traceId": "live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-971973d8-2a63-4883-a18f-bfa883f844ea-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Previous-model-failed continuation is memory-needed because the current turn omits the active lane details."
+      ]
+    },
+    {
+      "traceId": "live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-983f0a77-69b8-40b2-922b-c7dc44d4c7e9-window-007.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Continuation requires recovering the prior work surface, not just following the short prompt."
+      ]
+    },
+    {
+      "traceId": "live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-a96180ee-512c-47d8-b6a0-b2db38789889-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "The requested next move depends on prior in-session state and unfinished work."
+      ]
+    },
+    {
+      "traceId": "live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-b8b03b3e-6e68-4062-8dd5-0439897868c4-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Continuation after timeout is only actionable if recent lane reasoning and constraints are recalled."
+      ]
+    },
+    {
+      "traceId": "live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/main/live-main-ea1c291e-11db-40af-8a15-d4d00cfa963c-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Resume request relies on restoring prior task context rather than the current text alone."
+      ]
+    },
+    {
+      "traceId": "live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/pelican/live-pelican-19d2ca56-857b-4cd5-b4ca-384d6988e0bd-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Pelican continuation depends on recovering prior operational state, not just generic continuation behavior."
+      ]
+    },
+    {
+      "traceId": "live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/pelican/live-pelican-330d909a-03d4-4e50-bfd9-3b08fdcb8ba6-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Resume success requires the assistant to pull the previously active Pelican task context."
+      ]
+    },
+    {
+      "traceId": "live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/pelican/live-pelican-4b7823ea-a7a7-42bb-b79e-cefdbc1b56ac-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "This continue prompt is materially under-specified without the prior operational lane."
+      ]
+    },
+    {
+      "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/pelican/live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-016.json",
+      "notes": [
+        "bucket: keep_going_resume",
+        "Keep-going instruction should pull the current workstream and avoid resetting the plan from scratch."
+      ]
+    },
+    {
+      "traceId": "live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/pelican/live-pelican-7ade65ed-f8fd-4d4d-8c8f-77ff9531b42b-window-002.json",
+      "notes": [
+        "bucket: continue_after_timeout",
+        "Pelican resume after timeout is stateful and should activate retrieval of the last active lane."
+      ]
+    },
+    {
+      "traceId": "live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002",
+      "tracePath": "../../T-20260415-250/stratified-rich-live-535-extracted/traces/bountiful/live-bountiful-55dd01ce-c43c-4b90-a4c6-c2fa97115709-window-002.json",
+      "notes": [
+        "bucket: keep_going_resume",
+        "Group-workstream keep-going request depends on restoring the active Bountiful workstream and recent decisions."
+      ]
+    }
+  ]
+}
+
