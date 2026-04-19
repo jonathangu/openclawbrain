@@ -21,7 +21,7 @@ import { describeOpenClawBrainHotfixBoundary, inspectOpenClawBrainHookStatus, in
 import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, quarantineOpenClawBrainNestedDuplicateInstalls, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
 import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction, shouldReplaceOpenClawBrainInstallBeforeConverge } from "./install-converge.js";
 import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth, writeAttachmentPolicyDeclaration } from "./attachment-policy-truth.js";
-import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatusWithReport, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, summarizeTeacherNoArtifactCycle, writeScannedEventExportBundle } from "./index.js";
+import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, describeCurrentProfileBrainStatusWithReport, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, summarizeTeacherNoArtifactCycle, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
 import { reindexMaterializationCandidateWithEmbedder } from "./materialization-embedder.js";
@@ -1800,14 +1800,22 @@ function readInstallRuntimeFingerprint(openclawHome) {
         daemonRuntimeSource: daemonSurface?.surfaceIdentitySource ?? null
     };
 }
+function buildConvergePluginManagerEnv(openclawHome) {
+    const normalizedOpenClawHome = path.resolve(openclawHome);
+    const pluginManagerEnv = {
+        ...process.env,
+        OPENCLAW_HOME: normalizedOpenClawHome,
+        OPENCLAW_STATE_DIR: normalizedOpenClawHome,
+        OPENCLAW_CONFIG_PATH: path.join(normalizedOpenClawHome, "openclaw.json")
+    };
+    delete pluginManagerEnv.OPENCLAW_PROFILE;
+    return pluginManagerEnv;
+}
 function runOpenClawBrainConvergePluginStep(openclawHome) {
     const quarantinedNestedDuplicates = quarantineOpenClawBrainNestedDuplicateInstalls(openclawHome);
     const before = readInstallRuntimeFingerprint(openclawHome);
     const plan = planOpenClawBrainConvergePluginAction(before);
-    const pluginManagerEnv = {
-        ...process.env,
-        OPENCLAW_HOME: openclawHome
-    };
+    const pluginManagerEnv = buildConvergePluginManagerEnv(openclawHome);
     if (plan.action === "noop") {
         return {
             plan,
@@ -7523,12 +7531,11 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
             : { profileId: targetInspection.profileId }),
         teacherSnapshotPath: resolveOperatorTeacherSnapshotPath(activationRoot, statusOrRollback.input.teacherSnapshotPath)
     };
-    const statusWithReport = describeCurrentProfileBrainStatusWithReport(operatorInput);
-    const status = statusWithReport.status;
     const tracedLearning = buildTracedLearningStatusSurface(activationRoot);
-    const normalizedStatusAndReport = applyAttachmentPolicyTruth(status, statusOrRollback.json ? null : statusWithReport.report);
-    const hotfixBoundaryTruth = summarizeStatusHotfixBoundary(normalizedStatusAndReport.status);
     if (statusOrRollback.json) {
+        const status = describeCurrentProfileBrainStatus(operatorInput);
+        const normalizedStatusAndReport = applyAttachmentPolicyTruth(status, null);
+        const hotfixBoundaryTruth = summarizeStatusHotfixBoundary(normalizedStatusAndReport.status);
         console.log(JSON.stringify({
             ...normalizedStatusAndReport.status,
             tracedLearning,
@@ -7536,6 +7543,8 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
         }, null, 2));
     }
     else {
+        const statusWithReport = describeCurrentProfileBrainStatusWithReport(operatorInput);
+        const normalizedStatusAndReport = applyAttachmentPolicyTruth(statusWithReport.status, statusWithReport.report);
         const report = normalizedStatusAndReport.report;
         const providerConfig = readOpenClawBrainProviderConfigFromSources({
             env: process.env,

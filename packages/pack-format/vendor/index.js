@@ -372,7 +372,7 @@ export function validatePackActivationReadiness(packOrRootDir) {
     let pack;
     if (typeof packOrRootDir === "string") {
         try {
-            pack = loadPack(packOrRootDir);
+            pack = loadPackManifestRecord(packOrRootDir);
         }
         catch (error) {
             return [error instanceof Error ? error.message : String(error)];
@@ -548,7 +548,11 @@ function assertRetainedPointerMatchesManifest(slot, record, options = {}) {
     }
 }
 function ensurePackRecordMatchesManifest(record, options = {}) {
-    const pack = loadPack(path.resolve(record.packRootDir));
+    const includePayloads = options.includePayloads !== false;
+    const pack = loadCachedPackRecord(path.resolve(record.packRootDir), {
+        includePayloads,
+        packCache: options.packCache
+    });
     const errors = [];
     if (path.resolve(pack.manifestPath) !== path.resolve(record.manifestPath)) {
         errors.push(`pointer manifestPath ${record.manifestPath} does not match pack manifest ${pack.manifestPath}`);
@@ -631,7 +635,7 @@ function buildLearningSpineActivationPackSnapshot(record) {
     let graphChecksum = null;
     let routerIdentity = record.routerIdentity;
     try {
-        const pack = loadPack(path.resolve(record.packRootDir));
+        const pack = loadPackManifestRecord(path.resolve(record.packRootDir));
         routerChecksum = pack.manifest.payloadChecksums.router;
         graphChecksum = pack.manifest.payloadChecksums.graph;
         routerIdentity = pack.router?.routerIdentity ?? record.routerIdentity;
@@ -688,8 +692,7 @@ function inspectPointerRecord(slot, record) {
     }
     const findings = [];
     try {
-        const pack = ensurePackRecordMatchesManifest(record, { requireActivationReady: true });
-        findings.push(...validatePackActivationReadiness(pack));
+        ensurePackRecordMatchesManifest(record, { requireActivationReady: true, includePayloads: false });
     }
     catch (error) {
         findings.push(error instanceof Error ? error.message : String(error));
@@ -741,7 +744,7 @@ function previewPromotionPointers(current, updatedAt) {
     let candidatePack = null;
     if (current.candidate !== null) {
         try {
-            candidatePack = ensurePackRecordMatchesManifest(current.candidate, { requireActivationReady: true });
+            candidatePack = ensurePackRecordMatchesManifest(current.candidate, { requireActivationReady: true, includePayloads: false });
         }
         catch (error) {
             findings.push(error instanceof Error ? error.message : String(error));
@@ -750,7 +753,7 @@ function previewPromotionPointers(current, updatedAt) {
     let activePack = null;
     if (current.active !== null) {
         try {
-            activePack = ensurePackRecordMatchesManifest(current.active, { requireActivationReady: true });
+            activePack = ensurePackRecordMatchesManifest(current.active, { requireActivationReady: true, includePayloads: false });
         }
         catch (error) {
             findings.push(error instanceof Error ? error.message : String(error));
@@ -798,7 +801,7 @@ function previewRollbackPointers(current, updatedAt) {
     let previousPack = null;
     if (current.previous !== null) {
         try {
-            previousPack = ensurePackRecordMatchesManifest(current.previous, { requireActivationReady: true });
+            previousPack = ensurePackRecordMatchesManifest(current.previous, { requireActivationReady: true, includePayloads: false });
         }
         catch (error) {
             findings.push(error instanceof Error ? error.message : String(error));
@@ -807,7 +810,7 @@ function previewRollbackPointers(current, updatedAt) {
     let activePack = null;
     if (current.active !== null) {
         try {
-            activePack = ensurePackRecordMatchesManifest(current.active, { requireActivationReady: true });
+            activePack = ensurePackRecordMatchesManifest(current.active, { requireActivationReady: true, includePayloads: false });
         }
         catch (error) {
             findings.push(error instanceof Error ? error.message : String(error));
@@ -863,7 +866,8 @@ export function loadPackFromActivation(rootDir, slot = "active", options = {}) {
         return null;
     }
     return ensurePackRecordMatchesManifest(record, {
-        requireActivationReady: options.requireActivationReady === true
+        requireActivationReady: options.requireActivationReady === true,
+        packCache: options.packCache
     });
 }
 export function describeActivationTarget(rootDir, slot = "active", options = {}) {
@@ -903,7 +907,8 @@ export function inspectActivationState(rootDir, updatedAt = "2026-03-06T00:00:00
     };
 }
 export function describeActivationObservability(rootDir, slot = "active", options = {}) {
-    const inspection = inspectActivationState(rootDir, options.updatedAt);
+    const inspection = options.inspection ?? inspectActivationState(rootDir, options.updatedAt);
+    const packCache = options.packCache instanceof Map ? options.packCache : new Map();
     const selectedInspection = slot === "active" ? inspection.active : slot === "candidate" ? inspection.candidate : inspection.previous;
     const target = selectedInspection === null ? null : buildCompileTargetFromInspection(selectedInspection);
     let pack = null;
@@ -911,27 +916,40 @@ export function describeActivationObservability(rootDir, slot = "active", option
     let candidatePack = null;
     try {
         pack = loadPackFromActivation(rootDir, slot, {
-            requireActivationReady: options.requireActivationReady === true
+            requireActivationReady: options.requireActivationReady === true,
+            packCache
         });
     }
     catch {
         pack = null;
     }
-    try {
-        activePack = loadPackFromActivation(rootDir, "active", {
-            requireActivationReady: options.requireActivationReady === true
-        });
+    if (slot === "active") {
+        activePack = pack;
     }
-    catch {
-        activePack = null;
+    else {
+        try {
+            activePack = loadPackFromActivation(rootDir, "active", {
+                requireActivationReady: options.requireActivationReady === true,
+                packCache
+            });
+        }
+        catch {
+            activePack = null;
+        }
     }
-    try {
-        candidatePack = loadPackFromActivation(rootDir, "candidate", {
-            requireActivationReady: options.requireActivationReady === true
-        });
+    if (slot === "candidate") {
+        candidatePack = pack;
     }
-    catch {
-        candidatePack = null;
+    else {
+        try {
+            candidatePack = loadPackFromActivation(rootDir, "candidate", {
+                requireActivationReady: options.requireActivationReady === true,
+                packCache
+            });
+        }
+        catch {
+            candidatePack = null;
+        }
     }
     const activeTarget = inspection.active === null ? null : buildCompileTargetFromInspection(inspection.active);
     const candidateTarget = inspection.candidate === null ? null : buildCompileTargetFromInspection(inspection.candidate);
@@ -1061,6 +1079,71 @@ export function rollbackActivePack(rootDir, updatedAtOrOptions = "2026-03-06T00:
     return result;
 }
 export { LEARNING_SPINE_LOG_LAYOUT, appendLearningSpineLogEntry, buildLearningSpineLogId, readLearningSpineLogEntries, resolveLearningSpineLogPath } from "./learning-spine-logs.js";
+function loadPackManifestRecord(rootDir) {
+    const resolvedRootDir = path.resolve(rootDir);
+    const manifestPath = path.join(resolvedRootDir, PACK_LAYOUT.manifest);
+    if (!existsSync(manifestPath)) {
+        throw new Error(`pack manifest not found: ${manifestPath}`);
+    }
+    const manifest = readJsonFile(manifestPath);
+    const manifestErrors = validatePackDescriptor(manifest);
+    if (manifestErrors.length > 0) {
+        throw new Error(`Invalid pack descriptor: ${manifestErrors.join("; ")}`);
+    }
+    const graphPath = resolvePackAssetPath(resolvedRootDir, manifest.runtimeAssets.graphPath, "graph payload");
+    const vectorPath = resolvePackAssetPath(resolvedRootDir, manifest.runtimeAssets.vectorPath, "vector payload");
+    const routerPath = manifest.runtimeAssets.router.artifactPath === null
+        ? null
+        : resolvePackAssetPath(resolvedRootDir, manifest.runtimeAssets.router.artifactPath, "router payload");
+    const fileErrors = [];
+    pushFileError(fileErrors, graphPath, "graph payload");
+    pushFileError(fileErrors, vectorPath, "vector payload");
+    if (routerPath !== null && manifest.runtimeAssets.router.kind !== "none") {
+        pushFileError(fileErrors, routerPath, "router payload");
+    }
+    if (fileErrors.length > 0) {
+        throw new Error(`Invalid pack descriptor: ${fileErrors.join("; ")}`);
+    }
+    const router = routerPath === null ? null : readJsonFile(routerPath);
+    const payloadErrors = router === null ? [] : validateRouterArtifact(router, manifest);
+    if (routerPath === null) {
+        if (manifest.payloadChecksums.router !== null) {
+            payloadErrors.push("router checksum must be null when router artifact is absent");
+        }
+    }
+    else {
+        const routerChecksum = sha256File(routerPath);
+        if (manifest.payloadChecksums.router !== routerChecksum) {
+            payloadErrors.push("router checksum does not match manifest");
+        }
+    }
+    if (payloadErrors.length > 0) {
+        throw new Error(`Invalid pack descriptor: ${payloadErrors.join("; ")}`);
+    }
+    return {
+        rootDir: resolvedRootDir,
+        manifestPath,
+        graphPath,
+        vectorPath,
+        routerPath,
+        manifest,
+        router
+    };
+}
+function loadCachedPackRecord(rootDir, options = {}) {
+    const resolvedRootDir = path.resolve(rootDir);
+    const includePayloads = options.includePayloads === true;
+    const packCache = options.packCache instanceof Map ? options.packCache : null;
+    const cached = packCache?.get(resolvedRootDir) ?? null;
+    if (cached !== null && cached !== undefined) {
+        if (!includePayloads || ("graph" in cached && "vectors" in cached)) {
+            return cached;
+        }
+    }
+    const loaded = includePayloads ? loadPack(resolvedRootDir) : loadPackManifestRecord(resolvedRootDir);
+    packCache?.set(resolvedRootDir, loaded);
+    return loaded;
+}
 export function loadPack(rootDir) {
     const manifestPath = path.join(rootDir, PACK_LAYOUT.manifest);
     if (!existsSync(manifestPath)) {

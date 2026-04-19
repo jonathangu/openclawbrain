@@ -3075,8 +3075,8 @@ export function deriveEmpiricalStructuralBudgetFromCompileSignals(input) {
         ]
     };
 }
-function resolveCompileBudget(target, input) {
-    const pack = loadPackFromActivation(target.activationRoot, "active");
+function resolveCompileBudget(target, input, options = {}) {
+    const pack = options.pack ?? loadPackFromActivation(target.activationRoot, "active");
     return deriveEmpiricalStructuralBudget({
         requestedStrategy: input.budgetStrategy ?? "empirical_v1",
         ...(input.maxContextBlocks !== undefined ? { requestedMaxContextBlocks: input.maxContextBlocks } : {}),
@@ -3177,7 +3177,8 @@ export function compileRuntimeContext(input) {
     try {
         const target = resolveActivePackForCompile(activationRoot);
         validateFrozenReplayEvalIdentity(target, frozenReplayEvalIdentity);
-        const resolvedBudget = resolveCompileBudget(target, input);
+        const activePack = loadPackFromActivation(activationRoot, "active", { requireActivationReady: true });
+        const resolvedBudget = resolveCompileBudget(target, input, { pack: activePack });
         routeSelectionStartedAtNs = monotonicClockNs();
         const compile = compileRuntimeFromActivation(activationRoot, {
             contract: CONTRACT_IDS.runtimeCompile,
@@ -3191,7 +3192,9 @@ export function compileRuntimeContext(input) {
             ...(runtimeHints.length > 0 ? { runtimeHints } : {})
         }, {
             ...(selectionMode !== undefined ? { selectionMode } : {}),
-            ...(learnedRouteSelectionOverride === null ? {} : { _learnedRouteSelectionOverride: learnedRouteSelectionOverride })
+            ...(learnedRouteSelectionOverride === null ? {} : { _learnedRouteSelectionOverride: learnedRouteSelectionOverride }),
+            pack: activePack,
+            target: describePackCompileTarget(activePack)
         });
         routeSelectionMs = elapsedMsFrom(routeSelectionStartedAtNs);
         const selectionEngine = selectionMode ?? "flat_rank_v1";
@@ -3569,7 +3572,8 @@ function buildAttachStatusCompileInput(activationRoot, compile) {
         ...(compile?.maxContextChars !== undefined ? { maxContextChars: compile.maxContextChars } : {}),
         ...(compile?.mode !== undefined ? { mode: compile.mode } : {}),
         ...(compile?.compactionMode !== undefined ? { compactionMode: compile.compactionMode } : {}),
-        runtimeHints: compile?.runtimeHints ?? [...DEFAULT_ATTACH_STATUS_RUNTIME_HINTS]
+        runtimeHints: compile?.runtimeHints ?? [...DEFAULT_ATTACH_STATUS_RUNTIME_HINTS],
+        _suppressServeLog: true
     };
 }
 export function describeAttachStatus(input) {
@@ -6111,7 +6115,7 @@ export function summarizeLearningPathFromMaterialization(materialization) {
         router: materialization.candidate.payloads.router
     });
 }
-function summarizeActivePackObservability(activationRoot, active) {
+function summarizeActivePackObservability(activationRoot, active, options = {}) {
     if (active === null) {
         return {
             labelFlow: buildMissingLabelFlowSummary("no active pack is attached"),
@@ -6125,7 +6129,10 @@ function summarizeActivePackObservability(activationRoot, active) {
         };
     }
     try {
-        const pack = loadPackFromActivation(activationRoot, "active", { requireActivationReady: true });
+        const pack = loadPackFromActivation(activationRoot, "active", {
+            requireActivationReady: true,
+            packCache: options.packCache
+        });
         if (pack === null) {
             return {
                 labelFlow: buildMissingLabelFlowSummary("active pack payloads are unavailable"),
@@ -6612,6 +6619,9 @@ function loadLatestOperatorEventExportFromScanRoots(scanRoots) {
     };
 }
 function loadOperatorEventExport(input) {
+    if (Object.prototype.hasOwnProperty.call(input, "__loadedOperatorEventExport")) {
+        return input.__loadedOperatorEventExport;
+    }
     const eventExportPath = normalizeOptionalString(input.eventExportPath);
     if (eventExportPath !== undefined) {
         return loadOperatorEventExportFromPath(path.resolve(eventExportPath));
@@ -6779,6 +6789,9 @@ function summarizeSupervision(input) {
     };
 }
 function loadTeacherSurfaceFromInput(input) {
+    if (Object.prototype.hasOwnProperty.call(input, "__loadedTeacherSurface")) {
+        return input.__loadedTeacherSurface;
+    }
     const teacherSnapshotPath = resolveOperatorTeacherSnapshotPath(input.activationRoot, normalizeOptionalString(input.teacherSnapshotPath) ?? null);
     if (teacherSnapshotPath === null) {
         return null;
@@ -8042,6 +8055,15 @@ export function buildOperatorSurfaceReport(input) {
     const activationRoot = path.resolve(normalizeNonEmptyString(input.activationRoot, "activationRoot"));
     const updatedAt = normalizeIsoTimestamp(input.updatedAt, "updatedAt", new Date().toISOString());
     const brainAttachmentPolicy = normalizeBrainAttachmentPolicy(input.brainAttachmentPolicy);
+    const resolvedTeacherSnapshotPath = resolveOperatorTeacherSnapshotPath(activationRoot, normalizeOptionalString(input.teacherSnapshotPath) ?? null);
+    const cachedInput = {
+        ...input,
+        activationRoot,
+        teacherSnapshotPath: resolvedTeacherSnapshotPath,
+        __loadedTeacherSurface: resolvedTeacherSnapshotPath === null ? null : loadTeacherSurface(resolvedTeacherSnapshotPath)
+    };
+    cachedInput.__loadedOperatorEventExport = loadOperatorEventExport(cachedInput);
+    const packCache = new Map();
     let inspection = null;
     let observability = null;
     let inspectionError = null;
@@ -8057,7 +8079,9 @@ export function buildOperatorSurfaceReport(input) {
     if (inspection !== null && inspection.active !== null) {
         try {
             observability = describeActivationObservability(activationRoot, "active", {
-                updatedAt
+                updatedAt,
+                inspection,
+                packCache
             });
         }
         catch (error) {
@@ -8073,7 +8097,7 @@ export function buildOperatorSurfaceReport(input) {
         inspectionError
     });
     const activeObservability = inspectionError === null
-        ? summarizeActivePackObservability(activationRoot, active)
+        ? summarizeActivePackObservability(activationRoot, active, { packCache })
         : {
             labelFlow: buildMissingLabelFlowSummary(`activation observability is unavailable: ${inspectionError}`),
             learningPath: buildMissingLearningPathSummary(`activation observability is unavailable: ${inspectionError}`)
@@ -8107,7 +8131,7 @@ export function buildOperatorSurfaceReport(input) {
         activePackId: active?.packId ?? null,
         learnedRouting
     });
-    const teacherLoop = summarizeTeacherLoop(input);
+    const teacherLoop = summarizeTeacherLoop(cachedInput);
     const hook = summarizeOperatorHook({
         activationRoot,
         openclawHome: normalizeOptionalString(input.openclawHome) ?? null,
@@ -8132,8 +8156,8 @@ export function buildOperatorSurfaceReport(input) {
         },
         brain: observability === null ? summarizeBrainStateWithoutObservability(active, activation) : summarizeBrainState(active, observability),
         graph: observability === null
-            ? summarizeGraphWithoutObservability(input, active, activation)
-            : summarizeGraphObservability(input, active, observability),
+            ? summarizeGraphWithoutObservability(cachedInput, active, activation)
+            : summarizeGraphObservability(cachedInput, active, observability),
         labelFlow: activeObservability.labelFlow,
         learningPath: activeObservability.learningPath,
         learnedRouting,
@@ -8157,13 +8181,13 @@ export function buildOperatorSurfaceReport(input) {
             previousPackId: inspection?.previous?.packId ?? inspection?.pointers.previous?.packId ?? null,
             state: inspection === null ? "unknown" : inspection.rollback.allowed ? "ready" : inspection.active === null ? "unknown" : "blocked"
         },
-        supervision: summarizeSupervision(input),
-        learning: summarizeAlwaysOnLearning(input, active),
+        supervision: summarizeSupervision(cachedInput),
+        learning: summarizeAlwaysOnLearning(cachedInput, active),
         teacherLoop,
         routeFn,
         hook,
         attachmentTruth,
-        principal: summarizePrincipalObservability(input, active),
+        principal: summarizePrincipalObservability(cachedInput, active),
         manyProfile: summarizeManyProfileSupport(brainAttachmentPolicy)
     };
     const findings = buildOperatorFindings(reportBase);
