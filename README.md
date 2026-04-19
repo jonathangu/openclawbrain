@@ -38,6 +38,17 @@ In plain English:
 
 That means the agent gets continuity without turning every prompt into a giant history dump.
 
+## Latest proof tranche
+
+The newest published proof update is intentionally bounded.
+
+- On the reviewed frozen binary-gate v2 cohort, lowering `activationThreshold` from `0.38` to `0.21` moved merged `must_fire_binary_gate_v2` from `0/10` to `10/10`.
+- The checked restraint bundle stayed clean at the same time: unnecessary activations `0/65`, must-not-fire failures `0/69`, broad-live regressions `0/403`.
+- Proof surfaces now expose route-decision summaries and compact runtime-mode tables with the familiar `no_brain`, `vector_only`, `graph_prior_only`, and `learned_route` vocabulary.
+- The new teacher/compiler proposal lane is report-only and reviewable. It adds evidence refs, replay hooks, proof linkage, and rollback linkage without claiming live teacher-driven mutation.
+
+Honest boundary: this is stronger proof packaging and promotion hardening on checked bundles, not a broad online-proof claim.
+
 ## What is different from simple retrieval
 
 A basic archive can store the past.
