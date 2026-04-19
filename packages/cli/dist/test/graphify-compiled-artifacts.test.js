@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildGraphifyCompiledArtifactPack, resolveGraphifyCompiledArtifactPackOutputDir, writeGraphifyCompiledArtifactPack, GRAPHIFY_COMPILED_ARTIFACT_KIND_ORDER_V1 } from "../src/graphify-compiled-artifacts.js";
 import { exportGraphifyCompiledArtifactsPack } from "../src/import-export.js";
 function createTempRoot(t) {
@@ -63,7 +64,7 @@ test("graphify compiled-artifact pack bridge writes the scaffold pack with stabl
 
 test("graphify compiled-artifact pack CLI help and export wrapper keep the bridge path explicit", (t) => {
     const tempRoot = createTempRoot(t);
-    const cliSource = readFileSync(path.join(process.cwd(), "packages/cli/dist/src/cli.js"), "utf8");
+    const cliSource = readFileSync(fileURLToPath(new URL("../src/cli.js", import.meta.url)), "utf8");
     assert.match(cliSource, /graphify-compiled-artifacts/);
     assert.match(cliSource, /--bundle-id <id>/);
     assert.match(cliSource, /graphify-compiled-artifacts derive a Graphify-shaped compiled-artifact pack/);

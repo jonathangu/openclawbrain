@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildGraphifyDeterministicLintBundle, parseGraphifyDeterministicLintCliArgs, runGraphifyDeterministicLints } from "../src/graphify-lints.js";
 
 function createTempRoot(t) {
@@ -22,9 +23,14 @@ function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf8"));
 }
 
+function resolveRepoRoot() {
+  const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+  return path.resolve(packageRoot, "..", "..");
+}
+
 test("graphify deterministic pre-lint writes bounded proposal surfaces for a real proof bundle", (t) => {
   const tempRoot = createTempRoot(t);
-  const repoRoot = path.resolve(process.cwd());
+  const repoRoot = resolveRepoRoot();
   const bundleRoot = path.join(repoRoot, "artifacts", "teacher-v3-promotable-examples", "lint", "proof-bundle");
   assert.equal(existsSync(bundleRoot), true, "fixture bundle should exist");
 
@@ -59,7 +65,7 @@ test("graphify deterministic pre-lint writes bounded proposal surfaces for a rea
 
 test("graphify deterministic pre-lint detects missing files, hash drift, trust promotion, evidence gaps, joins, and release drift", (t) => {
   const tempRoot = createTempRoot(t);
-  const repoRoot = path.resolve(process.cwd());
+  const repoRoot = resolveRepoRoot();
   const bundleRoot = path.join(tempRoot, "broken-bundle");
   const artifactDir = path.join(bundleRoot, "artifacts", "example");
   mkdirSync(artifactDir, { recursive: true });

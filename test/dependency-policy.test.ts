@@ -31,7 +31,7 @@ function writeJson(root: string, relativePath: string, value: unknown): void {
 function writePublishableScaffold(root: string): void {
   writeJson(root, "package.json", {
     name: "@jonathangu/openclawbrain",
-    version: "0.4.43",
+    version: "0.4.44",
     dependencies: {
       "@mariozechner/pi-agent-core": "0.53.0",
       "@mariozechner/pi-ai": "0.53.0",
@@ -79,7 +79,7 @@ describe("verifyDependencyPolicy", () => {
     writePublishableScaffold(repoRoot);
     writeJson(repoRoot, "package.json", {
       name: "@jonathangu/openclawbrain",
-      version: "0.4.43",
+      version: "0.4.44",
       dependencies: {
         "@openclawbrain/compiler": "file:packages/compiler",
         "@openclawbrain/contracts": "file:packages/contracts",
@@ -131,7 +131,7 @@ describe("verifyDependencyPolicy", () => {
     writePublishableScaffold(repoRoot);
     writeJson(repoRoot, "package.json", {
       name: "@jonathangu/openclawbrain",
-      version: "0.4.43",
+      version: "0.4.44",
       dependencies: {
         "@mariozechner/pi-agent-core": "0.53.0",
         "@mariozechner/pi-ai": "0.53.0",

@@ -7,10 +7,10 @@ This guide covers install, verify, rollback, detach, and uninstall.
 Use the same home path through the whole flow.
 
 ```bash
-npx @openclawbrain/cli@0.4.43 openclawbrain install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.44 openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.43 openclawbrain status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.43 openclawbrain proof --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.44 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.44 openclawbrain proof --openclaw-home ~/.openclaw
 ```
 
 That same command path is used for:
@@ -33,33 +33,33 @@ Healthy installs should show:
 Preview first:
 
 ```bash
-npx @openclawbrain/cli@0.4.43 openclawbrain rollback --openclaw-home ~/.openclaw --dry-run
+npx @openclawbrain/cli@0.4.44 openclawbrain rollback --openclaw-home ~/.openclaw --dry-run
 ```
 
 Apply the rollback:
 
 ```bash
-npx @openclawbrain/cli@0.4.43 openclawbrain rollback --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.44 openclawbrain rollback --openclaw-home ~/.openclaw
 ```
 
 ## Detach and keep data
 
 ```bash
-npx @openclawbrain/cli@0.4.43 openclawbrain detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.44 openclawbrain detach --openclaw-home ~/.openclaw
 openclaw gateway restart
 ```
 
 ## Uninstall and keep data
 
 ```bash
-npx @openclawbrain/cli@0.4.43 openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data
+npx @openclawbrain/cli@0.4.44 openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data
 openclaw gateway restart
 ```
 
 ## Uninstall and purge data
 
 ```bash
-npx @openclawbrain/cli@0.4.43 openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
+npx @openclawbrain/cli@0.4.44 openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
 openclaw gateway restart
 ```
 

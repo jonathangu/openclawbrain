@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -4815,7 +4815,7 @@ function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options
         qualityScore: scoring.qualityScore,
         compileActiveVersion: options.compileActiveVersion,
         promoted: options.promoted,
-        timing: result.timing ?? null,
+        timing: null,
         observability,
         warnings: [...result.warnings]
     };
@@ -5798,7 +5798,12 @@ export function writeRecordedSessionReplayProofBundle(input) {
     }
     const trace = structuredClone(input.trace);
     const fixture = buildRecordedSessionReplayFixture(trace);
-    const scratchRoot = mkdtempSync(path.join(scratchRootParent, "openclawbrain-recorded-session-replay-"));
+    const scratchRootLabel = (trace.traceId ?? "recorded-session")
+        .replace(/[^a-z0-9._-]+/gi, "-")
+        .replace(/^-+|-+$/g, "") || "recorded-session";
+    const scratchRoot = path.join(scratchRootParent, `openclawbrain-recorded-session-replay-${scratchRootLabel}`);
+    rmSync(scratchRoot, { recursive: true, force: true });
+    mkdirSync(scratchRoot, { recursive: true });
     let bundle;
     try {
         bundle = runRecordedSessionReplay(scratchRoot, fixture, {

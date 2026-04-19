@@ -318,7 +318,7 @@ function trainReplayStopArtifact(outputDir: string, routerIdentity: string): voi
     artifactId: `artifact:${routerIdentity}`,
     artifactVersion: "0.0.1",
     packType: "base",
-    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.44",
     registryEntries: [createReplayOverrideRegistryEntry(datasetId)],
     routeRows: createReplayStopRouteRows(datasetId),
     outputDir,

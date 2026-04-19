@@ -4,7 +4,7 @@ Stop reteaching your agent the same things.
 
 OpenClawBrain gives OpenClaw a useful memory. It carries forward corrections, preferences, and successful past work so your agent can improve over time without turning every prompt into a giant transcript dump.
 
-Current version: **0.4.43** · [Changelog](CHANGELOG.md)
+Current version: **0.4.44** · [Changelog](CHANGELOG.md)
 
 ## Why people use it
 
@@ -19,10 +19,10 @@ Current version: **0.4.43** · [Changelog](CHANGELOG.md)
 If you already have OpenClaw and Node.js 20+, this is the simplest path:
 
 ```bash
-npx @openclawbrain/cli@0.4.43 openclawbrain install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.44 openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.43 openclawbrain status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.43 openclawbrain proof --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.44 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.44 openclawbrain proof --openclaw-home ~/.openclaw
 ```
 
 Use the same four commands later for upgrades and repairs.

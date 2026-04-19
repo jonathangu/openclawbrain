@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.44
+
+`0.4.44` is the post-win proof + hardening release: it packages the binary-gate promotion hardening, runtime-mode proof surfacing, and safe report-only teacher proposal lane into one public OpenClawBrain release.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.44`
+- `@openclawbrain/cli@0.4.44`
+
+**Changes**
+
+- hardens binary-gate promotion flow with automatic threshold selection and cleaned merged trap truth
+- exposes route-decision summaries and compact runtime-mode proof tables on the shipped proof surfaces
+- adds a report-only teacher proposal artifact lane with evidence refs, replay hooks, proof linkage, rollback linkage, and markdown rendering
+- aligns README, docs, release notes, and split-package version surfaces to `0.4.44`
+
+**Full release note**
+
+- [docs/release-notes-0.4.44.md](docs/release-notes-0.4.44.md)
+
 ## 0.4.43
 
 `0.4.43` is the OCB continuation + compaction release: it ships the cold-start continuation and explainable eval tranche, then layers in budgeted routing, compact-health metrics, and retry-visible identity handoff for compaction-safe downstream behavior.

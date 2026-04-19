@@ -36,7 +36,7 @@ async function main(): Promise<void> {
     artifactId: "router-artifact-replay-smoke",
     artifactVersion: "0.0.1",
     packType: "base",
-    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.44",
     registryEntries: [bundle.registryEntry],
     routeRows: bundle.routeRows,
     outputDir,

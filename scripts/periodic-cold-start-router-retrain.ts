@@ -67,7 +67,7 @@ async function main(): Promise<void> {
     candidateArtifactId: process.env.COLD_START_CANDIDATE_ARTIFACT_ID ?? "router-artifact-periodic-retrain-v1",
     candidateArtifactVersion: process.env.COLD_START_CANDIDATE_ARTIFACT_VERSION ?? "0.0.1",
     candidateRouterIdentity: process.env.COLD_START_CANDIDATE_ROUTER_IDENTITY ?? "router:periodic-retrain:v1",
-    compatibleRuntimeVersion: process.env.COLD_START_COMPATIBLE_RUNTIME_VERSION ?? "openclawbrain-runtime@0.4.43",
+    compatibleRuntimeVersion: process.env.COLD_START_COMPATIBLE_RUNTIME_VERSION ?? "openclawbrain-runtime@0.4.44",
     packType: (process.env.COLD_START_PACK_TYPE ?? "base") as "base" | "user_delta" | "mixed",
     registryId: process.env.COLD_START_REGISTRY_ID ?? "cold-start-router-periodic-retrain-v1",
     previousBaseArtifactDir: priorBaseArtifactDir,

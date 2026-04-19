@@ -93,7 +93,7 @@ async function main(): Promise<void> {
     artifactId: "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
     artifactVersion: "0.0.3",
     packType: "base",
-    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.44",
     registryEntries: loadedExport.registryEntries,
     routeRows: loadedExport.routeRows,
     outputDir: trainDir,

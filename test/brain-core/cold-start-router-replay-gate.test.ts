@@ -295,7 +295,7 @@ function trainActivationFirstReplayFixture(params: {
     artifactId: `router-artifact-${params.datasetId}`,
     artifactVersion: "0.0.1",
     packType: "base",
-    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.44",
     registryEntries: [makeActivationFirstRegistryEntry(params.datasetId)],
     routeRows: makeActivationFirstTrainingRows(params.datasetId),
     outputDir: params.outputDir,
@@ -318,7 +318,7 @@ describe("cold-start router replay gate", () => {
       artifactId: "router-artifact-replay-good",
       artifactVersion: "0.0.1",
       packType: "base",
-      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.44",
       registryEntries: [bundle.registryEntry],
       routeRows: bundle.routeRows,
       outputDir,
@@ -346,7 +346,7 @@ describe("cold-start router replay gate", () => {
       packType: "base",
       trainingDataRefCount: 1,
       replayGateRefCount: 1,
-      runtimeVersion: "openclawbrain-runtime@0.4.43",
+      runtimeVersion: "openclawbrain-runtime@0.4.44",
     });
     expect(verdict.rowResults).toHaveLength(2);
     expect(verdict.rowResults[0]).toMatchObject({
@@ -375,7 +375,7 @@ describe("cold-start router replay gate", () => {
       artifactId: "router-artifact-replay-bad",
       artifactVersion: "0.0.1",
       packType: "base",
-      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.44",
       registryEntries: [makeSmokeRegistryEntry()],
       routeRows: makeSmokeRouteRows(),
       outputDir,
