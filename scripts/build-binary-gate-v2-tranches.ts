@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -241,9 +241,37 @@ function normalizeBucket(value: string | undefined): string | undefined {
   return value?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
 
+function deriveTraceFamily(traceId: string): string | null {
+  const match = traceId.match(/^live-([a-z]+)-/i);
+  return match?.[1]?.toLowerCase() ?? null;
+}
+
+function canonicalizeAnchorSourcePath(anchor: TrancheAnchor): string {
+  const originalPath = resolveWorkspacePath(anchor.sourcePath);
+  if (existsSync(originalPath)) {
+    return anchor.sourcePath;
+  }
+
+  const traceFamily = deriveTraceFamily(anchor.traceId);
+  const fallbackCandidates = traceFamily === null
+    ? []
+    : [
+      path.join(workspaceRoot, "task-artifacts", "T-20260415-250", "stratified-rich-live-535-extracted", "traces", traceFamily, `${anchor.traceId}.json`),
+      path.join(workspaceRoot, "task-artifacts", "T-20260415-250", "semantic-rich-live-535-extracted", "traces", traceFamily, `${anchor.traceId}.json`),
+      path.join(workspaceRoot, "task-artifacts", "T-20260415-250", "primary-mixed-live-1045-extracted", "traces", traceFamily, `${anchor.traceId}.json`),
+      path.join(workspaceRoot, "task-artifacts", "T-20260415-250", "primary-mixed-live-1045-extracted-v2", "traces", traceFamily, `${anchor.traceId}.json`),
+    ];
+  const resolvedFallback = fallbackCandidates.find((candidatePath) => existsSync(candidatePath));
+  if (!resolvedFallback) {
+    return anchor.sourcePath;
+  }
+  return path.relative(workspaceRoot, resolvedFallback).split(path.sep).join("/");
+}
+
 function withUpdatedAnchor(anchor: TrancheAnchor, bucket: string): TrancheAnchor {
   return {
     ...anchor,
+    sourcePath: canonicalizeAnchorSourcePath(anchor),
     bucket,
   };
 }
@@ -292,7 +320,7 @@ function stripMetadataWrapper(text: string): string {
 
 function extractTrapUserVisibleText(anchor: TrancheAnchor): string {
   try {
-    const tracePath = resolveWorkspacePath(anchor.sourcePath);
+    const tracePath = resolveWorkspacePath(canonicalizeAnchorSourcePath(anchor));
     const trace = readJson<RecordedSessionTraceLike>(tracePath);
     const raw = trace.turns?.[0]?.userMessage;
     if (typeof raw !== "string") {

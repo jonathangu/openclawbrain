@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "artifact_id": "router-artifact-t-20260419-268-activation-first-gating-only-v1",
+  "artifact_version": "0.0.1",
+  "pack_type": "base",
+  "base_model_ref": "base-model.json#sha256:85896180b33d70c0144ad6512341e6d56e384bf0966fbcdfd294422149fea152",
+  "weights_ref": "weights.json#sha256:50ace9b68b6fc6fefc2997353588f2b1161f1def5b02a84d960615608b1f83f0",
+  "calibration_ref": "calibration.json#sha256:88dd7e5010a5bbfd7ea70071fb65a0fc6dd1bf62c4a8409542af36ae6ec3b34d",
+  "feature_normalizers_ref": "feature-normalizers.json#sha256:62abf8fe9eccc59db68fdcf65f5dfe64265858369fd205eca7df2b0c3e4f0ff4",
+  "source_priors_ref": "source-priors.json#sha256:917b58731d0354a8044ce6e862418a6f04c23ea2b93b5d378d0ba715b5fe77e9",
+  "safety_rules_ref": "safety-rules.json#sha256:3e86c657b9c16c674a88911ea6b8ef3cc6478a11597ec2f8ebf22fd1b3659708",
+  "compatible_runtime_version": "openclawbrain-runtime@0.4.43",
+  "training_data_refs": [
+    "activation-first-gating:T-20260419-268:felt_resume_25",
+    "activation-first-gating:T-20260419-268:must_fire_binary_gate_v2",
+    "activation-first-gating:T-20260419-268:must_not_fire_binary_gate_v2",
+    "activation-first-harness:../task-artifacts/T-20260419-268/activation-first-retune-harness-v2/activation-first-retune-harness.json",
+    "activation-first-route-objective:../task-artifacts/T-20260419-268/activation-first-retune-harness-v2/activation-first-route-objective-input.json",
+    "hotpotqa_v1",
+    "musique_v1"
+  ],
+  "replay_gate_refs": [
+    "replay:felt_resume_25",
+    "replay:must_fire_binary_gate_v2",
+    "replay:must_not_fire_binary_gate_v2",
+    "replay:real-approved-export:hotpotqa-musique-stoplocal-v3"
+  ],
+  "prior_base_artifact_id": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
+  "prior_base_artifact_checksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
+  "warm_start_applied": true,
+  "warm_start_from_artifact_id": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
+  "warm_start_from_artifact_checksum": "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
+  "warm_start_summary": "warm-start continuation from router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3 applied 100 continuation rows on top of 44 prior used rows",
+  "created_at": "2026-04-19T13:58:16.109Z",
+  "router_identity": "router:T-20260419-268:activation-first-gating-only:v1",
+  "artifact_checksum": "sha256:194c1c6d1c50be3f3223501e3446fb4e0ce2cdd8bf597d7075626449cfdbb083"
+}

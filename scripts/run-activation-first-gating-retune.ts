@@ -652,7 +652,7 @@ export function collectBundleReplaySurfaces(bundleRoot: string): ReplayBundleSur
   return surfaces;
 }
 
-function buildReplaySurfaceIndex(harnessDir: string): Map<string, ReplayBundleSurfaceV1[]> {
+export function buildReplaySurfaceIndex(harnessDir: string): Map<string, ReplayBundleSurfaceV1[]> {
   const bundleRoots = readdirSync(harnessDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && entry.name.endsWith("-replay-lane"))
     .map((entry) => path.join(harnessDir, entry.name));
@@ -1365,7 +1365,7 @@ function buildRegistryEntry(params: {
   };
 }
 
-function materializeLaneRows(params: {
+export function materializeLaneRows(params: {
   taskId: string;
   harnessDir: string;
   generatedAt: string;

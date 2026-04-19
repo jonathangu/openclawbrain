@@ -107,6 +107,40 @@ function readAndValidateArtifactFile<T>(params: {
   return artifact;
 }
 
+function normalizeCalibrationForRuntime(
+  calibration: ColdStartRouterCalibrationV1,
+): ColdStartRouterCalibrationV1 {
+  const hasLegacyMissingGateFields = calibration.activationThreshold === undefined
+    && calibration.abstentionThreshold === undefined
+    && calibration.expectedUtilityThreshold === undefined
+    && calibration.stopLocalThreshold === undefined
+    && calibration.interventionHead === undefined;
+
+  return {
+    ...calibration,
+    activationThreshold: calibration.activationThreshold ?? (hasLegacyMissingGateFields ? 0 : 0.45),
+    abstentionThreshold: calibration.abstentionThreshold ?? (hasLegacyMissingGateFields ? 1 : 0.55),
+    expectedUtilityThreshold: calibration.expectedUtilityThreshold ?? 0,
+    stopLocalThreshold: calibration.stopLocalThreshold ?? 0.5,
+    interventionHead: calibration.interventionHead ?? {
+      decisionPolicyMode: "router_blended",
+      freezeCandidateSelection: false,
+      freezeStopLocal: false,
+      featureProfile: "default_router",
+    },
+  };
+}
+
+function normalizeLivePolicyInitializerForRuntime(
+  initializer: ColdStartRouterModelV1["livePolicyInitializer"],
+): ColdStartRouterModelV1["livePolicyInitializer"] {
+  return {
+    ...initializer,
+    semanticClassSeedWeights: initializer.semanticClassSeedWeights ?? [],
+    semanticClassEdgeWeights: initializer.semanticClassEdgeWeights ?? [],
+  };
+}
+
 export interface ColdStartRouterRuntimeArtifactBundleV1 {
   artifactDir: string;
   manifestPath: string;
@@ -229,23 +263,30 @@ export function loadColdStartRouterArtifactBundleV1(artifactDir: string): ColdSt
 
   const manifest = manifestArtifact.value;
   const baseModel = baseModelArtifact.value;
-  const model = weightsArtifact.value;
-  const calibration = calibrationArtifact.value;
+  const rawModel = weightsArtifact.value;
+  const rawCalibration = calibrationArtifact.value;
   const featureNormalizers = featureNormalizersArtifact.value;
   const sourcePriors = sourcePriorsArtifact.value;
   const safetyRules = safetyRulesArtifact.value;
 
-  assert(model.calibration.contract === COLD_START_ROUTER_CALIBRATION_CONTRACT_V1, "weights.calibration must carry the calibration contract");
-  assert(model.featureNormalizers.contract === COLD_START_ROUTER_FEATURE_NORMALIZERS_CONTRACT_V1, "weights.featureNormalizers must carry the feature normalizer contract");
-  assert(model.sourcePriors.contract === COLD_START_ROUTER_SOURCE_PRIORS_CONTRACT_V1, "weights.sourcePriors must carry the source priors contract");
-  assert(model.safetyRules.contract === COLD_START_ROUTER_SAFETY_RULES_CONTRACT_V1, "weights.safetyRules must carry the safety rules contract");
-  assert(model.livePolicyInitializer?.contract === COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1, "weights.livePolicyInitializer must carry the live policy initializer contract");
-  assert(Array.isArray(model.toolActionPriors), "weights.toolActionPriors must be an array");
-  assert(Array.isArray(model.toolActionSets), "weights.toolActionSets must be an array");
-  assert(deepEqualJson(model.calibration, calibration), "weights.calibration must match calibration.json exactly");
-  assert(deepEqualJson(model.featureNormalizers, featureNormalizers), "weights.featureNormalizers must match feature-normalizers.json exactly");
-  assert(deepEqualJson(model.sourcePriors, sourcePriors), "weights.sourcePriors must match source-priors.json exactly");
-  assert(deepEqualJson(model.safetyRules, safetyRules), "weights.safetyRules must match safety-rules.json exactly");
+  const calibration = normalizeCalibrationForRuntime(rawCalibration);
+  const model: ColdStartRouterModelV1 = {
+    ...rawModel,
+    calibration,
+    livePolicyInitializer: normalizeLivePolicyInitializerForRuntime(rawModel.livePolicyInitializer),
+  };
+
+  assert(rawModel.calibration.contract === COLD_START_ROUTER_CALIBRATION_CONTRACT_V1, "weights.calibration must carry the calibration contract");
+  assert(rawModel.featureNormalizers.contract === COLD_START_ROUTER_FEATURE_NORMALIZERS_CONTRACT_V1, "weights.featureNormalizers must carry the feature normalizer contract");
+  assert(rawModel.sourcePriors.contract === COLD_START_ROUTER_SOURCE_PRIORS_CONTRACT_V1, "weights.sourcePriors must carry the source priors contract");
+  assert(rawModel.safetyRules.contract === COLD_START_ROUTER_SAFETY_RULES_CONTRACT_V1, "weights.safetyRules must carry the safety rules contract");
+  assert(rawModel.livePolicyInitializer?.contract === COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1, "weights.livePolicyInitializer must carry the live policy initializer contract");
+  assert(Array.isArray(rawModel.toolActionPriors), "weights.toolActionPriors must be an array");
+  assert(Array.isArray(rawModel.toolActionSets), "weights.toolActionSets must be an array");
+  assert(deepEqualJson(rawModel.calibration, rawCalibration), "weights.calibration must match calibration.json exactly");
+  assert(deepEqualJson(rawModel.featureNormalizers, featureNormalizers), "weights.featureNormalizers must match feature-normalizers.json exactly");
+  assert(deepEqualJson(rawModel.sourcePriors, sourcePriors), "weights.sourcePriors must match source-priors.json exactly");
+  assert(deepEqualJson(rawModel.safetyRules, safetyRules), "weights.safetyRules must match safety-rules.json exactly");
   assert(deepEqualJson(model.training, baseModel.training), "weights.training must match base-model.json training summary exactly");
   assert(baseModel.artifactId === manifest.artifact_id, "base-model artifactId must match the manifest");
   assert(baseModel.artifactVersion === manifest.artifact_version, "base-model artifactVersion must match the manifest");
