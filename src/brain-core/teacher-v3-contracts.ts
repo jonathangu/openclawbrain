@@ -570,6 +570,50 @@ export interface TeacherProposalSummaryV1 {
   resolvedAt?: string;
 }
 
+export interface TeacherProposalReplayHookV1 {
+  replayReady: boolean;
+  replaySummaryId: string | null;
+  replaySuites: string[];
+  placeholder: boolean;
+  summary: string;
+}
+
+export interface TeacherProposalProofLinkageV1 {
+  rollbackKey: string;
+  proofBundleId: string | null;
+  proofBundleStatus: TeacherProposalProofBundleV1["status"] | null;
+  replaySummaryId: string | null;
+  rollbackBound: boolean;
+  proofLinked: boolean;
+  surfaceIds: string[];
+  summary: string;
+}
+
+export interface TeacherProposalReportArtifactV1 {
+  contract: "teacher_v3_proposal_artifact.v1";
+  artifactId: string;
+  artifactRef: TeacherProposalArtifactRefV1;
+  proposalId: string;
+  proposalClass: TeacherProposalPromotableClassV1;
+  reviewMode: TeacherProposalReplayGateReviewModeV1;
+  reviewDiscipline: "report_only";
+  status: ProposalStatus;
+  summary: string;
+  proposal: TeacherProposalSummaryV1;
+  replayGate: TeacherProposalReplayGateV1;
+  gateMatrix: TeacherProposalReplayGateMatrixV1;
+  evidenceRefs: EvidenceRefV1[];
+  counterevidenceRefs: EvidenceRefV1[];
+  replayHook: TeacherProposalReplayHookV1;
+  replaySummary?: TeacherProposalReplaySummaryV1;
+  proofLinkage: TeacherProposalProofLinkageV1;
+  proofBundleSummary?: TeacherProposalProofBundleSummaryV1;
+  attachedArtifacts: TeacherProposalArtifactRefV1[];
+  recommendations: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface TeacherProposalDiffListV1 {
   added: string[];
   removed: string[];
