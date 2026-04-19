@@ -2177,12 +2177,207 @@ function buildReplayFreshnessTruth({ bundles, healthFreshnessDays, freshnessThre
   };
 }
 
+function isRecordedSessionReplayMode(mode) {
+  return typeof mode === "string" && RECORDED_SESSION_REPLAY_MODE_ORDER.includes(mode);
+}
+
+function finiteNumberOrNull(value, places = null) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+  return typeof places === "number" ? round(numeric, places) : numeric;
+}
+
+function normalizeRuntimeModeProofPair(
+  pairwiseDeltas,
+  candidateMode,
+  comparatorMode,
+) {
+  const pairs = Array.isArray(pairwiseDeltas?.pairs) ? pairwiseDeltas.pairs : [];
+  const direct = pairs.find((row) => row?.leftMode === candidateMode && row?.rightMode === comparatorMode) ?? null;
+  const inverse = direct === null
+    ? pairs.find((row) => row?.leftMode === comparatorMode && row?.rightMode === candidateMode) ?? null
+    : null;
+  const pair = direct ?? inverse;
+  if (!pair) {
+    return null;
+  }
+
+  const candidateIsLeft = direct !== null;
+  const traceBetterCount = Number(candidateIsLeft ? pair.traceWins?.left : pair.traceWins?.right) || 0;
+  const traceTiedCount = Number(pair.traceWins?.ties) || 0;
+  const traceRegressionCount = Number(candidateIsLeft ? pair.traceWins?.right : pair.traceWins?.left) || 0;
+  const turnBetterCount = Number(candidateIsLeft ? pair.turnWins?.left : pair.turnWins?.right) || 0;
+  const turnTiedCount = Number(pair.turnWins?.ties) || 0;
+  const turnRegressionCount = Number(candidateIsLeft ? pair.turnWins?.right : pair.turnWins?.left) || 0;
+  const traceTotalCount = traceBetterCount + traceTiedCount + traceRegressionCount;
+  const turnTotalCount = turnBetterCount + turnTiedCount + turnRegressionCount;
+  const sign = candidateIsLeft ? 1 : -1;
+
+  return {
+    candidateMode,
+    comparatorMode,
+    traceBetterCount,
+    traceTiedCount,
+    traceRegressionCount,
+    traceTotalCount,
+    traceTieOrBetterRate: traceTotalCount > 0 ? round((traceBetterCount + traceTiedCount) / traceTotalCount, 6) : null,
+    turnBetterCount,
+    turnTiedCount,
+    turnRegressionCount,
+    turnTotalCount,
+    turnTieOrBetterRate: turnTotalCount > 0 ? round((turnBetterCount + turnTiedCount) / turnTotalCount, 6) : null,
+    meanQualityDeltaCandidateMinusComparator: (() => {
+      const value = finiteNumberOrNull(pair.aggregateDeltas?.qualityScoreDeltaLeftMinusRightMean, 6);
+      return value === null ? null : round(sign * value, 6);
+    })(),
+    compileOkDeltaCandidateMinusComparator: sign * (Number(pair.aggregateDeltas?.compileOkDeltaLeftMinusRightSum) || 0),
+    phraseHitDeltaCandidateMinusComparator: sign * (Number(pair.aggregateDeltas?.phraseHitDeltaLeftMinusRightSum) || 0),
+    promotionDeltaCandidateMinusComparator: sign * (Number(pair.aggregateDeltas?.promotionDeltaLeftMinusRightSum) || 0),
+  };
+}
+
+function buildRuntimeModeProof(replayLaneBundle) {
+  if (!replayLaneBundle) {
+    return {
+      available: false,
+      sourceKind: null,
+      bundleId: null,
+      relativePath: null,
+      requestedTraceCount: null,
+      successfulTraceCount: null,
+      failedTraceCount: null,
+      modeOrder: [],
+      candidateMode: "learned_route",
+      baselineMode: "graph_prior_only",
+      floorMode: "no_brain",
+      traceOutcomeVsBaseline: null,
+      traceTieOrBetterVsBaseline: null,
+      regressionVsBaseline: null,
+      regressionVsFloor: null,
+      criticalRegressionCount: null,
+      modes: [],
+      pairs: [],
+      unavailableReason: "latest recorded-session-replay-lane bundle not found",
+    };
+  }
+
+  const summaryTables = replayLaneBundle.summaryTables ?? null;
+  const pairwiseDeltas = replayLaneBundle.pairwiseDeltas ?? null;
+  const modeRows = Array.isArray(summaryTables?.modes) ? summaryTables.modes : [];
+  const modeById = new Map(
+    modeRows
+      .filter((row) => isRecordedSessionReplayMode(row?.mode))
+      .map((row) => [row.mode, row]),
+  );
+  const modeOrder = RECORDED_SESSION_REPLAY_MODE_ORDER.filter((mode) => modeById.has(mode));
+  const scorecard = summaryTables?.scorecard ?? replayLaneBundle.closeout?.scorecard ?? null;
+  const candidateMode = isRecordedSessionReplayMode(scorecard?.candidateMode) ? scorecard.candidateMode : "learned_route";
+  const baselineMode = isRecordedSessionReplayMode(scorecard?.baselineMode) ? scorecard.baselineMode : "graph_prior_only";
+  const floorMode = isRecordedSessionReplayMode(scorecard?.floorMode) ? scorecard.floorMode : "no_brain";
+  const pairComparatorOrder = [
+    baselineMode,
+    ...RECORDED_SESSION_REPLAY_MODE_ORDER.filter(
+      (mode) => mode !== candidateMode && mode !== baselineMode && mode !== floorMode,
+    ),
+    floorMode,
+  ].filter((mode, index, values) => mode !== candidateMode && values.indexOf(mode) === index);
+  const pairs = pairComparatorOrder
+    .map((mode) => normalizeRuntimeModeProofPair(pairwiseDeltas, candidateMode, mode))
+    .filter(Boolean);
+
+  if (modeOrder.length === 0 && pairs.length === 0) {
+    return {
+      available: false,
+      sourceKind: replayLaneBundle.kind,
+      bundleId: replayLaneBundle.bundleId,
+      relativePath: replayLaneBundle.relativePath,
+      requestedTraceCount: Number.isFinite(replayLaneBundle.metrics?.requestedTraceCount)
+        ? Number(replayLaneBundle.metrics.requestedTraceCount)
+        : null,
+      successfulTraceCount: Number.isFinite(replayLaneBundle.metrics?.successfulTraceCount)
+        ? Number(replayLaneBundle.metrics.successfulTraceCount)
+        : null,
+      failedTraceCount: Number.isFinite(replayLaneBundle.metrics?.failedTraceCount)
+        ? Number(replayLaneBundle.metrics.failedTraceCount)
+        : null,
+      modeOrder: [],
+      candidateMode,
+      baselineMode,
+      floorMode,
+      traceOutcomeVsBaseline: scorecard?.traceOutcomeVsBaseline ?? null,
+      traceTieOrBetterVsBaseline: scorecard?.traceTieOrBetterVsBaseline ?? null,
+      regressionVsBaseline: scorecard?.regressionVsBaseline ?? null,
+      regressionVsFloor: scorecard?.regressionVsFloor ?? null,
+      criticalRegressionCount: Number.isFinite(scorecard?.criticalRegressionCount)
+        ? Number(scorecard.criticalRegressionCount)
+        : null,
+      modes: [],
+      pairs: [],
+      unavailableReason: "latest recorded-session-replay-lane bundle is missing compact mode and pairwise summaries",
+    };
+  }
+
+  return {
+    available: true,
+    sourceKind: replayLaneBundle.kind,
+    bundleId: replayLaneBundle.bundleId,
+    relativePath: replayLaneBundle.relativePath,
+    requestedTraceCount: Number.isFinite(summaryTables?.requestedTraceCount)
+      ? Number(summaryTables.requestedTraceCount)
+      : Number.isFinite(replayLaneBundle.metrics?.requestedTraceCount)
+        ? Number(replayLaneBundle.metrics.requestedTraceCount)
+        : null,
+    successfulTraceCount: Number.isFinite(summaryTables?.successfulTraceCount)
+      ? Number(summaryTables.successfulTraceCount)
+      : Number.isFinite(replayLaneBundle.metrics?.successfulTraceCount)
+        ? Number(replayLaneBundle.metrics.successfulTraceCount)
+        : null,
+    failedTraceCount: Number.isFinite(summaryTables?.failedTraceCount)
+      ? Number(summaryTables.failedTraceCount)
+      : Number.isFinite(replayLaneBundle.metrics?.failedTraceCount)
+        ? Number(replayLaneBundle.metrics.failedTraceCount)
+        : null,
+    modeOrder,
+    candidateMode,
+    baselineMode,
+    floorMode,
+    traceOutcomeVsBaseline: scorecard?.traceOutcomeVsBaseline ?? null,
+    traceTieOrBetterVsBaseline: scorecard?.traceTieOrBetterVsBaseline ?? null,
+    regressionVsBaseline: scorecard?.regressionVsBaseline ?? null,
+    regressionVsFloor: scorecard?.regressionVsFloor ?? null,
+    criticalRegressionCount: Number.isFinite(scorecard?.criticalRegressionCount)
+      ? Number(scorecard.criticalRegressionCount)
+      : null,
+    modes: modeOrder.map((mode) => {
+      const row = modeById.get(mode);
+      return {
+        mode,
+        traceCount: Number(row?.traceCount ?? 0),
+        rankedWinnerCount: Number(row?.rankedWinnerCount ?? 0),
+        sharedTopScoreTraceCount: Number(row?.sharedTopScoreTraceCount ?? 0),
+        meanQualityScore: finiteNumberOrNull(row?.meanQualityScore, 6),
+        compileOkCount: Number(row?.totalCompileOkCount ?? 0),
+        turnCount: Number(row?.totalTurnCount ?? 0),
+        phraseHitCount: Number(row?.totalPhraseHitCount ?? 0),
+        phraseCount: Number(row?.totalPhraseCount ?? 0),
+        promotionCount: Number(row?.totalPromotionCount ?? 0),
+        warningCount: Number(row?.totalWarningCount ?? 0),
+      };
+    }),
+    pairs,
+    unavailableReason: null,
+  };
+}
+
 function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs }) {
   const status = summarizeStatus(statusProbe);
   const watchHeartbeatAt = safeParseDate(status.watch?.lastHeartbeatAt ?? null);
   const watchHeartbeatAgeMinutes = watchHeartbeatAt ? round((now.getTime() - watchHeartbeatAt.getTime()) / 60000, 2) : null;
   const latest = latestBundlesByKind(bundles);
   const latestOperator = latest["operator-proof"] ?? null;
+  const latestReplayLane = latest["recorded-session-replay-lane"] ?? null;
   const latestReplay = latest["recorded-session-replay"] ?? null;
   const latestHost = latest["host-evidence"] ?? null;
   const performance = summarizePerformance(bundles, statusProbe, scanDurationMs);
@@ -2205,8 +2400,9 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
     fallbackSummary: latestHost?.routeDecisionSummary ?? null,
     fallbackPath: latestHost?.relativePath ?? null,
   });
+  const runtimeModeProof = buildRuntimeModeProof(latestReplayLane);
 
-  const bundleFreshness = [latestOperator, latestReplay, latestHost]
+  const bundleFreshness = [latestOperator, latestReplayLane, latestReplay, latestHost]
     .filter(Boolean)
     .map((bundle) => ({
       kind: bundle.kind,
@@ -2256,6 +2452,7 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
     feedbackTruth,
     attributionCoverageTruth,
     replayFreshnessTruth,
+    runtimeModeProof,
     routeDecisionSummary: routeDecisionSurface.summary,
     routeDecisionSummarySource: routeDecisionSurface.source,
     routeDecisionSummaryPath: routeDecisionSurface.relativePath,
@@ -2400,6 +2597,7 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
     fallbackSummary: latestHost?.routeDecisionSummary ?? null,
     fallbackPath: latestHost?.relativePath ?? null,
   });
+  const runtimeModeProof = buildRuntimeModeProof(latestReplayLane);
 
   const aggregate = {
     contract: CONTRACT,
@@ -2584,6 +2782,7 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
     feedbackTruth,
     attributionCoverageTruth,
     replayFreshnessTruth,
+    runtimeModeProof,
     routeDecisionSummary: routeDecisionSurface.summary,
     routeDecisionSummarySource: routeDecisionSurface.source,
     routeDecisionSummaryPath: routeDecisionSurface.relativePath,
@@ -2666,6 +2865,105 @@ function formatStopReasonCounts(summary) {
   ].join(" ");
 }
 
+function formatCountRateSummary(value) {
+  if (!value) {
+    return "n/a";
+  }
+  const count = Number(value.count);
+  const totalCount = Number(value.totalCount);
+  if (!Number.isFinite(count) || !Number.isFinite(totalCount)) {
+    return "n/a";
+  }
+  const rate = finiteNumberOrNull(value.rate, 6);
+  return `${count}/${totalCount}${rate === null ? "" : ` (${rate})`}`;
+}
+
+function formatOutcomeWithRegressions(value) {
+  if (!value) {
+    return "n/a";
+  }
+  return `${Number(value.betterCount ?? 0)} better, ${Number(value.tiedCount ?? 0)} tied, ${Number(value.worseCount ?? 0)} regressed`;
+}
+
+function formatSignedNumber(value, places = 6) {
+  const numeric = finiteNumberOrNull(value, places);
+  if (numeric === null) {
+    return "n/a";
+  }
+  if (numeric > 0) {
+    return `+${numeric}`;
+  }
+  return `${numeric}`;
+}
+
+function appendRuntimeModeProofMarkdown(lines, runtimeModeProof) {
+  lines.push("## Runtime-mode proof lane");
+  if (!runtimeModeProof?.available) {
+    lines.push(`- unavailable: ${runtimeModeProof?.unavailableReason ?? "no compact runtime-mode proof surfaced"}`);
+    return;
+  }
+
+  lines.push(
+    `- source: ${runtimeModeProof.sourceKind ?? "recorded-session-replay-lane"}`
+      + (runtimeModeProof.bundleId ? ` bundle=${runtimeModeProof.bundleId}` : "")
+      + (runtimeModeProof.relativePath ? ` path=${runtimeModeProof.relativePath}` : ""),
+  );
+  if (
+    Number.isFinite(runtimeModeProof.successfulTraceCount)
+    || Number.isFinite(runtimeModeProof.requestedTraceCount)
+    || Number.isFinite(runtimeModeProof.failedTraceCount)
+  ) {
+    lines.push(
+      `- traces: ${runtimeModeProof.successfulTraceCount ?? "n/a"}/${runtimeModeProof.requestedTraceCount ?? "n/a"} succeeded;`
+        + ` failed=${runtimeModeProof.failedTraceCount ?? "n/a"}`,
+    );
+  }
+  lines.push(
+    `- candidate/baseline/floor: ${runtimeModeProof.candidateMode} / ${runtimeModeProof.baselineMode} / ${runtimeModeProof.floorMode}`,
+  );
+  if (runtimeModeProof.traceOutcomeVsBaseline || runtimeModeProof.traceTieOrBetterVsBaseline) {
+    lines.push(
+      `- traces vs ${runtimeModeProof.baselineMode}: ${formatOutcomeWithRegressions(runtimeModeProof.traceOutcomeVsBaseline)};`
+        + ` tie-or-better ${formatCountRateSummary(runtimeModeProof.traceTieOrBetterVsBaseline)}`,
+    );
+  }
+  lines.push(
+    `- regressions: ${runtimeModeProof.baselineMode} ${formatCountRateSummary(runtimeModeProof.regressionVsBaseline)},`
+      + ` ${runtimeModeProof.floorMode} ${formatCountRateSummary(runtimeModeProof.regressionVsFloor)},`
+      + ` critical=${runtimeModeProof.criticalRegressionCount ?? "n/a"}`,
+  );
+  if (runtimeModeProof.modes.length > 0) {
+    lines.push("");
+    lines.push("| mode | traces | top/shared | mean q | compile | required-context | promotions | warnings |");
+    lines.push("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |");
+    for (const row of runtimeModeProof.modes) {
+      lines.push(
+        `| ${row.mode} | ${row.traceCount} | ${row.rankedWinnerCount}/${row.sharedTopScoreTraceCount} |`
+          + ` ${row.meanQualityScore ?? "n/a"} | ${row.compileOkCount}/${row.turnCount} |`
+          + ` ${row.phraseHitCount}/${row.phraseCount} | ${row.promotionCount} | ${row.warningCount} |`,
+      );
+    }
+  }
+  if (runtimeModeProof.pairs.length > 0) {
+    lines.push("");
+    lines.push(`- pairwise b/t/r = better / tied / regressed for ${runtimeModeProof.candidateMode} against the comparator`);
+    lines.push("| comparator | trace b/t/r | turn b/t/r | mean q delta | compile delta | context delta | promo delta |");
+    lines.push("| --- | --- | --- | ---: | ---: | ---: | ---: |");
+    for (const row of runtimeModeProof.pairs) {
+      lines.push(
+        `| ${row.comparatorMode} | ${row.traceBetterCount}/${row.traceTiedCount}/${row.traceRegressionCount}`
+          + ` | ${row.turnBetterCount}/${row.turnTiedCount}/${row.turnRegressionCount}`
+          + ` | ${formatSignedNumber(row.meanQualityDeltaCandidateMinusComparator)}`
+          + ` | ${formatSignedNumber(row.compileOkDeltaCandidateMinusComparator)}`
+          + ` | ${formatSignedNumber(row.phraseHitDeltaCandidateMinusComparator)}`
+          + ` | ${formatSignedNumber(row.promotionDeltaCandidateMinusComparator)} |`,
+      );
+    }
+  } else {
+    lines.push("- pairwise deltas: unavailable");
+  }
+}
+
 function appendRouteDecisionSurfaceMarkdown(lines, routeDecisionSummary, source, relativePath) {
   lines.push("## Route decision surface");
   if (!routeDecisionSummary) {
@@ -2739,6 +3037,8 @@ function formatHealthMarkdown(snapshot) {
     snapshot.routeDecisionSummarySource ?? null,
     snapshot.routeDecisionSummaryPath ?? null,
   );
+  lines.push("");
+  appendRuntimeModeProofMarkdown(lines, snapshot.runtimeModeProof ?? null);
   lines.push("");
   lines.push("## Operator health");
   lines.push(`- operator health: ${snapshot.operatorHealth.status}`);
@@ -2859,6 +3159,8 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- fail-open proxy: ${replayFocus?.failOpenSummary ?? "unavailable"}`);
   lines.push(`- purpose-aligned unique utility leaders: ${JSON.stringify(aggregate.replayMetrics.utilityWinnerModeCounts)}`);
   lines.push(`- purpose-aligned utility-tied bundles: ${aggregate.replayMetrics.utilityTiedTopBundleCount ?? 0}`);
+  lines.push("");
+  appendRuntimeModeProofMarkdown(lines, aggregate.runtimeModeProof ?? null);
   lines.push("");
   lines.push("## Replay diagnostics and cost proxies");
   lines.push(`- diagnostic unique top-rank modes: ${JSON.stringify(aggregate.replayMetrics.winnerModeCounts)}`);

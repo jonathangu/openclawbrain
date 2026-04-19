@@ -73,6 +73,217 @@ function buildRouteDecisionSummaryFixture() {
   ], 25);
 }
 
+function buildRuntimeModeReplayLaneBundle() {
+  return {
+    kind: "recorded-session-replay-lane",
+    bundleId: "replay-lane-runtime-mode-proof",
+    relativePath: "openclawbrain/docs/evidence/2026-04-19/runtime-mode-proof/recorded-session-replay/_lane",
+    canonicalAt: "2026-04-19T00:00:00.000Z",
+    ageDays: 0.5,
+    fileCount: 7,
+    artifactBytes: 2048,
+    validationOk: true,
+    metrics: {
+      sourceManifestId: "runtime-mode-proof-fixture",
+      requestedTraceCount: 18,
+      successfulTraceCount: 18,
+      failedTraceCount: 0,
+      candidateUtilityVsBaselineCounts: {
+        better: 9,
+        tied: 7,
+        worse: 2,
+        total: 18,
+      },
+      candidateTieOrBetterVsBaselineCount: 16,
+      candidateTieOrBetterVsBaselineRate: 0.888889,
+      regressionVsBaselineCount: 2,
+      regressionVsBaselineRate: 0.111111,
+      regressionVsFloorCount: 0,
+      regressionVsFloorRate: 0,
+      requiredContextRecallSummary: "learned_route stayed above graph_prior_only on required-context recall.",
+      requiredContextRecallDelta: 0.055556,
+      requiredContextRecallCandidateHits: 34,
+      requiredContextRecallBaselineHits: 32,
+      requiredContextRecallPhraseCount: 36,
+      activationCount: 12,
+      beneficialActivationCount: 9,
+      activationPrecision: 0.75,
+      activationPrecisionSummary: "9/12 activations were beneficial.",
+      activationProxyCount: 12,
+      beneficialActivationProxyCount: 10,
+      activationPrecisionProxy: 0.833333,
+      activationPrecisionProxySummary: "10/12 proxy activations were beneficial.",
+      incrementalWinTraceCount: 9,
+      candidateEstimatedPromptTokensPerIncrementalWin: 120,
+      baselineEstimatedPromptTokensPerIncrementalWin: 140,
+      candidateEstimatedPromptCostUsdPerIncrementalWin: 0.0006,
+      baselineEstimatedPromptCostUsdPerIncrementalWin: 0.0007,
+      promptTokenDeltaPerIncrementalWin: -20,
+      promptCostUsdDeltaPerIncrementalWin: -0.0001,
+      candidateServePathLatencyMsPerIncrementalWin: 55,
+      baselineServePathLatencyMsPerIncrementalWin: 60,
+      servePathLatencyMsDeltaPerIncrementalWin: -5,
+      failOpenDegradedTurnCount: 1,
+      failOpenAcceptableDegradedTurnCount: 1,
+      failOpenCatastrophicDegradedTurnCount: 0,
+      failOpenDegradedTurnRate: 0.027778,
+      failOpenCatastrophicTurnRate: 0,
+      failOpenSummary: "1/36 degraded turns stayed acceptable.",
+    },
+    summaryTables: {
+      requestedTraceCount: 18,
+      successfulTraceCount: 18,
+      failedTraceCount: 0,
+      modeOrder: ["no_brain", "vector_only", "graph_prior_only", "learned_route"],
+      scorecard: {
+        candidateMode: "learned_route",
+        baselineMode: "graph_prior_only",
+        floorMode: "no_brain",
+        traceOutcomeVsBaseline: {
+          betterCount: 9,
+          tiedCount: 7,
+          worseCount: 2,
+          totalCount: 18,
+        },
+        traceTieOrBetterVsBaseline: {
+          count: 16,
+          rate: 0.888889,
+          totalCount: 18,
+        },
+        regressionVsBaseline: {
+          count: 2,
+          rate: 0.111111,
+          totalCount: 18,
+        },
+        regressionVsFloor: {
+          count: 0,
+          rate: 0,
+          totalCount: 18,
+        },
+        criticalRegressionCount: 1,
+      },
+      modes: [
+        {
+          mode: "no_brain",
+          traceCount: 18,
+          rankedWinnerCount: 0,
+          sharedTopScoreTraceCount: 0,
+          meanQualityScore: 62,
+          totalCompileOkCount: 28,
+          totalTurnCount: 36,
+          totalPhraseHitCount: 26,
+          totalPhraseCount: 36,
+          totalPromotionCount: 0,
+          totalWarningCount: 0,
+        },
+        {
+          mode: "vector_only",
+          traceCount: 18,
+          rankedWinnerCount: 2,
+          sharedTopScoreTraceCount: 3,
+          meanQualityScore: 84,
+          totalCompileOkCount: 34,
+          totalTurnCount: 36,
+          totalPhraseHitCount: 30,
+          totalPhraseCount: 36,
+          totalPromotionCount: 0,
+          totalWarningCount: 1,
+        },
+        {
+          mode: "graph_prior_only",
+          traceCount: 18,
+          rankedWinnerCount: 7,
+          sharedTopScoreTraceCount: 9,
+          meanQualityScore: 86.5,
+          totalCompileOkCount: 35,
+          totalTurnCount: 36,
+          totalPhraseHitCount: 32,
+          totalPhraseCount: 36,
+          totalPromotionCount: 0,
+          totalWarningCount: 0,
+        },
+        {
+          mode: "learned_route",
+          traceCount: 18,
+          rankedWinnerCount: 9,
+          sharedTopScoreTraceCount: 12,
+          meanQualityScore: 90,
+          totalCompileOkCount: 36,
+          totalTurnCount: 36,
+          totalPhraseHitCount: 34,
+          totalPhraseCount: 36,
+          totalPromotionCount: 6,
+          totalWarningCount: 1,
+        },
+      ],
+    },
+    pairwiseDeltas: {
+      pairs: [
+        {
+          leftMode: "graph_prior_only",
+          rightMode: "learned_route",
+          traceWins: {
+            left: 2,
+            right: 9,
+            ties: 7,
+          },
+          turnWins: {
+            left: 4,
+            right: 20,
+            ties: 12,
+          },
+          aggregateDeltas: {
+            qualityScoreDeltaLeftMinusRightMean: -3.5,
+            compileOkDeltaLeftMinusRightSum: -1,
+            phraseHitDeltaLeftMinusRightSum: -2,
+            promotionDeltaLeftMinusRightSum: -6,
+          },
+        },
+        {
+          leftMode: "vector_only",
+          rightMode: "learned_route",
+          traceWins: {
+            left: 2,
+            right: 12,
+            ties: 4,
+          },
+          turnWins: {
+            left: 6,
+            right: 22,
+            ties: 8,
+          },
+          aggregateDeltas: {
+            qualityScoreDeltaLeftMinusRightMean: -6,
+            compileOkDeltaLeftMinusRightSum: -2,
+            phraseHitDeltaLeftMinusRightSum: -4,
+            promotionDeltaLeftMinusRightSum: -6,
+          },
+        },
+        {
+          leftMode: "no_brain",
+          rightMode: "learned_route",
+          traceWins: {
+            left: 0,
+            right: 18,
+            ties: 0,
+          },
+          turnWins: {
+            left: 0,
+            right: 30,
+            ties: 6,
+          },
+          aggregateDeltas: {
+            qualityScoreDeltaLeftMinusRightMean: -24,
+            compileOkDeltaLeftMinusRightSum: -8,
+            phraseHitDeltaLeftMinusRightSum: -10,
+            promotionDeltaLeftMinusRightSum: -6,
+          },
+        },
+      ],
+    },
+  };
+}
+
 describe("proof cron bundle scanning", () => {
   it("classifies bundle roots and excludes the cron output root", () => {
     const workspaceRoot = tempWorkspace();
@@ -863,6 +1074,122 @@ describe("proof cron config", () => {
       "{{openclawHome}}",
       "--json",
     ]);
+  });
+});
+
+describe("proof cron runtime-mode proof tables", () => {
+  it("threads compact runtime-mode proof tables into nightly and health summaries", () => {
+    const config = {
+      healthFreshnessDays: 7,
+      freshnessThresholdDays: 21,
+    };
+    const now = new Date("2026-04-19T12:00:00.000Z");
+    const bundles = [buildRuntimeModeReplayLaneBundle()];
+    const statusProbe = {
+      command: "node packages/cli/dist/src/cli.js status --openclaw-home ~/.openclaw --json",
+      startedAt: "2026-04-19T11:59:59.000Z",
+      endedAt: "2026-04-19T12:00:00.000Z",
+      durationMs: 1000,
+      exitCode: 0,
+      signal: null,
+      parsed: {
+        brain: {
+          activePackId: "pack-runtime-mode-proof",
+          routeFreshness: "updated",
+        },
+        brainStatus: {
+          status: "ok",
+          serveState: "serving_active_pack",
+          usedLearnedRouteFn: true,
+        },
+        hook: {
+          loadProof: "status_probe_ready",
+        },
+        passiveLearning: {
+          watch: {
+            state: "healthy",
+            lastHeartbeatAt: "2026-04-19T11:59:30.000Z",
+            intervalSeconds: 30,
+            proofState: "self_proving",
+            teacherArtifactCount: 2,
+          },
+        },
+        workerHealthy: true,
+        workerMode: "child",
+      },
+    };
+
+    const health = buildHealthSnapshot({
+      config,
+      now,
+      scanDurationMs: 42,
+      bundles,
+      statusProbe,
+    });
+    const aggregate = buildNightlyAggregate({
+      config,
+      now,
+      scanDurationMs: 42,
+      bundles,
+      statusProbe,
+    });
+
+    expect(health.runtimeModeProof).toMatchObject({
+      available: true,
+      modeOrder: ["no_brain", "vector_only", "graph_prior_only", "learned_route"],
+      candidateMode: "learned_route",
+      baselineMode: "graph_prior_only",
+      floorMode: "no_brain",
+    });
+    expect(health.runtimeModeProof?.pairs.map((row: any) => row.comparatorMode)).toEqual([
+      "graph_prior_only",
+      "vector_only",
+      "no_brain",
+    ]);
+    expect(health.runtimeModeProof?.pairs[0]).toMatchObject({
+      traceBetterCount: 9,
+      traceTiedCount: 7,
+      traceRegressionCount: 2,
+      turnBetterCount: 20,
+      turnTiedCount: 12,
+      turnRegressionCount: 4,
+      meanQualityDeltaCandidateMinusComparator: 3.5,
+      compileOkDeltaCandidateMinusComparator: 1,
+      phraseHitDeltaCandidateMinusComparator: 2,
+      promotionDeltaCandidateMinusComparator: 6,
+    });
+    expect(aggregate.runtimeModeProof).toMatchObject({
+      available: true,
+      bundleId: "replay-lane-runtime-mode-proof",
+    });
+
+    const healthMarkdown = formatHealthMarkdown(health);
+    const nightlyMarkdown = formatNightlyMarkdown(aggregate);
+
+    expect(healthMarkdown).toContain("## Runtime-mode proof lane");
+    expect(healthMarkdown).toContain(
+      "- traces vs graph_prior_only: 9 better, 7 tied, 2 regressed; tie-or-better 16/18 (0.888889)",
+    );
+    expect(healthMarkdown).toContain(
+      "- regressions: graph_prior_only 2/18 (0.111111), no_brain 0/18 (0), critical=1",
+    );
+    expect(healthMarkdown).toContain(
+      "| mode | traces | top/shared | mean q | compile | required-context | promotions | warnings |",
+    );
+    expect(healthMarkdown).toContain("| no_brain | 18 | 0/0 | 62 | 28/36 | 26/36 | 0 | 0 |");
+    expect(healthMarkdown).toContain("| learned_route | 18 | 9/12 | 90 | 36/36 | 34/36 | 6 | 1 |");
+    expect(healthMarkdown).toContain(
+      "| comparator | trace b/t/r | turn b/t/r | mean q delta | compile delta | context delta | promo delta |",
+    );
+    expect(healthMarkdown).toContain("| graph_prior_only | 9/7/2 | 20/12/4 | +3.5 | +1 | +2 | +6 |");
+    expect(healthMarkdown).toContain("| vector_only | 12/4/2 | 22/8/6 | +6 | +2 | +4 | +6 |");
+    expect(healthMarkdown).toContain("| no_brain | 18/0/0 | 30/6/0 | +24 | +8 | +10 | +6 |");
+
+    expect(nightlyMarkdown).toContain("## Runtime-mode proof lane");
+    expect(nightlyMarkdown).toContain("bundle=replay-lane-runtime-mode-proof");
+    expect(nightlyMarkdown).toContain(
+      "- pairwise b/t/r = better / tied / regressed for learned_route against the comparator",
+    );
   });
 });
 
