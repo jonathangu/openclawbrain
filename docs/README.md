@@ -7,10 +7,10 @@ Start here.
 If you want to try OpenClawBrain for the first time, use this command path:
 
 ```bash
-npx @openclawbrain/cli@0.4.44 openclawbrain install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.44 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.44 openclawbrain status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.44 openclawbrain proof --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.44 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.44 proof --openclaw-home ~/.openclaw
 ```
 
 That same path is also the upgrade and repair path.

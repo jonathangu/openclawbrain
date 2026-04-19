@@ -4,6 +4,8 @@ Stop reteaching your agent the same things.
 
 OpenClawBrain gives OpenClaw a useful memory. It carries forward corrections, preferences, and successful past work so your agent can improve over time without turning every prompt into a giant transcript dump.
 
+OpenClawBrain is now shipping checked wins, not just architecture. The latest public tranche turned a reviewed must-fire lane from `0/10` to `10/10` while the checked restraint bundle stayed clean, and the proof surfaces are published so you can inspect the claim instead of taking it on faith.
+
 Current version: **0.4.44** · [Changelog](CHANGELOG.md)
 
 ## Why people use it
@@ -19,10 +21,10 @@ Current version: **0.4.44** · [Changelog](CHANGELOG.md)
 If you already have OpenClaw and Node.js 20+, this is the simplest path:
 
 ```bash
-npx @openclawbrain/cli@0.4.44 openclawbrain install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.44 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.44 openclawbrain status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.44 openclawbrain proof --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.44 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.44 proof --openclaw-home ~/.openclaw
 ```
 
 Use the same four commands later for upgrades and repairs.
@@ -38,9 +40,9 @@ In plain English:
 
 That means the agent gets continuity without turning every prompt into a giant history dump.
 
-## Latest proof tranche
+## Latest shipped win
 
-The newest published proof update is intentionally bounded.
+The newest published update is intentionally bounded, but it is a real shipped win, not a vague benchmark story.
 
 - On the reviewed frozen binary-gate v2 cohort, lowering `activationThreshold` from `0.38` to `0.21` moved merged `must_fire_binary_gate_v2` from `0/10` to `10/10`.
 - The checked restraint bundle stayed clean at the same time: unnecessary activations `0/65`, must-not-fire failures `0/69`, broad-live regressions `0/403`.
