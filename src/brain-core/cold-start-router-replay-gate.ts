@@ -503,34 +503,16 @@ export function loadColdStartRouterArtifactV1(artifactDir: string): {
   };
 }
 
-export function replayColdStartRouterArtifactV1(params: {
+export function replayColdStartRouterModelV1(params: {
   artifactDir: string;
+  manifestSummary: RouterArtifactManifestSummaryV1 | null;
+  model: ColdStartRouterModelV1;
   routeRows: RouteDecisionRowV1[];
   policySupervisionRows?: PolicySupervisionRowV1[];
+  loadIssues?: ColdStartRouterReplayGateLoadIssueV1[];
 }): ColdStartRouterReplayGateVerdictV1 {
-  const loaded = loadColdStartRouterArtifactV1(params.artifactDir);
-  if (!loaded.artifact) {
-    return {
-      artifactDir: params.artifactDir,
-      manifestSummary: null,
-      passed: false,
-      verdict: "fail",
-      summary: `load failed: ${loaded.issues.map((issue) => issue.detail).join("; ")}`,
-      evaluatedRowCount: 0,
-      passedRowCount: 0,
-      failedRowCount: 0,
-      skippedRowCount: 0,
-      policyExpectationCount: 0,
-      passedPolicyExpectationCount: 0,
-      failedPolicyExpectationCount: 0,
-      loadIssues: loaded.issues,
-      laneSummaries: [],
-      rowResults: [],
-    };
-  }
-
   const rowResults: ColdStartRouterReplayGateRowResultV1[] = [];
-  const loadIssues = loaded.issues;
+  const loadIssues = [...(params.loadIssues ?? [])];
   const validPolicyRows: PolicySupervisionRowV1[] = [];
 
   for (const policyRow of params.policySupervisionRows ?? []) {
@@ -617,7 +599,7 @@ export function replayColdStartRouterArtifactV1(params: {
       continue;
     }
 
-    const scoring = scoreColdStartRouteRowV1({ model: loaded.artifact.model, row });
+    const scoring = scoreColdStartRouteRowV1({ model: params.model, row });
     const actualTopCandidateId = scoring.rankedCandidates[0]?.candidate.candidate_id ?? null;
     const actualStopLabel = scoring.stopPrediction.label;
     const actualActivated = scoring.decisionSummary.activated;
@@ -766,7 +748,7 @@ export function replayColdStartRouterArtifactV1(params: {
 
   return {
     artifactDir: params.artifactDir,
-    manifestSummary: loaded.artifact.manifestSummary,
+    manifestSummary: params.manifestSummary,
     passed,
     verdict,
     summary: `${passedRowCount}/${evaluatedRowCount} replay rows passed${skippedRowCount > 0 ? `, ${skippedRowCount} skipped` : ""}; ${activationSummary}${policySummary}`,
@@ -781,4 +763,40 @@ export function replayColdStartRouterArtifactV1(params: {
     laneSummaries,
     rowResults,
   };
+}
+
+export function replayColdStartRouterArtifactV1(params: {
+  artifactDir: string;
+  routeRows: RouteDecisionRowV1[];
+  policySupervisionRows?: PolicySupervisionRowV1[];
+}): ColdStartRouterReplayGateVerdictV1 {
+  const loaded = loadColdStartRouterArtifactV1(params.artifactDir);
+  if (!loaded.artifact) {
+    return {
+      artifactDir: params.artifactDir,
+      manifestSummary: null,
+      passed: false,
+      verdict: "fail",
+      summary: `load failed: ${loaded.issues.map((issue) => issue.detail).join("; ")}`,
+      evaluatedRowCount: 0,
+      passedRowCount: 0,
+      failedRowCount: 0,
+      skippedRowCount: 0,
+      policyExpectationCount: 0,
+      passedPolicyExpectationCount: 0,
+      failedPolicyExpectationCount: 0,
+      loadIssues: loaded.issues,
+      laneSummaries: [],
+      rowResults: [],
+    };
+  }
+
+  return replayColdStartRouterModelV1({
+    artifactDir: params.artifactDir,
+    manifestSummary: loaded.artifact.manifestSummary,
+    model: loaded.artifact.model,
+    routeRows: params.routeRows,
+    policySupervisionRows: params.policySupervisionRows,
+    loadIssues: loaded.issues,
+  });
 }

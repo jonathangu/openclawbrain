@@ -27,10 +27,26 @@ export type MustFireSplitTrancheId =
   | "must_fire_recent_decision"
   | "must_fire_stale_summary_repair";
 
+export const MUST_FIRE_SPLIT_TRANCHE_IDS_V1 = [
+  "must_fire_exact_artifact",
+  "must_fire_resume_state",
+  "must_fire_recent_decision",
+  "must_fire_stale_summary_repair",
+] as const satisfies readonly MustFireSplitTrancheId[];
+
 export type TrapSplitTrancheId =
   | "trap_wrapper_system"
   | "trap_operator_artifact"
   | "trap_user_visible_resume";
+
+export const TRAP_SPLIT_TRANCHE_IDS_V1 = [
+  "trap_wrapper_system",
+  "trap_operator_artifact",
+  "trap_user_visible_resume",
+] as const satisfies readonly TrapSplitTrancheId[];
+
+export const BINARY_GATE_V2_MERGED_POSITIVE_TRANCHE_ID = "must_fire_binary_gate_v2" as const;
+export const BINARY_GATE_V2_MERGED_ABSTENTION_TRANCHE_ID = "must_not_fire_binary_gate_v2" as const;
 
 export type HardNegativeClass =
   | "unnecessary_activation"
@@ -466,7 +482,7 @@ function buildMergedPositiveManifest(params: {
   ];
   return buildSplitManifest({
     outputTaskId: params.outputTaskId,
-    trancheId: "must_fire_binary_gate_v2",
+    trancheId: BINARY_GATE_V2_MERGED_POSITIVE_TRANCHE_ID,
     purpose:
       "Merged positive v2 audit lane for the binary activate-vs-abstain gate, composed only of exact-artifact, resume-state, recent-decision, and stale-summary-repair anchors.",
     sourceManifest: params.sourceManifest,
@@ -503,7 +519,7 @@ function buildMergedAbstentionManifest(params: {
   ];
   return {
     contract: LEARNED_ROUTE_TRANCHE_MANIFEST_CONTRACT,
-    trancheId: "must_not_fire_binary_gate_v2",
+    trancheId: BINARY_GATE_V2_MERGED_ABSTENTION_TRANCHE_ID,
     taskId: params.outputTaskId,
     builtAt: params.generatedAt,
     status: "anchor_set_complete",
@@ -601,11 +617,11 @@ export function buildBinaryGateV2HardNegativeSpec(baseSpec: HardNegativeSpec, pa
       },
     ],
     seedAssignments: {
-      must_not_fire_binary_gate_v2: {
+      [BINARY_GATE_V2_MERGED_ABSTENTION_TRANCHE_ID]: {
         anchorCount: 65,
         assignByBucket: true,
       },
-      must_fire_binary_gate_v2: {
+      [BINARY_GATE_V2_MERGED_POSITIVE_TRANCHE_ID]: {
         anchorCount: 10,
         assignOnlyWhenReplayShowsMaterialGain: true,
       },
@@ -658,7 +674,7 @@ export function buildBinaryGateV2Tranches(params: {
   const trapSplit = splitTrapAnchors(params.trapManifest.anchors);
 
   const mustFireSplitManifests = Object.fromEntries(
-    (Object.keys(mustFireSplit) as MustFireSplitTrancheId[]).map((trancheId) => [
+    MUST_FIRE_SPLIT_TRANCHE_IDS_V1.map((trancheId) => [
       trancheId,
       buildSplitManifest({
         outputTaskId: params.outputTaskId,
@@ -681,7 +697,7 @@ export function buildBinaryGateV2Tranches(params: {
   ) as Record<MustFireSplitTrancheId, TrancheManifest>;
 
   const trapSplitManifests = Object.fromEntries(
-    (Object.keys(trapSplit) as TrapSplitTrancheId[]).map((trancheId) => [
+    TRAP_SPLIT_TRANCHE_IDS_V1.map((trancheId) => [
       trancheId,
       buildSplitManifest({
         outputTaskId: params.outputTaskId,
@@ -763,8 +779,8 @@ function main(): void {
   for (const [trancheId, manifest] of Object.entries(built.trapSplitManifests)) {
     writeJson(path.join(args.outputDir, `${trancheId}.manifest.json`), manifest);
   }
-  writeJson(path.join(args.outputDir, "must_fire_binary_gate_v2.manifest.json"), built.mergedPositive);
-  writeJson(path.join(args.outputDir, "must_not_fire_binary_gate_v2.manifest.json"), built.mergedAbstention);
+  writeJson(path.join(args.outputDir, `${BINARY_GATE_V2_MERGED_POSITIVE_TRANCHE_ID}.manifest.json`), built.mergedPositive);
+  writeJson(path.join(args.outputDir, `${BINARY_GATE_V2_MERGED_ABSTENTION_TRANCHE_ID}.manifest.json`), built.mergedAbstention);
   writeJson(path.join(args.outputDir, "binary-gate-v2-hard-negative-spec.v1.json"), built.hardNegativeSpec);
   writeFileSync(path.join(args.outputDir, "README.md"), built.summaryMarkdown, "utf8");
 

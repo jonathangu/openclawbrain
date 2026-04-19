@@ -16,6 +16,7 @@ import {
   applyPositivePressureWeightOverrideV1,
   buildColdStartRouteRow,
   buildSyntheticRouteCandidatesV1,
+  chooseActivationThresholdFromSweepV1,
   collectBundleReplaySurfaces,
   chooseTraverseTargetCandidateIdV1,
   classifyBroadLiveProofReadV1,
@@ -657,13 +658,7 @@ describe("activation-first gating retune runner helpers", () => {
     expect(deriveFinalCandidateStatusV1({
       feltPassed: true,
       restraintPassed: true,
-      broadLiveAuthoritative: proofRead.authoritative,
-      broadLiveVetoResult: proofRead.vetoResult,
-    })).toBe("architecture_verdict");
-
-    expect(deriveFinalCandidateStatusV1({
-      feltPassed: false,
-      restraintPassed: true,
+      binaryGatePromotionPassed: false,
       broadLiveAuthoritative: true,
       broadLiveVetoResult: "pass",
     })).toBe("reject");
@@ -671,9 +666,120 @@ describe("activation-first gating retune runner helpers", () => {
     expect(deriveFinalCandidateStatusV1({
       feltPassed: true,
       restraintPassed: true,
+      binaryGatePromotionPassed: true,
+      broadLiveAuthoritative: proofRead.authoritative,
+      broadLiveVetoResult: proofRead.vetoResult,
+    })).toBe("architecture_verdict");
+
+    expect(deriveFinalCandidateStatusV1({
+      feltPassed: false,
+      restraintPassed: true,
+      binaryGatePromotionPassed: true,
+      broadLiveAuthoritative: true,
+      broadLiveVetoResult: "pass",
+    })).toBe("reject");
+
+    expect(deriveFinalCandidateStatusV1({
+      feltPassed: true,
+      restraintPassed: true,
+      binaryGatePromotionPassed: true,
       broadLiveAuthoritative: true,
       broadLiveVetoResult: "pass",
     })).toBe("pass");
+  });
+
+  it("chooses the highest qualifying threshold from the auto sweep and falls back when none qualify", () => {
+    const selected = chooseActivationThresholdFromSweepV1({
+      fallbackThreshold: 0.38,
+      sweep: [
+        {
+          threshold: 0.23,
+          feltReplayPassed: false,
+          qualifies: false,
+          mergedMustFirePassed: false,
+          mergedMustNotFirePassed: true,
+          mustFireSplitPassCount: 0,
+          mustFireSplitTotal: 4,
+          trapSplitPassCount: 3,
+          trapSplitTotal: 3,
+          passedTrancheCount: 4,
+          totalTrancheCount: 9,
+          passed: false,
+        },
+        {
+          threshold: 0.22,
+          feltReplayPassed: true,
+          qualifies: false,
+          mergedMustFirePassed: false,
+          mergedMustNotFirePassed: true,
+          mustFireSplitPassCount: 2,
+          mustFireSplitTotal: 4,
+          trapSplitPassCount: 3,
+          trapSplitTotal: 3,
+          passedTrancheCount: 6,
+          totalTrancheCount: 9,
+          passed: false,
+        },
+        {
+          threshold: 0.21,
+          feltReplayPassed: true,
+          qualifies: true,
+          mergedMustFirePassed: true,
+          mergedMustNotFirePassed: true,
+          mustFireSplitPassCount: 4,
+          mustFireSplitTotal: 4,
+          trapSplitPassCount: 3,
+          trapSplitTotal: 3,
+          passedTrancheCount: 9,
+          totalTrancheCount: 9,
+          passed: true,
+        },
+        {
+          threshold: 0.2,
+          feltReplayPassed: true,
+          qualifies: true,
+          mergedMustFirePassed: true,
+          mergedMustNotFirePassed: true,
+          mustFireSplitPassCount: 4,
+          mustFireSplitTotal: 4,
+          trapSplitPassCount: 3,
+          trapSplitTotal: 3,
+          passedTrancheCount: 9,
+          totalTrancheCount: 9,
+          passed: true,
+        },
+      ],
+    });
+
+    expect(selected).toEqual({
+      selectedThreshold: 0.21,
+      selectedBySweep: true,
+      qualifyingThresholdCount: 2,
+      notes: ["Auto sweep selected the highest qualifying threshold: 0.21."],
+    });
+
+    expect(chooseActivationThresholdFromSweepV1({
+      fallbackThreshold: 0.38,
+      sweep: [{
+        threshold: 0.37,
+        feltReplayPassed: false,
+        qualifies: false,
+        mergedMustFirePassed: false,
+        mergedMustNotFirePassed: true,
+        mustFireSplitPassCount: 0,
+        mustFireSplitTotal: 4,
+        trapSplitPassCount: 3,
+        trapSplitTotal: 3,
+        passedTrancheCount: 4,
+        totalTrancheCount: 9,
+        passed: false,
+      }],
+    })).toEqual({
+      selectedThreshold: 0.38,
+      selectedBySweep: false,
+      qualifyingThresholdCount: 0,
+      notes: ["Auto sweep found no qualifying threshold on the 0.01-0.99 grid; keeping provisional threshold 0.38."],
+    });
   });
 
   it("summarizes full felt optimize outcomes from comparative eval scorecards", () => {
@@ -861,6 +967,7 @@ describe("activation-first gating retune runner helpers", () => {
     expect(deriveFinalCandidateStatusV1({
       feltPassed: true,
       restraintPassed: true,
+      binaryGatePromotionPassed: true,
       broadLiveAuthoritative: freshPass.authoritative,
       broadLiveVetoResult: freshPass.vetoResult,
     })).toBe("architecture_verdict");

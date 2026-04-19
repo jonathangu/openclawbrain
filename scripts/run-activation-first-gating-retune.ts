@@ -14,12 +14,14 @@ import type {
 } from "../src/brain-core/cold-start-router-contracts.ts";
 import { loadColdStartRouterArtifactBundleV1 } from "../src/brain-core/cold-start-router-runtime.ts";
 import {
+  replayColdStartRouterModelV1,
   replayColdStartRouterArtifactV1,
   type ColdStartRouterReplayGateLaneSummaryV1,
   type ColdStartRouterReplayGateVerdictV1,
 } from "../src/brain-core/cold-start-router-replay-gate.ts";
 import {
   trainColdStartRouterArtifactV1,
+  type ColdStartRouterModelV1,
   type ColdStartRouterInterventionHeadConfigV1,
 } from "../src/brain-core/cold-start-router-trainer.ts";
 import type { GraphifyRouteObjectiveTraceLabelLikeV1 } from "../src/brain-core/graphify-training-bridge.ts";
@@ -32,6 +34,19 @@ import {
   type ComparativeEvalScorecardV1,
   runComparativeEval,
 } from "../src/eval/comparative-eval-runner.ts";
+import {
+  BINARY_GATE_V2_MERGED_ABSTENTION_TRANCHE_ID,
+  BINARY_GATE_V2_MERGED_POSITIVE_TRANCHE_ID,
+  MUST_FIRE_SPLIT_TRANCHE_IDS_V1,
+  TRAP_SPLIT_TRANCHE_IDS_V1,
+} from "./build-binary-gate-v2-tranches.ts";
+import {
+  gradeBinaryGateV2SplitV1,
+  prepareBinaryGateV2SplitReplayInputsV1,
+  type BinaryGateV2SplitSummaryV1,
+  type PreparedBinaryGateV2SplitReplayInputsV1,
+  type TrancheManifest as BinaryGateTrancheManifestV1,
+} from "./grade-binary-gate-v2-splits.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,6 +83,9 @@ export const ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1: ColdStartRouterI
 export const ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1 = {
   activationThreshold: 0.38,
 } as const;
+const AUTO_ACTIVATION_THRESHOLD_SWEEP_MIN_V1 = 0.01;
+const AUTO_ACTIVATION_THRESHOLD_SWEEP_MAX_V1 = 0.99;
+const AUTO_ACTIVATION_THRESHOLD_SWEEP_STEP_V1 = 0.01;
 export const FELT_SAFE_POSITIVE_PRESSURE_ROW_WEIGHT_OVERRIDES_V1: Record<string, number> = {
   "activation-first:felt_resume_25:live-main-6688d40b-5220-45ca-83f4-835184de4116-window-002": 3,
   "activation-first:felt_resume_25:live-main-4c69091d-1290-4bcd-a74c-7166c46e5670-window-002": 3,
@@ -123,7 +141,7 @@ interface ParsedArgs {
   warmStartArtifactDir: string;
   includeMustFire: boolean;
   generatedAt: string;
-  activationThreshold: number;
+  activationThreshold: number | null;
 }
 
 interface ActivationFirstHarnessLaneV1 {
@@ -369,8 +387,66 @@ export interface BroadLiveProofReadSummaryV1 {
 export interface CandidateStatusInputV1 {
   feltPassed: boolean;
   restraintPassed: boolean;
+  binaryGatePromotionPassed?: boolean;
   broadLiveAuthoritative: boolean;
   broadLiveVetoResult: BroadLiveVetoResultV1;
+}
+
+interface PreparedBinaryGatePromotionEntryV1 {
+  trancheId: string;
+  manifestPath: string;
+  prepared: PreparedBinaryGateV2SplitReplayInputsV1;
+}
+
+interface PreparedBinaryGatePromotionInputsV1 {
+  discoveryMode: "source_manifest_sibling_dir";
+  manifestRootDir: string;
+  mergedMustFire: PreparedBinaryGatePromotionEntryV1;
+  mergedMustNotFire: PreparedBinaryGatePromotionEntryV1;
+  mustFireSplits: PreparedBinaryGatePromotionEntryV1[];
+  trapSplits: PreparedBinaryGatePromotionEntryV1[];
+}
+
+interface BinaryGatePromotionPassSummaryV1 {
+  mergedMustFirePassed: boolean;
+  mergedMustNotFirePassed: boolean;
+  mustFireSplitPassCount: number;
+  mustFireSplitTotal: number;
+  trapSplitPassCount: number;
+  trapSplitTotal: number;
+  passedTrancheCount: number;
+  totalTrancheCount: number;
+  passed: boolean;
+}
+
+interface BinaryGatePromotionSummaryV1 extends BinaryGatePromotionPassSummaryV1 {
+  discoveryMode: "source_manifest_sibling_dir";
+  manifestRootDir: string;
+  outputDir: string | null;
+  mergedMustFire: BinaryGateV2SplitSummaryV1;
+  mergedMustNotFire: BinaryGateV2SplitSummaryV1;
+  mustFireSplits: BinaryGateV2SplitSummaryV1[];
+  trapSplits: BinaryGateV2SplitSummaryV1[];
+}
+
+export interface ActivationThresholdSweepEntryV1 extends BinaryGatePromotionPassSummaryV1 {
+  threshold: number;
+  feltReplayPassed: boolean;
+  qualifies: boolean;
+}
+
+export interface ActivationThresholdSelectionSummaryV1 {
+  mode: "manual_override" | "auto_sweep_v1";
+  provisionalThreshold: number;
+  selectedThreshold: number;
+  selectedBySweep: boolean;
+  thresholdSweepMin: number | null;
+  thresholdSweepMax: number | null;
+  thresholdSweepStep: number | null;
+  qualifyingThresholdCount: number;
+  sweepArtifactChecksum: string | null;
+  sweep: ActivationThresholdSweepEntryV1[];
+  notes: string[];
 }
 
 interface RunnerArtifactsV1 {
@@ -381,12 +457,15 @@ interface RunnerArtifactsV1 {
   candidateArtifactDir: string;
   feltOptimizeEvalDir: string;
   broadLiveEvalDir: string;
+  binaryGatePromotionDir: string;
+  activationThresholdSelectionPath: string;
   scorecardPath: string;
   runPath: string;
 }
 
 interface RunnerScorecardV1 {
   candidateArtifactDir: string;
+  activationThresholdSelection: ActivationThresholdSelectionSummaryV1;
   feltUniqueWinsTiesRegressions: FeltOverlapSummaryV1;
   feltComparativeEval: FeltOptimizeComparativeSummaryV1;
   feltBroadLiveOverlap: FeltOverlapSummaryV1;
@@ -402,6 +481,7 @@ interface RunnerScorecardV1 {
     count: number;
     total: number;
   };
+  binaryGatePromotion: BinaryGatePromotionSummaryV1;
   broadLive: BroadLiveProofReadSummaryV1;
   finalCandidateStatus: ActivationFirstCandidateStatusV1;
 }
@@ -427,7 +507,7 @@ function usage(): void {
       "  --include-must-fire           Include must-fire-30 as secondary training input (default)",
       "  --no-must-fire                Exclude must-fire-30 from training input",
       "  --generated-at <iso>          Override generated timestamp",
-      `  --activation-threshold <n>    Defaults to ${ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1.activationThreshold}`,
+      `  --activation-threshold <n>    Manually override the activation threshold (default: auto sweep, provisional ${ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1.activationThreshold})`,
       "  --help                        Show this help",
     ].join("\n") + "\n",
   );
@@ -453,7 +533,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     warmStartArtifactDir: DEFAULT_WARM_START_ARTIFACT_DIR,
     includeMustFire: true,
     generatedAt: new Date().toISOString(),
-    activationThreshold: ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1.activationThreshold,
+    activationThreshold: null,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -488,10 +568,10 @@ function parseArgs(argv: string[]): ParsedArgs {
       case "--activation-threshold": {
         const rawValue = normalizeCliString(argv[index + 1]);
         const parsedValue = rawValue === null ? Number.NaN : Number(rawValue);
-        if (!Number.isFinite(parsedValue)) {
-          throw new Error("--activation-threshold must be a finite number");
+        if (!Number.isFinite(parsedValue) || parsedValue < 0 || parsedValue > 1) {
+          throw new Error("--activation-threshold must be a finite number between 0 and 1");
         }
-        parsed.activationThreshold = parsedValue;
+        parsed.activationThreshold = Number(parsedValue.toFixed(2));
         index += 1;
         break;
       }
@@ -1444,11 +1524,6 @@ export function materializeLaneRows(params: {
   };
 }
 
-function ensureCandidateArtifactDir(candidateArtifactDir: string): void {
-  rmSync(candidateArtifactDir, { recursive: true, force: true });
-  mkdirSync(candidateArtifactDir, { recursive: true });
-}
-
 function findLaneSummary(
   verdict: ColdStartRouterReplayGateVerdictV1,
   laneName: string,
@@ -1483,6 +1558,370 @@ function summarizeMustNotFireFailures(laneSummary: ColdStartRouterReplayGateLane
   };
 }
 
+function buildActivationThresholdSweepGridV1(): number[] {
+  const values: number[] = [];
+  for (
+    let raw = Math.round(AUTO_ACTIVATION_THRESHOLD_SWEEP_MAX_V1 / AUTO_ACTIVATION_THRESHOLD_SWEEP_STEP_V1);
+    raw >= Math.round(AUTO_ACTIVATION_THRESHOLD_SWEEP_MIN_V1 / AUTO_ACTIVATION_THRESHOLD_SWEEP_STEP_V1);
+    raw -= 1
+  ) {
+    values.push(Number((raw * AUTO_ACTIVATION_THRESHOLD_SWEEP_STEP_V1).toFixed(2)));
+  }
+  return values;
+}
+
+export function chooseActivationThresholdFromSweepV1(params: {
+  sweep: ActivationThresholdSweepEntryV1[];
+  fallbackThreshold: number;
+}): {
+  selectedThreshold: number;
+  selectedBySweep: boolean;
+  qualifyingThresholdCount: number;
+  notes: string[];
+} {
+  const qualifying = params.sweep.filter((entry) => entry.qualifies);
+  const selected = qualifying[0] ?? null;
+  if (selected) {
+    return {
+      selectedThreshold: selected.threshold,
+      selectedBySweep: true,
+      qualifyingThresholdCount: qualifying.length,
+      notes: [`Auto sweep selected the highest qualifying threshold: ${selected.threshold.toFixed(2)}.`],
+    };
+  }
+  return {
+    selectedThreshold: params.fallbackThreshold,
+    selectedBySweep: false,
+    qualifyingThresholdCount: 0,
+    notes: [
+      `Auto sweep found no qualifying threshold on the ${AUTO_ACTIVATION_THRESHOLD_SWEEP_MIN_V1.toFixed(2)}-${AUTO_ACTIVATION_THRESHOLD_SWEEP_MAX_V1.toFixed(2)} grid; keeping provisional threshold ${params.fallbackThreshold.toFixed(2)}.`,
+    ],
+  };
+}
+
+function cloneModelWithActivationThresholdV1(
+  model: ColdStartRouterModelV1,
+  activationThreshold: number,
+): ColdStartRouterModelV1 {
+  return {
+    ...model,
+    calibration: {
+      ...model.calibration,
+      activationThreshold: Number(activationThreshold.toFixed(2)),
+    },
+  };
+}
+
+function resolveSourceManifestPathForHarnessLaneV1(
+  harnessDir: string,
+  lane: ActivationFirstHarnessLaneV1,
+  laneLabel: string,
+): string {
+  const manifestRef = normalizeCliString(lane.sourceManifestPath ?? lane.manifestPath);
+  if (manifestRef === null) {
+    throw new Error(`Harness ${laneLabel} lane is missing both sourceManifestPath and manifestPath`);
+  }
+  const manifestPath = resolveHarnessPath(harnessDir, manifestRef);
+  if (!existsSync(manifestPath)) {
+    throw new Error(`Harness ${laneLabel} manifest is missing at ${manifestPath}`);
+  }
+  return manifestPath;
+}
+
+function buildPreparedBinaryGatePromotionEntryV1(params: {
+  manifestPath: string;
+  routeRows: ColdStartRouteDecisionRowV1[];
+  policyRows: PolicySupervisionRowV1[];
+}): PreparedBinaryGatePromotionEntryV1 {
+  if (!existsSync(params.manifestPath)) {
+    throw new Error(`Binary-gate promotion manifest is missing at ${params.manifestPath}`);
+  }
+  const manifest = readJson<BinaryGateTrancheManifestV1>(params.manifestPath);
+  return {
+    trancheId: manifest.trancheId,
+    manifestPath: params.manifestPath,
+    prepared: prepareBinaryGateV2SplitReplayInputsV1({
+      manifest,
+      routeRows: params.routeRows,
+      policyRows: params.policyRows,
+    }),
+  };
+}
+
+function discoverPreparedBinaryGatePromotionInputsV1(params: {
+  harnessDir: string;
+  harness: ActivationFirstRetuneHarnessV1;
+  routeRows: ColdStartRouteDecisionRowV1[];
+  policyRows: PolicySupervisionRowV1[];
+}): PreparedBinaryGatePromotionInputsV1 {
+  const mergedMustFireManifestPath = resolveSourceManifestPathForHarnessLaneV1(
+    params.harnessDir,
+    params.harness.mustFire,
+    "mustFire",
+  );
+  const mergedMustNotFireManifestPath = resolveSourceManifestPathForHarnessLaneV1(
+    params.harnessDir,
+    params.harness.mustNotFire,
+    "mustNotFire",
+  );
+  const manifestRootDir = path.dirname(mergedMustFireManifestPath);
+  const mustNotFireManifestRootDir = path.dirname(mergedMustNotFireManifestPath);
+  if (mustNotFireManifestRootDir !== manifestRootDir) {
+    throw new Error(
+      `Binary-gate promotion manifest roots disagree: ${manifestRootDir} vs ${mustNotFireManifestRootDir}`,
+    );
+  }
+
+  const mergedMustFire = buildPreparedBinaryGatePromotionEntryV1({
+    manifestPath: mergedMustFireManifestPath,
+    routeRows: params.routeRows,
+    policyRows: params.policyRows,
+  });
+  if (mergedMustFire.trancheId !== BINARY_GATE_V2_MERGED_POSITIVE_TRANCHE_ID) {
+    throw new Error(
+      `Expected merged must-fire tranche ${BINARY_GATE_V2_MERGED_POSITIVE_TRANCHE_ID}, got ${mergedMustFire.trancheId}`,
+    );
+  }
+  const mergedMustNotFire = buildPreparedBinaryGatePromotionEntryV1({
+    manifestPath: mergedMustNotFireManifestPath,
+    routeRows: params.routeRows,
+    policyRows: params.policyRows,
+  });
+  if (mergedMustNotFire.trancheId !== BINARY_GATE_V2_MERGED_ABSTENTION_TRANCHE_ID) {
+    throw new Error(
+      `Expected merged must-not-fire tranche ${BINARY_GATE_V2_MERGED_ABSTENTION_TRANCHE_ID}, got ${mergedMustNotFire.trancheId}`,
+    );
+  }
+
+  return {
+    discoveryMode: "source_manifest_sibling_dir",
+    manifestRootDir,
+    mergedMustFire,
+    mergedMustNotFire,
+    mustFireSplits: MUST_FIRE_SPLIT_TRANCHE_IDS_V1.map((trancheId) => buildPreparedBinaryGatePromotionEntryV1({
+      manifestPath: path.join(manifestRootDir, `${trancheId}.manifest.json`),
+      routeRows: params.routeRows,
+      policyRows: params.policyRows,
+    })),
+    trapSplits: TRAP_SPLIT_TRANCHE_IDS_V1.map((trancheId) => buildPreparedBinaryGatePromotionEntryV1({
+      manifestPath: path.join(manifestRootDir, `${trancheId}.manifest.json`),
+      routeRows: params.routeRows,
+      policyRows: params.policyRows,
+    })),
+  };
+}
+
+function buildBinaryGatePromotionPassSummaryV1(params: {
+  mergedMustFirePassed: boolean;
+  mergedMustNotFirePassed: boolean;
+  mustFireSplitPassed: boolean[];
+  trapSplitPassed: boolean[];
+}): BinaryGatePromotionPassSummaryV1 {
+  const mustFireSplitPassCount = params.mustFireSplitPassed.filter(Boolean).length;
+  const trapSplitPassCount = params.trapSplitPassed.filter(Boolean).length;
+  const totalTrancheCount = 2 + params.mustFireSplitPassed.length + params.trapSplitPassed.length;
+  const passedTrancheCount = [
+    params.mergedMustFirePassed,
+    params.mergedMustNotFirePassed,
+    ...params.mustFireSplitPassed,
+    ...params.trapSplitPassed,
+  ].filter(Boolean).length;
+  return {
+    mergedMustFirePassed: params.mergedMustFirePassed,
+    mergedMustNotFirePassed: params.mergedMustNotFirePassed,
+    mustFireSplitPassCount,
+    mustFireSplitTotal: params.mustFireSplitPassed.length,
+    trapSplitPassCount,
+    trapSplitTotal: params.trapSplitPassed.length,
+    passedTrancheCount,
+    totalTrancheCount,
+    passed: passedTrancheCount === totalTrancheCount,
+  };
+}
+
+function evaluatePreparedBinaryGatePromotionAtThresholdV1(params: {
+  artifactDir: string;
+  model: ColdStartRouterModelV1;
+  preparedPromotion: PreparedBinaryGatePromotionInputsV1;
+}): BinaryGatePromotionPassSummaryV1 {
+  const gradePreparedEntry = (entry: PreparedBinaryGatePromotionEntryV1): boolean => (
+    replayColdStartRouterModelV1({
+      artifactDir: params.artifactDir,
+      manifestSummary: null,
+      model: params.model,
+      routeRows: entry.prepared.routeRows,
+      policySupervisionRows: entry.prepared.policyRows,
+    }).passed
+  );
+
+  return buildBinaryGatePromotionPassSummaryV1({
+    mergedMustFirePassed: gradePreparedEntry(params.preparedPromotion.mergedMustFire),
+    mergedMustNotFirePassed: gradePreparedEntry(params.preparedPromotion.mergedMustNotFire),
+    mustFireSplitPassed: params.preparedPromotion.mustFireSplits.map(gradePreparedEntry),
+    trapSplitPassed: params.preparedPromotion.trapSplits.map(gradePreparedEntry),
+  });
+}
+
+function buildBinaryGatePromotionSummaryV1(params: {
+  preparedPromotion: PreparedBinaryGatePromotionInputsV1;
+  outputDir: string | null;
+  mergedMustFire: BinaryGateV2SplitSummaryV1;
+  mergedMustNotFire: BinaryGateV2SplitSummaryV1;
+  mustFireSplits: BinaryGateV2SplitSummaryV1[];
+  trapSplits: BinaryGateV2SplitSummaryV1[];
+}): BinaryGatePromotionSummaryV1 {
+  const passSummary = buildBinaryGatePromotionPassSummaryV1({
+    mergedMustFirePassed: params.mergedMustFire.replay.passed,
+    mergedMustNotFirePassed: params.mergedMustNotFire.replay.passed,
+    mustFireSplitPassed: params.mustFireSplits.map((summary) => summary.replay.passed),
+    trapSplitPassed: params.trapSplits.map((summary) => summary.replay.passed),
+  });
+  return {
+    ...passSummary,
+    discoveryMode: params.preparedPromotion.discoveryMode,
+    manifestRootDir: portableRelativePath(workspaceRoot, params.preparedPromotion.manifestRootDir),
+    outputDir: params.outputDir,
+    mergedMustFire: params.mergedMustFire,
+    mergedMustNotFire: params.mergedMustNotFire,
+    mustFireSplits: params.mustFireSplits,
+    trapSplits: params.trapSplits,
+  };
+}
+
+function buildBinaryGatePromotionMarkdownV1(summary: BinaryGatePromotionSummaryV1): string {
+  return [
+    "# Binary-gate promotion",
+    "",
+    `- discoveryMode: ${summary.discoveryMode}`,
+    `- manifestRootDir: ${summary.manifestRootDir}`,
+    `- passed tranches: ${summary.passedTrancheCount}/${summary.totalTrancheCount}`,
+    `- merged must-fire: ${summary.mergedMustFire.trancheId} => ${summary.mergedMustFire.replay.passed ? "pass" : "fail"}`,
+    `- merged must-not-fire: ${summary.mergedMustNotFire.trancheId} => ${summary.mergedMustNotFire.replay.passed ? "pass" : "fail"}`,
+    "",
+    "## must-fire split",
+    ...summary.mustFireSplits.map((entry) => `- ${entry.trancheId}: ${entry.replay.passed ? "pass" : "fail"} (${entry.routeRowCount} rows)`),
+    "",
+    "## trap split",
+    ...summary.trapSplits.map((entry) => {
+      const dedupeNote = entry.dedupe.exactDuplicateRouteRowsCollapsed > 0 || entry.dedupe.exactDuplicatePolicyRowsCollapsed > 0
+        ? `; collapsed exact duplicates route=${entry.dedupe.exactDuplicateRouteRowsCollapsed}, policy=${entry.dedupe.exactDuplicatePolicyRowsCollapsed}`
+        : "";
+      return `- ${entry.trancheId}: ${entry.replay.passed ? "pass" : "fail"} (${entry.routeRowCount} rows${dedupeNote})`;
+    }),
+    "",
+  ].join("\n");
+}
+
+function writeBinaryGatePromotionArtifactsV1(params: {
+  outputDir: string;
+  summary: BinaryGatePromotionSummaryV1;
+  grades: Array<ReturnType<typeof gradeBinaryGateV2SplitV1>>;
+}): void {
+  rmSync(params.outputDir, { recursive: true, force: true });
+  mkdirSync(params.outputDir, { recursive: true });
+
+  for (const grade of params.grades) {
+    const trancheDir = path.join(params.outputDir, grade.summary.trancheId);
+    mkdirSync(trancheDir, { recursive: true });
+    writeJson(path.join(trancheDir, "route-rows.json"), grade.prepared.routeRows);
+    writeJson(path.join(trancheDir, "policy-supervision-rows.json"), grade.prepared.policyRows);
+    writeJson(path.join(trancheDir, "replay-verdict.json"), grade.replay);
+    writeJson(path.join(trancheDir, "summary.json"), grade.summary);
+    writeFileSync(
+      path.join(trancheDir, "README.md"),
+      [
+        `# ${grade.summary.trancheId}`,
+        "",
+        `- laneKey: ${grade.summary.laneKey}`,
+        `- traceCount: ${grade.summary.traceCount}`,
+        `- routeRowCount: ${grade.summary.routeRowCount}`,
+        `- policyRowCount: ${grade.summary.policyRowCount}`,
+        `- replay verdict: ${grade.replay.verdict}`,
+        `- replay passed: ${grade.replay.passed}`,
+        `- summary: ${grade.replay.summary}`,
+        ...(grade.summary.dedupe.exactDuplicateRouteRowsCollapsed > 0
+          ? [`- collapsed exact duplicate route rows: ${grade.summary.dedupe.exactDuplicateRouteRowsCollapsed}`]
+          : []),
+        ...(grade.summary.dedupe.exactDuplicatePolicyRowsCollapsed > 0
+          ? [`- collapsed exact duplicate policy rows: ${grade.summary.dedupe.exactDuplicatePolicyRowsCollapsed}`]
+          : []),
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+  }
+
+  writeJson(path.join(params.outputDir, "summary.json"), params.summary);
+  writeFileSync(path.join(params.outputDir, "README.md"), `${buildBinaryGatePromotionMarkdownV1(params.summary)}\n`, "utf8");
+}
+
+function ensureCandidateArtifactDir(candidateArtifactDir: string): void {
+  rmSync(candidateArtifactDir, { recursive: true, force: true });
+  mkdirSync(candidateArtifactDir, { recursive: true });
+}
+
+function trainCandidateArtifactV1(params: {
+  compatibleRuntimeVersion: string;
+  routeObjectiveInput: ActivationFirstRouteObjectiveInputV1;
+  harness: ActivationFirstRetuneHarnessV1;
+  registryEntries: DataRegistryEntryV1[];
+  routeRows: ColdStartRouteDecisionRowV1[];
+  policyRows: PolicySupervisionRowV1[];
+  includeMustFire: boolean;
+  taskId: string;
+  generatedAt: string;
+  outputDir: string;
+  warmStartArtifactDir: string;
+  candidateArtifactId: string;
+  candidateArtifactVersion: string;
+  candidateRouterIdentity: string;
+  activationThreshold: number;
+  trainingDataRefs: string[];
+}): {
+  trainingResult: ReturnType<typeof trainColdStartRouterArtifactV1>;
+  candidateArtifact: CandidateArtifactRunSummaryV1;
+} {
+  ensureCandidateArtifactDir(params.outputDir);
+  const trainingResult = trainColdStartRouterArtifactV1({
+    artifactId: params.candidateArtifactId,
+    artifactVersion: params.candidateArtifactVersion,
+    packType: "base",
+    compatibleRuntimeVersion: params.compatibleRuntimeVersion,
+    registryEntries: params.registryEntries,
+    routeRows: params.routeRows,
+    policySupervisionRows: params.policyRows,
+    focusLaneWeights: params.harness.suggestedTrainingConfig.focusLaneWeights,
+    rowTypeWeights: params.harness.suggestedTrainingConfig.rowTypeWeights,
+    interventionHead: ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1,
+    calibrationOverrides: {
+      ...ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1,
+      activationThreshold: params.activationThreshold,
+    },
+    outputDir: params.outputDir,
+    routerIdentity: params.candidateRouterIdentity,
+    createdAt: params.generatedAt,
+    trainingDataRefs: params.trainingDataRefs,
+    replayGateRefs: [
+      `replay:${params.routeObjectiveInput.lanes.feltResume.trancheId}`,
+      `replay:${params.routeObjectiveInput.lanes.mustNotFire.trancheId}`,
+      ...(params.includeMustFire ? [`replay:${params.routeObjectiveInput.lanes.mustFire.trancheId}`] : []),
+    ],
+    warmStartArtifactDir: params.warmStartArtifactDir,
+    warmStartMode: "strict",
+    warmStartRef: params.warmStartArtifactDir,
+  });
+
+  return {
+    trainingResult,
+    candidateArtifact: {
+      artifactId: trainingResult.manifest.artifact_id,
+      artifactVersion: trainingResult.manifest.artifact_version,
+      artifactChecksum: trainingResult.manifest.artifact_checksum,
+      outputDir: params.outputDir,
+      routerIdentity: params.candidateRouterIdentity,
+    },
+  };
+}
 function buildFeltOverlapSummary(
   feltTraceIds: string[],
   scorecard: BroadLiveScorecardV1 | null,
@@ -1629,7 +2068,7 @@ export function classifyBroadLiveProofReadV1(params: {
 export function deriveFinalCandidateStatusV1(
   input: CandidateStatusInputV1,
 ): ActivationFirstCandidateStatusV1 {
-  if (!input.feltPassed || !input.restraintPassed) {
+  if (!input.feltPassed || !input.restraintPassed || input.binaryGatePromotionPassed === false) {
     return "reject";
   }
   if (!input.broadLiveAuthoritative || input.broadLiveVetoResult === "proof_read_only") {
@@ -1872,15 +2311,18 @@ function renderBrutalScorecard(scorecard: RunnerScorecardV1): string {
   const broadLive = scorecard.broadLive;
   const feltEval = scorecard.feltUniqueWinsTiesRegressions;
   const overlap = scorecard.feltBroadLiveOverlap;
+  const thresholdSelection = scorecard.activationThresholdSelection;
   const feltSuffix = scorecard.feltComparativeEval.available
     ? ` (full felt eval ${feltEval.availableTraceCount}/${feltEval.totalTraceCount}; broad-live overlap ${overlap.availableTraceCount}/${overlap.totalTraceCount})`
     : feltEval.availableTraceCount > 0
       ? ` (broad-live overlap ${feltEval.availableTraceCount}/${feltEval.totalTraceCount})`
       : " (felt eval unavailable)";
   return [
+    `activation threshold: ${thresholdSelection.selectedThreshold.toFixed(2)} (${thresholdSelection.mode === "auto_sweep_v1" && thresholdSelection.selectedBySweep ? "auto sweep" : thresholdSelection.mode === "manual_override" ? "manual override" : "auto fallback"})`,
     `felt unique wins / ties / regressions: ${feltEval.betterCount}/${feltEval.tiedCount}/${feltEval.worseCount}${feltSuffix}`,
     `felt replay-gate expectation pass count: ${scorecard.feltReplayGateExpectationPassCount.passed}/${scorecard.feltReplayGateExpectationPassCount.total}`,
     `unnecessary activations / must-not-fire failures: ${scorecard.unnecessaryActivations.count}/${scorecard.unnecessaryActivations.total} / ${scorecard.mustNotFireFailures.count}/${scorecard.mustNotFireFailures.total}`,
+    `binary-gate promotion tranches: ${scorecard.binaryGatePromotion.passedTrancheCount}/${scorecard.binaryGatePromotion.totalTrancheCount}`,
     `broad-live regressions or veto result: ${broadLive.regressions}/${broadLive.comparableTraceCount}; ${broadLive.vetoResult}${broadLiveQualificationSuffix(broadLive)}`,
     `final candidate status: ${scorecard.finalCandidateStatus}`,
   ].join("\n");
@@ -1937,6 +2379,8 @@ async function main(): Promise<void> {
     candidateArtifactDir: path.join(args.outputDir, "candidate-artifact"),
     feltOptimizeEvalDir: path.join(args.outputDir, "felt-optimize-comparative-eval"),
     broadLiveEvalDir: path.join(args.outputDir, "broad-live-comparative-eval"),
+    binaryGatePromotionDir: path.join(args.outputDir, "binary-gate-promotion"),
+    activationThresholdSelectionPath: path.join(args.outputDir, "activation-threshold-selection.json"),
     scorecardPath: path.join(args.outputDir, "scorecard.json"),
     runPath: path.join(args.outputDir, "run.json"),
   };
@@ -1957,7 +2401,18 @@ async function main(): Promise<void> {
     ),
   });
 
-  ensureCandidateArtifactDir(artifacts.candidateArtifactDir);
+  const feltLane = materializedLanes.find((lane) => lane.laneKey === "feltResume");
+  const mustNotFireLane = materializedLanes.find((lane) => lane.laneKey === "mustNotFire");
+  if (!feltLane || !mustNotFireLane) {
+    throw new Error("feltResume and mustNotFire lanes are required");
+  }
+
+  const preparedBinaryGatePromotion = discoverPreparedBinaryGatePromotionInputsV1({
+    harnessDir: args.harnessDir,
+    harness,
+    routeRows,
+    policyRows,
+  });
 
   const warmStartBundle = loadColdStartRouterArtifactBundleV1(args.warmStartArtifactDir);
   const candidateArtifactId = `router-artifact-${args.taskId.toLowerCase()}-activation-first-gating-only-v1`;
@@ -1968,41 +2423,114 @@ async function main(): Promise<void> {
     `activation-first-route-objective:${portableRelativePath(repoRoot, routeObjectiveInputPath)}`,
     ...materializedLanes.map((lane) => lane.datasetId),
   ]);
-
-  const candidate = trainColdStartRouterArtifactV1({
-    artifactId: candidateArtifactId,
-    artifactVersion: candidateArtifactVersion,
-    packType: "base",
+  const provisionalActivationThreshold = args.activationThreshold
+    ?? ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1.activationThreshold;
+  let candidateTraining = trainCandidateArtifactV1({
     compatibleRuntimeVersion: warmStartBundle.manifest.compatible_runtime_version,
+    routeObjectiveInput,
+    harness,
     registryEntries,
     routeRows,
-    policySupervisionRows: policyRows,
-    focusLaneWeights: harness.suggestedTrainingConfig.focusLaneWeights,
-    rowTypeWeights: harness.suggestedTrainingConfig.rowTypeWeights,
-    interventionHead: ACTIVATION_FIRST_GATING_ONLY_INTERVENTION_HEAD_V1,
-    calibrationOverrides: {
-      ...ACTIVATION_FIRST_GATING_ONLY_CALIBRATION_OVERRIDES_V1,
-      activationThreshold: args.activationThreshold,
-    },
+    policyRows,
+    includeMustFire: args.includeMustFire,
+    taskId: args.taskId,
+    generatedAt: args.generatedAt,
     outputDir: artifacts.candidateArtifactDir,
-    routerIdentity: candidateRouterIdentity,
-    createdAt: args.generatedAt,
-    trainingDataRefs,
-    replayGateRefs: [
-      `replay:${routeObjectiveInput.lanes.feltResume.trancheId}`,
-      `replay:${routeObjectiveInput.lanes.mustNotFire.trancheId}`,
-      ...(args.includeMustFire ? [`replay:${routeObjectiveInput.lanes.mustFire.trancheId}`] : []),
-    ],
     warmStartArtifactDir: args.warmStartArtifactDir,
-    warmStartMode: "strict",
-    warmStartRef: args.warmStartArtifactDir,
+    candidateArtifactId,
+    candidateArtifactVersion,
+    candidateRouterIdentity,
+    activationThreshold: provisionalActivationThreshold,
+    trainingDataRefs,
   });
+  let candidate = candidateTraining.trainingResult;
+  let candidateArtifact = candidateTraining.candidateArtifact;
+  let selectedActivationThreshold = provisionalActivationThreshold;
+  let activationThresholdSelection: ActivationThresholdSelectionSummaryV1;
 
-  const feltLane = materializedLanes.find((lane) => lane.laneKey === "feltResume");
-  const mustNotFireLane = materializedLanes.find((lane) => lane.laneKey === "mustNotFire");
-  if (!feltLane || !mustNotFireLane) {
-    throw new Error("feltResume and mustNotFire lanes are required");
+  if (args.activationThreshold === null) {
+    const sweepArtifactChecksum = candidateArtifact.artifactChecksum;
+    const provisionalModel = loadColdStartRouterArtifactBundleV1(artifacts.candidateArtifactDir).model;
+    const thresholdSweep = buildActivationThresholdSweepGridV1().map((threshold) => {
+      const modelAtThreshold = cloneModelWithActivationThresholdV1(provisionalModel, threshold);
+      const feltReplayAtThreshold = replayColdStartRouterModelV1({
+        artifactDir: artifacts.candidateArtifactDir,
+        manifestSummary: null,
+        model: modelAtThreshold,
+        routeRows: feltLane.routeRows,
+        policySupervisionRows: feltLane.policyRows,
+      });
+      const feltReplayLaneSummary = findLaneSummary(feltReplayAtThreshold, feltLane.laneName);
+      const feltReplayPassed = feltReplayAtThreshold.passed && feltReplayLaneSummary.failedPolicyExpectationCount === 0;
+      const binaryGatePromotionPasses = evaluatePreparedBinaryGatePromotionAtThresholdV1({
+        artifactDir: artifacts.candidateArtifactDir,
+        model: modelAtThreshold,
+        preparedPromotion: preparedBinaryGatePromotion,
+      });
+      return {
+        threshold,
+        feltReplayPassed,
+        qualifies: feltReplayPassed && binaryGatePromotionPasses.passed,
+        ...binaryGatePromotionPasses,
+      } satisfies ActivationThresholdSweepEntryV1;
+    });
+    const thresholdChoice = chooseActivationThresholdFromSweepV1({
+      sweep: thresholdSweep,
+      fallbackThreshold: provisionalActivationThreshold,
+    });
+    selectedActivationThreshold = thresholdChoice.selectedThreshold;
+    activationThresholdSelection = {
+      mode: "auto_sweep_v1",
+      provisionalThreshold: provisionalActivationThreshold,
+      selectedThreshold: selectedActivationThreshold,
+      selectedBySweep: thresholdChoice.selectedBySweep,
+      thresholdSweepMin: AUTO_ACTIVATION_THRESHOLD_SWEEP_MIN_V1,
+      thresholdSweepMax: AUTO_ACTIVATION_THRESHOLD_SWEEP_MAX_V1,
+      thresholdSweepStep: AUTO_ACTIVATION_THRESHOLD_SWEEP_STEP_V1,
+      qualifyingThresholdCount: thresholdChoice.qualifyingThresholdCount,
+      sweepArtifactChecksum,
+      sweep: thresholdSweep,
+      notes: thresholdChoice.notes,
+    };
+    if (selectedActivationThreshold !== provisionalActivationThreshold) {
+      candidateTraining = trainCandidateArtifactV1({
+        compatibleRuntimeVersion: warmStartBundle.manifest.compatible_runtime_version,
+        routeObjectiveInput,
+        harness,
+        registryEntries,
+        routeRows,
+        policyRows,
+        includeMustFire: args.includeMustFire,
+        taskId: args.taskId,
+        generatedAt: args.generatedAt,
+        outputDir: artifacts.candidateArtifactDir,
+        warmStartArtifactDir: args.warmStartArtifactDir,
+        candidateArtifactId,
+        candidateArtifactVersion,
+        candidateRouterIdentity,
+        activationThreshold: selectedActivationThreshold,
+        trainingDataRefs,
+      });
+      candidate = candidateTraining.trainingResult;
+      candidateArtifact = candidateTraining.candidateArtifact;
+    }
+  } else {
+    activationThresholdSelection = {
+      mode: "manual_override",
+      provisionalThreshold: provisionalActivationThreshold,
+      selectedThreshold: provisionalActivationThreshold,
+      selectedBySweep: false,
+      thresholdSweepMin: null,
+      thresholdSweepMax: null,
+      thresholdSweepStep: null,
+      qualifyingThresholdCount: 0,
+      sweepArtifactChecksum: candidateArtifact.artifactChecksum,
+      sweep: [],
+      notes: [`Manual --activation-threshold override set the threshold to ${provisionalActivationThreshold.toFixed(2)}.`],
+    };
   }
+
+  writeJson(artifacts.activationThresholdSelectionPath, activationThresholdSelection);
 
   const feltReplay = replayColdStartRouterArtifactV1({
     artifactDir: artifacts.candidateArtifactDir,
@@ -2019,13 +2547,52 @@ async function main(): Promise<void> {
   const mustNotFireLaneSummary = findLaneSummary(mustNotFireReplay, mustNotFireLane.laneName);
   const unnecessaryActivations = summarizeUnnecessaryActivations(mustNotFireReplay);
   const mustNotFireFailures = summarizeMustNotFireFailures(mustNotFireLaneSummary);
-  const candidateArtifact = {
-    artifactId: candidate.manifest.artifact_id,
-    artifactVersion: candidate.manifest.artifact_version,
-    artifactChecksum: candidate.manifest.artifact_checksum,
-    outputDir: artifacts.candidateArtifactDir,
-    routerIdentity: candidateRouterIdentity,
-  };
+  const mergedMustFireGrade = gradeBinaryGateV2SplitV1({
+    taskId: args.taskId,
+    splitManifestPath: preparedBinaryGatePromotion.mergedMustFire.manifestPath,
+    sourceRunDir: args.outputDir,
+    candidateArtifactDir: artifacts.candidateArtifactDir,
+    generatedAt: args.generatedAt,
+  });
+  const mergedMustNotFireGrade = gradeBinaryGateV2SplitV1({
+    taskId: args.taskId,
+    splitManifestPath: preparedBinaryGatePromotion.mergedMustNotFire.manifestPath,
+    sourceRunDir: args.outputDir,
+    candidateArtifactDir: artifacts.candidateArtifactDir,
+    generatedAt: args.generatedAt,
+  });
+  const mustFireSplitGrades = preparedBinaryGatePromotion.mustFireSplits.map((entry) => gradeBinaryGateV2SplitV1({
+    taskId: args.taskId,
+    splitManifestPath: entry.manifestPath,
+    sourceRunDir: args.outputDir,
+    candidateArtifactDir: artifacts.candidateArtifactDir,
+    generatedAt: args.generatedAt,
+  }));
+  const trapSplitGrades = preparedBinaryGatePromotion.trapSplits.map((entry) => gradeBinaryGateV2SplitV1({
+    taskId: args.taskId,
+    splitManifestPath: entry.manifestPath,
+    sourceRunDir: args.outputDir,
+    candidateArtifactDir: artifacts.candidateArtifactDir,
+    generatedAt: args.generatedAt,
+  }));
+  const binaryGatePromotion = buildBinaryGatePromotionSummaryV1({
+    preparedPromotion: preparedBinaryGatePromotion,
+    outputDir: portableRelativePath(repoRoot, artifacts.binaryGatePromotionDir),
+    mergedMustFire: mergedMustFireGrade.summary,
+    mergedMustNotFire: mergedMustNotFireGrade.summary,
+    mustFireSplits: mustFireSplitGrades.map((grade) => grade.summary),
+    trapSplits: trapSplitGrades.map((grade) => grade.summary),
+  });
+  writeBinaryGatePromotionArtifactsV1({
+    outputDir: artifacts.binaryGatePromotionDir,
+    summary: binaryGatePromotion,
+    grades: [
+      mergedMustFireGrade,
+      mergedMustNotFireGrade,
+      ...mustFireSplitGrades,
+      ...trapSplitGrades,
+    ],
+  });
   const feltComparativeEval = runCandidateSpecificFeltOptimizeEval({
     harnessDir: args.harnessDir,
     feltOptimizeOutputDir: artifacts.feltOptimizeEvalDir,
@@ -2052,12 +2619,14 @@ async function main(): Promise<void> {
   const finalCandidateStatus = deriveFinalCandidateStatusV1({
     feltPassed: feltReplay.passed && feltLaneSummary.failedPolicyExpectationCount === 0,
     restraintPassed: mustNotFireReplay.passed && mustNotFireLaneSummary.failedPolicyExpectationCount === 0,
+    binaryGatePromotionPassed: binaryGatePromotion.passed,
     broadLiveAuthoritative: broadLive.authoritative,
     broadLiveVetoResult: broadLive.vetoResult,
   });
 
   const scorecard: RunnerScorecardV1 = {
     candidateArtifactDir: portableRelativePath(repoRoot, artifacts.candidateArtifactDir),
+    activationThresholdSelection,
     feltUniqueWinsTiesRegressions,
     feltComparativeEval,
     feltBroadLiveOverlap: broadLive.feltOverlap,
@@ -2067,6 +2636,7 @@ async function main(): Promise<void> {
     },
     unnecessaryActivations,
     mustNotFireFailures,
+    binaryGatePromotion,
     broadLive,
     finalCandidateStatus,
   };
@@ -2079,7 +2649,9 @@ async function main(): Promise<void> {
     harnessPath,
     routeObjectiveInputPath,
     warmStartArtifactDir: args.warmStartArtifactDir,
-    activationThreshold: args.activationThreshold,
+    requestedActivationThreshold: args.activationThreshold,
+    activationThreshold: selectedActivationThreshold,
+    activationThresholdSelection,
     candidateArtifact: {
       outputDir: artifacts.candidateArtifactDir,
       artifactId: candidate.manifest.artifact_id,
@@ -2093,6 +2665,7 @@ async function main(): Promise<void> {
     feltReplay,
     feltComparativeEvaluation: feltComparativeEval,
     mustNotFireReplay,
+    binaryGatePromotion,
     broadLiveEvaluation: {
       outputDir: artifacts.broadLiveEvalDir,
       guardrailManifestPath: harness.broadLiveGuardrail?.manifestPath ?? null,
