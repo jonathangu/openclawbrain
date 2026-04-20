@@ -144,9 +144,11 @@ test("summary operator status report skips detailed-only active-pack and princip
                 return null;
             }
             function loadTeacherSurface() {
+                teacherSurfaceLoadCalls += 1;
                 return null;
             }
             function loadOperatorEventExport() {
+                eventExportLoadCalls += 1;
                 return null;
             }
             function inspectActivationState() {
@@ -521,7 +523,32 @@ test("summary operator status report skips detailed-only active-pack and princip
             function summarizeCandidateAheadBy() {
                 return [];
             }
+            function buildSummaryOnlySupervision() {
+                return {
+                    available: false,
+                    sourcePath: null,
+                    sourceKind: "summary_only",
+                    exportDigest: null,
+                    exportedAt: null,
+                    flowing: null,
+                    scanPolicy: null,
+                    scanSurfaceCount: 0,
+                    scanSurfaces: [],
+                    sourceCount: 0,
+                    freshestSourceStream: null,
+                    freshestCreatedAt: null,
+                    freshestKind: null,
+                    humanLabelCount: null,
+                    selfLabelCount: null,
+                    attributedEventCount: null,
+                    totalEventCount: null,
+                    selectionDigestCount: null,
+                    sources: [],
+                    detail: "summary-only supervision"
+                };
+            }
             function summarizeSupervision() {
+                supervisionCalls += 1;
                 return {
                     available: false,
                     sourcePath: null,
@@ -545,7 +572,45 @@ test("summary operator status report skips detailed-only active-pack and princip
                     detail: "no event export"
                 };
             }
+            function buildSummaryOnlyAlwaysOnLearning() {
+                return {
+                    available: false,
+                    sourcePath: null,
+                    bootstrapped: null,
+                    mode: "unavailable",
+                    nextPriorityLane: "unavailable",
+                    nextPriorityBucket: "unavailable",
+                    backlogState: "unavailable",
+                    pendingLive: null,
+                    pendingBackfill: null,
+                    pendingTotal: null,
+                    pendingByBucket: null,
+                    freshLivePriority: null,
+                    principalCheckpointCount: null,
+                    pendingPrincipalCount: null,
+                    oldestUnlearnedPrincipalEvent: null,
+                    newestPendingPrincipalEvent: null,
+                    leadingPrincipalCheckpoint: null,
+                    principalCheckpoints: [],
+                    principalLagToPromotion: {
+                        activeEventRangeEnd: null,
+                        latestPrincipalSequence: null,
+                        sequenceLag: null,
+                        status: "unavailable"
+                    },
+                    warningStates: [],
+                    learnedRange: null,
+                    materializationCount: null,
+                    lastMaterializedAt: null,
+                    lastMaterializationReason: null,
+                    lastMaterializationLane: null,
+                    lastMaterializationPriority: null,
+                    lastMaterializedPackId: null,
+                    detail: "summary-only learning"
+                };
+            }
             function summarizeAlwaysOnLearning() {
+                learningCalls += 1;
                 return {
                     available: false,
                     sourcePath: null,
@@ -617,16 +682,28 @@ test("summary operator status report skips detailed-only active-pack and princip
             function summarizeOperatorStatus() {
                 return "ok";
             }
+            let teacherSurfaceLoadCalls = 0;
+            let eventExportLoadCalls = 0;
+            let supervisionCalls = 0;
+            let learningCalls = 0;
             globalThis.__statusSummaryCounters = {
                 get() {
                     return {
                         activePackObservabilityCalls,
-                        principalObservabilityCalls
+                        principalObservabilityCalls,
+                        teacherSurfaceLoadCalls,
+                        eventExportLoadCalls,
+                        supervisionCalls,
+                        learningCalls
                     };
                 },
                 reset() {
                     activePackObservabilityCalls = 0;
                     principalObservabilityCalls = 0;
+                    teacherSurfaceLoadCalls = 0;
+                    eventExportLoadCalls = 0;
+                    supervisionCalls = 0;
+                    learningCalls = 0;
                 }
             };
         `
@@ -645,11 +722,17 @@ test("summary operator status report skips detailed-only active-pack and princip
 
     assert.deepEqual(globalThis.__statusSummaryCounters.get(), {
         activePackObservabilityCalls: 0,
-        principalObservabilityCalls: 0
+        principalObservabilityCalls: 0,
+        teacherSurfaceLoadCalls: 0,
+        eventExportLoadCalls: 0,
+        supervisionCalls: 0,
+        learningCalls: 0
     });
     assert.equal(summaryReport.labelFlow.source, "missing");
     assert.equal(summaryReport.learningPath.available, false);
     assert.equal(summaryReport.principal.available, false);
+    assert.equal(summaryReport.supervision.sourceKind, "summary_only");
+    assert.deepEqual(summaryReport.learning.warningStates, []);
 
     globalThis.__statusSummaryCounters.reset();
     const detailedReport = buildOperatorSurfaceReport({
@@ -658,7 +741,11 @@ test("summary operator status report skips detailed-only active-pack and princip
 
     assert.deepEqual(globalThis.__statusSummaryCounters.get(), {
         activePackObservabilityCalls: 1,
-        principalObservabilityCalls: 1
+        principalObservabilityCalls: 1,
+        teacherSurfaceLoadCalls: 0,
+        eventExportLoadCalls: 0,
+        supervisionCalls: 1,
+        learningCalls: 1
     });
     assert.equal(detailedReport.labelFlow.source, "active_pack");
     assert.equal(detailedReport.learningPath.available, true);

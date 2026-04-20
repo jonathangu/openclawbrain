@@ -229,3 +229,101 @@ test("resolveActivationCompileTarget accepts a preloaded pack without reopening 
     assert.equal(resolved.target, target);
     assert.equal(resolved.slot, "active");
 });
+
+test("summary graph materialization falls back to active-pack truth without loading the teacher snapshot", () => {
+    const summarizeLatestGraphMaterialization = loadFunctionFromSourcePath({
+        sourcePath: path.join(__dirname, "..", "src", "index.js"),
+        startMarker: "function summarizeLatestGraphMaterialization",
+        endMarker: "function summarizeGraphObservability",
+        prelude: `
+            function resolveOperatorSurfaceReportDetailLevel() {
+                return "summary";
+            }
+            function loadTeacherSurfaceFromInput() {
+                throw new Error("summary graph truth should not load the teacher snapshot");
+            }
+        `
+    });
+    const result = summarizeLatestGraphMaterialization({}, { packId: "pack-active" }, null);
+    assert.deepEqual(result, {
+        known: true,
+        packId: "pack-active",
+        changed: null,
+        connectDiagnostics: null,
+        operatorSummary: null,
+        detail: "summary status uses the active pack pack-active as the latest cheap local graph truth"
+    });
+});
+
+test("summary status embeddings skip vector inspection and Ollama model probing", () => {
+    const summarizeStatusEmbeddings = loadFunctionFromSourcePath({
+        sourcePath: path.join(__dirname, "..", "src", "cli.js"),
+        startMarker: "function summarizeStatusEmbeddings",
+        endMarker: "function summarizeStatusLocalLlm",
+        prelude: `
+            let packLoads = 0;
+            let probeCalls = 0;
+            function loadPackFromActivation() {
+                packLoads += 1;
+                return null;
+            }
+            function summarizePackVectorEmbeddingState() {
+                throw new Error("summary status should not inspect vectors");
+            }
+            function runOllamaProbe() {
+                probeCalls += 1;
+                return { detected: true, detail: "ollama responded" };
+            }
+            function toErrorMessage(error) {
+                return error instanceof Error ? error.message : String(error);
+            }
+            globalThis.__summaryEmbeddingCounters = () => ({ packLoads, probeCalls });
+        `
+    });
+    const result = summarizeStatusEmbeddings({
+        active: { activationReady: true },
+        activationRoot: "/tmp/activation"
+    }, {
+        embedder: {
+            provider: "ollama",
+            model: "nomic-embed-text"
+        },
+        embedderBaseUrl: "http://127.0.0.1:11434"
+    });
+    assert.equal(result.provisionedState, "not_checked");
+    assert.equal(result.liveState, "unknown");
+    assert.match(result.detail, /skipped active-pack vector inspection and Ollama model probing/);
+    assert.deepEqual(globalThis.__summaryEmbeddingCounters(), {
+        packLoads: 0,
+        probeCalls: 0
+    });
+    delete globalThis.__summaryEmbeddingCounters;
+});
+
+test("summary status local LLM surface skips synchronous Ollama probing", () => {
+    const summarizeStatusLocalLlm = loadFunctionFromSourcePath({
+        sourcePath: path.join(__dirname, "..", "src", "cli.js"),
+        startMarker: "function summarizeStatusLocalLlm",
+        endMarker: "function summarizeStatusTeacher",
+        prelude: `
+            let probeCalls = 0;
+            function runOllamaProbe() {
+                probeCalls += 1;
+                return { detected: true, detail: "ollama responded" };
+            }
+            globalThis.__summaryLocalLlmProbeCalls = () => probeCalls;
+        `
+    });
+    const result = summarizeStatusLocalLlm({
+        teacher: {
+            provider: "ollama",
+            model: "qwen3.5:14b"
+        },
+        teacherBaseUrl: "http://127.0.0.1:11434"
+    });
+    assert.equal(result.detected, null);
+    assert.equal(result.enabled, true);
+    assert.match(result.detail, /skipped synchronous Ollama probing/);
+    assert.equal(globalThis.__summaryLocalLlmProbeCalls(), 0);
+    delete globalThis.__summaryLocalLlmProbeCalls;
+});
