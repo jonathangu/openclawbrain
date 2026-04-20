@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.45
+
+`0.4.45` is the status hot-path release: it keeps the shipped proof and hardening story from `0.4.44`, but makes plain human `openclawbrain status` cheaper, calmer, and more trustworthy on real hosts.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.45`
+- `@openclawbrain/cli@0.4.45`
+
+**Changes**
+
+- reduces status read amplification so plain summary status stops eagerly loading detailed-only teacher snapshot and event-export surfaces
+- keeps summary status on cheap local truth by skipping active-pack embedding inspection and synchronous Ollama probing unless the operator asks for `--detailed`
+- preserves the public operator contract by keeping the lighter summary-path detail selection internal instead of widening the API
+- aligns README, docs, release notes, and split-package version surfaces to `0.4.45`
+
+**Full release note**
+
+- [docs/release-notes-0.4.45.md](docs/release-notes-0.4.45.md)
+
 ## 0.4.44
 
 `0.4.44` is the post-win proof + hardening release: it packages the binary-gate promotion hardening, runtime-mode proof surfacing, and safe report-only teacher proposal lane into one public OpenClawBrain release.

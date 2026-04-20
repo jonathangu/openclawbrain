@@ -6,7 +6,7 @@ OpenClawBrain gives OpenClaw a useful memory. It carries forward corrections, pr
 
 OpenClawBrain is now shipping measured improvements, not just architecture. In the latest public update, it went from missing every reviewed case where memory should have been used to catching all `10/10`, without adding extra false positives. And the proof is published, so you can inspect the claim instead of taking it on faith.
 
-Current version: **0.4.44** · [Changelog](CHANGELOG.md)
+Current version: **0.4.45** · [Changelog](CHANGELOG.md)
 
 ## Why people use it
 
@@ -21,10 +21,10 @@ Current version: **0.4.44** · [Changelog](CHANGELOG.md)
 If you already have OpenClaw and Node.js 20+, this is the simplest path:
 
 ```bash
-npx @openclawbrain/cli@0.4.44 install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.45 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.44 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.44 proof --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.45 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.45 proof --openclaw-home ~/.openclaw
 ```
 
 Use the same four commands later for upgrades and repairs.
