@@ -123,6 +123,18 @@ test("status teacher stays healthy for a fresh watch heartbeat with no teacher a
     assert.match(summary.detail, /no eligible feedback, operator overrides, or matched interaction text/);
 });
 
+test("status teacher can rely on watch truth when summary skips synchronous Ollama probing", () => {
+    const summary = summarizeStatusTeacher(makeTeacherReport({
+        latestFreshness: "fresh",
+        watchState: "watching"
+    }), providerConfig, { detected: null });
+    assert.equal(summary.enabled, true);
+    assert.equal(summary.healthy, true);
+    assert.equal(summary.stale, false);
+    assert.equal(summary.idle, true);
+    assert.match(summary.detail, /summary status skipped synchronous probing/);
+});
+
 test("status teacher stays unhealthy when the watch snapshot itself is stale", () => {
     const summary = summarizeStatusTeacher(makeTeacherReport({
         latestFreshness: "fresh",

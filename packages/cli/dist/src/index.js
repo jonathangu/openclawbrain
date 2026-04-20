@@ -6390,19 +6390,22 @@ function summarizeBrainState(active, observability) {
     };
 }
 function summarizeLatestGraphMaterialization(input, active, activeGraphEvolution) {
-    const loadedTeacherSurface = loadTeacherSurfaceFromInput(input);
-    const latestMaterialization = loadedTeacherSurface?.snapshot.learner.lastMaterialization ?? null;
-    const latestGraph = latestMaterialization?.candidate.summary.graphEvolutionLog ?? null;
-    if (latestGraph !== null) {
-        const packId = latestMaterialization?.candidate.summary.packId ?? latestGraph.packId;
-        return {
-            known: true,
-            packId,
-            changed: latestGraph.structuralEvolutionSummary.changed,
-            connectDiagnostics: latestGraph.connectDiagnostics === null ? null : { ...latestGraph.connectDiagnostics },
-            operatorSummary: latestGraph.structuralEvolutionSummary.operatorSummary,
-            detail: `latest known materialization is ${packId} from the teacher snapshot`
-        };
+    const includeTeacherSnapshot = resolveOperatorSurfaceReportDetailLevel(input) !== "summary";
+    if (includeTeacherSnapshot) {
+        const loadedTeacherSurface = loadTeacherSurfaceFromInput(input);
+        const latestMaterialization = loadedTeacherSurface?.snapshot.learner.lastMaterialization ?? null;
+        const latestGraph = latestMaterialization?.candidate.summary.graphEvolutionLog ?? null;
+        if (latestGraph !== null) {
+            const packId = latestMaterialization?.candidate.summary.packId ?? latestGraph.packId;
+            return {
+                known: true,
+                packId,
+                changed: latestGraph.structuralEvolutionSummary.changed,
+                connectDiagnostics: latestGraph.connectDiagnostics === null ? null : { ...latestGraph.connectDiagnostics },
+                operatorSummary: latestGraph.structuralEvolutionSummary.operatorSummary,
+                detail: `latest known materialization is ${packId} from the teacher snapshot`
+            };
+        }
     }
     if (active !== null && activeGraphEvolution !== null) {
         return {
@@ -6412,6 +6415,16 @@ function summarizeLatestGraphMaterialization(input, active, activeGraphEvolution
             connectDiagnostics: activeGraphEvolution.connectDiagnostics === null ? null : { ...activeGraphEvolution.connectDiagnostics },
             operatorSummary: activeGraphEvolution.structuralEvolutionSummary.operatorSummary,
             detail: `latest known materialization is the active pack ${active.packId}`
+        };
+    }
+    if (!includeTeacherSnapshot && active !== null) {
+        return {
+            known: true,
+            packId: active.packId,
+            changed: null,
+            connectDiagnostics: null,
+            operatorSummary: null,
+            detail: `summary status uses the active pack ${active.packId} as the latest cheap local graph truth`
         };
     }
     return {
@@ -6757,6 +6770,31 @@ function buildSummaryOnlyPrincipalObservability(active) {
             note: detail
         },
         servingDownstreamOfLatestCorrection: null,
+        detail
+    };
+}
+function buildSummaryOnlySupervision(active) {
+    const detail = "summary status skipped event-export supervision inspection; rerun `openclawbrain status --detailed` when you need local supervision and attribution proof";
+    return {
+        available: false,
+        sourcePath: null,
+        sourceKind: "summary_only",
+        exportDigest: active?.eventExportDigest ?? null,
+        exportedAt: null,
+        flowing: null,
+        scanPolicy: null,
+        scanSurfaceCount: 0,
+        scanSurfaces: [],
+        sourceCount: 0,
+        freshestSourceStream: null,
+        freshestCreatedAt: null,
+        freshestKind: null,
+        humanLabelCount: null,
+        selfLabelCount: null,
+        attributedEventCount: null,
+        totalEventCount: null,
+        selectionDigestCount: null,
+        sources: [],
         detail
     };
 }
@@ -7531,6 +7569,44 @@ function summarizeAlwaysOnLearning(input, active) {
                             : "learner is waiting for the first export"
     };
 }
+function buildSummaryOnlyAlwaysOnLearning(active) {
+    const detail = "summary status skipped teacher backlog inspection; rerun `openclawbrain status --detailed` when you need learner queue and principal lag proof";
+    return {
+        available: false,
+        sourcePath: null,
+        bootstrapped: null,
+        mode: "unavailable",
+        nextPriorityLane: "unavailable",
+        nextPriorityBucket: "unavailable",
+        backlogState: "unavailable",
+        pendingLive: null,
+        pendingBackfill: null,
+        pendingTotal: null,
+        pendingByBucket: null,
+        freshLivePriority: null,
+        principalCheckpointCount: null,
+        pendingPrincipalCount: null,
+        oldestUnlearnedPrincipalEvent: null,
+        newestPendingPrincipalEvent: null,
+        leadingPrincipalCheckpoint: null,
+        principalCheckpoints: [],
+        principalLagToPromotion: {
+            activeEventRangeEnd: active?.eventRange.end ?? null,
+            latestPrincipalSequence: null,
+            sequenceLag: null,
+            status: "unavailable"
+        },
+        warningStates: [],
+        learnedRange: null,
+        materializationCount: null,
+        lastMaterializedAt: null,
+        lastMaterializationReason: null,
+        lastMaterializationLane: null,
+        lastMaterializationPriority: null,
+        lastMaterializedPackId: null,
+        detail
+    };
+}
 function buildOperatorFindings(report) {
     const findings = [];
     const push = (severity, code, summary, detail) => {
@@ -7628,7 +7704,12 @@ function buildOperatorFindings(report) {
         push("warn", "rollback_blocked", "rollback is not ready", report.rollback.findings.join("; ") || "previous pointer is missing or no rollback target is retained");
     }
     if (!report.supervision.available) {
-        push("warn", "supervision_unavailable", "supervision flow is not inspectable yet", "pass `--event-export <bundle-root-or-payload>` to inspect local supervision freshness");
+        if (report.supervision.sourceKind === "summary_only") {
+            // Plain summary intentionally skips event-export inspection.
+        }
+        else {
+            push("warn", "supervision_unavailable", "supervision flow is not inspectable yet", "pass `--event-export <bundle-root-or-payload>` to inspect local supervision freshness");
+        }
     }
     else if (report.supervision.flowing) {
         push("pass", "supervision_visible", `supervision is flowing through ${report.supervision.freshestSourceStream ?? "unknown-source"}`, `freshest=${report.supervision.freshestCreatedAt ?? "unknown"}; humanLabels=${report.supervision.humanLabelCount ?? 0}`);
@@ -7762,7 +7843,7 @@ function summarizeCurrentProfilePassiveLearning(report, activePackId) {
         pendingBackfill: report.learning.available ? report.learning.pendingBackfill : null,
         lastWatchHeartbeatAt: watch.lastHeartbeatAt ?? report.teacherLoop.lastHeartbeatAt,
         watchIntervalSeconds: watch.intervalSeconds ?? report.teacherLoop.pollIntervalSeconds,
-        lastExportAt: report.supervision.exportedAt,
+        lastExportAt: report.supervision.exportedAt ?? report.teacherLoop.lastProcessedAt,
         lastPromotionAt: report.promotion.lastPromotion.at,
         currentServingPackId: activePackId,
         lastMaterializedPackId: report.learning.lastMaterializedPackId ?? report.teacherLoop.lastMaterializedPackId,
@@ -8091,10 +8172,8 @@ function buildOperatorSurfaceReportWithDetailLevel(input, detailLevel) {
     const cachedInput = {
         ...input,
         activationRoot,
-        teacherSnapshotPath: resolvedTeacherSnapshotPath,
-        __loadedTeacherSurface: resolvedTeacherSnapshotPath === null ? null : loadTeacherSurface(resolvedTeacherSnapshotPath)
+        teacherSnapshotPath: resolvedTeacherSnapshotPath
     };
-    cachedInput.__loadedOperatorEventExport = loadOperatorEventExport(cachedInput);
     const packCache = new Map();
     let inspection = null;
     let observability = null;
@@ -8218,8 +8297,12 @@ function buildOperatorSurfaceReportWithDetailLevel(input, detailLevel) {
             previousPackId: inspection?.previous?.packId ?? inspection?.pointers.previous?.packId ?? null,
             state: inspection === null ? "unknown" : inspection.rollback.allowed ? "ready" : inspection.active === null ? "unknown" : "blocked"
         },
-        supervision: summarizeSupervision(cachedInput),
-        learning: summarizeAlwaysOnLearning(cachedInput, active),
+        supervision: detailLevel === "summary"
+            ? buildSummaryOnlySupervision(active)
+            : summarizeSupervision(cachedInput),
+        learning: detailLevel === "summary"
+            ? buildSummaryOnlyAlwaysOnLearning(active)
+            : summarizeAlwaysOnLearning(cachedInput, active),
         teacherLoop,
         routeFn,
         hook,

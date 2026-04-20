@@ -1175,7 +1175,44 @@ function runOllamaProbe(args, baseUrl) {
         };
     }
 }
-function summarizeStatusEmbeddings(report, providerConfig) {
+function summarizeStatusEmbeddings(report, providerConfig, options = {}) {
+    if (options.detailed !== true) {
+        const skippedDetail = "summary status skipped active-pack vector inspection and Ollama model probing; rerun `openclawbrain status --detailed` for live embedding proof";
+        if (providerConfig.embedder.provider === "off") {
+            return {
+                provider: providerConfig.embedder.provider,
+                model: providerConfig.embedder.model,
+                provisionedState: "off",
+                liveState: "unknown",
+                embeddedEntryCount: null,
+                totalEntryCount: null,
+                models: [],
+                detail: `${skippedDetail}; embedder provider is off`
+            };
+        }
+        if (providerConfig.embedder.provider === "keywords") {
+            return {
+                provider: providerConfig.embedder.provider,
+                model: providerConfig.embedder.model,
+                provisionedState: "builtin",
+                liveState: "unknown",
+                embeddedEntryCount: null,
+                totalEntryCount: null,
+                models: [],
+                detail: `${skippedDetail}; keyword embedder needs no Ollama model provision`
+            };
+        }
+        return {
+            provider: providerConfig.embedder.provider,
+            model: providerConfig.embedder.model,
+            provisionedState: "not_checked",
+            liveState: "unknown",
+            embeddedEntryCount: null,
+            totalEntryCount: null,
+            models: [],
+            detail: skippedDetail
+        };
+    }
     let embeddedEntryCount = null;
     let totalEntryCount = null;
     let models = [];
@@ -1237,9 +1274,20 @@ function summarizeStatusEmbeddings(report, providerConfig) {
         detail: `${liveDetail}; ollama model check: ${modelProbe.detail}`
     };
 }
-function summarizeStatusLocalLlm(providerConfig) {
-    const detection = runOllamaProbe(["--version"], providerConfig.teacherBaseUrl);
+function summarizeStatusLocalLlm(providerConfig, options = {}) {
     const enabled = providerConfig.teacher.provider === "ollama";
+    if (options.detailed !== true) {
+        return {
+            detected: null,
+            enabled,
+            provider: providerConfig.teacher.provider,
+            model: providerConfig.teacher.model,
+            detail: enabled
+                ? "summary status skipped synchronous Ollama probing; rerun `openclawbrain status --detailed` for live teacher connectivity proof"
+                : `teacher labeling is ${providerConfig.teacher.provider}; summary status skipped synchronous Ollama probing`
+        };
+    }
+    const detection = runOllamaProbe(["--version"], providerConfig.teacherBaseUrl);
     if (enabled) {
         return {
             detected: detection.detected,
@@ -1263,6 +1311,7 @@ function summarizeStatusLocalLlm(providerConfig) {
 }
 function summarizeStatusTeacher(report, providerConfig, localLlm) {
     const enabled = providerConfig.teacher.provider === "ollama";
+    const probeSkipped = localLlm.detected === null;
     const latestCycle = report.teacherLoop.lastNoOpReason === "unavailable"
         ? "unknown"
         : report.teacherLoop.lastNoOpReason === "none"
@@ -1279,7 +1328,7 @@ function summarizeStatusTeacher(report, providerConfig, localLlm) {
             detail: `${providerConfig.teacher.model} is not enabled because teacher labeling is ${providerConfig.teacher.provider}`
         };
     }
-    if (!localLlm.detected) {
+    if (localLlm.detected === false) {
         return {
             model: providerConfig.teacher.model,
             enabled,
@@ -1298,7 +1347,9 @@ function summarizeStatusTeacher(report, providerConfig, localLlm) {
             stale: null,
             idle: null,
             latestCycle,
-            detail: `${providerConfig.teacher.model} is enabled on Ollama, but no watch teacher snapshot is visible yet`
+            detail: probeSkipped
+                ? `${providerConfig.teacher.model} is configured on Ollama, but summary status skipped synchronous probing and no watch teacher snapshot is visible yet`
+                : `${providerConfig.teacher.model} is enabled on Ollama, but no watch teacher snapshot is visible yet`
         };
     }
     const watchState = report.teacherLoop.watch?.state ?? report.teacherLoop.watchState ?? "not_visible";
@@ -1321,8 +1372,12 @@ function summarizeStatusTeacher(report, providerConfig, localLlm) {
             idle,
             latestCycle,
             detail: report.teacherLoop.failureDetail === null
-                ? `${providerConfig.teacher.model} is enabled, but the watch loop recorded ${report.teacherLoop.failureMode}`
-                : `${providerConfig.teacher.model} is enabled, but the watch loop recorded ${report.teacherLoop.failureMode}: ${report.teacherLoop.failureDetail}`
+                ? probeSkipped
+                    ? `${providerConfig.teacher.model} is configured on Ollama; summary status skipped synchronous probing and the watch loop recorded ${report.teacherLoop.failureMode}`
+                    : `${providerConfig.teacher.model} is enabled, but the watch loop recorded ${report.teacherLoop.failureMode}`
+                : probeSkipped
+                    ? `${providerConfig.teacher.model} is configured on Ollama; summary status skipped synchronous probing and the watch loop recorded ${report.teacherLoop.failureMode}: ${report.teacherLoop.failureDetail}`
+                    : `${providerConfig.teacher.model} is enabled, but the watch loop recorded ${report.teacherLoop.failureMode}: ${report.teacherLoop.failureDetail}`
         };
     }
     return {
@@ -1332,9 +1387,13 @@ function summarizeStatusTeacher(report, providerConfig, localLlm) {
         stale,
         idle,
         latestCycle,
-        detail: watchState === "lagging"
-            ? `${providerConfig.teacher.model} is enabled on Ollama, but the watch heartbeat is lagging; ${cycleDetail}`
-            : `${providerConfig.teacher.model} is enabled on Ollama; ${cycleDetail}`
+        detail: probeSkipped
+            ? watchState === "lagging"
+                ? `${providerConfig.teacher.model} is configured on Ollama; summary status skipped synchronous probing, the watch heartbeat is lagging; ${cycleDetail}`
+                : `${providerConfig.teacher.model} is configured on Ollama; summary status skipped synchronous probing; ${cycleDetail}`
+            : watchState === "lagging"
+                ? `${providerConfig.teacher.model} is enabled on Ollama, but the watch heartbeat is lagging; ${cycleDetail}`
+                : `${providerConfig.teacher.model} is enabled on Ollama; ${cycleDetail}`
     };
 }
 function summarizeStatusEmbedder(embeddings) {
@@ -1476,10 +1535,10 @@ function summarizeStatusAlerts(report, providerConfig, embeddings, localLlm) {
     if (providerConfig.warnings.length > 0) {
         pushUniqueAlert(buckets.cosmeticNoise, "provider env warnings forced fallback defaults");
     }
-    if (localLlm.enabled && !localLlm.detected) {
+    if (localLlm.enabled && localLlm.detected === false) {
         pushUniqueAlert(buckets.degradedBrain, "local LLM is enabled but not detected");
     }
-    if (embeddings.provider === "ollama" && embeddings.provisionedState !== "confirmed") {
+    if (embeddings.provider === "ollama" && embeddings.provisionedState === "not_confirmed") {
         pushUniqueAlert(buckets.degradedBrain, `embedder model ${embeddings.model} is not confirmed on Ollama`);
     }
     if (embeddings.provider === "ollama" && embeddings.liveState === "no") {
@@ -1562,12 +1621,13 @@ function formatTracedLearningSurface(surface) {
     return `present=${yesNo(surface.present)} updated=${surface.updatedAt ?? "none"} routes=${surface.routeTraceCount} supervision=${surface.supervisionCount} updates=${surface.routerUpdateCount} teacher=${surface.teacherArtifactCount} pg=${surface.pgVersionUsed ?? "none"} pack=${surface.materializedPackId ?? "none"} detail=${detail}`;
 }
 function buildCompactStatusHeader(status, report, options) {
+    const detailed = options.detailed === true;
     const installHook = summarizeStatusInstallHook(options.openclawHome);
     const hookLoad = summarizeStatusHookLoad(installHook, status);
     const hotfixBoundary = summarizeStatusHotfixBoundary(status);
-    const embeddings = summarizeStatusEmbeddings(report, options.providerConfig);
-    const localLlm = summarizeStatusLocalLlm(options.providerConfig);
-    const teacher = summarizeStatusTeacher(report, options.providerConfig, localLlm);
+    const embeddings = options.embeddings ?? summarizeStatusEmbeddings(report, options.providerConfig, { detailed });
+    const localLlm = options.localLlm ?? summarizeStatusLocalLlm(options.providerConfig, { detailed });
+    const teacher = options.teacher ?? summarizeStatusTeacher(report, options.providerConfig, localLlm);
     const embedder = summarizeStatusEmbedder(embeddings);
     const routeFn = summarizeStatusRouteFn(status, report);
     const alerts = summarizeStatusAlerts(report, options.providerConfig, embeddings, localLlm);
@@ -1609,8 +1669,8 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
     const installHook = summarizeStatusInstallHook(options.openclawHome);
     const displayedStatus = summarizeDisplayedStatus(status, installHook);
     const hotfixBoundary = summarizeStatusHotfixBoundary(status);
-    const embeddings = summarizeStatusEmbeddings(report, options.providerConfig);
-    const localLlm = summarizeStatusLocalLlm(options.providerConfig);
+    const embeddings = summarizeStatusEmbeddings(report, options.providerConfig, { detailed: true });
+    const localLlm = summarizeStatusLocalLlm(options.providerConfig, { detailed: true });
     const teacher = summarizeStatusTeacher(report, options.providerConfig, localLlm);
     const liveModels = embeddings.models.length === 0 ? "none" : embeddings.models.join("|");
     const attachmentTruth = summarizeStatusAttachmentTruth({
@@ -1625,7 +1685,13 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
         : `target      activation=${status.host.activationRoot} ${formatOpenClawTargetLine(targetInspection)} hook=${status.hook.hookPath === null ? "unverified" : shortenPath(status.hook.hookPath)}`;
     return [
         `STATUS ${displayedStatus}`,
-        ...buildCompactStatusHeader(status, report, options),
+        ...buildCompactStatusHeader(status, report, {
+            ...options,
+            detailed: true,
+            embeddings,
+            localLlm,
+            teacher
+        }),
         `answer      ${status.brain.summary}`,
         targetLine,
         ...(targetInspection === null ? [] : [`preflight   ${formatOpenClawTargetExplanation(targetInspection)}`]),
