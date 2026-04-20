@@ -52,11 +52,12 @@ import {
 } from "../brain-store/embedding.js";
 import { BrainWorker } from "../brain-worker/worker.js";
 import type { LcmDependencies } from "../types.js";
-import type { WorkerTeacherCompleteRequestMessage } from "../brain-worker/protocol.js";
+import type { WorkerTeacherBatchLifecycleMessage, WorkerTeacherCompleteRequestMessage } from "../brain-worker/protocol.js";
 import { flattenEdges, populateGraph, promoteGraphSnapshot, reloadGraphFromStore } from "./graph-io.js";
 import { buildPromotionStory, buildWorkerPromotionSnapshotMetadata } from "./promotion-story.js";
 import { readWorkerRuntimeState } from "./worker-state.js";
 import { WorkerSupervisor } from "./worker-supervisor.js";
+import { TeacherBatchTaskFlowCoordinator } from "./teacher-batch-taskflow.js";
 import { isSystemMessage } from "../brain-harvest/system-filter.js";
 import { buildContextManagementModel } from "../context-management-model.js";
 import { buildContinuousLearningOperatorStatus, continuousLearningControlDir } from "./continuous-learning-status.js";
@@ -361,6 +362,547 @@ function cloneAgentIdentity(identity: BrainAgentIdentity | null | undefined): Br
     : null;
 }
 
+type CorrectionMemoryPredicateV1 = "fact" | "preference" | "workflow" | "alias" | "other";
+type CorrectionMemoryNodeStateV1 = "current" | "superseded" | "conflicting" | "stale";
+type CorrectionMemorySourceAuthorityV1 = "user_explicit" | "human_curated" | "derived";
+
+type CorrectionMemoryStateV1 = {
+  schemaVersion: 1;
+  subjectKey: string;
+  subjectText: string;
+  predicate: CorrectionMemoryPredicateV1;
+  state: CorrectionMemoryNodeStateV1;
+  sourceAuthority: CorrectionMemorySourceAuthorityV1;
+  sourceMessageId?: number;
+  sourceConversationId?: number;
+  supersedesNodeIds?: string[];
+  supersededByNodeId?: string;
+  conflictSetId?: string;
+  support: {
+    explicitSourceCount: number;
+    derivedSourceCount: number;
+    latestSourceAt?: number;
+  };
+  validity: {
+    confidence: number;
+    needsSourceExpansion: boolean;
+  };
+};
+
+type ParsedCorrectionDraft = {
+  subjectKey: string;
+  subjectText: string;
+  predicate: CorrectionMemoryPredicateV1;
+  valueKey: string | null;
+  confidence: number;
+  needsSourceExpansion: boolean;
+};
+
+type CorrectionSiblingUpdate = {
+  id: string;
+  metadata: Record<string, unknown>;
+};
+
+type RetrievedCorrectionMemoryState = Pick<CorrectionMemoryStateV1, "subjectKey" | "state">;
+
+type RetrievedCorrectionNode = {
+  firedNode: TraverseResult["firedNodes"][number];
+  node: BrainNode;
+  correctionMemory: RetrievedCorrectionMemoryState;
+};
+
+function normalizeCorrectionText(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function trimInstructionPunctuation(text: string): string {
+  return normalizeCorrectionText(text).replace(/[\s.?!,:;]+$/g, "").trim();
+}
+
+function normalizeSubjectKey(text: string): string {
+  const normalized = trimInstructionPunctuation(text)
+    .toLowerCase()
+    .replace(/^(the|a|an)\s+/i, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return normalized || "other";
+}
+
+function hasCorrectionAmbiguityCue(text: string): boolean {
+  return /\b(maybe|perhaps|probably|possibly|guess|think|might|could|either|or)\b|\?|\//i.test(text);
+}
+
+function parseCorrectionDraft(instruction: string): ParsedCorrectionDraft {
+  const normalizedInstruction = normalizeCorrectionText(instruction);
+  const factMatch = normalizedInstruction.match(/^the\s+(.+?)\s+is\s+(.+?)[.?!]?$/i);
+  if (factMatch) {
+    const subjectText = trimInstructionPunctuation(factMatch[1] ?? "");
+    const valueText = trimInstructionPunctuation(factMatch[2] ?? "");
+    const needsSourceExpansion = hasCorrectionAmbiguityCue(valueText);
+    return {
+      subjectKey: normalizeSubjectKey(subjectText),
+      subjectText,
+      predicate: "fact",
+      valueKey: normalizeSubjectKey(valueText),
+      confidence: needsSourceExpansion ? 0.62 : 0.95,
+      needsSourceExpansion,
+    };
+  }
+
+  const preferenceMatch = normalizedInstruction.match(/^use\s+(.+?)(?:,\s*not\s+(.+?))?[.?!]?$/i);
+  if (preferenceMatch) {
+    const preferredText = trimInstructionPunctuation(preferenceMatch[1] ?? "");
+    const rejectedText = trimInstructionPunctuation(preferenceMatch[2] ?? "");
+    const needsSourceExpansion = hasCorrectionAmbiguityCue(`${preferredText} ${rejectedText}`.trim());
+    const subjectText = rejectedText || preferredText;
+    return {
+      subjectKey: normalizeSubjectKey(subjectText),
+      subjectText,
+      predicate: "preference",
+      valueKey: normalizeSubjectKey(preferredText),
+      confidence: needsSourceExpansion ? 0.64 : 0.9,
+      needsSourceExpansion,
+    };
+  }
+
+  if (/^(always|before|after|when)\b/i.test(normalizedInstruction)) {
+    const subjectText = trimInstructionPunctuation(normalizedInstruction);
+    return {
+      subjectKey: normalizeSubjectKey(subjectText),
+      subjectText,
+      predicate: "workflow",
+      valueKey: null,
+      confidence: 0.74,
+      needsSourceExpansion: false,
+    };
+  }
+
+  const fallbackSubject = trimInstructionPunctuation(normalizedInstruction) || "other";
+  return {
+    subjectKey: normalizeSubjectKey(fallbackSubject),
+    subjectText: fallbackSubject,
+    predicate: "other",
+    valueKey: null,
+    confidence: 0.45,
+    needsSourceExpansion: true,
+  };
+}
+
+function getCorrectionSourceAuthority(metadata: Record<string, unknown>): CorrectionMemorySourceAuthorityV1 | null {
+  const authority = metadata.sourceAuthority;
+  return authority === "user_explicit" || authority === "human_curated" || authority === "derived"
+    ? authority
+    : null;
+}
+
+function getCorrectionLatestSourceAt(node: Pick<BrainNode, "createdAt" | "metadata">): number {
+  const sourceMessageId = typeof node.metadata?.sourceMessageId === "number" ? node.metadata.sourceMessageId : null;
+  const current = typeof node.metadata?.correctionMemory === "object" && node.metadata.correctionMemory !== null
+    ? node.metadata.correctionMemory as { support?: { latestSourceAt?: unknown } }
+    : null;
+  const correctionLatest = typeof current?.support?.latestSourceAt === "number" ? current.support.latestSourceAt : null;
+  return Math.max(node.createdAt, sourceMessageId ?? 0, correctionLatest ?? 0);
+}
+
+function getCorrectionSourceConversationId(metadata: Record<string, unknown>): number | undefined {
+  if (typeof metadata.sourceConversationId === "number") {
+    return metadata.sourceConversationId;
+  }
+  const correctionMemory = isPlainRecord(metadata.correctionMemory) ? metadata.correctionMemory : null;
+  return typeof correctionMemory?.sourceConversationId === "number" ? correctionMemory.sourceConversationId : undefined;
+}
+
+function isConflictSensitiveQueryText(queryText: string): boolean {
+  const normalized = normalizeCorrectionText(queryText).toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+
+  return [
+    /\bconflict(?:s|ing)?\b/i,
+    /\bcontradict(?:ion|ions|ory|s|ed)?\b/i,
+    /\bdisagree(?:ment|ments|s|d|ing)?\b/i,
+    /\bambig(?:uous|uity)\b/i,
+    /\binconsistent\b/i,
+    /\bcompeting\b/i,
+    /\bwhat changed\b/i,
+    /\bused to\b/i,
+    /\bchange history\b/i,
+  ].some((pattern) => pattern.test(normalized));
+}
+
+function isTypedMemorySensitiveQueryText(queryText: string): boolean {
+  const normalized = normalizeCorrectionText(queryText).toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+
+  return [
+    /\bcurrent\b/i,
+    /\blatest\b/i,
+    /\bnow\b/i,
+    /\bchanged\b/i,
+    /\bcodeword\b/i,
+    /\bpreference\b/i,
+    /\brule\b/i,
+    /\bshould\s+i\s+use\b/i,
+    /\bwhat should\b/i,
+  ].some((pattern) => pattern.test(normalized));
+}
+
+function isObviousDirectAnswerQueryText(queryText: string): boolean {
+  const normalized = normalizeCorrectionText(queryText).toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+
+  if (/\b(answer|reply)\s+with\s+(just|only)\b/i.test(normalized)) {
+    return true;
+  }
+
+  if (normalized.length > 160) {
+    return false;
+  }
+
+  return [
+    /^what is \d+ plus \d+\??$/i,
+    /^what is \d+ minus \d+\??$/i,
+    /^what is \d+ times \d+\??$/i,
+    /^what is the square root of \d+\??$/i,
+    /^what is \d+ in binary\??$/i,
+    /^what is the capital of [a-z .'-]+\??$/i,
+    /^how many vowels are in the word [a-z]+\??$/i,
+    /^how many letters are in the word [a-z]+\??$/i,
+    /^what day comes after [a-z]+\??$/i,
+    /^sort these numbers ascending: [0-9 ]+\.?$/i,
+  ].some((pattern) => pattern.test(normalized));
+}
+
+function shouldClampDirectAnswerRetrieval(queryText: string, enabled: boolean): boolean {
+  return enabled
+    && isObviousDirectAnswerQueryText(queryText)
+    && !isConflictSensitiveQueryText(queryText)
+    && !isTypedMemorySensitiveQueryText(queryText);
+}
+
+function isSyntheticWorkspaceSentinelNode(node: Pick<BrainNode, "content" | "sourceUri">): boolean {
+  const normalizedContent = normalizeCorrectionText(node.content).toLowerCase();
+  if (!normalizedContent) {
+    return false;
+  }
+
+  if (
+    normalizedContent.includes("# synthetic eval workspace")
+    && normalizedContent.includes("this workspace exists only for correction-persistence harness runs")
+  ) {
+    return true;
+  }
+
+  return typeof node.sourceUri === "string"
+    && node.sourceUri.toLowerCase().endsWith("harness.md")
+    && normalizedContent.includes("correction-persistence harness runs");
+}
+
+function readCorrectionMemoryFromNode(node: Pick<BrainNode, "kind" | "metadata">): RetrievedCorrectionMemoryState | null {
+  if (node.kind !== "correction" || !isPlainRecord(node.metadata)) {
+    return null;
+  }
+
+  const correctionMemory = isPlainRecord(node.metadata.correctionMemory) ? node.metadata.correctionMemory : null;
+  const subjectKey = typeof correctionMemory?.subjectKey === "string" ? correctionMemory.subjectKey.trim() : "";
+  const state = correctionMemory?.state;
+  if (!subjectKey) {
+    return null;
+  }
+  return state === "current" || state === "superseded" || state === "conflicting" || state === "stale"
+    ? { subjectKey, state }
+    : null;
+}
+
+function groupCorrectionNodesBySubjectKey(entries: RetrievedCorrectionNode[]): Map<string, RetrievedCorrectionNode[]> {
+  const groups = new Map<string, RetrievedCorrectionNode[]>();
+  for (const entry of entries) {
+    const existing = groups.get(entry.correctionMemory.subjectKey);
+    if (existing) {
+      existing.push(entry);
+      continue;
+    }
+    groups.set(entry.correctionMemory.subjectKey, [entry]);
+  }
+  return groups;
+}
+
+function compareRetrievedCorrectionNodeRecency(left: RetrievedCorrectionNode, right: RetrievedCorrectionNode): number {
+  const latestDiff = getCorrectionLatestSourceAt(right.node) - getCorrectionLatestSourceAt(left.node);
+  if (latestDiff !== 0) {
+    return latestDiff;
+  }
+
+  const createdAtDiff = right.node.createdAt - left.node.createdAt;
+  if (createdAtDiff !== 0) {
+    return createdAtDiff;
+  }
+
+  return left.node.id.localeCompare(right.node.id);
+}
+
+function buildFilteredTraversalFooter(params: Pick<
+  TraverseResult,
+  "seedScores" | "trajectory" | "vetoedNodes" | "interruption" | "interruptionAccounting"
+> & {
+  firedNodes: TraverseResult["firedNodes"];
+  contextChars: number;
+}): string {
+  const selectedSeedCount = params.seedScores.filter((seed) => seed.selected).length;
+  const footerParts = [
+    "Brain",
+    `${params.seedScores.length} seed candidates`,
+    `${selectedSeedCount} seed picks`,
+    `${params.trajectory.length} expansions`,
+    `${params.firedNodes.length} fired`,
+    `${params.vetoedNodes.length} veto`,
+    `${params.contextChars} chars`,
+  ];
+
+  if (params.interruption) {
+    footerParts.push("INTERRUPTED");
+    if (params.interruptionAccounting) {
+      if (params.interruptionAccounting.droppedFrontierNodeIds.length > 0) {
+        footerParts.push(`${params.interruptionAccounting.droppedFrontierNodeIds.length} frontier dropped`);
+      }
+      if (params.interruptionAccounting.droppedProposalCount > 0) {
+        footerParts.push(`${params.interruptionAccounting.droppedProposalCount} proposals dropped`);
+      }
+      footerParts.push(`${Math.round(params.interruptionAccounting.budgetUtilization * 100)}% budget used`);
+    }
+    footerParts.push(params.interruption.servedPartial ? "partial" : "empty");
+  }
+
+  return footerParts.join(" · ");
+}
+
+function filterRetrievedCorrectionNodes(params: {
+  queryText: string;
+  traversalResult: TraverseResult;
+  lookupNode: (nodeId: string) => BrainNode | null | undefined;
+  config: Pick<BrainConfig, "directAnswerNoFire" | "suppressSyntheticWorkspaceSentinel">;
+}): TraverseResult {
+  const keptNodeIds = new Set<string>();
+  const correctionNodes: RetrievedCorrectionNode[] = [];
+  const syntheticWorkspaceSentinelNodeIds = new Set<string>();
+
+  for (const firedNode of params.traversalResult.firedNodes) {
+    const node = params.lookupNode(firedNode.nodeId) ?? null;
+    const correctionMemory = node ? readCorrectionMemoryFromNode(node) : null;
+    if (!node || !correctionMemory) {
+      if (node && isSyntheticWorkspaceSentinelNode(node)) {
+        syntheticWorkspaceSentinelNodeIds.add(firedNode.nodeId);
+      }
+      keptNodeIds.add(firedNode.nodeId);
+      continue;
+    }
+
+    correctionNodes.push({
+      firedNode,
+      node,
+      correctionMemory,
+    });
+  }
+
+  if (correctionNodes.length === 0) {
+    if (shouldClampDirectAnswerRetrieval(params.queryText, params.config.directAnswerNoFire)) {
+      return {
+        ...params.traversalResult,
+        firedNodes: [],
+        contextChars: 0,
+        footer: buildFilteredTraversalFooter({
+          ...params.traversalResult,
+          firedNodes: [],
+          contextChars: 0,
+        }),
+      };
+    }
+
+    const filteredFiredNodes = params.traversalResult.firedNodes
+      .filter((firedNode) => keptNodeIds.has(firedNode.nodeId));
+    if (filteredFiredNodes.length === params.traversalResult.firedNodes.length) {
+      return params.traversalResult;
+    }
+
+    const contextChars = filteredFiredNodes.reduce((sum, node) => sum + node.content.length, 0);
+    return {
+      ...params.traversalResult,
+      firedNodes: filteredFiredNodes,
+      contextChars,
+      footer: buildFilteredTraversalFooter({
+        ...params.traversalResult,
+        firedNodes: filteredFiredNodes,
+        contextChars,
+      }),
+    };
+  }
+
+  if (params.config.suppressSyntheticWorkspaceSentinel) {
+    for (const nodeId of syntheticWorkspaceSentinelNodeIds) {
+      keptNodeIds.delete(nodeId);
+    }
+  }
+
+  const allowConflictClusters = isConflictSensitiveQueryText(params.queryText);
+  const correctionGroups = groupCorrectionNodesBySubjectKey(correctionNodes);
+  for (const entries of correctionGroups.values()) {
+    if (allowConflictClusters) {
+      for (const entry of entries) {
+        if (entry.correctionMemory.state === "current" || entry.correctionMemory.state === "conflicting") {
+          keptNodeIds.add(entry.firedNode.nodeId);
+        }
+      }
+      continue;
+    }
+
+    const currentEntry = entries
+      .filter((entry) => entry.correctionMemory.state === "current")
+      .sort(compareRetrievedCorrectionNodeRecency)[0];
+    if (currentEntry) {
+      keptNodeIds.add(currentEntry.firedNode.nodeId);
+    }
+  }
+
+  const filteredFiredNodes = params.traversalResult.firedNodes
+    .filter((firedNode) => keptNodeIds.has(firedNode.nodeId));
+  if (shouldClampDirectAnswerRetrieval(params.queryText, params.config.directAnswerNoFire)) {
+    return {
+      ...params.traversalResult,
+      firedNodes: [],
+      contextChars: 0,
+      footer: buildFilteredTraversalFooter({
+        ...params.traversalResult,
+        firedNodes: [],
+        contextChars: 0,
+      }),
+    };
+  }
+  if (filteredFiredNodes.length === params.traversalResult.firedNodes.length) {
+    return params.traversalResult;
+  }
+
+  const contextChars = filteredFiredNodes.reduce((sum, node) => sum + node.content.length, 0);
+  return {
+    ...params.traversalResult,
+    firedNodes: filteredFiredNodes,
+    contextChars,
+    footer: buildFilteredTraversalFooter({
+      ...params.traversalResult,
+      firedNodes: filteredFiredNodes,
+      contextChars,
+    }),
+  };
+}
+
+function buildConflictSetId(subjectKey: string, nodeIds: string[]): string {
+  const digest = createHash("sha1")
+    .update(`${subjectKey}:${[...nodeIds].sort().join(":")}`)
+    .digest("hex")
+    .slice(0, 12);
+  return `cm_conflict_${digest}`;
+}
+
+function buildCorrectionMemoryState(params: {
+  metadata: Record<string, unknown>;
+  draft: ParsedCorrectionDraft;
+  sourceAuthority: CorrectionMemorySourceAuthorityV1;
+  sourceConversationId?: number;
+  state?: CorrectionMemoryNodeStateV1;
+  supersedesNodeIds?: string[];
+  supersededByNodeId?: string;
+  conflictSetId?: string;
+  explicitSourceCount: number;
+  derivedSourceCount: number;
+  latestSourceAt?: number;
+}): CorrectionMemoryStateV1 {
+  const sourceMessageId = typeof params.metadata.sourceMessageId === "number" ? params.metadata.sourceMessageId : undefined;
+  return {
+    schemaVersion: 1,
+    subjectKey: params.draft.subjectKey,
+    subjectText: params.draft.subjectText,
+    predicate: params.draft.predicate,
+    state: params.state ?? "current",
+    sourceAuthority: params.sourceAuthority,
+    ...(typeof sourceMessageId === "number" ? { sourceMessageId } : {}),
+    ...(typeof params.sourceConversationId === "number" ? { sourceConversationId: params.sourceConversationId } : {}),
+    ...(params.supersedesNodeIds && params.supersedesNodeIds.length > 0 ? { supersedesNodeIds: params.supersedesNodeIds } : {}),
+    ...(params.supersededByNodeId ? { supersededByNodeId: params.supersededByNodeId } : {}),
+    ...(params.conflictSetId ? { conflictSetId: params.conflictSetId } : {}),
+    support: {
+      explicitSourceCount: params.explicitSourceCount,
+      derivedSourceCount: params.derivedSourceCount,
+      ...(typeof params.latestSourceAt === "number" ? { latestSourceAt: params.latestSourceAt } : {}),
+    },
+    validity: {
+      confidence: params.draft.confidence,
+      needsSourceExpansion: params.draft.needsSourceExpansion,
+    },
+  };
+}
+
+function withCorrectionMemory(
+  metadata: Record<string, unknown>,
+  correctionMemory: CorrectionMemoryStateV1,
+): Record<string, unknown> {
+  return {
+    ...metadata,
+    correctionMemory,
+  };
+}
+
+function isDeterministicReplacement(newDraft: ParsedCorrectionDraft, existingDraft: ParsedCorrectionDraft): boolean {
+  return newDraft.subjectKey === existingDraft.subjectKey
+    && newDraft.predicate === existingDraft.predicate
+    && !newDraft.needsSourceExpansion
+    && !existingDraft.needsSourceExpansion
+    && typeof newDraft.valueKey === "string"
+    && newDraft.valueKey.length > 0
+    && typeof existingDraft.valueKey === "string"
+    && existingDraft.valueKey.length > 0;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function buildTeacherBatchFlowOperatorStatus(store: BrainStore): Record<string, unknown> {
+  const latestEvent = store.getTrainingStateJson<Record<string, unknown>>("last_teacher_batch_flow_event_json");
+  const lookupKey = typeof latestEvent?.lookupKey === "string" ? latestEvent.lookupKey : null;
+  const bindings = store.getTrainingStateJson<Record<string, unknown>>("teacher_batch_taskflow_bindings_json");
+  const binding = lookupKey && isPlainRecord(bindings?.[lookupKey]) ? bindings[lookupKey] : null;
+
+  return {
+    visible: lookupKey !== null,
+    lookupKey,
+    batchId: typeof latestEvent?.batchId === "string" ? latestEvent.batchId : null,
+    flowId: typeof binding?.flowId === "string" ? binding.flowId : null,
+    revision: typeof binding?.revision === "number" && Number.isFinite(binding.revision) ? binding.revision : null,
+    ownerSessionKey: typeof binding?.ownerSessionKey === "string" ? binding.ownerSessionKey : null,
+    ownerSessionKnown: typeof binding?.ownerSessionKey === "string" && binding.ownerSessionKey.length > 0,
+    currentStep: typeof latestEvent?.step === "string" ? latestEvent.step : null,
+    status: typeof latestEvent?.status === "string" ? latestEvent.status : null,
+    detail: typeof latestEvent?.detail === "string" ? latestEvent.detail : null,
+    conversationIds: Array.isArray(latestEvent?.conversationIds) ? latestEvent.conversationIds : [],
+    observationIds: Array.isArray(latestEvent?.observationIds) ? latestEvent.observationIds : [],
+    episodeIds: Array.isArray(latestEvent?.episodeIds) ? latestEvent.episodeIds : [],
+    labelIds: Array.isArray(latestEvent?.labelIds) ? latestEvent.labelIds : [],
+    updatedAt: typeof binding?.updatedAt === "number" && Number.isFinite(binding.updatedAt)
+      ? binding.updatedAt
+      : typeof latestEvent?.emittedAt === "number" && Number.isFinite(latestEvent.emittedAt)
+        ? latestEvent.emittedAt
+        : null,
+    endedAt: typeof latestEvent?.emittedAt === "number" && Number.isFinite(latestEvent.emittedAt)
+      && (latestEvent?.status === "completed" || latestEvent?.status === "failed")
+      ? latestEvent.emittedAt
+      : null,
+  };
+}
+
 function buildLearningHealthSummary(params: {
   contextFeedback: ContextFeedbackSummary;
   contextUsefulness: ContextUsefulnessSummary;
@@ -555,6 +1097,7 @@ export class BrainService {
   private prefetchCache = new Map<string, BrainPrefetchCacheEntry>();
   private prefetchCacheByQueryDigest = new Map<string, string>();
   private lastObservedPrefetchPackVersion: number | null = null;
+  private teacherBatchTaskFlowCoordinator: TeacherBatchTaskFlowCoordinator;
 
   constructor(params: {
     deps: LcmDependencies;
@@ -610,6 +1153,11 @@ export class BrainService {
     runBrainMigrations(db);
 
     this.store = new BrainStore(db, { brainRoot: this.config.root });
+    this.teacherBatchTaskFlowCoordinator = new TeacherBatchTaskFlowCoordinator({
+      store: this.store,
+      bindManagedTaskFlowSession: params.deps.bindManagedTaskFlowSession,
+      log: params.deps.log,
+    });
     this.lastAssemblyDecision = this.getStoredLastAssemblyDecision();
     this.lastPrefetchDecision = this.getStoredLastPrefetchDecision();
     this.recentPrefetchDecisions = this.getStoredRecentPrefetchDecisions();
@@ -687,6 +1235,7 @@ export class BrainService {
               buildWorkerPromotionSnapshotMetadata(this.store, { healthJson, promotionVerdict }),
             );
           },
+          onTeacherBatchLifecycle: (event) => this.recordTeacherBatchLifecycleEvent(event),
         },
       );
     } else {
@@ -701,6 +1250,7 @@ export class BrainService {
           this.reloadMutableGraphFromStore();
           this.reloadServingGraph();
         },
+        onTeacherBatchLifecycle: (message) => this.recordTeacherBatchLifecycleEvent(message),
         onTeacherComplete: async (
           message: WorkerTeacherCompleteRequestMessage,
           teacherModel,
@@ -750,6 +1300,20 @@ export class BrainService {
         },
       });
     }
+  }
+
+  rememberTeacherBatchOwnerSession(params: {
+    conversationId: number;
+    sessionKey: string;
+  }): void {
+    this.teacherBatchTaskFlowCoordinator.rememberOwnerSession(params);
+  }
+
+  private async recordTeacherBatchLifecycleEvent(
+    message: WorkerTeacherBatchLifecycleMessage | WorkerTeacherBatchLifecycleMessage["event"],
+  ): Promise<void> {
+    const event = "event" in message ? message.event : message;
+    await this.teacherBatchTaskFlowCoordinator.handleLifecycleEvent(event);
   }
 
   startWorker(): void {
@@ -1560,7 +2124,18 @@ export class BrainService {
       return null;
     }
 
-    const traversalResult = compileResult.traversalResult;
+    const traversalResult = filterRetrievedCorrectionNodes({
+      queryText: params.queryText,
+      traversalResult: compileResult.traversalResult,
+      lookupNode: (nodeId: string) => this.servingGraph.getNode(nodeId) ?? null,
+      config: {
+        directAnswerNoFire: this.config.directAnswerNoFire,
+        suppressSyntheticWorkspaceSentinel: this.config.suppressSyntheticWorkspaceSentinel,
+      },
+    });
+    if (traversalResult.firedNodes.length === 0) {
+      return null;
+    }
     const episode = recordEpisode({
       traversalResult,
       queryText: params.queryText,
@@ -2185,6 +2760,105 @@ export class BrainService {
     this.enqueueUserObservation(observation);
   }
 
+  private normalizeCommittedCorrectionMetadata(params: {
+    node: BrainNode;
+    metadata: Record<string, unknown>;
+    conversationId?: number;
+  }): { nodeMetadata: Record<string, unknown>; siblingUpdates: CorrectionSiblingUpdate[] } {
+    const sourceAuthority = getCorrectionSourceAuthority(params.metadata);
+    if (params.node.kind !== "correction" || sourceAuthority !== "user_explicit") {
+      return {
+        nodeMetadata: params.metadata,
+        siblingUpdates: [],
+      };
+    }
+
+    const draft = parseCorrectionDraft(params.node.content);
+    const siblingRecords = this.store.getAllNodes()
+      .filter((node) => node.kind === "correction" && node.id !== params.node.id)
+      .map((node) => {
+        const metadata = isPlainRecord(node.metadata) ? node.metadata : {};
+        return {
+          node,
+          metadata,
+          sourceAuthority: getCorrectionSourceAuthority(metadata),
+          draft: parseCorrectionDraft(node.content),
+        };
+      })
+      .filter((record) => record.sourceAuthority === "user_explicit" && record.draft.subjectKey === draft.subjectKey);
+
+    const explicitSourceCount = 1 + siblingRecords.length;
+    const derivedSourceCount = 0;
+    const latestSourceAt = Math.max(
+      getCorrectionLatestSourceAt(params.node),
+      ...siblingRecords.map((record) => getCorrectionLatestSourceAt(record.node)),
+    );
+
+    const hasConflict = siblingRecords.some((record) => !isDeterministicReplacement(draft, record.draft));
+    if (hasConflict) {
+      const conflictSetId = buildConflictSetId(
+        draft.subjectKey,
+        [params.node.id, ...siblingRecords.map((record) => record.node.id)],
+      );
+      return {
+        nodeMetadata: withCorrectionMemory(params.metadata, buildCorrectionMemoryState({
+          metadata: params.metadata,
+          draft,
+          sourceAuthority,
+          sourceConversationId: params.conversationId,
+          state: "conflicting",
+          conflictSetId,
+          explicitSourceCount,
+          derivedSourceCount,
+          latestSourceAt,
+        })),
+        siblingUpdates: siblingRecords.map((record) => ({
+          id: record.node.id,
+          metadata: withCorrectionMemory(record.metadata, buildCorrectionMemoryState({
+            metadata: record.metadata,
+            draft: record.draft,
+            sourceAuthority: record.sourceAuthority,
+            sourceConversationId: getCorrectionSourceConversationId(record.metadata),
+            state: "conflicting",
+            conflictSetId,
+            explicitSourceCount,
+            derivedSourceCount,
+            latestSourceAt,
+          })),
+        })),
+      };
+    }
+
+    const supersedesNodeIds = siblingRecords.map((record) => record.node.id);
+    return {
+      nodeMetadata: withCorrectionMemory(params.metadata, buildCorrectionMemoryState({
+        metadata: params.metadata,
+        draft,
+        sourceAuthority,
+        sourceConversationId: params.conversationId,
+        state: "current",
+        supersedesNodeIds,
+        explicitSourceCount,
+        derivedSourceCount,
+        latestSourceAt,
+      })),
+      siblingUpdates: siblingRecords.map((record) => ({
+        id: record.node.id,
+        metadata: withCorrectionMemory(record.metadata, buildCorrectionMemoryState({
+          metadata: record.metadata,
+          draft: record.draft,
+          sourceAuthority: record.sourceAuthority,
+          sourceConversationId: getCorrectionSourceConversationId(record.metadata),
+          state: "superseded",
+          supersededByNodeId: params.node.id,
+          explicitSourceCount,
+          derivedSourceCount,
+          latestSourceAt,
+        })),
+      })),
+    };
+  }
+
   async teach(params: {
     instruction: string;
     conversationId?: number;
@@ -2223,8 +2897,28 @@ export class BrainService {
       updatedAt: now,
     };
 
+    const correctionNormalization = this.normalizeCommittedCorrectionMetadata({
+      node,
+      metadata: node.metadata,
+      conversationId: params.conversationId,
+    });
+    node.metadata = correctionNormalization.nodeMetadata;
+
     this.mutableGraph.addNode(node);
     this.store.insertNode(node);
+    for (const siblingUpdate of correctionNormalization.siblingUpdates) {
+      const siblingNode = this.mutableGraph.getNode(siblingUpdate.id);
+      if (!siblingNode) {
+        continue;
+      }
+      const updatedSibling: BrainNode = {
+        ...siblingNode,
+        metadata: siblingUpdate.metadata,
+        updatedAt: now,
+      };
+      this.mutableGraph.addNode(updatedSibling);
+      this.store.updateNodeMetadata(updatedSibling.id, updatedSibling.metadata, updatedSibling.updatedAt);
+    }
 
     const recentEpisodes = this.store
       .getRecentEpisodes(10)
@@ -2440,6 +3134,7 @@ export class BrainService {
       lastEvaluationCycle: this.store.getTrainingStateJson("last_teacher_evaluation_cycle_json"),
       lastUpdateCycle: this.store.getTrainingStateJson("last_teacher_update_cycle_json"),
     };
+    const teacherBatchFlow = buildTeacherBatchFlowOperatorStatus(this.store);
     const attributionTruth = summarizeAttributionTruth({
       observationAttribution,
       teacherTruth,
@@ -2562,6 +3257,7 @@ export class BrainService {
       observationAttribution,
       attributionTruth,
       teacherTruth,
+      teacherBatchFlow,
       operatorHealth,
       contextFeedback,
       contextUsefulness,

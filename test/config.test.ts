@@ -30,6 +30,8 @@ describe("resolveLcmConfig", () => {
       brainMaxFanoutPerNode: 7,
       brainMaxFrontierSize: 19,
       brainPersistRawSurfaces: true,
+      brainDirectAnswerNoFire: true,
+      brainSuppressSyntheticWorkspaceSentinel: true,
       brainMaxSeeds: 13,
       brainSemanticThreshold: 0.82,
       brainShadowMode: true,
@@ -53,6 +55,8 @@ describe("resolveLcmConfig", () => {
     expect(config.brain?.maxFanoutPerNode).toBe(7);
     expect(config.brain?.maxFrontierSize).toBe(19);
     expect(config.brain?.persistRawSurfaces).toBe(true);
+    expect(config.brain?.directAnswerNoFire).toBe(true);
+    expect(config.brain?.suppressSyntheticWorkspaceSentinel).toBe(true);
     expect(config.brain?.maxSeeds).toBe(13);
     expect(config.brain?.semanticThreshold).toBe(0.82);
     expect(config.brain?.shadowMode).toBe(true);
@@ -180,6 +184,8 @@ describe("resolveLcmConfig", () => {
       "brainMaxFanoutPerNode",
       "brainMaxFrontierSize",
       "brainPersistRawSurfaces",
+      "brainDirectAnswerNoFire",
+      "brainSuppressSyntheticWorkspaceSentinel",
       "brainMaxSeeds",
       "brainSemanticThreshold",
       "brainShadowMode",

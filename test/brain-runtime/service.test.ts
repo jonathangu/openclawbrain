@@ -4,9 +4,19 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrainGraph } from "../../src/brain-core/graph.js";
 import type { BrainEdge, BrainNode } from "../../src/brain-core/types.js";
+import type { TraverseResult } from "../../src/brain-core/traverse.js";
 import { BrainAssemblerExtension } from "../../src/brain-runtime/assembler-extension.js";
 import { BrainService } from "../../src/brain-runtime/service.js";
-import type { LcmDependencies } from "../../src/types.js";
+import {
+  buildTeacherBatchFlowLifecycleEvent,
+  createTeacherBatchFlowState,
+} from "../../src/brain-worker/teacher-job.js";
+import type {
+  BoundManagedTaskFlowRuntimeLike,
+  LcmDependencies,
+  ManagedTaskFlowMutationResultLike,
+  ManagedTaskFlowRecordLike,
+} from "../../src/types.js";
 
 const tempDirs: string[] = [];
 
@@ -47,6 +57,81 @@ function makeRuntimeNode(id: string, embedding: Float32Array, tokenCount = 100):
     metadata: {},
     createdAt: Date.now(),
     updatedAt: Date.now(),
+  };
+}
+
+function makeSyntheticWorkspaceSentinelNode(id = "workspace_sentinel"): BrainNode {
+  const content = "# Synthetic eval workspace\n\nThis workspace exists only for correction-persistence harness runs.\n";
+  return {
+    id,
+    kind: "chunk",
+    content,
+    embedding: embed(content),
+    sourceUri: "HARNESS.md",
+    trust: "scanner",
+    tags: [],
+    tokenCount: Math.ceil(content.length / 4),
+    metadata: {},
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+function makeCorrectionNode(params: {
+  id: string;
+  content: string;
+  state: "current" | "superseded" | "conflicting";
+  subjectKey?: string;
+  createdAt?: number;
+}): BrainNode {
+  const createdAt = params.createdAt ?? Date.now();
+  return {
+    id: params.id,
+    kind: "correction",
+    content: params.content,
+    embedding: embed(params.content),
+    sourceUri: null,
+    trust: "human",
+    tags: [],
+    tokenCount: Math.ceil(params.content.length / 4),
+    metadata: {
+      sourceAuthority: "user_explicit",
+      correctionMemory: {
+        schemaVersion: 1,
+        subjectKey: params.subjectKey ?? "codeword",
+        subjectText: params.subjectKey ?? "codeword",
+        predicate: "fact",
+        state: params.state,
+        sourceAuthority: "user_explicit",
+        support: {
+          explicitSourceCount: 2,
+          derivedSourceCount: 0,
+        },
+        validity: {
+          confidence: 0.95,
+          needsSourceExpansion: false,
+        },
+      },
+    },
+    createdAt,
+    updatedAt: createdAt,
+  };
+}
+
+function buildTraverseResult(nodes: BrainNode[]): TraverseResult {
+  return {
+    firedNodes: nodes.map((node) => ({
+      nodeId: node.id,
+      kind: node.kind,
+      content: node.content,
+      tokenCount: node.tokenCount,
+    })),
+    vetoedNodes: [],
+    trajectory: [],
+    seedScores: [],
+    contextChars: nodes.reduce((sum, node) => sum + node.content.length, 0),
+    footer: "Brain · test traversal",
+    interruption: null,
   };
 }
 
@@ -150,6 +235,68 @@ function createDeps(
       debug: vi.fn(),
     },
   };
+}
+
+function createManagedTaskFlowRuntime() {
+  const flows = new Map<string, ManagedTaskFlowRecordLike>();
+  let flowCounter = 0;
+
+  const applyMutation = (
+    flowId: string,
+    expectedRevision: number,
+    mutate: (flow: ManagedTaskFlowRecordLike) => ManagedTaskFlowRecordLike,
+  ): ManagedTaskFlowMutationResultLike => {
+    const current = flows.get(flowId);
+    if (!current) {
+      return { applied: false, code: "not_found" };
+    }
+    if (current.revision !== expectedRevision) {
+      return { applied: false, code: "revision_conflict", current };
+    }
+    const next = mutate(current);
+    flows.set(flowId, next);
+    return { applied: true, flow: next };
+  };
+
+  const runtime: BoundManagedTaskFlowRuntimeLike = {
+    createManaged: (params) => {
+      const flow: ManagedTaskFlowRecordLike = {
+        flowId: `flow_${++flowCounter}`,
+        revision: 1,
+        status: params.status ?? "queued",
+        currentStep: params.currentStep ?? null,
+        stateJson: params.stateJson ?? null,
+        waitJson: params.waitJson ?? null,
+        endedAt: params.endedAt ?? null,
+      };
+      flows.set(flow.flowId, flow);
+      return flow;
+    },
+    get: (flowId) => flows.get(flowId),
+    resume: (params) => applyMutation(params.flowId, params.expectedRevision, (flow) => ({
+      ...flow,
+      revision: flow.revision + 1,
+      status: params.status ?? flow.status,
+      currentStep: params.currentStep ?? flow.currentStep ?? null,
+      stateJson: params.stateJson ?? flow.stateJson ?? null,
+    })),
+    finish: (params) => applyMutation(params.flowId, params.expectedRevision, (flow) => ({
+      ...flow,
+      revision: flow.revision + 1,
+      status: "completed",
+      stateJson: params.stateJson ?? flow.stateJson ?? null,
+      endedAt: params.endedAt ?? flow.endedAt ?? null,
+    })),
+    fail: (params) => applyMutation(params.flowId, params.expectedRevision, (flow) => ({
+      ...flow,
+      revision: flow.revision + 1,
+      status: "failed",
+      stateJson: params.stateJson ?? flow.stateJson ?? null,
+      endedAt: params.endedAt ?? flow.endedAt ?? null,
+    })),
+  };
+
+  return { runtime, flows };
 }
 
 async function waitFor(predicate: () => Promise<boolean> | boolean, timeoutMs = 3_000): Promise<void> {
@@ -1839,6 +1986,168 @@ describe("BrainService", () => {
     expect((await second.status()).pendingObservations).toBe(0);
   });
 
+  it("rebinds the same owner-bound teacher batch managed flow across service restart", async () => {
+    const brainRoot = makeTempDir("openclawbrain-taskflow-restart-state-");
+    const { runtime, flows } = createManagedTaskFlowRuntime();
+
+    const firstDeps = createDeps(brainRoot);
+    firstDeps.bindManagedTaskFlowSession = vi.fn(() => runtime);
+    const first = new BrainService({ deps: firstDeps });
+    first.rememberTeacherBatchOwnerSession({
+      conversationId: 42,
+      sessionKey: "agent:main:telegram:8518484672",
+    });
+
+    const state = createTeacherBatchFlowState({
+      observations: [
+        { observationId: "bo_1", episodeId: "ep_1", conversationId: 42, createdAt: 10 },
+      ],
+      batchBudget: 1,
+    });
+
+    await (first as unknown as {
+      recordTeacherBatchLifecycleEvent: (event: ReturnType<typeof buildTeacherBatchFlowLifecycleEvent>) => Promise<void>;
+    }).recordTeacherBatchLifecycleEvent(buildTeacherBatchFlowLifecycleEvent({
+      state,
+      step: "teacher_invoked",
+      emittedAt: 100,
+      detail: "teacher evaluation started",
+    }));
+
+    expect(flows.get("flow_1")).toMatchObject({
+      status: "running",
+      currentStep: "teacher_invoked",
+    });
+
+    const secondDeps = createDeps(brainRoot);
+    secondDeps.bindManagedTaskFlowSession = vi.fn(() => runtime);
+    const second = new BrainService({ deps: secondDeps });
+
+    await (second as unknown as {
+      recordTeacherBatchLifecycleEvent: (event: ReturnType<typeof buildTeacherBatchFlowLifecycleEvent>) => Promise<void>;
+    }).recordTeacherBatchLifecycleEvent(buildTeacherBatchFlowLifecycleEvent({
+      state: {
+        ...state,
+        labelIds: ["bl_1"],
+        evaluatedCount: 1,
+        appliedLabelCount: 1,
+      },
+      step: "reward_signal_applied",
+      status: "completed",
+      emittedAt: 200,
+      detail: "reward label applied after restart",
+    }));
+
+    expect(flows.size).toBe(1);
+    expect(flows.get("flow_1")).toMatchObject({
+      status: "completed",
+      endedAt: 200,
+    });
+    const persistedBindings = ((second as unknown as {
+      store: { getTrainingStateJson: <T>(key: string) => T | null };
+    }).store).getTrainingStateJson<Record<string, { flowId: string; revision: number; status: string }>>(
+      "teacher_batch_taskflow_bindings_json",
+    );
+    expect(persistedBindings?.[state.lookupKey]).toMatchObject({
+      flowId: "flow_1",
+      revision: 3,
+      status: "completed",
+    });
+  });
+
+  it("rebinds the same owner-bound teacher batch managed flow across service restart when the batch fails", async () => {
+    const brainRoot = makeTempDir("openclawbrain-taskflow-restart-failure-state-");
+    const { runtime, flows } = createManagedTaskFlowRuntime();
+
+    const firstDeps = createDeps(brainRoot);
+    firstDeps.bindManagedTaskFlowSession = vi.fn(() => runtime);
+    const first = new BrainService({ deps: firstDeps });
+    first.rememberTeacherBatchOwnerSession({
+      conversationId: 84,
+      sessionKey: "agent:main:telegram:8518484672",
+    });
+
+    const state = createTeacherBatchFlowState({
+      observations: [
+        { observationId: "bo_2", episodeId: "ep_2", conversationId: 84, createdAt: 20 },
+      ],
+      batchBudget: 1,
+    });
+
+    await (first as unknown as {
+      recordTeacherBatchLifecycleEvent: (event: ReturnType<typeof buildTeacherBatchFlowLifecycleEvent>) => Promise<void>;
+    }).recordTeacherBatchLifecycleEvent(buildTeacherBatchFlowLifecycleEvent({
+      state,
+      step: "teacher_invoked",
+      emittedAt: 300,
+      detail: "teacher evaluation started",
+    }));
+
+    expect(flows.get("flow_1")).toMatchObject({
+      status: "running",
+      currentStep: "teacher_invoked",
+    });
+
+    const secondDeps = createDeps(brainRoot);
+    secondDeps.bindManagedTaskFlowSession = vi.fn(() => runtime);
+    const second = new BrainService({ deps: secondDeps });
+
+    await (second as unknown as {
+      recordTeacherBatchLifecycleEvent: (event: ReturnType<typeof buildTeacherBatchFlowLifecycleEvent>) => Promise<void>;
+    }).recordTeacherBatchLifecycleEvent(buildTeacherBatchFlowLifecycleEvent({
+      state,
+      step: "reward_signal_emitted",
+      status: "failed",
+      emittedAt: 400,
+      detail: "reward application failed after restart",
+    }));
+
+    expect(flows.size).toBe(1);
+    expect(flows.get("flow_1")).toMatchObject({
+      status: "failed",
+      endedAt: 400,
+    });
+    const persistedBindings = ((second as unknown as {
+      store: { getTrainingStateJson: <T>(key: string) => T | null };
+    }).store).getTrainingStateJson<Record<string, { flowId: string; revision: number; status: string }>>(
+      "teacher_batch_taskflow_bindings_json",
+    );
+    expect(persistedBindings?.[state.lookupKey]).toMatchObject({
+      flowId: "flow_1",
+      revision: 3,
+      status: "failed",
+    });
+    const latestEvent = ((second as unknown as {
+      store: { getTrainingStateJson: <T>(key: string) => T | null };
+    }).store).getTrainingStateJson<{ detail?: string | null; status?: string; step?: string }>(
+      "last_teacher_batch_flow_event_json",
+    );
+    expect(latestEvent).toMatchObject({
+      step: "reward_signal_emitted",
+      status: "failed",
+      detail: "reward application failed after restart",
+    });
+
+    const status = await second.status();
+    expect(status.teacherBatchFlow).toMatchObject({
+      visible: true,
+      lookupKey: state.lookupKey,
+      flowId: "flow_1",
+      revision: 3,
+      ownerSessionKnown: true,
+      ownerSessionKey: "agent:main:telegram:8518484672",
+      currentStep: "reward_signal_emitted",
+      status: "failed",
+      detail: "reward application failed after restart",
+      updatedAt: 400,
+      endedAt: 400,
+      conversationIds: [84],
+      observationIds: ["bo_2"],
+      episodeIds: ["ep_2"],
+      labelIds: [],
+    });
+  });
+
   it("surfaces the latest candidate-pack PG update artifact in runtime status", async () => {
     const brainRoot = makeTempDir("openclawbrain-state-");
     const service = new BrainService({
@@ -2342,6 +2651,459 @@ describe("BrainService", () => {
     });
   });
 
+  it("marks newer explicit same-subject corrections as current and backfills older siblings as superseded", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-codeword-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-codeword-state-");
+    writeFileSync(
+      join(workspaceRoot, "CODEWORD.md"),
+      "# Demo\n\nThe codeword is hippo.\n",
+      "utf8",
+    );
+
+    const fetchMock = vi.fn(async (_input: unknown, init?: { body?: unknown }) => {
+      const rawBody = typeof init?.body === "string" ? init.body : "{}";
+      const parsed = JSON.parse(rawBody) as { input?: string | string[] };
+      const input = Array.isArray(parsed.input) ? parsed.input[0] : parsed.input ?? "";
+      return {
+        ok: true,
+        json: async () => ({ data: [{ embedding: Array.from(embed(String(input))) }] }),
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const first = await service.teachUserCorrection({
+      canonicalInstruction: "The codeword is hippo.",
+      sourceQuote: "the codeword is hippo",
+      sourceMessageId: 1,
+      conversationId: 17,
+      via: "demo_seed",
+    });
+    const second = await service.teachUserCorrection({
+      canonicalInstruction: "The codeword is giraffe.",
+      sourceQuote: "wrong, the codeword is giraffe",
+      sourceMessageId: 3,
+      conversationId: 17,
+      via: "brain_teach_user_correction",
+    });
+
+    const nodes = (service as unknown as {
+      store: { getAllNodes: () => Array<{ id: string; metadata?: Record<string, unknown> }> };
+    }).store.getAllNodes();
+    const firstNode = nodes.find((node) => node.id === first.nodeId);
+    const secondNode = nodes.find((node) => node.id === second.nodeId);
+
+    expect(secondNode?.metadata).toMatchObject({
+      sourceAuthority: "user_explicit",
+      correctionMemory: {
+        schemaVersion: 1,
+        subjectKey: "codeword",
+        subjectText: "codeword",
+        predicate: "fact",
+        state: "current",
+        sourceAuthority: "user_explicit",
+        sourceMessageId: 3,
+        sourceConversationId: 17,
+        supersedesNodeIds: [first.nodeId],
+        support: {
+          explicitSourceCount: 2,
+          derivedSourceCount: 0,
+        },
+        validity: {
+          needsSourceExpansion: false,
+        },
+      },
+    });
+    expect(firstNode?.metadata).toMatchObject({
+      sourceAuthority: "user_explicit",
+      correctionMemory: {
+        schemaVersion: 1,
+        subjectKey: "codeword",
+        predicate: "fact",
+        state: "superseded",
+        sourceAuthority: "user_explicit",
+        sourceMessageId: 1,
+        supersededByNodeId: second.nodeId,
+        support: {
+          explicitSourceCount: 2,
+          derivedSourceCount: 0,
+        },
+      },
+    });
+  });
+
+  it("marks ambiguous same-subject explicit corrections as conflicting", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-codeword-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-codeword-state-");
+    writeFileSync(
+      join(workspaceRoot, "CODEWORD.md"),
+      "# Demo\n\nThe codeword is hippo.\n",
+      "utf8",
+    );
+
+    const fetchMock = vi.fn(async (_input: unknown, init?: { body?: unknown }) => {
+      const rawBody = typeof init?.body === "string" ? init.body : "{}";
+      const parsed = JSON.parse(rawBody) as { input?: string | string[] };
+      const input = Array.isArray(parsed.input) ? parsed.input[0] : parsed.input ?? "";
+      return {
+        ok: true,
+        json: async () => ({ data: [{ embedding: Array.from(embed(String(input))) }] }),
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const first = await service.teachUserCorrection({
+      canonicalInstruction: "The codeword is hippo.",
+      sourceQuote: "the codeword is hippo",
+      sourceMessageId: 1,
+      conversationId: 17,
+      via: "demo_seed",
+    });
+    const second = await service.teachUserCorrection({
+      canonicalInstruction: "The codeword is maybe giraffe.",
+      sourceQuote: "wrong, the codeword is maybe giraffe",
+      sourceMessageId: 4,
+      conversationId: 17,
+      via: "brain_teach_user_correction",
+    });
+
+    const nodes = (service as unknown as {
+      store: { getAllNodes: () => Array<{ id: string; metadata?: Record<string, unknown> }> };
+    }).store.getAllNodes();
+    const firstNode = nodes.find((node) => node.id === first.nodeId);
+    const secondNode = nodes.find((node) => node.id === second.nodeId);
+    const firstConflict = (firstNode?.metadata?.correctionMemory ?? null) as Record<string, unknown> | null;
+    const secondConflict = (secondNode?.metadata?.correctionMemory ?? null) as Record<string, unknown> | null;
+
+    expect(firstConflict).toMatchObject({
+      subjectKey: "codeword",
+      state: "conflicting",
+      support: {
+        explicitSourceCount: 2,
+        derivedSourceCount: 0,
+      },
+    });
+    expect(secondConflict).toMatchObject({
+      subjectKey: "codeword",
+      state: "conflicting",
+      sourceMessageId: 4,
+      sourceConversationId: 17,
+      support: {
+        explicitSourceCount: 2,
+        derivedSourceCount: 0,
+      },
+      validity: {
+        needsSourceExpansion: true,
+      },
+    });
+    expect(typeof firstConflict?.conflictSetId).toBe("string");
+    expect(secondConflict?.conflictSetId).toBe(firstConflict?.conflictSetId);
+  });
+
+  it("suppresses superseded correction siblings during normal retrieval when a current sibling exists", async () => {
+    const brainRoot = makeTempDir("openclawbrain-retrieval-filter-state-");
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    const graph = new BrainGraph();
+    const chunk = makeRuntimeNode("chunk_anchor", embed("codeword"));
+    const superseded = makeCorrectionNode({
+      id: "corr_old",
+      content: "The codeword is hippo.",
+      state: "superseded",
+      createdAt: 1,
+    });
+    const current = makeCorrectionNode({
+      id: "corr_current",
+      content: "The codeword is giraffe.",
+      state: "current",
+      createdAt: 2,
+    });
+    graph.addNode(chunk);
+    graph.addNode(superseded);
+    graph.addNode(current);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "what is the codeword?",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: buildTraverseResult([chunk, superseded, current]),
+        queryEmbedding: embed("codeword"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.fired.map((node) => node.nodeId)).toEqual(["chunk_anchor", "corr_current"]);
+
+    const trace = await service.getTrace(result?.trace.id);
+    expect(trace?.routeTrace?.injectedNodeSummaries.map((summary) => summary.nodeId)).toEqual([
+      "chunk_anchor",
+      "corr_current",
+    ]);
+  });
+
+  it("keeps conflicting correction clusters on conflict-sensitive retrieval", async () => {
+    const brainRoot = makeTempDir("openclawbrain-retrieval-filter-state-");
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    const graph = new BrainGraph();
+    const chunk = makeRuntimeNode("chunk_anchor", embed("codeword"));
+    const firstConflict = makeCorrectionNode({
+      id: "corr_conflict_a",
+      content: "The codeword is hippo.",
+      state: "conflicting",
+      createdAt: 1,
+    });
+    const secondConflict = makeCorrectionNode({
+      id: "corr_conflict_b",
+      content: "The codeword is maybe giraffe.",
+      state: "conflicting",
+      createdAt: 2,
+    });
+    graph.addNode(chunk);
+    graph.addNode(firstConflict);
+    graph.addNode(secondConflict);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "what are the conflicting codeword corrections?",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: buildTraverseResult([chunk, firstConflict, secondConflict]),
+        queryEmbedding: embed("codeword"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.fired.map((node) => node.nodeId)).toEqual([
+      "chunk_anchor",
+      "corr_conflict_a",
+      "corr_conflict_b",
+    ]);
+
+    const trace = await service.getTrace(result?.trace.id);
+    expect(trace?.routeTrace?.injectedNodeSummaries.map((summary) => summary.nodeId)).toEqual([
+      "chunk_anchor",
+      "corr_conflict_a",
+      "corr_conflict_b",
+    ]);
+  });
+
+  it("clamps obvious direct-answer retrieval when the no-fire switch is enabled", async () => {
+    const brainRoot = makeTempDir("openclawbrain-direct-answer-clamp-state-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot, { directAnswerNoFire: true }),
+    });
+    const graph = new BrainGraph();
+    const chunk = makeRuntimeNode("chunk_anchor", embed("northstar metric typescript"));
+    graph.addNode(chunk);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "What is 17 plus 26? Answer with just the number.",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: buildTraverseResult([chunk]),
+        queryEmbedding: embed("17 plus 26"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("does not clamp typed-memory current-truth retrieval when the no-fire switch is enabled", async () => {
+    const brainRoot = makeTempDir("openclawbrain-direct-answer-exempt-state-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot, { directAnswerNoFire: true }),
+    });
+    const graph = new BrainGraph();
+    const current = makeCorrectionNode({
+      id: "corr_current",
+      content: "The codeword is giraffe.",
+      state: "current",
+      createdAt: 2,
+    });
+    graph.addNode(current);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "What is the codeword? Answer with just the word.",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: buildTraverseResult([current]),
+        queryEmbedding: embed("codeword"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.fired.map((node) => node.nodeId)).toEqual(["corr_current"]);
+  });
+
+  it("suppresses the synthetic workspace sentinel when correction memory is also retrieved", async () => {
+    const brainRoot = makeTempDir("openclawbrain-sentinel-suppression-state-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot, { suppressSyntheticWorkspaceSentinel: true }),
+    });
+    const graph = new BrainGraph();
+    const workspaceSentinel = makeSyntheticWorkspaceSentinelNode();
+    const current = makeCorrectionNode({
+      id: "corr_current",
+      content: "Use Vitest now, not Jest.",
+      state: "current",
+      subjectKey: "test-runner",
+      createdAt: 2,
+    });
+    graph.addNode(workspaceSentinel);
+    graph.addNode(current);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "Show a minimal JavaScript test for sum(1, 2) === 3.",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: buildTraverseResult([workspaceSentinel, current]),
+        queryEmbedding: embed("vitest javascript test"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.fired.map((node) => node.nodeId)).toEqual(["corr_current"]);
+
+    const trace = await service.getTrace(result?.trace.id);
+    expect(trace?.routeTrace?.injectedNodeSummaries.map((summary) => summary.nodeId)).toEqual([
+      "corr_current",
+    ]);
+  });
+
   it("prefers the observed episode id when attaching follow-up text and auto-correction supervision", async () => {
     const workspaceRoot = makeTempDir("openclawbrain-episode-attribution-workspace-");
     const brainRoot = makeTempDir("openclawbrain-episode-attribution-state-");
@@ -2536,6 +3298,131 @@ describe("BrainService", () => {
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
   });
+
+  it("records teacher-batch taskflow truth end to end in child-worker mode", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-child-worker-taskflow-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-child-worker-taskflow-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const { runtime, flows } = createManagedTaskFlowRuntime();
+    const deps = createDeps(brainRoot, {
+      workerMode: "child",
+      teacherEnabled: true,
+      persistRawSurfaces: false,
+      teacherProvider: "openai",
+      teacherModel: "gpt-5.4-mini",
+      trainerIntervalMs: 200,
+      workerHeartbeatTimeoutMs: 5_000,
+      workerRestartDelayMs: 100,
+    });
+    deps.bindManagedTaskFlowSession = vi.fn(() => runtime);
+    deps.complete = vi.fn(async () => ({
+      content: [{
+        type: "text",
+        text: "{\"retrieval_relevance\":0.88,\"agent_usage\":0.72,\"outcome_support\":0.8,\"final_score\":0.79,\"confidence\":0.61,\"reason\":\"child worker teacher evaluation completed\"}",
+      }],
+    }));
+
+    const service = new BrainService({ deps });
+
+    try {
+      await service.init({
+        workspaceRoot,
+        embedFn: async (text) => embed(text),
+      });
+      service.rememberTeacherBatchOwnerSession({
+        conversationId: 77,
+        sessionKey: "agent:main:telegram:8518484672",
+      });
+
+      const result = await service.query({
+        conversationId: 77,
+        queryText: "how do I open a pull request?",
+        budgetChars: 4000,
+        queryEmbedding: embed("gh pr create pull request"),
+      });
+      expect(result).not.toBeNull();
+
+      await service.recordTurnObservation({
+        episodeId: result?.episode.id,
+        assistantResponse: "Use `gh pr create` to open the pull request.",
+        toolResults: [],
+      });
+      await service.observeUserTurn({
+        conversationId: 77,
+        messageId: 200,
+        episodeId: result?.episode.id,
+        userText: "That worked.",
+        recentMessages: [
+          { role: "assistant", content: "Use `gh pr create` to open the pull request." },
+          { role: "user", content: "how do I open a pull request?" },
+        ],
+        recentSummaries: [],
+      });
+
+      service.startWorker();
+      let latestStatus: Record<string, unknown> | null = null;
+      try {
+        await waitFor(async () => {
+          const status = await service.status();
+          latestStatus = status;
+          return status.workerMode === "child"
+            && status.workerHealthy === true
+            && (status.teacherBatchFlow as { status?: string | null; currentStep?: string | null; flowId?: string | null; ownerSessionKnown?: boolean }).status === "completed"
+            && (status.teacherBatchFlow as { currentStep?: string | null }).currentStep === "reward_signal_applied"
+            && Boolean((status.teacherBatchFlow as { flowId?: string | null }).flowId)
+            && (status.teacherBatchFlow as { ownerSessionKnown?: boolean }).ownerSessionKnown === true
+            && status.pendingObservations === 0;
+        }, 12_000);
+      } catch (error) {
+        throw new Error(`child-worker teacher batch did not complete: ${JSON.stringify({
+          workerMode: latestStatus?.workerMode,
+          workerStatus: latestStatus?.workerStatus,
+          workerHealthy: latestStatus?.workerHealthy,
+          pendingObservations: latestStatus?.pendingObservations,
+          teacherBatchFlow: latestStatus?.teacherBatchFlow,
+          teacherTruth: latestStatus?.teacherTruth,
+          workerLastFatalError: latestStatus?.workerLastFatalError,
+        })}`);
+      }
+
+      const status = await service.status();
+      expect(status.workerMode).toBe("child");
+      expect(status.teacherBatchFlow).toMatchObject({
+        visible: true,
+        ownerSessionKnown: true,
+        ownerSessionKey: "agent:main:telegram:8518484672",
+        currentStep: "reward_signal_applied",
+        status: "completed",
+        conversationIds: [77],
+      });
+      expect(((status.teacherBatchFlow as { flowId?: string | null }).flowId) ?? null).toEqual(expect.any(String));
+      expect(flows.size).toBe(1);
+      expect(deps.complete).toHaveBeenCalled();
+
+      const trace = await service.getTrace(result?.trace.id);
+      expect(trace?.supervision).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            source: "teacher",
+            value: 0.79,
+          }),
+        ]),
+      );
+    } finally {
+      service.stopWorker();
+      await waitFor(async () => {
+        const status = await service.status();
+        return status.workerStatus === "stopped" || status.workerPid === null;
+      }, 5_000).catch(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      });
+    }
+  }, 15_000);
 
   it("keeps serving from the last promoted pack when the child worker dies", async () => {
     const workspaceRoot = makeTempDir("openclawbrain-workspace-");

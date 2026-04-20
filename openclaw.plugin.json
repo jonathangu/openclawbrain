@@ -3,7 +3,7 @@
   "uiHints": {
     "contextThreshold": {
       "label": "Context Threshold",
-      "help": "Fraction of context window that triggers compaction (0.0–1.0)"
+      "help": "Fraction of context window that triggers compaction (0.0\u20131.0)"
     },
     "incrementalMaxDepth": {
       "label": "Incremental Max Depth",
@@ -56,6 +56,14 @@
     "brainPersistRawSurfaces": {
       "label": "Persist Raw Brain Surfaces",
       "help": "Store raw prompt, turn, and source audit detail locally in addition to redacted-safe summaries"
+    },
+    "brainDirectAnswerNoFire": {
+      "label": "Direct-Answer No-Fire",
+      "help": "Clamp obvious answer-only direct-answer turns to no-fire unless the query is current-truth or conflict-sensitive"
+    },
+    "brainSuppressSyntheticWorkspaceSentinel": {
+      "label": "Suppress Synthetic Workspace Sentinel",
+      "help": "Drop the synthetic eval workspace sentinel when correction memory is also retrieved"
     },
     "brainWorkerMode": {
       "label": "Worker Mode",
@@ -174,6 +182,12 @@
       "brainPersistRawSurfaces": {
         "type": "boolean"
       },
+      "brainDirectAnswerNoFire": {
+        "type": "boolean"
+      },
+      "brainSuppressSyntheticWorkspaceSentinel": {
+        "type": "boolean"
+      },
       "brainMaxSeeds": {
         "type": "integer",
         "minimum": 1
@@ -201,9 +215,6 @@
       "brainWorkerRestartDelayMs": {
         "type": "integer",
         "minimum": 0
-      },
-      "brainPersistRawSurfaces": {
-        "type": "boolean"
       },
       "brainShadowMode": {
         "type": "boolean"

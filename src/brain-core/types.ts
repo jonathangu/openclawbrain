@@ -685,6 +685,11 @@ export interface DecisionTraceInjectedNodeSummary {
   tags: string[];
   tokenCount: number;
   contentPreview: string;
+  correctionState?: "current" | "superseded" | "conflicting" | "stale";
+  correctionSubjectKey?: string | null;
+  correctionSubjectText?: string | null;
+  correctionConflictSetId?: string | null;
+  correctionNeedsSourceExpansion?: boolean | null;
 }
 
 export type DecisionPointActionKindV1 =
@@ -1651,6 +1656,8 @@ export interface BrainConfig {
   workerRestartDelayMs: number;
   teacherEnabled: boolean;
   persistRawSurfaces: boolean;
+  directAnswerNoFire: boolean;
+  suppressSyntheticWorkspaceSentinel: boolean;
   autoUserCorrectionsEnabled: boolean;
   autoUserCorrectionsProvider: string;
   autoUserCorrectionsModel: string;
@@ -1689,6 +1696,8 @@ export const DEFAULT_BRAIN_CONFIG: BrainConfig = {
   workerRestartDelayMs: 5_000,
   teacherEnabled: true,
   persistRawSurfaces: false,
+  directAnswerNoFire: false,
+  suppressSyntheticWorkspaceSentinel: false,
   autoUserCorrectionsEnabled: false,
   autoUserCorrectionsProvider: "",
   autoUserCorrectionsModel: "",

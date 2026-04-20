@@ -22,6 +22,8 @@ export type OpenClawBrainRuntimeConfig = {
   workerRestartDelayMs?: number;
   teacherEnabled: boolean;
   persistRawSurfaces: boolean;
+  directAnswerNoFire?: boolean;
+  suppressSyntheticWorkspaceSentinel?: boolean;
   teacherProvider: string;
   teacherModel: string;
   autoUserCorrectionsEnabled: boolean;
@@ -259,6 +261,14 @@ export function resolveLcmConfig(
         env.OPENCLAWBRAIN_PERSIST_RAW_SURFACES !== undefined
           ? env.OPENCLAWBRAIN_PERSIST_RAW_SURFACES === "true"
           : toBool(pc.brainPersistRawSurfaces) ?? false,
+      directAnswerNoFire:
+        env.OPENCLAWBRAIN_DIRECT_ANSWER_NO_FIRE !== undefined
+          ? env.OPENCLAWBRAIN_DIRECT_ANSWER_NO_FIRE !== "false"
+          : toBool(pc.brainDirectAnswerNoFire) ?? false,
+      suppressSyntheticWorkspaceSentinel:
+        env.OPENCLAWBRAIN_SUPPRESS_SYNTHETIC_WORKSPACE_SENTINEL !== undefined
+          ? env.OPENCLAWBRAIN_SUPPRESS_SYNTHETIC_WORKSPACE_SENTINEL !== "false"
+          : toBool(pc.brainSuppressSyntheticWorkspaceSentinel) ?? false,
       teacherProvider:
         env.OPENCLAWBRAIN_TEACHER_PROVIDER?.trim() ?? toStr(pc.brainTeacherProvider) ?? "",
       teacherModel:

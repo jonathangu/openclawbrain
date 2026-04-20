@@ -36,6 +36,14 @@
       "label": "Persist Raw Brain Surfaces",
       "help": "Store raw prompt, turn, and source audit detail locally in addition to redacted-safe summaries"
     },
+    "brainDirectAnswerNoFire": {
+      "label": "Direct-Answer No-Fire",
+      "help": "Clamp obvious answer-only direct-answer turns to no-fire unless the query is current-truth or conflict-sensitive"
+    },
+    "brainSuppressSyntheticWorkspaceSentinel": {
+      "label": "Suppress Synthetic Workspace Sentinel",
+      "help": "Drop the synthetic eval workspace sentinel when correction memory is also retrieved"
+    },
     "brainEmbeddingBaseUrl": {
       "label": "Embedding Base URL",
       "help": "Optional base URL override for the embedding provider endpoint"
@@ -110,6 +118,12 @@
         "minimum": 1
       },
       "brainPersistRawSurfaces": {
+        "type": "boolean"
+      },
+      "brainDirectAnswerNoFire": {
+        "type": "boolean"
+      },
+      "brainSuppressSyntheticWorkspaceSentinel": {
         "type": "boolean"
       },
       "brainMaxSeeds": {
