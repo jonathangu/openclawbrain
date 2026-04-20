@@ -405,7 +405,7 @@ describe("continuous learning operator status", () => {
     expect(status.runtimeTruth).toMatchObject({
       baseArtifactId: "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
       baseArtifactVersion: "0.0.3",
-      baseArtifactChecksum: "sha256:4ef43329a36bea9e9c9d2fe18aecff29037b636dd6912ee3f60b24532ccee834",
+      baseArtifactChecksum: "sha256:5ebedc06407909e4f1801ac819e97f9a8bc2f2d02f84cd3286233b73b0a5887e",
       baseArtifactSource: "candidate",
       basePackType: "base",
       mixedPackFromBaseArtifactId: null,

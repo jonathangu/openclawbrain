@@ -87,45 +87,51 @@ describe("recorded-session-rollout-proof", () => {
     assert.equal(verdict.eligibleTraceSummary.cleanWinTraceCount, 3);
   });
 
-  it("the shipped suite fails because the available replay traces are test fixtures and learned route never wins cleanly", () => {
+  it("the shipped suite still fails the rollout bar even with real recorded sessions because learned route rarely wins cleanly", () => {
     const tracePaths = discoverRecordedSessionReplayTracePaths(path.resolve("docs/evidence"));
     const verdict = evaluateRecordedSessionReplayRollout(tracePaths);
 
     const traceIds = tracePaths.map((tracePath) => path.basename(path.dirname(tracePath)));
     const uniqueTraceIds = [...new Set(traceIds)].sort();
+    const classifications = [...new Set(verdict.traces.map((trace) => trace.evidence.classification))].sort();
 
     assert.ok(uniqueTraceIds.includes("trace-comparative-replay"));
     assert.ok(uniqueTraceIds.includes("trace-train-freeze-eval"));
     assert.ok(tracePaths.length >= 2);
     assert.equal(verdict.ok, false);
     assert.equal(verdict.totalTraceCount, tracePaths.length);
-    assert.equal(verdict.eligibleTraceCount, 0);
-    assert.ok(verdict.failureReasons.includes("insufficient_eligible_trace_count"));
+    assert.ok(verdict.eligibleTraceCount > 0);
+    assert.ok(verdict.eligibleTraceCount < tracePaths.length);
+    assert.ok(verdict.failureReasons.includes("clean_win_rate_below_bar"));
     assert.ok(verdict.failureReasons.includes("average_margin_vs_vector_only_below_bar"));
     assert.ok(verdict.failureReasons.includes("average_margin_vs_graph_prior_only_below_bar"));
-    assert.ok(verdict.traces.every((trace) => trace.evidence.classification === "test_fixture"));
+    assert.ok(classifications.includes("non_test_recorded_session"));
+    assert.ok(classifications.includes("test_fixture"));
     assert.ok(verdict.traces.every((trace) => trace.validationOk === true));
 
-    const vectorOnly = verdict.allTraceSummary.baselineAggregates.find(
+    const noBrain = verdict.allTraceSummary.baselineAggregates.find(
+      (aggregate) => aggregate.baselineMode === "no_brain",
+    );
+    const vectorOnly = verdict.eligibleTraceSummary.baselineAggregates.find(
       (aggregate) => aggregate.baselineMode === "vector_only",
     );
-    const graphPriorOnly = verdict.allTraceSummary.baselineAggregates.find(
+    const graphPriorOnly = verdict.eligibleTraceSummary.baselineAggregates.find(
       (aggregate) => aggregate.baselineMode === "graph_prior_only",
     );
 
+    assert.ok(noBrain);
+    assert.equal(noBrain?.traceCount, tracePaths.length);
+    assert.equal(noBrain?.lossCount, 0);
+
     assert.ok(vectorOnly);
-    assert.equal(vectorOnly?.traceCount, tracePaths.length);
-    assert.equal(vectorOnly?.lossCount, 0);
-    assert.ok((vectorOnly?.strictWinCount ?? 0) + (vectorOnly?.tieCount ?? 0) === tracePaths.length);
-    assert.ok((vectorOnly?.averageMargin ?? 0) >= 0);
+    assert.equal(vectorOnly?.traceCount, verdict.eligibleTraceCount);
+    assert.ok((vectorOnly?.lossCount ?? 0) > 0 || (vectorOnly?.averageMargin ?? 0) <= 0);
 
     assert.ok(graphPriorOnly);
-    assert.equal(graphPriorOnly?.traceCount, tracePaths.length);
-    assert.equal(graphPriorOnly?.lossCount, 0);
-    assert.ok((graphPriorOnly?.strictWinCount ?? 0) + (graphPriorOnly?.tieCount ?? 0) === tracePaths.length);
-    assert.ok((graphPriorOnly?.averageMargin ?? 0) >= 0);
+    assert.equal(graphPriorOnly?.traceCount, verdict.eligibleTraceCount);
+    assert.ok((graphPriorOnly?.strictWinCount ?? 0) < verdict.eligibleTraceSummary.requiredCleanWinCount);
 
-    assert.ok(verdict.allTraceSummary.cleanWinTraceCount >= 0);
-    assert.ok(verdict.allTraceSummary.learnedWinnerTraceCount >= 0);
+    assert.ok(verdict.eligibleTraceSummary.cleanWinTraceCount < verdict.eligibleTraceSummary.requiredCleanWinCount);
+    assert.ok(verdict.allTraceSummary.learnedWinnerTraceCount >= verdict.allTraceSummary.cleanWinTraceCount);
   });
 });
