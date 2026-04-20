@@ -35,6 +35,7 @@ const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
 const OPENCLAWBRAIN_EMBEDDER_PROVIDER_ENV = "OPENCLAWBRAIN_EMBEDDER_PROVIDER";
 const OPENCLAWBRAIN_EMBEDDER_MODEL_ENV = "OPENCLAWBRAIN_EMBEDDER_MODEL";
 const OPENCLAWBRAIN_INSTALL_SKIP_EMBEDDER_PROVISION_ENV = "OPENCLAWBRAIN_INSTALL_SKIP_EMBEDDER_PROVISION";
+const OPERATOR_SURFACE_DETAIL_LEVEL = Symbol.for("@openclawbrain/cli/operatorSurfaceDetailLevel");
 const LEGACY_COMPAT_PACKAGE_NAME = "@jonathangu/openclawbrain";
 const INSTALL_COMPATIBLE_LOCAL_TEACHER_MODEL_PREFIXES = [
     "gemma4:31b",
@@ -1673,6 +1674,15 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
         `logs        root=${status.brain.logRoot ?? "none"}`,
         `turn        attribution=${status.currentTurnAttribution === null ? "none" : status.currentTurnAttribution.contract}`
     ].join("\n");
+}
+function withOperatorSurfaceReportDetailLevel(input, detailLevel) {
+    const taggedInput = { ...input };
+    Object.defineProperty(taggedInput, OPERATOR_SURFACE_DETAIL_LEVEL, {
+        value: detailLevel,
+        enumerable: false,
+        configurable: true
+    });
+    return taggedInput;
 }
 // Auto-detection of activation root is now handled by the shared
 // resolveActivationRoot() helper in resolve-activation-root.ts.
@@ -7543,7 +7553,9 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
         }, null, 2));
     }
     else {
-        const statusWithReport = describeCurrentProfileBrainStatusWithReport(operatorInput);
+        const statusWithReport = statusOrRollback.detailed
+            ? describeCurrentProfileBrainStatusWithReport(operatorInput)
+            : describeCurrentProfileBrainStatusWithReport(withOperatorSurfaceReportDetailLevel(operatorInput, "summary"));
         const normalizedStatusAndReport = applyAttachmentPolicyTruth(statusWithReport.status, statusWithReport.report);
         const report = normalizedStatusAndReport.report;
         const providerConfig = readOpenClawBrainProviderConfigFromSources({
