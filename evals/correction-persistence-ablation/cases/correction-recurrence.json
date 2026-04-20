@@ -1,0 +1,131 @@
+[
+  {
+    "case_id": "cp-001-language-typescript",
+    "slice": "correction-follow-up",
+    "description": "User corrected the agent to prefer TypeScript over JavaScript.",
+    "setup_turns": [
+      { "role": "user", "content": "Don't use JavaScript for examples. I want TypeScript, not JavaScript." },
+      { "role": "assistant", "content": "Understood. I'll use TypeScript." }
+    ],
+    "filler_turns": 4,
+    "query": "Write a small URL parser example for me.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [": string", "interface", "type ", "URL("],
+      "negative_signals": ["```javascript", "const parseUrl = (input) =>", "function parseUrl(input)"]
+    }
+  },
+  {
+    "case_id": "cp-002-no-comments",
+    "slice": "correction-follow-up",
+    "description": "User asked for code with no comments, and the later answer should keep that preference.",
+    "setup_turns": [
+      { "role": "user", "content": "When you write code for me, don't include comments." },
+      { "role": "assistant", "content": "Okay, I'll keep the code comment-free." }
+    ],
+    "filler_turns": 4,
+    "query": "Write a Python function that reverses a string.",
+    "success_criteria": {
+      "type": "regex",
+      "pattern": "def\\s+\\w+\\s*\\(",
+      "must_not_match": "^\\s*#|^\\s*//|^\\s*/\\*|^\\s*\\*|^\\s*\"\"\"|^\\s*'''"
+    }
+  },
+  {
+    "case_id": "cp-003-metric-units",
+    "slice": "correction-follow-up",
+    "description": "User prefers metric units and the later answer should respect that.",
+    "setup_turns": [
+      { "role": "user", "content": "Please use metric units with me, not imperial." },
+      { "role": "assistant", "content": "Got it. I'll stick to metric units." }
+    ],
+    "filler_turns": 4,
+    "query": "Give me a simple recipe for roasted carrots.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": ["g", "ml", "°c", "180c", "200c"],
+      "negative_signals": ["cup", "cups", "tbsp", "tablespoon", "°f", "350f", "400f"]
+    }
+  },
+  {
+    "case_id": "cp-004-peanut-allergy",
+    "slice": "correction-follow-up",
+    "description": "User disclosed a peanut allergy, and later food advice should respect it.",
+    "setup_turns": [
+      { "role": "user", "content": "I'm allergic to peanuts. Don't suggest peanuts or peanut oil in food ideas." },
+      { "role": "assistant", "content": "Understood. I'll avoid peanuts and peanut oil." }
+    ],
+    "filler_turns": 5,
+    "query": "Give me a quick lunch idea.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": ["peanut-free", "no peanuts", "avoid peanuts", "peanut oil-free"],
+      "negative_signals": ["peanut", "peanut oil", "satay"]
+    }
+  },
+  {
+    "case_id": "cp-005-vue3-not-vue2",
+    "slice": "stale-memory-conflict",
+    "description": "A stale earlier preference for Vue 2 should be overridden by a later explicit correction to Vue 3.",
+    "setup_turns": [
+      { "role": "user", "content": "Use Vue 2 for frontend examples." },
+      { "role": "assistant", "content": "Okay, I'll use Vue 2 examples." },
+      { "role": "user", "content": "Actually, use Vue 3 now, not Vue 2." },
+      { "role": "assistant", "content": "Understood. I'll use Vue 3." }
+    ],
+    "filler_turns": 5,
+    "query": "Show me a small Vue component example.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": ["<script setup", "createApp(", "ref("],
+      "negative_signals": ["new Vue(", "Vue.extend", "vue@2"]
+    }
+  },
+  {
+    "case_id": "cp-006-name-jonathan",
+    "slice": "continuation",
+    "description": "The agent should remember the user's preferred name later in the conversation.",
+    "setup_turns": [
+      { "role": "user", "content": "Call me Jonathan." },
+      { "role": "assistant", "content": "Sure, Jonathan." }
+    ],
+    "filler_turns": 5,
+    "query": "Write a one-line thank-you note to me.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": ["jonathan"]
+    }
+  },
+  {
+    "case_id": "cp-007-british-spelling",
+    "slice": "continuation",
+    "description": "The user asked for British spelling and the later answer should keep it.",
+    "setup_turns": [
+      { "role": "user", "content": "Please use British spelling with me, not American spelling." },
+      { "role": "assistant", "content": "Will do. I'll use British spelling." }
+    ],
+    "filler_turns": 5,
+    "query": "Write one sentence about organising a project colour palette.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": ["organising", "colour"],
+      "negative_signals": ["organizing", "color"]
+    }
+  },
+  {
+    "case_id": "cp-008-arithmetic-control",
+    "slice": "direct-answer",
+    "description": "Negative control where memory should stay quiet because the query is direct and context-free.",
+    "setup_turns": [
+      { "role": "user", "content": "I prefer metric units and TypeScript examples." },
+      { "role": "assistant", "content": "Got it." }
+    ],
+    "filler_turns": 3,
+    "query": "What is 17 plus 26? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": ["43"],
+      "negative_signals": ["typescript", "metric", "because"]
+    }
+  }
+]
