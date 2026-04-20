@@ -25,6 +25,9 @@ const RUNTIME_EVENT_EXPORT_BUNDLE_CONTRACT = "normalized_event_export_bundle.v1"
 const DEFAULT_ATTACH_STATUS_MESSAGE = "openclaw attach status probe";
 const DEFAULT_ATTACH_STATUS_RUNTIME_HINTS = ["attach", "status", "probe"];
 const BRAIN_SERVE_HOT_PATH_TIMING_DETAIL = "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes.";
+// Internal-only signal so the CLI can request summary-friendly status reports
+// without widening the declared operator report API.
+const OPERATOR_SURFACE_DETAIL_LEVEL = Symbol.for("@openclawbrain/cli/operatorSurfaceDetailLevel");
 export const RUNTIME_EVENT_EXPORT_BUNDLE_LAYOUT = {
     manifest: "manifest.json",
     payload: "normalized-event-export.json"
@@ -6734,6 +6737,29 @@ function summarizePrincipalObservability(input, active) {
                 : `${pendingEvents.length} principal item(s) are newer than the active serving range`
     };
 }
+function buildSummaryOnlyPrincipalObservability(active) {
+    const detail = "summary status skipped principal feedback frontier inspection; rerun `openclawbrain status --detailed` when you need principal lag proof";
+    return {
+        available: false,
+        sourcePath: null,
+        sourceKind: "missing",
+        latestFeedback: null,
+        latestCorrection: null,
+        pendingCount: null,
+        pendingItems: [],
+        latestPromotion: {
+            known: false,
+            at: null,
+            activePackId: active?.packId ?? null,
+            activeEventRangeEnd: active?.eventRange.end ?? null,
+            includesLatestFeedback: null,
+            includesLatestCorrection: null,
+            note: detail
+        },
+        servingDownstreamOfLatestCorrection: null,
+        detail
+    };
+}
 function summarizeSupervision(input) {
     const loaded = loadOperatorEventExport(input);
     if (loaded === null) {
@@ -8052,6 +8078,12 @@ function buildCurrentProfileBrainStatusFromReport(report, policyMode, profileId)
     };
 }
 export function buildOperatorSurfaceReport(input) {
+    return buildOperatorSurfaceReportWithDetailLevel(input, resolveOperatorSurfaceReportDetailLevel(input));
+}
+function resolveOperatorSurfaceReportDetailLevel(input) {
+    return input?.[OPERATOR_SURFACE_DETAIL_LEVEL] === "summary" ? "summary" : "full";
+}
+function buildOperatorSurfaceReportWithDetailLevel(input, detailLevel) {
     const activationRoot = path.resolve(normalizeNonEmptyString(input.activationRoot, "activationRoot"));
     const updatedAt = normalizeIsoTimestamp(input.updatedAt, "updatedAt", new Date().toISOString());
     const brainAttachmentPolicy = normalizeBrainAttachmentPolicy(input.brainAttachmentPolicy);
@@ -8096,12 +8128,17 @@ export function buildOperatorSurfaceReport(input) {
         previous,
         inspectionError
     });
-    const activeObservability = inspectionError === null
-        ? summarizeActivePackObservability(activationRoot, active, { packCache })
-        : {
-            labelFlow: buildMissingLabelFlowSummary(`activation observability is unavailable: ${inspectionError}`),
-            learningPath: buildMissingLearningPathSummary(`activation observability is unavailable: ${inspectionError}`)
-        };
+    const activeObservability = detailLevel === "summary"
+        ? {
+            labelFlow: buildMissingLabelFlowSummary("summary status skipped active-pack label-flow inspection; rerun `openclawbrain status --detailed` for the full label-flow surface"),
+            learningPath: buildMissingLearningPathSummary("summary status skipped active-pack learning-path inspection; rerun `openclawbrain status --detailed` for the full learning-path surface")
+        }
+        : inspectionError === null
+            ? summarizeActivePackObservability(activationRoot, active, { packCache })
+            : {
+                labelFlow: buildMissingLabelFlowSummary(`activation observability is unavailable: ${inspectionError}`),
+                learningPath: buildMissingLearningPathSummary(`activation observability is unavailable: ${inspectionError}`)
+            };
     const servePath = probeOperatorServePath(activationRoot, observability, active?.packId ?? null);
     const learnedRouting = observability === null
         ? summarizeLearnedRoutingWithoutObservability(active)
@@ -8187,7 +8224,9 @@ export function buildOperatorSurfaceReport(input) {
         routeFn,
         hook,
         attachmentTruth,
-        principal: summarizePrincipalObservability(cachedInput, active),
+        principal: detailLevel === "summary"
+            ? buildSummaryOnlyPrincipalObservability(active)
+            : summarizePrincipalObservability(cachedInput, active),
         manyProfile: summarizeManyProfileSupport(brainAttachmentPolicy)
     };
     const findings = buildOperatorFindings(reportBase);
@@ -8204,8 +8243,17 @@ export function describeCurrentProfileBrainStatusWithReport(input) {
         status: buildCurrentProfileBrainStatusFromReport(report, report.manyProfile.declaredAttachmentPolicy, normalizeOptionalString(input.profileId) ?? null)
     };
 }
+function withOperatorSurfaceReportDetailLevel(input, detailLevel) {
+    const taggedInput = { ...input };
+    Object.defineProperty(taggedInput, OPERATOR_SURFACE_DETAIL_LEVEL, {
+        value: detailLevel,
+        enumerable: false,
+        configurable: true
+    });
+    return taggedInput;
+}
 export function describeCurrentProfileBrainStatus(input) {
-    return describeCurrentProfileBrainStatusWithReport(input).status;
+    return describeCurrentProfileBrainStatusWithReport(withOperatorSurfaceReportDetailLevel(input, "summary")).status;
 }
 export function formatOperatorRollbackReport(result) {
     const header = result.allowed ? (result.dryRun ? "ROLLBACK ready" : "ROLLBACK ok") : "ROLLBACK blocked";
