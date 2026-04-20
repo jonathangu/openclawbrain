@@ -1110,13 +1110,13 @@ function activationFreshnessNotes(rootDir, slot, target) {
 }
 export function resolveActivationCompileTarget(rootDir, options = {}) {
     const slot = options.slot ?? "active";
-    const pack = loadPackFromActivation(rootDir, slot, {
+    const pack = options.pack ?? loadPackFromActivation(rootDir, slot, {
         requireActivationReady: options.requireActivationReady !== false
     });
     if (pack === null) {
         throw new Error(`Activation slot ${slot} is empty`);
     }
-    const target = describePackCompileTarget(pack);
+    const target = options.target ?? describePackCompileTarget(pack);
     const expectation = resolveActivationCompileExpectation(options);
     if (expectation !== undefined) {
         const expectationErrors = validateRuntimeCompileExpectation(expectation);
