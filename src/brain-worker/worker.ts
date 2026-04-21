@@ -40,6 +40,12 @@ import { computeHealth } from "../brain-core/health.js";
 import { clusterMutationsIntoBundles, evaluateBundle, DEFAULT_BUNDLE_CONFIG } from "../brain-core/bundle-evaluator.js";
 import type { BundleEvaluationConfig, MutationBundle } from "../brain-core/bundle-evaluator.js";
 import { evaluateContextUsefulness } from "../brain-core/usefulness.js";
+import {
+  buildTeacherBatchFlowLifecycleEvent,
+  createTeacherBatchFlowState,
+  type TeacherBatchFlowLifecycleEventV1,
+  type TeacherBatchFlowStateV1,
+} from "./teacher-job.js";
 
 const TEACHER_OBSERVATION_BUDGET = 20;
 const TEACHER_CYCLE_DECISION_LIMIT = 8;
@@ -319,6 +325,18 @@ function incrementRewardSourceCount(
   counts[source] = (counts[source] ?? 0) + 1;
 }
 
+function formatTeacherBatchFailureDetail(error: unknown, fallback: string): string {
+  if (error instanceof Error) {
+    const message = error.message.trim();
+    return message.length > 0 ? message : fallback;
+  }
+  if (typeof error === "string") {
+    const message = error.trim();
+    return message.length > 0 ? message : fallback;
+  }
+  return fallback;
+}
+
 export class BrainWorker {
   private interval: ReturnType<typeof setInterval> | null = null;
   private running = false;
@@ -335,6 +353,7 @@ export class BrainWorker {
       isEnabled?: () => boolean;
       onPromotionReady?: (params: { healthJson: string; promotionVerdict: PromotionRunVerdict }) => Promise<void> | void;
       onTickResult?: (params: { ok: boolean; at: number; error?: string }) => void;
+      onTeacherBatchLifecycle?: (event: TeacherBatchFlowLifecycleEventV1) => Promise<void> | void;
     } = {},
   ) {}
 
@@ -377,9 +396,9 @@ export class BrainWorker {
     this.running = true;
     try {
       this.store.setTrainingState("worker_last_tick_at", Date.now());
-      await this.evaluatePendingObservations();
+      const teacherBatchState = await this.evaluatePendingObservations();
       await this.evaluatePendingShadowUsefulness();
-      await this.processLabels();
+      await this.processLabels(teacherBatchState);
       await this.applyUpdates();
       this.runDecay();
       this.proposeMutations();
@@ -452,14 +471,41 @@ export class BrainWorker {
     return Date.now() - Math.max(1_000, this.config.trainerIntervalMs);
   }
 
-  private async evaluatePendingObservations(): Promise<void> {
+  private async emitTeacherBatchLifecycle(event: TeacherBatchFlowLifecycleEventV1): Promise<void> {
+    await this.hooks.onTeacherBatchLifecycle?.(event);
+  }
+
+  private async evaluatePendingObservations(): Promise<TeacherBatchFlowStateV1 | null> {
     if (!this.teacher || !this.config.teacherEnabled) {
-      return;
+      return null;
     }
 
     const readyBefore = this.observationReadyBefore();
     const queue = this.store.getTeacherQueueSummary(readyBefore, TEACHER_OBSERVATION_BUDGET);
     const pending = this.store.getPendingObservations(TEACHER_OBSERVATION_BUDGET, readyBefore);
+    const teacherBatchState = pending.length > 0
+      ? createTeacherBatchFlowState({
+          observations: pending.map((observation) => ({
+            observationId: observation.id,
+            episodeId: observation.episodeId,
+            conversationId: observation.conversationId,
+            createdAt: observation.createdAt,
+          })),
+          batchBudget: TEACHER_OBSERVATION_BUDGET,
+        })
+      : null;
+    if (teacherBatchState) {
+      await this.emitTeacherBatchLifecycle(buildTeacherBatchFlowLifecycleEvent({
+        state: teacherBatchState,
+        step: "observation_batch_bound",
+        detail: `${teacherBatchState.selectedCount} observation(s) selected for teacher evaluation`,
+      }));
+      await this.emitTeacherBatchLifecycle(buildTeacherBatchFlowLifecycleEvent({
+        state: teacherBatchState,
+        step: "teacher_invoked",
+        detail: `teacher evaluation started for ${teacherBatchState.selectedCount} observation(s)`,
+      }));
+    }
     const decisions: Array<{
       observationId: string;
       episodeId: string;
@@ -494,162 +540,179 @@ export class BrainWorker {
     let exactAttributionCount = 0;
     let fallbackAttributionCount = 0;
     let unboundAttributionCount = 0;
+    const emittedLabelIds: string[] = [];
 
-    for (const observation of pending) {
-      const feedbackRichness = classifyTeacherFeedbackRichness({
-        followUpText: observation.followUpText,
-        toolResults: observation.toolResults,
-      });
-      const episode = this.store.getEpisode(observation.episodeId);
-      if (!episode) {
-        this.store.completeObservationEvaluation({
-          observationId: observation.id,
-          phase1Score: 0,
-          phase2Score: 0,
-          finalScore: 0,
-          confidence: 0,
-          reason: "episode missing",
+    try {
+      for (const observation of pending) {
+        const feedbackRichness = classifyTeacherFeedbackRichness({
+          followUpText: observation.followUpText,
+          toolResults: observation.toolResults,
         });
-        skippedCount += 1;
-        decisions.push({
-          observationId: observation.id,
-          episodeId: observation.episodeId,
-          traceId: observation.traceId,
-          decision: "skipped",
-          reason: "episode missing",
-          feedbackRichness,
-          bindingMode: null,
-          attributionQuality: null,
-          finalScore: 0,
-          confidence: 0,
-          createdAt: observation.createdAt,
-          evaluatedAt: Date.now(),
-        });
-        continue;
-      }
+        const episode = this.store.getEpisode(observation.episodeId);
+        if (!episode) {
+          this.store.completeObservationEvaluation({
+            observationId: observation.id,
+            phase1Score: 0,
+            phase2Score: 0,
+            finalScore: 0,
+            confidence: 0,
+            reason: "episode missing",
+          });
+          skippedCount += 1;
+          decisions.push({
+            observationId: observation.id,
+            episodeId: observation.episodeId,
+            traceId: observation.traceId,
+            decision: "skipped",
+            reason: "episode missing",
+            feedbackRichness,
+            bindingMode: null,
+            attributionQuality: null,
+            finalScore: 0,
+            confidence: 0,
+            createdAt: observation.createdAt,
+            evaluatedAt: Date.now(),
+          });
+          continue;
+        }
 
-      const review = await this.teacher.evaluateObservation(observation);
-      if (!review) {
-        this.store.completeObservationEvaluation({
-          observationId: observation.id,
-          phase1Score: 0,
-          phase2Score: 0,
-          finalScore: 0,
-          confidence: 0,
-          reason: "teacher input unavailable",
-        });
-        skippedCount += 1;
-        decisions.push({
-          observationId: observation.id,
-          episodeId: observation.episodeId,
-          traceId: observation.traceId,
-          decision: "skipped",
-          reason: "teacher input unavailable",
-          feedbackRichness,
-          bindingMode: null,
-          attributionQuality: null,
-          finalScore: 0,
-          confidence: 0,
-          createdAt: observation.createdAt,
-          evaluatedAt: Date.now(),
-        });
-        continue;
-      }
-      const attributionQuality = classifyObservationBindingQuality(review.bindingMode);
-      if (attributionQuality === "exact") {
-        exactAttributionCount += 1;
-      } else if (attributionQuality === "fallback") {
-        fallbackAttributionCount += 1;
-      } else {
-        unboundAttributionCount += 1;
-      }
-      const teacherEvaluation = {
-        version: review.version,
-        observationId: review.observationId,
-        episodeId: review.episodeId,
-        traceId: review.traceId,
-        serveDecisionRecordId: review.serveDecisionRecordId,
-        selectionDigest: review.selectionDigest,
-        turnCompileEventId: review.turnCompileEventId,
-        decisionRecordedAt: review.decisionRecordedAt,
-        activePackId: review.activePackId,
-        activePackEventExportDigest: review.activePackEventExportDigest,
-        activePackGraphChecksum: review.activePackGraphChecksum,
-        activePackRouterChecksum: review.activePackRouterChecksum,
-        activePackBuiltAt: review.activePackBuiltAt,
-        bindingMode: review.bindingMode,
-        retrievalRelevance: review.retrievalRelevance,
-        agentUsage: review.agentUsage,
-        outcomeSupport: review.outcomeSupport,
-        finalScore: review.finalScore,
-        confidence: review.confidence,
-        reason: review.reason,
-      };
-
-      const evidence = this.store.insertEvidence({
-        episodeId: episode.id,
-        conversationId: episode.conversationId,
-        source: "teacher",
-        kind: "teacher_review",
-        value: review.finalScore,
-        confidence: review.confidence,
-        reason: review.reason,
-        contentSnippet: (observation.assistantResponse || episode.queryText).slice(0, 240),
-        metadata: {
-          observationId: observation.id,
+        const review = await this.teacher.evaluateObservation(observation);
+        if (!review) {
+          this.store.completeObservationEvaluation({
+            observationId: observation.id,
+            phase1Score: 0,
+            phase2Score: 0,
+            finalScore: 0,
+            confidence: 0,
+            reason: "teacher input unavailable",
+          });
+          skippedCount += 1;
+          decisions.push({
+            observationId: observation.id,
+            episodeId: observation.episodeId,
+            traceId: observation.traceId,
+            decision: "skipped",
+            reason: "teacher input unavailable",
+            feedbackRichness,
+            bindingMode: null,
+            attributionQuality: null,
+            finalScore: 0,
+            confidence: 0,
+            createdAt: observation.createdAt,
+            evaluatedAt: Date.now(),
+          });
+          continue;
+        }
+        const attributionQuality = classifyObservationBindingQuality(review.bindingMode);
+        if (attributionQuality === "exact") {
+          exactAttributionCount += 1;
+        } else if (attributionQuality === "fallback") {
+          fallbackAttributionCount += 1;
+        } else {
+          unboundAttributionCount += 1;
+        }
+        const teacherEvaluation = {
+          version: review.version,
+          observationId: review.observationId,
+          episodeId: review.episodeId,
           traceId: review.traceId,
           serveDecisionRecordId: review.serveDecisionRecordId,
           selectionDigest: review.selectionDigest,
           turnCompileEventId: review.turnCompileEventId,
+          decisionRecordedAt: review.decisionRecordedAt,
+          activePackId: review.activePackId,
+          activePackEventExportDigest: review.activePackEventExportDigest,
           activePackGraphChecksum: review.activePackGraphChecksum,
+          activePackRouterChecksum: review.activePackRouterChecksum,
+          activePackBuiltAt: review.activePackBuiltAt,
           bindingMode: review.bindingMode,
-          attributionQuality,
-          feedbackRichness,
+          retrievalRelevance: review.retrievalRelevance,
+          agentUsage: review.agentUsage,
+          outcomeSupport: review.outcomeSupport,
+          finalScore: review.finalScore,
+          confidence: review.confidence,
+          reason: review.reason,
+        };
+
+        const evidence = this.store.insertEvidence({
+          episodeId: episode.id,
+          conversationId: episode.conversationId,
+          source: "teacher",
+          kind: "teacher_review",
+          value: review.finalScore,
+          confidence: review.confidence,
+          reason: review.reason,
+          contentSnippet: (observation.assistantResponse || episode.queryText).slice(0, 240),
+          metadata: {
+            observationId: observation.id,
+            traceId: review.traceId,
+            serveDecisionRecordId: review.serveDecisionRecordId,
+            selectionDigest: review.selectionDigest,
+            turnCompileEventId: review.turnCompileEventId,
+            activePackGraphChecksum: review.activePackGraphChecksum,
+            bindingMode: review.bindingMode,
+            attributionQuality,
+            feedbackRichness,
+            phase1Score: review.retrievalRelevance,
+            phase2Score: review.outcomeSupport,
+            agentUsage: review.agentUsage,
+            teacherEvaluation,
+            teacherInput: review.input,
+          },
+        });
+        const label = this.store.insertLabel({
+          episodeId: episode.id,
+          source: "teacher",
+          value: review.finalScore,
+          confidence: review.confidence,
+          reason: review.reason,
+        });
+        emittedLabelIds.push(label.id);
+        this.resolveEvidenceWithTrace({
+          episode,
+          evidence,
+          resolution: "promoted_to_label",
+          labelId: label.id,
+          note: "teacher_observation_v2",
+        });
+        this.store.completeObservationEvaluation({
+          observationId: observation.id,
           phase1Score: review.retrievalRelevance,
           phase2Score: review.outcomeSupport,
-          agentUsage: review.agentUsage,
+          finalScore: review.finalScore,
+          confidence: review.confidence,
+          reason: review.reason,
           teacherEvaluation,
-          teacherInput: review.input,
+        });
+        evaluatedCount += 1;
+        decisions.push({
+          observationId: observation.id,
+          episodeId: observation.episodeId,
+          traceId: observation.traceId,
+          decision: "evaluated",
+          reason: `${review.reason}; ${describeTeacherReadyReason(feedbackRichness)}`,
+          feedbackRichness,
+          bindingMode: review.bindingMode,
+          attributionQuality,
+          finalScore: review.finalScore,
+          confidence: review.confidence,
+          createdAt: observation.createdAt,
+          evaluatedAt: Date.now(),
+        });
+      }
+    } catch (error) {
+      await this.emitTeacherBatchLifecycle(buildTeacherBatchFlowLifecycleEvent({
+        state: {
+          ...teacherBatchState,
+          labelIds: emittedLabelIds,
+          evaluatedCount,
+          skippedCount,
         },
-      });
-      const label = this.store.insertLabel({
-        episodeId: episode.id,
-        source: "teacher",
-        value: review.finalScore,
-        confidence: review.confidence,
-        reason: review.reason,
-      });
-      this.resolveEvidenceWithTrace({
-        episode,
-        evidence,
-        resolution: "promoted_to_label",
-        labelId: label.id,
-        note: "teacher_observation_v2",
-      });
-      this.store.completeObservationEvaluation({
-        observationId: observation.id,
-        phase1Score: review.retrievalRelevance,
-        phase2Score: review.outcomeSupport,
-        finalScore: review.finalScore,
-        confidence: review.confidence,
-        reason: review.reason,
-        teacherEvaluation,
-      });
-      evaluatedCount += 1;
-      decisions.push({
-        observationId: observation.id,
-        episodeId: observation.episodeId,
-        traceId: observation.traceId,
-        decision: "evaluated",
-        reason: `${review.reason}; ${describeTeacherReadyReason(feedbackRichness)}`,
-        feedbackRichness,
-        bindingMode: review.bindingMode,
-        attributionQuality,
-        finalScore: review.finalScore,
-        confidence: review.confidence,
-        createdAt: observation.createdAt,
-        evaluatedAt: Date.now(),
-      });
+        step: "teacher_invoked",
+        status: "failed",
+        detail: formatTeacherBatchFailureDetail(error, "teacher batch evaluation failed"),
+      }));
+      throw error;
     }
 
     this.store.setTrainingStateJson("last_teacher_evaluation_cycle_json", {
@@ -674,6 +737,30 @@ export class BrainWorker {
           ? "no teacher observations were pending this cycle"
           : `${evaluatedCount} evaluated, ${skippedCount} skipped; ${queue.readyCount} ready, ${queue.delayedCount} delayed, ${queue.budgetDeferredCount} deferred by teacher budget`,
     });
+
+    if (!teacherBatchState) {
+      return null;
+    }
+
+    const batchStateAfterEvaluation: TeacherBatchFlowStateV1 = {
+      ...teacherBatchState,
+      labelIds: emittedLabelIds,
+      evaluatedCount,
+      skippedCount,
+    };
+    await this.emitTeacherBatchLifecycle(buildTeacherBatchFlowLifecycleEvent({
+      state: batchStateAfterEvaluation,
+      step: "evaluation_recorded",
+      detail: `${evaluatedCount} evaluated, ${skippedCount} skipped`,
+    }));
+    if (emittedLabelIds.length > 0) {
+      await this.emitTeacherBatchLifecycle(buildTeacherBatchFlowLifecycleEvent({
+        state: batchStateAfterEvaluation,
+        step: "reward_signal_emitted",
+        detail: `${emittedLabelIds.length} reward label(s) emitted from teacher evaluation`,
+      }));
+    }
+    return batchStateAfterEvaluation;
   }
 
   private async evaluatePendingShadowUsefulness(): Promise<void> {
@@ -687,24 +774,63 @@ export class BrainWorker {
     }
   }
 
-  private async processLabels(): Promise<void> {
+  private async processLabels(teacherBatchState: TeacherBatchFlowStateV1 | null = null): Promise<void> {
     const pending = this.store.getPendingLabels();
-    for (const label of pending) {
-      const episode = this.store.getEpisode(label.episodeId);
-      if (!episode) {
-        this.store.markLabelApplied(label.id);
-        continue;
-      }
-
-      if (episode.reward !== null && episode.rewardSource !== null) {
-        if (trustRank(episode.rewardSource) >= trustRank(label.source)) {
+    const pendingTeacherBatchLabelIds = new Set(teacherBatchState?.labelIds ?? []);
+    let appliedTeacherBatchLabelCount = 0;
+    try {
+      for (const label of pending) {
+        const episode = this.store.getEpisode(label.episodeId);
+        if (!episode) {
           this.store.markLabelApplied(label.id);
+          if (pendingTeacherBatchLabelIds.has(label.id)) {
+            appliedTeacherBatchLabelCount += 1;
+          }
           continue;
         }
-      }
 
-      this.store.setEpisodeReward(episode.id, label.value, label.source);
-      this.store.markLabelApplied(label.id);
+        if (episode.reward !== null && episode.rewardSource !== null) {
+          if (trustRank(episode.rewardSource) >= trustRank(label.source)) {
+            this.store.markLabelApplied(label.id);
+            if (pendingTeacherBatchLabelIds.has(label.id)) {
+              appliedTeacherBatchLabelCount += 1;
+            }
+            continue;
+          }
+        }
+
+        this.store.setEpisodeReward(episode.id, label.value, label.source);
+        this.store.markLabelApplied(label.id);
+        if (pendingTeacherBatchLabelIds.has(label.id)) {
+          appliedTeacherBatchLabelCount += 1;
+        }
+      }
+    } catch (error) {
+      if (teacherBatchState) {
+        await this.emitTeacherBatchLifecycle(buildTeacherBatchFlowLifecycleEvent({
+          state: {
+            ...teacherBatchState,
+            appliedLabelCount: appliedTeacherBatchLabelCount,
+          },
+          step: "reward_signal_applied",
+          status: "failed",
+          detail: formatTeacherBatchFailureDetail(error, "teacher batch reward application failed"),
+        }));
+      }
+      throw error;
+    }
+
+    if (teacherBatchState && teacherBatchState.labelIds.length > 0) {
+      const completedTeacherBatchState: TeacherBatchFlowStateV1 = {
+        ...teacherBatchState,
+        appliedLabelCount: appliedTeacherBatchLabelCount,
+      };
+      await this.emitTeacherBatchLifecycle(buildTeacherBatchFlowLifecycleEvent({
+        state: completedTeacherBatchState,
+        step: "reward_signal_applied",
+        status: "completed",
+        detail: `${appliedTeacherBatchLabelCount} reward label(s) applied or resolved`,
+      }));
     }
   }
 

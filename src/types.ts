@@ -85,6 +85,77 @@ export type ParseAgentSessionKeyFn = (sessionKey: string) => {
 
 export type IsSubagentSessionKeyFn = (sessionKey: string) => boolean;
 
+export type TaskFlowJsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: TaskFlowJsonValue }
+  | TaskFlowJsonValue[];
+
+export type ManagedTaskFlowStatusLike = "queued" | "running" | "waiting" | "failed" | "completed" | "cancelled";
+
+export type ManagedTaskFlowRecordLike = {
+  flowId: string;
+  revision: number;
+  status: ManagedTaskFlowStatusLike;
+  currentStep?: string | null;
+  stateJson?: TaskFlowJsonValue | null;
+  waitJson?: TaskFlowJsonValue | null;
+  endedAt?: number | null;
+};
+
+export type ManagedTaskFlowMutationResultLike = {
+  applied: true;
+  flow: ManagedTaskFlowRecordLike;
+} | {
+  applied: false;
+  code: string;
+  current?: ManagedTaskFlowRecordLike;
+};
+
+export interface BoundManagedTaskFlowRuntimeLike {
+  createManaged(params: {
+    controllerId: string;
+    goal: string;
+    status?: ManagedTaskFlowStatusLike;
+    currentStep?: string | null;
+    stateJson?: TaskFlowJsonValue | null;
+    waitJson?: TaskFlowJsonValue | null;
+    createdAt?: number;
+    updatedAt?: number;
+    endedAt?: number | null;
+  }): ManagedTaskFlowRecordLike;
+  get(flowId: string): ManagedTaskFlowRecordLike | undefined;
+  resume(params: {
+    flowId: string;
+    expectedRevision: number;
+    status?: Extract<ManagedTaskFlowStatusLike, "queued" | "running">;
+    currentStep?: string | null;
+    stateJson?: TaskFlowJsonValue | null;
+    updatedAt?: number;
+  }): ManagedTaskFlowMutationResultLike;
+  finish(params: {
+    flowId: string;
+    expectedRevision: number;
+    stateJson?: TaskFlowJsonValue | null;
+    updatedAt?: number;
+    endedAt?: number;
+  }): ManagedTaskFlowMutationResultLike;
+  fail(params: {
+    flowId: string;
+    expectedRevision: number;
+    stateJson?: TaskFlowJsonValue | null;
+    blockedSummary?: string | null;
+    updatedAt?: number;
+    endedAt?: number;
+  }): ManagedTaskFlowMutationResultLike;
+}
+
+export type BindManagedTaskFlowSessionFn = (params: {
+  sessionKey: string;
+}) => BoundManagedTaskFlowRuntimeLike | null;
+
 /**
  * Dependencies injected into the LCM engine at registration time.
  * These replace all direct imports from OpenClaw core.
@@ -135,6 +206,9 @@ export interface LcmDependencies {
 
   /** Resolve runtime session id from an agent session key */
   resolveSessionIdFromSessionKey: (sessionKey: string) => Promise<string | undefined>;
+
+  /** Bind a managed Task Flow runtime to a session when available */
+  bindManagedTaskFlowSession?: BindManagedTaskFlowSessionFn;
 
   /** Agent lane constant for subagents */
   agentLaneSubagent: string;

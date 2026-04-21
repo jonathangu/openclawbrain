@@ -1265,6 +1265,23 @@ function createLcmDependencies(api: OpenClawPluginApi): LcmDependencies {
         return undefined;
       }
     },
+    bindManagedTaskFlowSession: ({ sessionKey }) => {
+      const key = sessionKey.trim();
+      if (!key) {
+        return null;
+      }
+      const runtimeTasks = (api.runtime as { tasks?: { flow?: { bindSession?: (params: { sessionKey: string }) => unknown } } }).tasks;
+      const bindSession = runtimeTasks?.flow?.bindSession
+        ?? (api.runtime as { taskFlow?: { bindSession?: (params: { sessionKey: string }) => unknown } }).taskFlow?.bindSession;
+      if (typeof bindSession !== "function") {
+        return null;
+      }
+      try {
+        return bindSession({ sessionKey: key }) as ReturnType<NonNullable<LcmDependencies["bindManagedTaskFlowSession"]>>;
+      } catch {
+        return null;
+      }
+    },
     agentLaneSubagent: "subagent",
     log: {
       info: (msg) => api.logger.info(msg),

@@ -7,8 +7,30 @@ import type {
   ChildToParentMessage,
   ParentTeacherCompleteResultMessage,
   ParentToChildMessage,
+  WorkerTeacherBatchLifecycleMessage,
   WorkerTeacherCompleteRequestMessage,
 } from "../brain-worker/protocol.js";
+
+class TeacherBatchFlowBridge {
+  constructor(
+    private params: {
+      store: BrainStore;
+      log: { info: (msg: string) => void; warn: (msg: string) => void; error: (msg: string) => void };
+      onTeacherBatchLifecycle?: (message: WorkerTeacherBatchLifecycleMessage) => Promise<void> | void;
+    },
+  ) {}
+
+  async handle(message: WorkerTeacherBatchLifecycleMessage): Promise<void> {
+    this.params.store.setTrainingState("worker_last_teacher_batch_flow_lookup_key", message.event.lookupKey);
+    this.params.store.setTrainingState("worker_last_teacher_batch_flow_step", message.event.step);
+    this.params.store.setTrainingState("worker_last_teacher_batch_flow_status", message.event.status);
+    this.params.store.setTrainingStateJson("last_teacher_batch_flow_event_json", message.event);
+    this.params.log.info(
+      `[brain] teacher batch flow ${message.event.step} (${message.event.status}) ${message.event.lookupKey}`,
+    );
+    await this.params.onTeacherBatchLifecycle?.(message);
+  }
+}
 
 const childRunnerPath = fileURLToPath(new URL("../brain-worker/child-runner.ts", import.meta.url));
 const pluginRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -27,6 +49,7 @@ export class WorkerSupervisor {
   private child: ChildProcess | null = null;
   private shouldRun = false;
   private restartTimer: ReturnType<typeof setTimeout> | null = null;
+  private teacherBatchFlowBridge: TeacherBatchFlowBridge;
 
   constructor(
     private params: {
@@ -40,8 +63,15 @@ export class WorkerSupervisor {
         message: WorkerTeacherCompleteRequestMessage,
         teacherModel: { provider: string; model: string } | null,
       ) => Promise<ParentTeacherCompleteResultMessage>;
+      onTeacherBatchLifecycle?: (message: WorkerTeacherBatchLifecycleMessage) => Promise<void> | void;
     },
-  ) {}
+  ) {
+    this.teacherBatchFlowBridge = new TeacherBatchFlowBridge({
+      store: this.params.store,
+      log: this.params.log,
+      onTeacherBatchLifecycle: this.params.onTeacherBatchLifecycle,
+    });
+  }
 
   start(): void {
     if (!this.params.isEnabled()) {
@@ -192,6 +222,10 @@ export class WorkerSupervisor {
       }
       case "pack-promoted": {
         this.params.onPackPromoted();
+        return;
+      }
+      case "teacher-batch-lifecycle": {
+        await this.teacherBatchFlowBridge.handle(message);
         return;
       }
       case "teacher-complete": {

@@ -883,6 +883,97 @@ describe("LcmContextEngine.assemble canonical path", () => {
     }
   });
 
+  it("registers the owner session key for brain-backed teacher batches during assembly", async () => {
+    const previousOpenAiApiKey = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "test-key";
+    const brainRoot = mkdtempSync(join(tmpdir(), "openclawbrain-engine-owner-session-state-"));
+    const workspaceRoot = mkdtempSync(join(tmpdir(), "openclawbrain-engine-owner-session-workspace-"));
+    tempDirs.push(brainRoot, workspaceRoot);
+    try {
+      writeFileSync(
+        join(workspaceRoot, "PLAYBOOK.md"),
+        "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+        "utf8",
+      );
+
+      const fetchMock = vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ data: [{ embedding: Array.from(embedForBrain("gh pr create pull request")) }] }),
+      }));
+      vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+      const engine = createEngineWithConfig({
+        brain: {
+          enabled: true,
+          root: brainRoot,
+          budgetFraction: 0.3,
+          maxHops: 8,
+          maxFanoutPerNode: 4,
+          maxFrontierSize: 32,
+          maxSeeds: 10,
+          semanticThreshold: 0.1,
+          servingTemperature: 0.1,
+          learningTemperature: 1,
+          learningRate: 0.01,
+          baselineAlpha: 0.1,
+          decayRate: 0.995,
+          trainerIntervalMs: 10_000,
+          teacherEnabled: false,
+          persistRawSurfaces: false,
+          teacherProvider: "",
+          teacherModel: "",
+          autoUserCorrectionsEnabled: false,
+          autoUserCorrectionsProvider: "",
+          autoUserCorrectionsModel: "",
+          autoUserCorrectionsMinConfidence: 0.8,
+          mutationsEnabled: true,
+          replayEpisodeCount: 100,
+          minFiredPerQuery: 1,
+          maxDormantPercent: 0.3,
+          maxOrphanCount: 10,
+          shadowMode: false,
+          embeddingProvider: "openai",
+          embeddingModel: "text-embedding-3-small",
+          embeddingBaseUrl: "https://example.invalid/v1",
+        },
+      });
+      const brainService = engine.getBrainService();
+      expect(brainService).not.toBeNull();
+      await brainService!.init({
+        workspaceRoot,
+        embedFn: async (text) => embedForBrain(text),
+      });
+
+      const sessionId = "session-brain-owner-binding";
+      const sessionKey = "agent:main:telegram:8518484672";
+      const result = await engine.assemble({
+        sessionId,
+        sessionKey,
+        messages: [
+          { role: "user", content: "How do I open a pull request?" },
+        ] as AgentMessage[],
+        tokenBudget: 10_000,
+      });
+
+      expect(result.messages.length).toBeGreaterThan(0);
+      const conversation = await engine.getConversationStore().getConversationBySessionId(sessionId);
+      expect(conversation).not.toBeNull();
+
+      const store = (brainService as unknown as {
+        store: { getTrainingStateJson: <T>(key: string) => T | null };
+      }).store;
+      expect(store.getTrainingStateJson<Record<string, string>>("teacher_batch_owner_sessions_json")).toMatchObject({
+        [String(conversation!.conversationId)]: sessionKey,
+      });
+    } finally {
+      if (previousOpenAiApiKey === undefined) {
+        delete process.env.OPENAI_API_KEY;
+      } else {
+        process.env.OPENAI_API_KEY = previousOpenAiApiKey;
+      }
+    }
+  });
+
   it("fails open before brain query when the soft compile deadline is already exhausted", async () => {
     const brainRoot = mkdtempSync(join(tmpdir(), "openclawbrain-engine-deadline-state-"));
     const workspaceRoot = mkdtempSync(join(tmpdir(), "openclawbrain-engine-deadline-workspace-"));

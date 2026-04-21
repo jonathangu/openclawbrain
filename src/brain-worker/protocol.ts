@@ -1,4 +1,5 @@
 import type { CompletionContentBlock } from "../types.js";
+import type { TeacherBatchFlowLifecycleEventV1 } from "./teacher-job.js";
 
 export type WorkerReadyMessage = {
   type: "ready";
@@ -29,6 +30,13 @@ export type WorkerTickResultMessage = {
   error?: string;
 };
 
+export type WorkerTeacherBatchLifecycleMessage = {
+  type: "teacher-batch-lifecycle";
+  pid: number;
+  at: number;
+  event: TeacherBatchFlowLifecycleEventV1;
+};
+
 export type WorkerTeacherCompleteRequestMessage = {
   type: "teacher-complete";
   requestId: string;
@@ -57,6 +65,7 @@ export type ChildToParentMessage =
   | WorkerHeartbeatMessage
   | WorkerReloadGraphAckMessage
   | WorkerTickResultMessage
+  | WorkerTeacherBatchLifecycleMessage
   | WorkerTeacherCompleteRequestMessage
   | WorkerPackPromotedMessage
   | WorkerFatalErrorMessage;

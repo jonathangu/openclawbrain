@@ -641,6 +641,11 @@ export class BrainStore {
       .run(serializeEmbedding(embedding), Date.now(), id);
   }
 
+  updateNodeMetadata(id: string, metadata: Record<string, unknown>, updatedAt = Date.now()): void {
+    this.db.prepare(`UPDATE brain_nodes SET metadata = ?, updated_at = ? WHERE id = ?`)
+      .run(JSON.stringify(metadata), updatedAt, id);
+  }
+
   clearGraph(): void {
     this.db.exec(`
       DELETE FROM brain_tool_action_priors;

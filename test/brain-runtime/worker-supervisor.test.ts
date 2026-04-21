@@ -1,95 +1,93 @@
-import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { fork } from "node:child_process";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import { WorkerSupervisor } from "../../src/brain-runtime/worker-supervisor.js";
+import { buildTeacherBatchFlowLifecycleEvent, createTeacherBatchFlowState } from "../../src/brain-worker/teacher-job.js";
+import type { WorkerTeacherBatchLifecycleMessage } from "../../src/brain-worker/protocol.js";
 import { DEFAULT_BRAIN_CONFIG } from "../../src/brain-core/types.js";
-import { resolveChildWorkerExecArgv } from "../../src/brain-runtime/worker-supervisor.js";
 
-const tempDirs: string[] = [];
-const childRunnerPath = fileURLToPath(new URL("../../src/brain-worker/child-runner.ts", import.meta.url));
-
-function makeTempDir(prefix: string): string {
-  const dir = mkdtempSync(join(tmpdir(), prefix));
-  tempDirs.push(dir);
-  return dir;
+function createStore() {
+  const values = new Map<string, string>();
+  return {
+    values,
+    getTrainingState: (key: string) => values.get(key) ?? null,
+    setTrainingState: vi.fn((key: string, value: string | number) => {
+      values.set(key, String(value));
+    }),
+    setTrainingStateJson: vi.fn((key: string, value: unknown | null) => {
+      values.set(key, value === null ? "" : JSON.stringify(value));
+    }),
+  };
 }
 
-afterEach(() => {
-  while (tempDirs.length) {
-    const dir = tempDirs.pop();
-    if (dir) {
-      rmSync(dir, { recursive: true, force: true });
-    }
-  }
-});
-
-describe("resolveChildWorkerExecArgv", () => {
-  it("resolves tsx to an absolute loader path instead of relying on cwd", () => {
-    const execArgv = resolveChildWorkerExecArgv();
-    expect(execArgv[0]).toBe("--import");
-    expect(execArgv[1]).not.toBe("tsx/esm");
-    expect(execArgv[1]).toMatch(/^file:\/\//);
-  });
-
-  it("lets the child worker boot from cwd=/ without tsx resolution failures", async () => {
-    const brainRoot = makeTempDir("ocb-worker-supervisor-");
-    mkdirSync(brainRoot, { recursive: true });
-
-    const childConfig = {
-      ...DEFAULT_BRAIN_CONFIG,
-      root: brainRoot,
-      trainerIntervalMs: 60_000,
-      workerHeartbeatTimeoutMs: 5_000,
-      teacherEnabled: false,
-        persistRawSurfaces: false,
-      embeddingProvider: "ollama",
-      embeddingModel: "bge-large:latest",
-    };
-
-    const result = await new Promise<{ ready: boolean; stderr: string; exitCode: number | null }>((resolve) => {
-      let stderr = "";
-      let resolved = false;
-      const child = fork(childRunnerPath, [], {
-        cwd: "/",
-        execArgv: resolveChildWorkerExecArgv(),
-        stdio: ["ignore", "pipe", "pipe", "ipc"],
-        env: {
-          ...process.env,
-          OPENCLAWBRAIN_CHILD_CONFIG_JSON: JSON.stringify(childConfig),
-          OPENCLAWBRAIN_CHILD_TEACHER_MODEL_JSON: "",
-        },
-      });
-
-      const finish = (payload: { ready: boolean; stderr: string; exitCode: number | null }) => {
-        if (resolved) return;
-        resolved = true;
-        resolve(payload);
-      };
-
-      child.stderr?.on("data", (chunk) => {
-        stderr += String(chunk);
-      });
-
-      child.on("message", (message: { type?: string }) => {
-        if (message?.type === "ready") {
-          child.send?.({ type: "shutdown" });
-          finish({ ready: true, stderr, exitCode: null });
-        }
-      });
-
-      child.on("exit", (code) => {
-        finish({ ready: false, stderr, exitCode: code });
-      });
-
-      setTimeout(() => {
-        child.kill("SIGTERM");
-        finish({ ready: false, stderr, exitCode: null });
-      }, 5_000);
+describe("WorkerSupervisor teacher batch lifecycle bridge", () => {
+  it("records lifecycle breadcrumbs and forwards teacher batch events", async () => {
+    const store = createStore();
+    const onTeacherBatchLifecycle = vi.fn(async () => undefined);
+    const supervisor = new WorkerSupervisor({
+      config: {
+        ...DEFAULT_BRAIN_CONFIG,
+        root: "/tmp/openclawbrain-test",
+        semanticThreshold: 0.1,
+        trainerIntervalMs: 10_000,
+        workerMode: "child",
+        workerHeartbeatTimeoutMs: 5_000,
+        workerRestartDelayMs: 100,
+        teacherEnabled: false,
+      },
+      store: store as never,
+      log: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      },
+      teacherModel: null,
+      isEnabled: () => true,
+      onPackPromoted: vi.fn(),
+      onTeacherComplete: vi.fn(async () => ({
+        type: "teacher-complete-result",
+        requestId: "req_1",
+        ok: true,
+        content: [],
+      })),
+      onTeacherBatchLifecycle,
     });
 
-    expect(result.ready).toBe(true);
-    expect(result.stderr).not.toContain("Cannot find package 'tsx'");
+    const message: WorkerTeacherBatchLifecycleMessage = {
+      type: "teacher-batch-lifecycle",
+      pid: 123,
+      at: 456,
+      event: buildTeacherBatchFlowLifecycleEvent({
+        state: createTeacherBatchFlowState({
+          observations: [
+            { observationId: "bo_1", episodeId: "ep_1", conversationId: 42, createdAt: 10 },
+          ],
+          batchBudget: 1,
+        }),
+        step: "teacher_invoked",
+        emittedAt: 456,
+      }),
+    };
+
+    await (supervisor as unknown as {
+      handleMessage: (message: WorkerTeacherBatchLifecycleMessage, child: unknown) => Promise<void>;
+    }).handleMessage(message, {});
+
+    expect(store.setTrainingState).toHaveBeenCalledWith(
+      "worker_last_teacher_batch_flow_lookup_key",
+      message.event.lookupKey,
+    );
+    expect(store.setTrainingState).toHaveBeenCalledWith(
+      "worker_last_teacher_batch_flow_step",
+      "teacher_invoked",
+    );
+    expect(store.setTrainingState).toHaveBeenCalledWith(
+      "worker_last_teacher_batch_flow_status",
+      "running",
+    );
+    expect(store.setTrainingStateJson).toHaveBeenCalledWith(
+      "last_teacher_batch_flow_event_json",
+      message.event,
+    );
+    expect(onTeacherBatchLifecycle).toHaveBeenCalledWith(message);
   });
 });

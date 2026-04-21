@@ -1573,6 +1573,12 @@ export class LcmContextEngine implements ContextEngine {
       if (!conversation && shouldRouteThroughBrain) {
         conversation = await this.conversationStore.getOrCreateConversation(params.sessionId);
       }
+      if (conversation && this.brainService && typeof params.sessionKey === "string" && params.sessionKey.trim().length > 0) {
+        this.brainService.rememberTeacherBatchOwnerSession({
+          conversationId: conversation.conversationId,
+          sessionKey: params.sessionKey,
+        });
+      }
       if (!conversation) {
         const fallbackBrainDecision = brainDecision
           ? {

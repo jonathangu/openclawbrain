@@ -12,7 +12,7 @@ import { runBrainMigrations } from "../brain-store/migrations.js";
 import { BrainStore } from "../brain-store/store.js";
 import { promoteGraphSnapshot, reloadGraphFromStore } from "../brain-runtime/graph-io.js";
 import { buildWorkerPromotionSnapshotMetadata } from "../brain-runtime/promotion-story.js";
-import type { ChildToParentMessage, ParentToChildMessage } from "./protocol.js";
+import type { ChildToParentMessage, ParentToChildMessage, WorkerTeacherBatchLifecycleMessage } from "./protocol.js";
 import { BrainWorker } from "./worker.js";
 
 function send(message: ChildToParentMessage): void {
@@ -243,6 +243,15 @@ async function main(): Promise<void> {
         store.setTrainingState("worker_last_tick_ok", ok ? "true" : "false");
         store.setTrainingState("worker_last_tick_error", error ?? "");
         send({ type: "tick-result", pid: process.pid, at, ok, error });
+      },
+      onTeacherBatchLifecycle: (event) => {
+        const message: WorkerTeacherBatchLifecycleMessage = {
+          type: "teacher-batch-lifecycle",
+          pid: process.pid,
+          at: event.emittedAt,
+          event,
+        };
+        send(message);
       },
     },
   );
