@@ -1,0 +1,1509 @@
+[
+  {
+    "case_id": "cp-second-001-yaml-not-json",
+    "slice": "correction-follow-up",
+    "description": "Prefer YAML over JSON in a later config example.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When you show config examples, use YAML, not JSON."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use YAML for config examples."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Show a tiny app config with name demo and port 8080.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "name: demo",
+        "port: 8080"
+      ],
+      "negative_signals": [
+        "{",
+        "\"name\"",
+        "\"port\""
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-002-go-not-python",
+    "slice": "correction-follow-up",
+    "description": "Prefer Go over Python in a later code example.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use Go for code examples with me, not Python."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use Go."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a tiny HTTP handler that writes ok.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "package main",
+        "http.HandleFunc",
+        "fmt.Fprint"
+      ],
+      "negative_signals": [
+        "def ",
+        "from flask",
+        "Flask("
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-003-no-bold-markdown",
+    "slice": "correction-follow-up",
+    "description": "Avoid bold markdown later after an explicit style preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Please do not use bold markdown with me."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll avoid bold markdown."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write one bullet about release health.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "- ",
+        "release",
+        "health"
+      ],
+      "negative_signals": [
+        "**"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-004-iso-date-only",
+    "slice": "correction-follow-up",
+    "description": "Keep later date formatting in YYYY-MM-DD after a correction.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use YYYY-MM-DD for dates with me, not month names."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use YYYY-MM-DD dates."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Format July 9th 2026 as a date.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "2026-07-09"
+      ],
+      "negative_signals": [
+        "July 9",
+        "Jul 9",
+        "07/09/2026"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-005-numbered-not-bullets",
+    "slice": "correction-follow-up",
+    "description": "Use numbered lists later instead of bullets.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use numbered lists with me, not bullet lists."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use numbered lists."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Give me two short deployment checks.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "1.",
+        "2."
+      ],
+      "negative_signals": [
+        "- ",
+        "* "
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-006-euros-not-dollars",
+    "slice": "correction-follow-up",
+    "description": "Respect a euros-over-dollars preference in a later budget example.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use euros with me, not dollars, in budget examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Will do. I'll use euros."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Give a sample project budget line.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "\u20ac",
+        "EUR"
+      ],
+      "negative_signals": [
+        "$",
+        "USD"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-007-no-code-fences",
+    "slice": "correction-follow-up",
+    "description": "Avoid code fences later after an explicit preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Do not wrap code in markdown fences for me."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll avoid markdown code fences."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a tiny shell command that prints hi.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "echo",
+        "hi"
+      ],
+      "negative_signals": [
+        "```"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-008-named-export-not-default",
+    "slice": "correction-follow-up",
+    "description": "Use named exports instead of default exports in a later TS example.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "In TypeScript examples, use named exports, not default exports."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use named exports."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a tiny TypeScript module exporting greet.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "export function greet",
+        "export const greet"
+      ],
+      "negative_signals": [
+        "export default"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-009-zulu-timestamp",
+    "slice": "correction-follow-up",
+    "description": "Use Z suffix timestamps later after an explicit correction.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When you give UTC timestamps, use the Z suffix, not spelled-out UTC."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use Z suffix UTC timestamps."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Format March 1st 2027 at 14:05 UTC as a timestamp.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "2027-03-01T14:05Z",
+        "2027-03-01T14:05:00Z"
+      ],
+      "negative_signals": [
+        " UTC",
+        "+00:00"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-010-kebab-case-filename",
+    "slice": "correction-follow-up",
+    "description": "Use kebab-case filenames later after an explicit preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use kebab-case file names with me, not snake_case or camelCase."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use kebab-case file names."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Suggest a filename for a cache cleaner script.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "cache-cleaner"
+      ],
+      "negative_signals": [
+        "cache_cleaner",
+        "cacheCleaner"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-011-no-contractions",
+    "slice": "correction-follow-up",
+    "description": "Avoid contractions later after an explicit style request.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Do not use contractions when writing to me."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I will avoid contractions."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write one sentence about backups.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "do not",
+        "cannot",
+        "it is",
+        "backups"
+      ],
+      "negative_signals": [
+        "don't",
+        "can't",
+        "it's",
+        "won't"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-012-h2-not-h1",
+    "slice": "correction-follow-up",
+    "description": "Use H2 headings later instead of H1 headings.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use H2 headings with me, not H1 headings."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use H2 headings."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a heading for release notes.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "## Release notes",
+        "## release notes"
+      ],
+      "negative_signals": [
+        "# Release notes",
+        "# release notes"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-013-plain-email-not-mailto",
+    "slice": "correction-follow-up",
+    "description": "Use plain text email addresses later instead of mailto links.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When you show email addresses, use plain text, not mailto links."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use plain text email addresses."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Give me a support contact line.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "support@",
+        "email"
+      ],
+      "negative_signals": [
+        "mailto:"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-014-single-quotes-js",
+    "slice": "correction-follow-up",
+    "description": "Use single quotes later in JavaScript after an explicit preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use single quotes in JavaScript examples, not double quotes."
+      },
+      {
+        "role": "assistant",
+        "content": "Will do. I'll use single quotes."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a tiny JavaScript constant named mode with value dev.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "'dev'",
+        "const mode = 'dev'"
+      ],
+      "negative_signals": [
+        "\"dev\""
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-015-gh-issue-list",
+    "slice": "tool-heavy",
+    "description": "Prefer gh issue list over browser instructions for listing issues.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When I ask about GitHub issues, give me gh CLI commands, not browser steps."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use gh CLI commands."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I use to list open issues?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "gh issue list"
+      ],
+      "negative_signals": [
+        "github.com",
+        "open the browser"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-016-git-restore-not-checkout",
+    "slice": "tool-heavy",
+    "description": "Prefer git restore over checkout for discarding file changes.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use git restore, not git checkout, when undoing file changes."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use git restore."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I discard changes in README.md?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "git restore README.md"
+      ],
+      "negative_signals": [
+        "git checkout -- README.md",
+        "git checkout README.md"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-017-pnpm-dlx-not-npx",
+    "slice": "tool-heavy",
+    "description": "Prefer pnpm dlx over npx for one-off package execution.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use pnpm dlx for one-off tools, not npx."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use pnpm dlx."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I run prettier once on src/index.ts?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "pnpm dlx prettier",
+        "src/index.ts"
+      ],
+      "negative_signals": [
+        "npx prettier"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-018-uv-run-pytest",
+    "slice": "tool-heavy",
+    "description": "Prefer uv run pytest for running tests.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use uv run pytest when I ask how to run Python tests."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use uv run pytest."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I run the Python tests?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "uv run pytest"
+      ],
+      "negative_signals": [
+        "python -m pytest",
+        "pytest -q"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-019-docker-compose-logs",
+    "slice": "tool-heavy",
+    "description": "Prefer docker compose v2 logs command for following service logs.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use docker compose v2 commands with me, not old docker-compose syntax."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use docker compose v2 commands."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I use to follow logs for the web service?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "docker compose logs -f web"
+      ],
+      "negative_signals": [
+        "docker-compose logs -f web"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-020-jq-version-field",
+    "slice": "tool-heavy",
+    "description": "Prefer jq for extracting JSON fields.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use jq when I ask how to read JSON fields from the CLI."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use jq."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I print the version field from package.json?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "jq",
+        ".version",
+        "package.json"
+      ],
+      "negative_signals": [
+        "python -m json.tool",
+        "sed -n"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-021-fd-typescript-files",
+    "slice": "tool-heavy",
+    "description": "Prefer fd for finding files instead of generic find.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use fd instead of find when I ask about locating files."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use fd."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I run to find TypeScript files under src?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "fd",
+        "-e ts",
+        "src"
+      ],
+      "negative_signals": [
+        "find src",
+        "-name '*.ts'"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-022-rg-line-numbers",
+    "slice": "tool-heavy",
+    "description": "Prefer ripgrep with line numbers instead of grep -R.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use ripgrep, not grep -R, when I ask about searching code."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use ripgrep."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I search for TODO in src with line numbers?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "rg -n",
+        "TODO",
+        "src"
+      ],
+      "negative_signals": [
+        "grep -R",
+        "grep -rn"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-023-gh-issue-create",
+    "slice": "tool-heavy",
+    "description": "Prefer gh issue create over browser instructions.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When I ask how to open a GitHub issue, give me a gh CLI command, not browser steps."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use gh CLI commands."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I use to create a new issue?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "gh issue create"
+      ],
+      "negative_signals": [
+        "github.com",
+        "open a browser"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-024-git-switch-create-branch",
+    "slice": "tool-heavy",
+    "description": "Prefer git switch -c for creating a branch.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use git switch for branch changes, not git checkout."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use git switch."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I create and move onto hotfix/login?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "git switch -c hotfix/login"
+      ],
+      "negative_signals": [
+        "git checkout -b hotfix/login",
+        "git checkout hotfix/login"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-025-gh-repo-fork",
+    "slice": "tool-heavy",
+    "description": "Prefer gh repo fork for forking a repository.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When I ask how to fork a GitHub repo, give me a gh CLI command."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use gh CLI commands."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I use to fork owner/repo?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "gh repo fork owner/repo"
+      ],
+      "negative_signals": [
+        "fork it in the browser",
+        "github.com"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-026-json-then-yaml-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later YAML preference should override earlier JSON preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use JSON for config examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use JSON."
+      },
+      {
+        "role": "user",
+        "content": "Actually, switch that. Use YAML for config examples, not JSON."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use YAML instead."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Show a tiny app config with name demo and port 8080.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "name: demo",
+        "port: 8080"
+      ],
+      "negative_signals": [
+        "{",
+        "\"name\"",
+        "\"port\""
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-027-python-then-go-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later Go preference should beat earlier Python preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use Python for code examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use Python."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use Go for code examples, not Python."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use Go."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a tiny HTTP handler that writes ok.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "package main",
+        "http.HandleFunc",
+        "fmt.Fprint"
+      ],
+      "negative_signals": [
+        "def ",
+        "Flask(",
+        "from flask"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-028-bullets-then-numbered-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later numbered-list preference should beat earlier bullets preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use bullet lists with me."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use bullet lists."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use numbered lists with me, not bullets."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use numbered lists."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Give me two short deployment checks.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "1.",
+        "2."
+      ],
+      "negative_signals": [
+        "- ",
+        "* "
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-029-dollars-then-euros-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later euros preference should beat earlier dollars preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use dollars in budget examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use dollars."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use euros in budget examples, not dollars."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use euros."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Give a sample project budget line.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "\u20ac",
+        "EUR"
+      ],
+      "negative_signals": [
+        "$",
+        "USD"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-030-fences-then-no-fences-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later no-code-fence preference should beat earlier fenced-code preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Wrap code in markdown fences for me."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use code fences."
+      },
+      {
+        "role": "user",
+        "content": "Actually, do not wrap code in markdown fences."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll avoid code fences."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a tiny shell command that prints hi.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "echo",
+        "hi"
+      ],
+      "negative_signals": [
+        "```"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-031-default-then-named-export-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later named-export preference should beat earlier default-export preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use default exports in TypeScript examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use default exports."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use named exports in TypeScript examples, not default exports."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use named exports."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a tiny TypeScript module exporting greet.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "export function greet",
+        "export const greet"
+      ],
+      "negative_signals": [
+        "export default"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-032-contractions-then-none-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later no-contractions preference should beat earlier contractions preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Feel free to use contractions when writing to me."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I can use contractions."
+      },
+      {
+        "role": "user",
+        "content": "Actually, do not use contractions when writing to me."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I will avoid contractions."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write one sentence about backups.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "do not",
+        "cannot",
+        "it is",
+        "backups"
+      ],
+      "negative_signals": [
+        "don't",
+        "can't",
+        "it's",
+        "won't"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-033-double-then-single-quotes-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later single-quote preference should beat earlier double-quote preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use double quotes in JavaScript examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use double quotes."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use single quotes in JavaScript examples, not double quotes."
+      },
+      {
+        "role": "assistant",
+        "content": "Will do. I'll use single quotes."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a tiny JavaScript constant named mode with value dev.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "'dev'",
+        "const mode = 'dev'"
+      ],
+      "negative_signals": [
+        "\"dev\""
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-034-browser-then-gh-list-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later gh CLI issue-list preference should beat earlier browser guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When I ask about GitHub issues, tell me how to do it in the browser."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll give browser steps."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use gh CLI commands for GitHub issues, not browser steps."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use gh CLI commands."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I use to list open issues?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "gh issue list"
+      ],
+      "negative_signals": [
+        "github.com",
+        "open the browser"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-035-checkout-then-restore-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later git restore preference should beat earlier checkout guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use git checkout when undoing file changes."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use git checkout."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use git restore, not git checkout, when undoing file changes."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use git restore."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I discard changes in README.md?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "git restore README.md"
+      ],
+      "negative_signals": [
+        "git checkout -- README.md",
+        "git checkout README.md"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-036-npx-then-pnpm-dlx-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later pnpm dlx preference should beat earlier npx guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use npx for one-off tools."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use npx."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use pnpm dlx for one-off tools, not npx."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use pnpm dlx."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I run prettier once on src/index.ts?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "pnpm dlx prettier",
+        "src/index.ts"
+      ],
+      "negative_signals": [
+        "npx prettier"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-037-pytest-then-uv-run-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later uv run pytest preference should beat earlier python -m pytest guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use python -m pytest when I ask how to run Python tests."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use python -m pytest."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use uv run pytest when I ask how to run Python tests."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use uv run pytest."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I run the Python tests?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "uv run pytest"
+      ],
+      "negative_signals": [
+        "python -m pytest",
+        "pytest -q"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-038-grep-then-rg-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later ripgrep preference should beat earlier grep guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use grep -R when I ask how to search code."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use grep -R."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use ripgrep, not grep -R, when I ask how to search code."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use ripgrep."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I search for TODO in src with line numbers?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "rg -n",
+        "TODO",
+        "src"
+      ],
+      "negative_signals": [
+        "grep -R",
+        "grep -rn"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-039-find-then-fd-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later fd preference should beat earlier find guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use find when I ask how to locate files."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use find."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use fd instead of find when I ask how to locate files."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use fd."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I run to find TypeScript files under src?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "fd",
+        "-e ts",
+        "src"
+      ],
+      "negative_signals": [
+        "find src",
+        "-name '*.ts'"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-040-postgres-then-sqlite-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "Later SQLite preference should beat earlier Postgres preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use PostgreSQL in database examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use PostgreSQL."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use SQLite in database examples, not PostgreSQL."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use SQLite."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Show a CREATE TABLE for notes with an auto-incrementing id.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "INTEGER PRIMARY KEY",
+        "CREATE TABLE notes"
+      ],
+      "negative_signals": [
+        "SERIAL",
+        "BIGSERIAL"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-041-arithmetic-19-plus-24",
+    "slice": "direct-answer",
+    "description": "Direct arithmetic should stay correct and memory should stay unnecessary.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use YAML for config examples with me."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use YAML."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What is 19 plus 24? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "43"
+      ],
+      "negative_signals": [
+        "yaml",
+        "name:"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-042-arithmetic-9-times-7",
+    "slice": "direct-answer",
+    "description": "Direct arithmetic should ignore earlier stylistic memory.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use numbered lists with me, not bullets."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use numbered lists."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What is 9 times 7? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "63"
+      ],
+      "negative_signals": [
+        "1.",
+        "2."
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-043-capital-nepal",
+    "slice": "direct-answer",
+    "description": "Direct geography answer should remain simple and correct.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use Go for code examples, not Python."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use Go."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What is the capital of Nepal? Answer with just the city name.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "Kathmandu"
+      ],
+      "negative_signals": [
+        "package main",
+        "def "
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-044-vowels-orange",
+    "slice": "direct-answer",
+    "description": "Direct counting answer should ignore earlier memory.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Do not use contractions when writing to me."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I will avoid contractions."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How many vowels are in the word orange? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "3"
+      ],
+      "negative_signals": [
+        "do not",
+        "cannot"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-045-binary-of-6",
+    "slice": "direct-answer",
+    "description": "Direct binary conversion should remain correct.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use single quotes in JavaScript examples, not double quotes."
+      },
+      {
+        "role": "assistant",
+        "content": "Will do. I'll use single quotes."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What is 6 in binary? Answer with just the digits.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "110"
+      ],
+      "negative_signals": [
+        "'",
+        "\""
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-046-day-after-thursday",
+    "slice": "direct-answer",
+    "description": "Direct sequencing answer should remain simple.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use H2 headings with me, not H1 headings."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use H2 headings."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What day comes after Thursday? Answer with just the day.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "Friday"
+      ],
+      "negative_signals": [
+        "##"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-047-square-root-64",
+    "slice": "direct-answer",
+    "description": "Direct arithmetic answer should remain correct.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When you show email addresses, use plain text, not mailto links."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use plain text email addresses."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What is the square root of 64? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "8"
+      ],
+      "negative_signals": [
+        "mailto:",
+        "support@"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-048-letters-in-planet",
+    "slice": "direct-answer",
+    "description": "Direct counting answer should remain simple and correct.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use euros in budget examples, not dollars."
+      },
+      {
+        "role": "assistant",
+        "content": "Will do. I'll use euros."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How many letters are in the word planet? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "6"
+      ],
+      "negative_signals": [
+        "\u20ac",
+        "EUR"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-049-sort-8-2-5",
+    "slice": "direct-answer",
+    "description": "Direct sorting answer should not need memory.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use kebab-case file names with me, not snake_case or camelCase."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use kebab-case file names."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Sort these numbers ascending: 8 2 5. Answer with just the numbers separated by spaces.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "2 5 8"
+      ],
+      "negative_signals": [
+        "cache-cleaner",
+        "-"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-second-050-subtract-90-minus-37",
+    "slice": "direct-answer",
+    "description": "Direct subtraction should remain correct without memory help.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Do not wrap code in markdown fences for me."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll avoid markdown code fences."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What is 90 minus 37? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "53"
+      ],
+      "negative_signals": [
+        "```",
+        "echo"
+      ]
+    }
+  }
+]

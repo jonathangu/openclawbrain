@@ -16,15 +16,20 @@ import { Ledger } from "../src/ledger/ledger.js";
 import type { TaskCase, TurnSlice } from "../src/types.js";
 
 async function main(): Promise<void> {
-  const model = process.env.OCB_MODEL ?? "gemma4:31b-q4_k_m";
+  const model = process.env.OCB_MODEL ?? "qwen2.5:32b-instruct";
+  const ollamaHost = process.env.OCB_OLLAMA_HOST ?? "http://localhost:11434";
+  const timeoutMs = Number.parseInt(process.env.OCB_TIMEOUT_MS ?? "", 10) || 600_000;
+  const maxRetries = Number.parseInt(process.env.OCB_MAX_RETRIES ?? "", 10) || 2;
+  const maxOutputTokens = Number.parseInt(process.env.OCB_MAX_OUTPUT_TOKENS ?? "", 10) || 128;
   const ledgerPath = process.env.OCB_LEDGER ?? "./ocb-ledger.sqlite";
   const casesPath = process.env.OCB_CASES ?? "./cases/correction-recurrence.json";
   const resultsDir = process.env.OCB_RESULTS ?? "./results";
+  const runId = process.env.OCB_RUN_ID;
 
   const cases = JSON.parse(await readFile(casesPath, "utf8")) as TaskCase[];
   const ledger = new Ledger(ledgerPath);
   try {
-    const agent = new OllamaClient(model);
+    const agent = new OllamaClient(model, ollamaHost, timeoutMs, maxRetries, maxOutputTokens);
     const backends: MemoryBackendImpl[] = [
       new NoneBackend(),
       new CorrectionOnlyBackend(),
@@ -36,8 +41,8 @@ async function main(): Promise<void> {
       backends.push(new FullOcbBackend(await createOcbAdapter()));
     }
 
-    const run_id = randomUUID();
-    console.log(`run_id=${run_id} model=${model} cases=${cases.length} backends=${backends.map((backend) => backend.name).join(",")}`);
+    const run_id = runId ?? randomUUID();
+    console.log(`run_id=${run_id} model=${model} host=${ollamaHost} timeout_ms=${timeoutMs} max_retries=${maxRetries} max_output_tokens=${maxOutputTokens} cases=${cases.length} backends=${backends.map((backend) => backend.name).join(",")} resume=${runId ? "explicit" : "fresh"}`);
 
     const { summary } = await runAblation({
       run_id,

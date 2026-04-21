@@ -1,0 +1,1511 @@
+[
+  {
+    "case_id": "cp-prereg-001-typescript-not-javascript",
+    "slice": "correction-follow-up",
+    "description": "Prefer TypeScript over JavaScript in later code examples.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Don't use JavaScript for examples. I want TypeScript, not JavaScript."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use TypeScript."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a small URL parser example for me.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        ": string",
+        "interface ",
+        "type ",
+        "new URL("
+      ],
+      "negative_signals": [
+        "```javascript",
+        "const parseUrl = (input) =>",
+        "function parseUrl(input)"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-002-no-comments-python",
+    "slice": "correction-follow-up",
+    "description": "Keep later code comment-free after the user asked for no comments.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When you write code for me, don't include comments."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll keep the code comment-free."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a Python function that reverses a string.",
+    "success_criteria": {
+      "type": "regex",
+      "pattern": "def\\s+\\w+\\s*\\(",
+      "must_not_match": "^\\s*#|^\\s*//|^\\s*/\\*|^\\s*\\*|^\\s*\"\"\"|^\\s*'''"
+    }
+  },
+  {
+    "case_id": "cp-prereg-003-metric-recipe",
+    "slice": "correction-follow-up",
+    "description": "Respect metric-only cooking guidance later in the conversation.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Please use metric units with me, not imperial."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll stick to metric units."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Give me a simple recipe for roasted carrots.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        " g ",
+        " ml ",
+        "\u00b0c",
+        "180c",
+        "200c"
+      ],
+      "negative_signals": [
+        " cup",
+        " cups",
+        "tbsp",
+        "tablespoon",
+        "\u00b0f",
+        "350f",
+        "400f"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-004-peanut-allergy",
+    "slice": "correction-follow-up",
+    "description": "Carry forward a peanut allergy into later food advice.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "I'm allergic to peanuts. Don't suggest peanuts or peanut oil in food ideas."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll avoid peanuts and peanut oil."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Give me a quick lunch idea and add a brief safety note.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "allergy-safe",
+        "safe option",
+        "safe for you"
+      ],
+      "negative_signals": [
+        "peanut oil",
+        "satay",
+        "peanut butter"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-005-british-spelling",
+    "slice": "correction-follow-up",
+    "description": "Keep British spelling after the user corrected away from American spelling.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Please use British spelling with me, not American spelling."
+      },
+      {
+        "role": "assistant",
+        "content": "Will do. I'll use British spelling."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Write one sentence about organising a project colour palette.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "organising",
+        "colour"
+      ],
+      "negative_signals": [
+        "organizing",
+        "color"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-006-iso-timestamp",
+    "slice": "correction-follow-up",
+    "description": "Later timestamps should stay in ISO 8601 after an explicit format correction.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When you give me timestamps, use ISO 8601 format, not slash dates or AM/PM style."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use ISO 8601 timestamps."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Format April 5th 2026 at 6:07 pm as a local timestamp.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "2026-04-05T18:07",
+        "2026-04-05 18:07"
+      ],
+      "negative_signals": [
+        "04/05/2026",
+        "4/5/2026",
+        "6:07 PM",
+        "6:07 pm"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-007-no-emoji",
+    "slice": "correction-follow-up",
+    "description": "Avoid emojis in a later short writing task after the user explicitly banned them.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Don't use emojis when you write to me."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll keep it emoji-free."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a one-line release note for a bug fix.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "fix",
+        "bug"
+      ],
+      "negative_signals": [
+        "\ud83d\ude00",
+        "\ud83c\udf89",
+        "\ud83d\ude80",
+        "\u2705",
+        "\u2728",
+        "\ud83d\ude42"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-008-bash-not-fish",
+    "slice": "correction-follow-up",
+    "description": "Respect a bash-over-fish shell preference in a later shell snippet.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use bash examples for shell snippets, not fish shell."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use bash examples."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Show the first line of a shell script and one echo command.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "#!/usr/bin/env bash",
+        "echo \"hello\"",
+        "echo 'hello'"
+      ],
+      "negative_signals": [
+        "#!/usr/bin/env fish",
+        "set -gx",
+        "function "
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-009-no-markdown-tables",
+    "slice": "correction-follow-up",
+    "description": "Keep summaries out of markdown tables after an explicit preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Don't use markdown tables with me. Use bullets instead."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use bullet lists instead of tables."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Give me two bullet points about using linting.",
+    "success_criteria": {
+      "type": "regex",
+      "pattern": "^[-*] ",
+      "must_not_match": "\\|"
+    }
+  },
+  {
+    "case_id": "cp-prereg-010-pytest-not-unittest",
+    "slice": "tool-heavy",
+    "description": "Respect pytest over unittest in a later test example.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use pytest examples for Python tests, not unittest."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use pytest."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a minimal Python test for add(1, 2) == 3.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "def test_",
+        "assert add(1, 2) == 3"
+      ],
+      "negative_signals": [
+        "import unittest",
+        "class Test"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-011-postgres-not-mysql",
+    "slice": "correction-follow-up",
+    "description": "Carry a Postgres preference into a later SQL example.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use PostgreSQL examples for me, not MySQL."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use PostgreSQL examples."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Show a CREATE TABLE for users with an auto-incrementing id.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "SERIAL",
+        "GENERATED ALWAYS AS IDENTITY",
+        "GENERATED BY DEFAULT AS IDENTITY"
+      ],
+      "negative_signals": [
+        "AUTO_INCREMENT"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-012-24-hour-time",
+    "slice": "correction-follow-up",
+    "description": "Later times should stay in 24-hour format after an explicit correction.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use 24-hour time with me, not AM/PM."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay. I'll use 24-hour time."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Express 6:30 pm in 24-hour time.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "18:30"
+      ],
+      "negative_signals": [
+        "6:30 PM",
+        "6:30 pm"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-013-no-semicolons",
+    "slice": "correction-follow-up",
+    "description": "Keep semicolons out of a later JavaScript snippet after the user banned them.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "When you write JavaScript for me, don't use semicolons."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll omit semicolons."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Write a short JavaScript function named add.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "const add = (a, b) => a + b",
+        "function add(a, b) {"
+      ],
+      "negative_signals": [
+        ";"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-014-hex-not-rgb",
+    "slice": "correction-follow-up",
+    "description": "Respect a hex-colour preference in a later CSS example.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use hex colour values for CSS examples, not rgb()."
+      },
+      {
+        "role": "assistant",
+        "content": "Will do. I'll use hex colours."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Show a CSS color example for a button.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "#"
+      ],
+      "negative_signals": [
+        "rgb("
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-015-example-org",
+    "slice": "correction-follow-up",
+    "description": "Remember the corrected placeholder email domain later in the conversation.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use example.org for placeholder email addresses, not example.com."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use example.org."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Draft a placeholder support email address.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "@example.org"
+      ],
+      "negative_signals": [
+        "@example.com"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-016-gh-pr-create",
+    "slice": "tool-heavy",
+    "description": "Carry forward a gh-over-hub preference for pull request commands.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use gh pr create for pull requests, not hub pull-request."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use gh pr create."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "Which command should I use to open a pull request from the CLI?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "gh pr create"
+      ],
+      "negative_signals": [
+        "hub pull-request"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-017-rg-not-grep",
+    "slice": "tool-heavy",
+    "description": "Carry forward an rg-over-grep recursive search preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use rg for recursive text search, not grep -R."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use rg."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I run to search for TODO under src?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "rg TODO src",
+        "rg 'TODO' src",
+        "rg \"TODO\" src"
+      ],
+      "negative_signals": [
+        "grep -R"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-018-pnpm-not-npm",
+    "slice": "tool-heavy",
+    "description": "Carry forward a pnpm-over-npm package install preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use pnpm for Node package installs, not npm."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use pnpm."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I use to install lodash in an existing project?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "pnpm add lodash"
+      ],
+      "negative_signals": [
+        "npm install lodash"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-019-uv-not-pip",
+    "slice": "tool-heavy",
+    "description": "Carry forward a uv-over-pip Python dependency preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use uv to add Python dependencies, not pip install."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use uv."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I run to add requests to the project?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "uv add requests"
+      ],
+      "negative_signals": [
+        "pip install requests"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-020-python3-m-pytest",
+    "slice": "tool-heavy",
+    "description": "Carry forward python3 -m pytest over plain pytest.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use python3 -m pytest to run tests, not plain pytest."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use python3 -m pytest."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I run the Python test suite?",
+    "success_criteria": {
+      "type": "regex",
+      "pattern": "python3\\s+-m\\s+pytest",
+      "must_not_match": "^pytest\\b|\\npytest\\b|`pytest\\b"
+    }
+  },
+  {
+    "case_id": "cp-prereg-021-docker-compose-v2",
+    "slice": "tool-heavy",
+    "description": "Carry forward docker compose over docker-compose.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use docker compose, not docker-compose."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll use docker compose."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I use to start the compose stack in the foreground?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "docker compose up"
+      ],
+      "negative_signals": [
+        "docker-compose up"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-022-fd-not-find",
+    "slice": "tool-heavy",
+    "description": "Carry forward fd over find for filename search.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use fd for filename search, not find . -name."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use fd."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I run to find files named config?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "fd config"
+      ],
+      "negative_signals": [
+        "find . -name"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-023-jq-not-sed",
+    "slice": "tool-heavy",
+    "description": "Carry forward jq over sed/awk for JSON extraction.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use jq for JSON extraction, not sed or awk."
+      },
+      {
+        "role": "assistant",
+        "content": "Will do. I'll use jq."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "How should I print the version field from package.json?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "jq",
+        ".version"
+      ],
+      "negative_signals": [
+        "sed",
+        "awk"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-024-git-switch-not-checkout",
+    "slice": "tool-heavy",
+    "description": "Carry forward git switch over git checkout for branch switching.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use git switch for branch changes, not git checkout."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use git switch."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I use to move onto feature/login?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "git switch feature/login"
+      ],
+      "negative_signals": [
+        "git checkout feature/login"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-025-gh-repo-clone",
+    "slice": "tool-heavy",
+    "description": "Carry forward gh repo clone over git clone for GitHub repos.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use gh repo clone for GitHub repositories, not git clone."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use gh repo clone."
+      }
+    ],
+    "filler_turns": 4,
+    "query": "What command should I use to clone owner/repo from GitHub?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "gh repo clone owner/repo"
+      ],
+      "negative_signals": [
+        "git clone"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-026-vue3-over-vue2",
+    "slice": "stale-memory-conflict",
+    "description": "A later explicit correction to Vue 3 should outrank an earlier Vue 2 preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use Vue 2 for frontend examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use Vue 2 examples."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use Vue 3 now, not Vue 2."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use Vue 3."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Show me a small Vue component example.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "<script setup",
+        "ref("
+      ],
+      "negative_signals": [
+        "new Vue(",
+        "Vue.extend",
+        "vue@2"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-027-react-hooks-over-classes",
+    "slice": "stale-memory-conflict",
+    "description": "A later explicit correction to React hooks should outrank earlier class-component guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use React class components for examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use class components."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use hooks now, not class components."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use hooks."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Show a small React counter component.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "useState("
+      ],
+      "negative_signals": [
+        "class Counter extends React.Component",
+        "this.state",
+        "setState("
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-028-pnpm-over-npm-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to pnpm should outrank an earlier npm preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use npm for Node package installs."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use npm."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use pnpm now, not npm."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use pnpm."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "How should I install react in the project?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "pnpm add react"
+      ],
+      "negative_signals": [
+        "npm install react"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-029-postgres-over-mysql-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to Postgres should outrank an earlier MySQL preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use MySQL examples for SQL."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use MySQL."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use PostgreSQL now, not MySQL."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use PostgreSQL."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Show a CREATE TABLE for users with an auto-incrementing id.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "SERIAL",
+        "GENERATED ALWAYS AS IDENTITY",
+        "GENERATED BY DEFAULT AS IDENTITY"
+      ],
+      "negative_signals": [
+        "AUTO_INCREMENT"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-030-poetry-over-pipenv",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to Poetry should outrank an earlier Pipenv preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use Pipenv for Python dependencies."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use Pipenv."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use Poetry now, not Pipenv."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use Poetry."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "How should I add requests to the project?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "poetry add requests"
+      ],
+      "negative_signals": [
+        "pipenv install requests"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-031-esm-over-commonjs",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to ESM should outrank earlier CommonJS guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use CommonJS examples for Node scripts."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use CommonJS."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use ESM now, not CommonJS."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use ESM."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Show a Node example that reads a file.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "import fs from 'node:fs'",
+        "import { readFileSync } from 'node:fs'",
+        "import fs from \"node:fs\""
+      ],
+      "negative_signals": [
+        "require("
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-032-vitest-over-jest",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to Vitest should outrank earlier Jest guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use Jest for JavaScript tests."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use Jest."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use Vitest now, not Jest."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use Vitest."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Show a minimal JavaScript test for sum(1, 2) === 3.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "from \"vitest\"",
+        "from 'vitest'"
+      ],
+      "negative_signals": [
+        "@jest/globals",
+        "jest."
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-033-two-spaces-over-tabs",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to two-space indentation should outrank earlier tab guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use tabs for indentation in config snippets."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use tabs."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use two spaces now, not tabs."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use two spaces."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Show a YAML snippet with app name and port 3000.",
+    "success_criteria": {
+      "type": "regex",
+      "pattern": "^app:\\n  name:",
+      "must_not_match": "\\t"
+    }
+  },
+  {
+    "case_id": "cp-prereg-034-celsius-over-fahrenheit",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to Celsius should outrank an earlier Fahrenheit preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use Fahrenheit temperatures for recipes."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use Fahrenheit."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use Celsius now, not Fahrenheit."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use Celsius."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "What oven temperature should I use for roasting vegetables? Give a common default.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "180\u00b0C",
+        "200\u00b0C",
+        "180 c",
+        "200 c"
+      ],
+      "negative_signals": [
+        "350\u00b0F",
+        "400\u00b0F",
+        "350 f",
+        "400 f"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-035-node20-over-node18",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to Node 20 should outrank an earlier Node 18 preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use Node 18 in Dockerfile examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use Node 18."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use Node 20 now, not Node 18."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use Node 20."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Show the first line of a Node Dockerfile.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "FROM node:20"
+      ],
+      "negative_signals": [
+        "FROM node:18"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-036-main-over-master",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to main should outrank an earlier master preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use master as the default branch name."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use master."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use main now, not master."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use main."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Which branch name should I target for the default branch?",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "main"
+      ],
+      "negative_signals": [
+        "master"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-037-northstar-over-polaris",
+    "slice": "stale-memory-conflict",
+    "description": "A later product rename should outrank the earlier project name.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "The app name is Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, Polaris it is."
+      },
+      {
+        "role": "user",
+        "content": "Actually, the app name is Northstar now, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use Northstar."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Write a one-line release note for the app.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "Northstar"
+      ],
+      "negative_signals": [
+        "Polaris"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-038-bullets-over-tables-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction away from markdown tables should outrank an earlier table preference.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use markdown tables for summaries."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use tables."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use bullets now, not markdown tables."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use bullets."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Give me two bullet points about backups.",
+    "success_criteria": {
+      "type": "regex",
+      "pattern": "^[-*] ",
+      "must_not_match": "\\|"
+    }
+  },
+  {
+    "case_id": "cp-prereg-039-typescript-over-javascript-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to TypeScript should outrank earlier JavaScript guidance.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use JavaScript for examples."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use JavaScript."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use TypeScript now, not JavaScript."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use TypeScript."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Write a small URL parser example for me.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        ": string",
+        "interface ",
+        "type ",
+        "new URL("
+      ],
+      "negative_signals": [
+        "```javascript",
+        "const parseUrl = (input) =>",
+        "function parseUrl(input)"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-040-british-over-american-conflict",
+    "slice": "stale-memory-conflict",
+    "description": "A later correction to British spelling should outrank earlier American spelling.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use American spelling with me."
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, I'll use American spelling."
+      },
+      {
+        "role": "user",
+        "content": "Actually, use British spelling now, not American spelling."
+      },
+      {
+        "role": "assistant",
+        "content": "Understood. I'll use British spelling."
+      }
+    ],
+    "filler_turns": 5,
+    "query": "Write one sentence about organising a project colour palette.",
+    "success_criteria": {
+      "type": "contains_any",
+      "positive_signals": [
+        "organising",
+        "colour"
+      ],
+      "negative_signals": [
+        "organizing",
+        "color"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-041-arithmetic-17-plus-26",
+    "slice": "direct-answer",
+    "description": "Negative control: memory should stay quiet on a simple arithmetic answer.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use TypeScript, metric units, and call the app Northstar, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll remember those preferences."
+      }
+    ],
+    "filler_turns": 3,
+    "query": "What is 17 plus 26? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": [
+        "43"
+      ],
+      "negative_signals": [
+        "typescript",
+        "metric",
+        "northstar",
+        "polaris",
+        "because"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-042-arithmetic-7-times-8",
+    "slice": "direct-answer",
+    "description": "Negative control: memory should stay quiet on a simple multiplication answer.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use TypeScript, metric units, and call the app Northstar, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll remember those preferences."
+      }
+    ],
+    "filler_turns": 3,
+    "query": "What is 7 times 8? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": [
+        "56"
+      ],
+      "negative_signals": [
+        "typescript",
+        "metric",
+        "northstar",
+        "polaris",
+        "because"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-043-capital-uruguay",
+    "slice": "direct-answer",
+    "description": "Negative control: memory should stay quiet on a direct geography fact.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use TypeScript, metric units, and call the app Northstar, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll remember those preferences."
+      }
+    ],
+    "filler_turns": 3,
+    "query": "What is the capital of Uruguay? Answer with just the city name.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": [
+        "Montevideo"
+      ],
+      "negative_signals": [
+        "typescript",
+        "metric",
+        "northstar",
+        "polaris",
+        "because"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-044-vowels-banana",
+    "slice": "direct-answer",
+    "description": "Negative control: memory should stay quiet on a direct counting task.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use TypeScript, metric units, and call the app Northstar, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll remember those preferences."
+      }
+    ],
+    "filler_turns": 3,
+    "query": "How many vowels are in the word banana? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": [
+        "3"
+      ],
+      "negative_signals": [
+        "typescript",
+        "metric",
+        "northstar",
+        "polaris",
+        "because"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-045-binary-of-5",
+    "slice": "direct-answer",
+    "description": "Negative control: memory should stay quiet on a base conversion answer.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use TypeScript, metric units, and call the app Northstar, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll remember those preferences."
+      }
+    ],
+    "filler_turns": 3,
+    "query": "What is 5 in binary? Answer with just the digits.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": [
+        "101"
+      ],
+      "negative_signals": [
+        "typescript",
+        "metric",
+        "northstar",
+        "polaris",
+        "because"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-046-day-after-monday",
+    "slice": "direct-answer",
+    "description": "Negative control: memory should stay quiet on a direct weekday answer.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use TypeScript, metric units, and call the app Northstar, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll remember those preferences."
+      }
+    ],
+    "filler_turns": 3,
+    "query": "What day comes after Monday? Answer with just the day.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": [
+        "Tuesday"
+      ],
+      "negative_signals": [
+        "typescript",
+        "metric",
+        "northstar",
+        "polaris",
+        "because"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-047-square-root-81",
+    "slice": "direct-answer",
+    "description": "Negative control: memory should stay quiet on a direct square-root answer.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use TypeScript, metric units, and call the app Northstar, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll remember those preferences."
+      }
+    ],
+    "filler_turns": 3,
+    "query": "What is the square root of 81? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": [
+        "9"
+      ],
+      "negative_signals": [
+        "typescript",
+        "metric",
+        "northstar",
+        "polaris",
+        "because"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-048-letters-in-robot",
+    "slice": "direct-answer",
+    "description": "Negative control: memory should stay quiet on a direct letter-count answer.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use TypeScript, metric units, and call the app Northstar, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll remember those preferences."
+      }
+    ],
+    "filler_turns": 3,
+    "query": "How many letters are in the word robot? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": [
+        "5"
+      ],
+      "negative_signals": [
+        "typescript",
+        "metric",
+        "northstar",
+        "polaris",
+        "because"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-049-sort-4-1-3",
+    "slice": "direct-answer",
+    "description": "Negative control: memory should stay quiet on a direct sorting answer.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use TypeScript, metric units, and call the app Northstar, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll remember those preferences."
+      }
+    ],
+    "filler_turns": 3,
+    "query": "Sort these numbers ascending: 4 1 3. Answer with just the numbers separated by spaces.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": [
+        "1 3 4"
+      ],
+      "negative_signals": [
+        "typescript",
+        "metric",
+        "northstar",
+        "polaris",
+        "because"
+      ]
+    }
+  },
+  {
+    "case_id": "cp-prereg-050-subtract-100-minus-58",
+    "slice": "direct-answer",
+    "description": "Negative control: memory should stay quiet on another simple arithmetic answer.",
+    "setup_turns": [
+      {
+        "role": "user",
+        "content": "Use TypeScript, metric units, and call the app Northstar, not Polaris."
+      },
+      {
+        "role": "assistant",
+        "content": "Got it. I'll remember those preferences."
+      }
+    ],
+    "filler_turns": 3,
+    "query": "What is 100 minus 58? Answer with just the number.",
+    "success_criteria": {
+      "type": "contains_all",
+      "positive_signals": [
+        "42"
+      ],
+      "negative_signals": [
+        "typescript",
+        "metric",
+        "northstar",
+        "polaris",
+        "because"
+      ]
+    }
+  }
+]

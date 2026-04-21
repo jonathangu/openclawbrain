@@ -21,7 +21,7 @@ export interface MemoryBackendImpl {
 export class NoneBackend implements MemoryBackendImpl {
   readonly name = "none" as const;
 
-  async decide(): Promise<MemoryDecision> {
+  async decide(_history?: ChatTurn[], _query?: string): Promise<MemoryDecision> {
     return {
       fire: false,
       retrieved: [],
@@ -145,8 +145,8 @@ export class FullOcbBackend implements MemoryBackendImpl {
         fire: boolean;
         retrieved: RetrievedItem[];
         injected_text: string;
-        gate_score: number;
-        gate_threshold: number;
+        gate_score: number | null;
+        gate_threshold: number | null;
       }>;
     },
   ) {}

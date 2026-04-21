@@ -495,6 +495,11 @@ function cloneInjectedNodeSummary(summary: DecisionTraceInjectedNodeSummary): De
     tags: [...summary.tags],
     tokenCount: summary.tokenCount,
     contentPreview: summary.contentPreview,
+    correctionState: summary.correctionState,
+    correctionSubjectKey: summary.correctionSubjectKey,
+    correctionSubjectText: summary.correctionSubjectText,
+    correctionConflictSetId: summary.correctionConflictSetId,
+    correctionNeedsSourceExpansion: summary.correctionNeedsSourceExpansion,
   };
 }
 
@@ -1037,6 +1042,22 @@ function summarizeBranchOutcomes(traversalResult: TraverseResult): {
 }
 
 function summarizeInjectedNode(node: BrainNode): DecisionTraceInjectedNodeSummary {
+  const correctionMemory = node.kind === "correction"
+    && typeof node.metadata === "object"
+    && node.metadata !== null
+    && !Array.isArray(node.metadata)
+    && typeof node.metadata.correctionMemory === "object"
+    && node.metadata.correctionMemory !== null
+    && !Array.isArray(node.metadata.correctionMemory)
+    ? node.metadata.correctionMemory as {
+        state?: unknown;
+        subjectKey?: unknown;
+        subjectText?: unknown;
+        conflictSetId?: unknown;
+        validity?: { needsSourceExpansion?: unknown };
+      }
+    : null;
+  const correctionState = correctionMemory?.state;
   return {
     nodeId: node.id,
     kind: node.kind,
@@ -1046,6 +1067,20 @@ function summarizeInjectedNode(node: BrainNode): DecisionTraceInjectedNodeSummar
     tags: [...node.tags],
     tokenCount: node.tokenCount,
     contentPreview: truncatePreview(node.content),
+    correctionState: correctionState === "current"
+      || correctionState === "superseded"
+      || correctionState === "conflicting"
+      || correctionState === "stale"
+      ? correctionState
+      : undefined,
+    correctionSubjectKey: typeof correctionMemory?.subjectKey === "string" ? correctionMemory.subjectKey : null,
+    correctionSubjectText: typeof correctionMemory?.subjectText === "string" ? correctionMemory.subjectText : null,
+    correctionConflictSetId: typeof correctionMemory?.conflictSetId === "string"
+      ? correctionMemory.conflictSetId
+      : null,
+    correctionNeedsSourceExpansion: typeof correctionMemory?.validity?.needsSourceExpansion === "boolean"
+      ? correctionMemory.validity.needsSourceExpansion
+      : null,
   };
 }
 

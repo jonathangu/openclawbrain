@@ -50,6 +50,41 @@ export class Ledger {
     this.db.exec(SCHEMA);
   }
 
+  getRecordedOutcome(args: {
+    run_id: string;
+    case_id: string;
+    backend: MemoryBackend;
+  }): { task_passed: boolean } | null {
+    const row = this.db
+      .prepare(
+        `SELECT o.task_passed AS task_passed
+         FROM decisions d
+         JOIN outcomes o ON o.decision_id = d.decision_id
+         WHERE d.run_id = ? AND d.case_id = ? AND d.backend = ?`,
+      )
+      .get(args.run_id, args.case_id, args.backend) as { task_passed: number } | undefined;
+
+    return row ? { task_passed: row.task_passed === 1 } : null;
+  }
+
+  clearIncompleteDecision(args: {
+    run_id: string;
+    case_id: string;
+    backend: MemoryBackend;
+  }): number {
+    const result = this.db
+      .prepare(
+        `DELETE FROM decisions
+         WHERE run_id = ?
+           AND case_id = ?
+           AND backend = ?
+           AND decision_id NOT IN (SELECT decision_id FROM outcomes)`,
+      )
+      .run(args.run_id, args.case_id, args.backend);
+
+    return result.changes;
+  }
+
   logDecision(decision: Decision): void {
     this.db
       .prepare(

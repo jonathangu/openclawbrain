@@ -33,6 +33,24 @@ export async function runAblation(args: AblationArgs): Promise<{
   for (const taskCase of cases) {
     const results: Partial<Record<MemoryBackend, boolean>> = {};
     for (const backend of backends) {
+      const existing = ledger.getRecordedOutcome({
+        run_id,
+        case_id: taskCase.case_id,
+        backend: backend.name,
+      });
+      if (existing) {
+        results[backend.name] = existing.task_passed;
+        i++;
+        onProgress?.({ case_id: taskCase.case_id, backend: backend.name, passed: existing.task_passed, i, total });
+        continue;
+      }
+
+      ledger.clearIncompleteDecision({
+        run_id,
+        case_id: taskCase.case_id,
+        backend: backend.name,
+      });
+
       const { passed } = await runCase({
         run_id,
         case: taskCase,

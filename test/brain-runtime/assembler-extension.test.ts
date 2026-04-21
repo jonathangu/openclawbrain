@@ -190,6 +190,102 @@ function makeStructuredTraversalResult(): TraversalResult {
   };
 }
 
+function makeConflictAwareStructuredTraversalResult(): TraversalResult {
+  const result = makeStructuredTraversalResult();
+  const routeTrace = result.trace.routeTrace!;
+  routeTrace.injectedNodeSummaries = [
+    {
+      ...routeTrace.injectedNodeSummaries[0],
+      contentPreview: "Use gh pr create for pull requests.",
+      correctionState: "current",
+      correctionSubjectKey: "pull_request_command",
+      correctionSubjectText: "pull request command",
+      correctionNeedsSourceExpansion: false,
+    },
+    {
+      nodeId: "bn_conflict_a",
+      kind: "correction",
+      trust: "human",
+      provenanceRef: "prov_bn_conflict_a",
+      sourceUri: "MEMORY.md",
+      tags: ["pull-request"],
+      tokenCount: 12,
+      contentPreview: "Use hub pull-request for pull requests in this repo.",
+      correctionState: "conflicting",
+      correctionSubjectKey: "pull_request_command",
+      correctionSubjectText: "pull request command",
+      correctionConflictSetId: "cm_conflict_pull_request_command",
+      correctionNeedsSourceExpansion: true,
+    },
+    {
+      nodeId: "bn_conflict_b",
+      kind: "correction",
+      trust: "human",
+      provenanceRef: "prov_bn_conflict_b",
+      sourceUri: "MEMORY.md",
+      tags: ["pull-request"],
+      tokenCount: 11,
+      contentPreview: "Use gh pr create for pull requests, but prior memory disagrees.",
+      correctionState: "conflicting",
+      correctionSubjectKey: "pull_request_command",
+      correctionSubjectText: "pull request command",
+      correctionConflictSetId: "cm_conflict_pull_request_command",
+      correctionNeedsSourceExpansion: true,
+    },
+    {
+      ...routeTrace.injectedNodeSummaries[1],
+    },
+  ];
+  routeTrace.sourceSummary = {
+    injectedCount: 4,
+    kinds: { correction: 3, chunk: 1 },
+    trusts: { human: 3, scanner: 1 },
+    sourceUris: ["PLAYBOOK.md", "MEMORY.md", "docs/deploy.md"],
+    sourceRefs: ["prov_bn_1", "prov_bn_conflict_a", "prov_bn_conflict_b", "prov_bn_2"],
+  };
+  return result;
+}
+
+function makeSupersededStructuredTraversalResult(): TraversalResult {
+  const result = makeStructuredTraversalResult();
+  const routeTrace = result.trace.routeTrace!;
+  routeTrace.injectedNodeSummaries = [
+    {
+      ...routeTrace.injectedNodeSummaries[0],
+      contentPreview: "Use gh pr create for pull requests.",
+      correctionState: "current",
+      correctionSubjectKey: "pull_request_command",
+      correctionSubjectText: "pull request command",
+      correctionNeedsSourceExpansion: false,
+    },
+    {
+      nodeId: "bn_superseded",
+      kind: "correction",
+      trust: "human",
+      provenanceRef: "prov_bn_superseded",
+      sourceUri: "MEMORY.md",
+      tags: ["pull-request"],
+      tokenCount: 10,
+      contentPreview: "Use hub pull-request for pull requests.",
+      correctionState: "superseded",
+      correctionSubjectKey: "pull_request_command",
+      correctionSubjectText: "pull request command",
+      correctionNeedsSourceExpansion: false,
+    },
+    {
+      ...routeTrace.injectedNodeSummaries[1],
+    },
+  ];
+  routeTrace.sourceSummary = {
+    injectedCount: 3,
+    kinds: { correction: 2, chunk: 1 },
+    trusts: { human: 2, scanner: 1 },
+    sourceUris: ["PLAYBOOK.md", "MEMORY.md", "docs/deploy.md"],
+    sourceRefs: ["prov_bn_1", "prov_bn_superseded", "prov_bn_2"],
+  };
+  return result;
+}
+
 function createBrainStub(overrides?: {
   enabled?: boolean;
   initialized?: boolean;
@@ -379,6 +475,61 @@ describe("BrainAssemblerExtension", () => {
     expect(injected).not.toContain("tail-marker-never-rendered suffix so fallback would be obvious");
     expect(injected).not.toContain("tail-marker-never-rendered with raw transcript detail");
     expect(injected).not.toContain("tail-marker-never-rendered after you understand the failure");
+  });
+
+  it("renders conflicting correction clusters with an explicit source-expansion warning", async () => {
+    const brain = createBrainStub({
+      query: async () => makeConflictAwareStructuredTraversalResult(),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "What are the conflicting pull request corrections?" }],
+    });
+
+    const injected = String(result.messages[0]?.content ?? "");
+    expect(injected).toContain("Warning: conflicting correction cluster retrieved; expand toward source before asserting exact current truth.");
+    expect(injected).toContain("[conflict · human] Use hub pull-request for pull requests in this repo.");
+    expect(injected).toContain("[conflict · human] Use gh pr create for pull requests, but prior memory disagrees.");
+    expect(injected).toContain("`bn_conflict_a` [correction/conflicting/human] from MEMORY.md");
+  });
+
+  it("omits superseded correction cards from the default structured display", async () => {
+    const brain = createBrainStub({
+      query: async () => makeSupersededStructuredTraversalResult(),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    const injected = String(result.messages[0]?.content ?? "");
+    expect(injected).toContain("[human] Use gh pr create for pull requests.");
+    expect(injected).not.toContain("Use hub pull-request for pull requests.");
+    expect(injected).toContain("`bn_superseded` [correction/superseded/human] from MEMORY.md");
   });
 
   it("falls back to legacy verbatim rendering when route-trace summaries are unavailable", async () => {

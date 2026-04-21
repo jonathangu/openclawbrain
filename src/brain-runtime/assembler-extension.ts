@@ -237,12 +237,73 @@ function formatSourceUri(sourceUri: string | null): string {
   return sourceUri?.trim() || "unknown source";
 }
 
+function getCorrectionState(summary: DecisionTraceInjectedNodeSummary): DecisionTraceInjectedNodeSummary["correctionState"] {
+  return summary.kind === "correction" ? summary.correctionState : undefined;
+}
+
+function isSupersededCorrectionSummary(summary: DecisionTraceInjectedNodeSummary): boolean {
+  return getCorrectionState(summary) === "superseded";
+}
+
+function buildCorrectionSummaryLabel(summary: DecisionTraceInjectedNodeSummary): string {
+  const state = getCorrectionState(summary);
+  switch (state) {
+    case "conflicting":
+      return `conflict · ${summary.trust}`;
+    case "stale":
+      return `stale · ${summary.trust}`;
+    case "superseded":
+      return `superseded · ${summary.trust}`;
+    default:
+      return summary.trust;
+  }
+}
+
 function buildCorrectionSummaryLine(summary: DecisionTraceInjectedNodeSummary): string {
-  return `- [${summary.trust}] ${compactPreview(summary.contentPreview)}`;
+  return `- [${buildCorrectionSummaryLabel(summary)}] ${compactPreview(summary.contentPreview)}`;
 }
 
 function buildTypedSummaryLine(summary: DecisionTraceInjectedNodeSummary): string {
   return `- [${summary.kind}] ${compactPreview(summary.contentPreview)}`;
+}
+
+function buildCorrectionSection(corrections: DecisionTraceInjectedNodeSummary[]): string {
+  const visibleCorrections = corrections.filter((summary) => !isSupersededCorrectionSummary(summary));
+  if (visibleCorrections.length === 0) {
+    return "- none";
+  }
+
+  const currentCorrections = visibleCorrections.filter((summary) => {
+    const state = getCorrectionState(summary);
+    return !state || state === "current";
+  });
+  const conflictingCorrections = visibleCorrections.filter((summary) => getCorrectionState(summary) === "conflicting");
+  const staleCorrections = visibleCorrections.filter((summary) => getCorrectionState(summary) === "stale");
+
+  const sectionLines: string[] = [];
+  if (currentCorrections.length > 0) {
+    sectionLines.push(...currentCorrections.map(buildCorrectionSummaryLine));
+  }
+  if (conflictingCorrections.length > 0) {
+    sectionLines.push(
+      "- Warning: conflicting correction cluster retrieved; expand toward source before asserting exact current truth.",
+      ...conflictingCorrections.map(buildCorrectionSummaryLine),
+    );
+  }
+  if (staleCorrections.length > 0) {
+    sectionLines.push(
+      "- Warning: stale correction memory retrieved; source expansion may be required before asserting exact current truth.",
+      ...staleCorrections.map(buildCorrectionSummaryLine),
+    );
+  }
+  return sectionLines.join("\n");
+}
+
+function buildAuditNodeLabel(summary: DecisionTraceInjectedNodeSummary): string {
+  if (summary.kind !== "correction" || !summary.correctionState || summary.correctionState === "current") {
+    return `${summary.kind}/${summary.trust}`;
+  }
+  return `${summary.kind}/${summary.correctionState}/${summary.trust}`;
 }
 
 function buildAuditOverview(routeTrace: DecisionRouteTrace): string {
@@ -262,7 +323,7 @@ function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: D
     "OpenClawBrain retrieved context. Prefer correction cards over conflicting heuristics when directly relevant.",
     "",
     "## Correction Cards",
-    corrections.length > 0 ? corrections.map(buildCorrectionSummaryLine).join("\n") : "- none",
+    buildCorrectionSection(corrections),
     "",
     "## Route-Selected Summaries",
     evidence.length > 0 ? evidence.map(buildTypedSummaryLine).join("\n") : "- none",
@@ -276,7 +337,7 @@ function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: D
     `- Kinds: ${formatCountMap(routeTrace.sourceSummary.kinds)}`,
     `- Trusts: ${formatCountMap(routeTrace.sourceSummary.trusts)}`,
     routeTrace.injectedNodeSummaries
-      .map((node) => `- \`${node.nodeId}\` [${node.kind}/${node.trust}] from ${formatSourceUri(node.sourceUri)}`)
+      .map((node) => `- \`${node.nodeId}\` [${buildAuditNodeLabel(node)}] from ${formatSourceUri(node.sourceUri)}`)
       .join("\n"),
     "",
     "## Transcript Support",
@@ -286,7 +347,8 @@ function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: D
 }
 
 function orderedInjectedNodeSummaries(routeTrace: DecisionRouteTrace): DecisionTraceInjectedNodeSummary[] {
-  const corrections = routeTrace.injectedNodeSummaries.filter((node) => node.kind === "correction");
+  const corrections = routeTrace.injectedNodeSummaries
+    .filter((node) => node.kind === "correction" && !isSupersededCorrectionSummary(node));
   const evidence = routeTrace.injectedNodeSummaries
     .filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
   const playbooks = routeTrace.injectedNodeSummaries
@@ -294,12 +356,26 @@ function orderedInjectedNodeSummaries(routeTrace: DecisionRouteTrace): DecisionT
   return [...corrections, ...evidence, ...playbooks];
 }
 
+function buildCompactNodeLabel(summary: DecisionTraceInjectedNodeSummary, includeTrust: boolean): string {
+  const parts = [summary.kind];
+  if (summary.kind === "correction") {
+    const state = getCorrectionState(summary);
+    if (state && state !== "current") {
+      parts.push(state === "conflicting" ? "conflict" : state);
+    }
+  }
+  if (includeTrust) {
+    parts.push(summary.trust);
+  }
+  return parts.join("/");
+}
+
 function buildCompactFittedNodeLine(summary: DecisionTraceInjectedNodeSummary): string {
-  return `- [${summary.kind}/${summary.trust}] ${compactPreview(summary.contentPreview)}`;
+  return `- [${buildCompactNodeLabel(summary, true)}] ${compactPreview(summary.contentPreview)}`;
 }
 
 function buildCompactPartialFittedNodeLine(summary: DecisionTraceInjectedNodeSummary): string {
-  return `- [${summary.kind}] ${compactPreview(summary.contentPreview, 56)}`;
+  return `- [${buildCompactNodeLabel(summary, false)}] ${compactPreview(summary.contentPreview, 56)}`;
 }
 
 function buildCompactStructuredBrainContext(
@@ -387,7 +463,7 @@ function buildStructuredPartialBrainContextBlock(
     buildPartialServeNotice(stage),
     "",
     "## Correction Cards",
-    corrections.length > 0 ? corrections.map(buildCorrectionSummaryLine).join("\n") : "- none",
+    buildCorrectionSection(corrections),
     "",
     "## Route-Selected Summaries",
     evidence.length > 0 ? evidence.map(buildTypedSummaryLine).join("\n") : "- none",

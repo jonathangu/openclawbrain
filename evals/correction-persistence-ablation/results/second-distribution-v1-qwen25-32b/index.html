@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OpenClawBrain — Correction-persistence ablation results</title>
+<style>
+  body { font: 15px/1.45 system-ui, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #111; }
+  h1 { margin-bottom: 0.25rem; }
+  .sub { color: #555; margin-top: 0; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1.5rem; }
+  th, td { border: 1px solid #ddd; padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; }
+  th { background: #fafafa; }
+  td.empty { color: #aaa; }
+  .pass { font-size: 1.2rem; font-weight: 600; }
+  .meta { font-size: 0.75rem; color: #666; }
+  .note { background: #fff8e6; border: 1px solid #f0d16f; padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>OpenClawBrain — Correction-persistence ablation results</h1>
+<p class="sub">Run <code>second-distribution-v1-qwen25-32b</code> · generated Mon, 20 Apr 2026 15:17:10 GMT</p>
+
+<div class="note">
+These numbers come directly from the decision and outcome ledger. No blended averages.
+Each cell shows pass rate, pass count / total cases, fire count, abstention regret and
+false-fire harm counts versus the <code>none</code> baseline, and mean tokens per pass.
+</div>
+
+
+
+<table>
+<thead><tr><th>slice</th><th>none</th><th>correction-only</th><th>correction-plus-heuristics</th><th>full-ocb</th></tr></thead>
+<tbody><tr><th>all</th><td>
+      <div class="pass">90.0%</div>
+      <div class="meta">45/50</div>
+      <div class="meta">fires 0/50</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 60</div>
+    </td><td>
+      <div class="pass">88.0%</div>
+      <div class="meta">44/50</div>
+      <div class="meta">fires 19/50</div>
+      <div class="meta">regret 0 · harm 1</div>
+      <div class="meta">tok/pass 71</div>
+    </td><td>
+      <div class="pass">88.0%</div>
+      <div class="meta">44/50</div>
+      <div class="meta">fires 29/50</div>
+      <div class="meta">regret 0 · harm 2</div>
+      <div class="meta">tok/pass 78</div>
+    </td><td>
+      <div class="pass">92.0%</div>
+      <div class="meta">46/50</div>
+      <div class="meta">fires 32/50</div>
+      <div class="meta">regret 1 · harm 0</div>
+      <div class="meta">tok/pass 68</div>
+    </td></tr><tr><th>correction-follow-up</th><td>
+      <div class="pass">92.9%</div>
+      <div class="meta">13/14</div>
+      <div class="meta">fires 0/14</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 45</div>
+    </td><td>
+      <div class="pass">92.9%</div>
+      <div class="meta">13/14</div>
+      <div class="meta">fires 5/14</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 50</div>
+    </td><td>
+      <div class="pass">92.9%</div>
+      <div class="meta">13/14</div>
+      <div class="meta">fires 5/14</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 51</div>
+    </td><td>
+      <div class="pass">92.9%</div>
+      <div class="meta">13/14</div>
+      <div class="meta">fires 11/14</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 55</div>
+    </td></tr><tr><th>tool-heavy</th><td>
+      <div class="pass">90.9%</div>
+      <div class="meta">10/11</div>
+      <div class="meta">fires 0/11</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 103</div>
+    </td><td>
+      <div class="pass">81.8%</div>
+      <div class="meta">9/11</div>
+      <div class="meta">fires 5/11</div>
+      <div class="meta">regret 0 · harm 1</div>
+      <div class="meta">tok/pass 133</div>
+    </td><td>
+      <div class="pass">81.8%</div>
+      <div class="meta">9/11</div>
+      <div class="meta">fires 8/11</div>
+      <div class="meta">regret 0 · harm 2</div>
+      <div class="meta">tok/pass 143</div>
+    </td><td>
+      <div class="pass">90.9%</div>
+      <div class="meta">10/11</div>
+      <div class="meta">fires 3/11</div>
+      <div class="meta">regret 1 · harm 0</div>
+      <div class="meta">tok/pass 107</div>
+    </td></tr><tr><th>stale-memory-conflict</th><td>
+      <div class="pass">80.0%</div>
+      <div class="meta">12/15</div>
+      <div class="meta">fires 0/15</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 88</div>
+    </td><td>
+      <div class="pass">80.0%</div>
+      <div class="meta">12/15</div>
+      <div class="meta">fires 9/15</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 104</div>
+    </td><td>
+      <div class="pass">80.0%</div>
+      <div class="meta">12/15</div>
+      <div class="meta">fires 9/15</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 114</div>
+    </td><td>
+      <div class="pass">86.7%</div>
+      <div class="meta">13/15</div>
+      <div class="meta">fires 11/15</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 90</div>
+    </td></tr><tr><th>direct-answer</th><td>
+      <div class="pass">100.0%</div>
+      <div class="meta">10/10</div>
+      <div class="meta">fires 0/10</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 3</div>
+    </td><td>
+      <div class="pass">100.0%</div>
+      <div class="meta">10/10</div>
+      <div class="meta">fires 0/10</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 3</div>
+    </td><td>
+      <div class="pass">100.0%</div>
+      <div class="meta">10/10</div>
+      <div class="meta">fires 7/10</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 13</div>
+    </td><td>
+      <div class="pass">100.0%</div>
+      <div class="meta">10/10</div>
+      <div class="meta">fires 7/10</div>
+      <div class="meta">regret 0 · harm 0</div>
+      <div class="meta">tok/pass 19</div>
+    </td></tr></tbody>
+</table>
+
+<p class="meta" style="margin-top: 2rem;">
+Abstention regret = cases where the <code>none</code> baseline passed, this backend did not fire, and it failed.<br>
+False-fire harm = cases where the <code>none</code> baseline passed, this backend fired, and it failed.<br>
+Tokens per pass = (total cases × mean total tokens) / total passes. Lower is better. ∞ means zero passes.
+</p>
+</body>
+</html>
