@@ -15,6 +15,20 @@ import { generateResults } from "../src/results/generate.js";
 import { Ledger } from "../src/ledger/ledger.js";
 import type { TaskCase, TurnSlice } from "../src/types.js";
 
+function resolveSystemPrompt(): string | undefined {
+  if (process.env.OCB_CORRECTION_CURRENT_CHOICE_ONLY !== "1") {
+    return undefined;
+  }
+
+  return [
+    "If the conversation contains an explicit later correction or updated preference, follow the latest current choice only.",
+    "Do not mention superseded, legacy, compatibility, fallback, or older alternatives unless the user explicitly asks for history, migration, compatibility, tradeoffs, or conversion.",
+    "When a later correction resolves a unit, format, tool, package-manager, or style choice, answer using only the corrected choice.",
+    "Do not append parenthetical conversions, equivalent legacy forms, or dual-format alternatives unless the user explicitly asks for both forms or for conversion.",
+    "When answering, prefer the direct current recommendation over extra optional alternatives.",
+  ].join(" ");
+}
+
 async function main(): Promise<void> {
   const model = process.env.OCB_MODEL ?? "qwen2.5:32b-instruct";
   const ollamaHost = process.env.OCB_OLLAMA_HOST ?? "http://localhost:11434";
@@ -25,6 +39,7 @@ async function main(): Promise<void> {
   const casesPath = process.env.OCB_CASES ?? "./cases/correction-recurrence.json";
   const resultsDir = process.env.OCB_RESULTS ?? "./results";
   const runId = process.env.OCB_RUN_ID;
+  const systemPrompt = resolveSystemPrompt();
 
   const cases = JSON.parse(await readFile(casesPath, "utf8")) as TaskCase[];
   const ledger = new Ledger(ledgerPath);
@@ -50,6 +65,7 @@ async function main(): Promise<void> {
       backends,
       agent,
       ledger,
+      system_prompt: systemPrompt,
       onProgress: (event) =>
         console.log(`[${event.i}/${event.total}] ${event.backend} on ${event.case_id}: ${event.passed ? "PASS" : "FAIL"}`),
     });
