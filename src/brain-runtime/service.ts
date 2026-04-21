@@ -403,7 +403,10 @@ type CorrectionSiblingUpdate = {
   metadata: Record<string, unknown>;
 };
 
-type RetrievedCorrectionMemoryState = Pick<CorrectionMemoryStateV1, "subjectKey" | "state">;
+type RetrievedCorrectionMemoryState = Pick<
+  CorrectionMemoryStateV1,
+  "subjectKey" | "subjectText" | "predicate" | "state" | "sourceAuthority" | "sourceConversationId"
+>;
 
 type RetrievedCorrectionNode = {
   firedNode: TraverseResult["firedNodes"][number];
@@ -610,13 +613,160 @@ function readCorrectionMemoryFromNode(node: Pick<BrainNode, "kind" | "metadata">
 
   const correctionMemory = isPlainRecord(node.metadata.correctionMemory) ? node.metadata.correctionMemory : null;
   const subjectKey = typeof correctionMemory?.subjectKey === "string" ? correctionMemory.subjectKey.trim() : "";
+  const subjectText = typeof correctionMemory?.subjectText === "string" ? correctionMemory.subjectText.trim() : "";
+  const predicate = correctionMemory?.predicate;
   const state = correctionMemory?.state;
+  const sourceAuthority = correctionMemory?.sourceAuthority;
+  const sourceConversationId = typeof correctionMemory?.sourceConversationId === "number"
+    ? correctionMemory.sourceConversationId
+    : undefined;
   if (!subjectKey) {
     return null;
   }
-  return state === "current" || state === "superseded" || state === "conflicting" || state === "stale"
-    ? { subjectKey, state }
+  return (
+    (state === "current" || state === "superseded" || state === "conflicting" || state === "stale")
+    && (predicate === "fact" || predicate === "preference" || predicate === "workflow" || predicate === "alias" || predicate === "other")
+    && (sourceAuthority === "user_explicit" || sourceAuthority === "human_curated" || sourceAuthority === "derived")
+  )
+    ? { subjectKey, subjectText, predicate, state, sourceAuthority, sourceConversationId }
     : null;
+}
+
+const CORRECTION_BRIDGE_STOPWORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "for",
+  "i",
+  "me",
+  "my",
+  "not",
+  "of",
+  "or",
+  "should",
+  "the",
+  "to",
+  "use",
+  "what",
+  "which",
+  "with",
+]);
+
+function normalizeCorrectionBridgeToken(token: string): string {
+  const normalized = token.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  if (normalized.length > 4 && normalized.endsWith("s")) {
+    return normalized.slice(0, -1);
+  }
+  return normalized;
+}
+
+function tokenizeCorrectionBridgeText(text: string): Set<string> {
+  return new Set(
+    normalizeCorrectionText(text)
+      .toLowerCase()
+      .split(/[^a-z0-9]+/g)
+      .map((token) => normalizeCorrectionBridgeToken(token))
+      .filter((token) => token.length >= 3 && !CORRECTION_BRIDGE_STOPWORDS.has(token)),
+  );
+}
+
+function isWorkflowToolBridgeQueryText(queryText: string): boolean {
+  if (!isTypedMemorySensitiveQueryText(queryText)) {
+    return false;
+  }
+  const normalized = normalizeCorrectionText(queryText).toLowerCase();
+  return /\b(command|syntax|cli|tool)\b/i.test(normalized);
+}
+
+function scoreWorkflowToolBridgeCandidate(queryText: string, node: BrainNode, correctionMemory: RetrievedCorrectionMemoryState): number {
+  const queryTokens = tokenizeCorrectionBridgeText(queryText);
+  if (queryTokens.size === 0) {
+    return 0;
+  }
+
+  const candidateTokens = tokenizeCorrectionBridgeText(`${node.content} ${correctionMemory.subjectText}`);
+  let overlap = 0;
+  for (const token of queryTokens) {
+    if (candidateTokens.has(token)) {
+      overlap += 1;
+    }
+  }
+  return overlap;
+}
+
+function buildWorkflowToolBridgeTraversalResult(params: {
+  conversationId: number;
+  queryText: string;
+  graph: BrainGraph;
+}): TraverseResult | null {
+  if (!isWorkflowToolBridgeQueryText(params.queryText)) {
+    return null;
+  }
+
+  const candidates = params.graph.getAllNodes()
+    .filter((node): node is BrainNode => node.kind === "correction")
+    .map((node) => ({
+      node,
+      correctionMemory: readCorrectionMemoryFromNode(node),
+    }))
+    .filter((entry): entry is { node: BrainNode; correctionMemory: RetrievedCorrectionMemoryState } => !!entry.correctionMemory)
+    .filter((entry) => entry.correctionMemory.state === "current")
+    .filter((entry) => entry.correctionMemory.sourceAuthority === "user_explicit")
+    .filter((entry) => entry.correctionMemory.sourceConversationId === params.conversationId)
+    .filter((entry) => entry.correctionMemory.predicate === "preference" || entry.correctionMemory.predicate === "workflow")
+    .map((entry) => ({
+      ...entry,
+      score: scoreWorkflowToolBridgeCandidate(params.queryText, entry.node, entry.correctionMemory),
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+      return compareRetrievedCorrectionNodeRecency(
+        {
+          firedNode: {
+            nodeId: left.node.id,
+            kind: left.node.kind,
+            content: left.node.content,
+            tokenCount: left.node.tokenCount,
+          },
+          node: left.node,
+          correctionMemory: left.correctionMemory,
+        },
+        {
+          firedNode: {
+            nodeId: right.node.id,
+            kind: right.node.kind,
+            content: right.node.content,
+            tokenCount: right.node.tokenCount,
+          },
+          node: right.node,
+          correctionMemory: right.correctionMemory,
+        },
+      );
+    });
+
+  const best = candidates[0];
+  const runnerUp = candidates[1];
+  if (!best || (runnerUp && runnerUp.score === best.score)) {
+    return null;
+  }
+
+  return {
+    firedNodes: [{
+      nodeId: best.node.id,
+      kind: best.node.kind,
+      content: best.node.content,
+      tokenCount: best.node.tokenCount,
+    }],
+    vetoedNodes: [],
+    trajectory: [],
+    seedScores: [],
+    contextChars: best.node.content.length,
+    footer: "Brain · 0 seed candidates · explicit workflow/tool bridge · 1 fired",
+    interruption: null,
+  };
 }
 
 function groupCorrectionNodesBySubjectKey(entries: RetrievedCorrectionNode[]): Map<string, RetrievedCorrectionNode[]> {
@@ -2120,13 +2270,19 @@ export class BrainService {
   }): Promise<TraversalResult | null> {
     const { compileResult } = params;
     this.lastQueryInterruption = compileResult.queryInterruption ? { ...compileResult.queryInterruption } : null;
-    if (!compileResult.traversalResult) {
+    const bridgedTraversalResult = compileResult.traversalResult
+      ?? buildWorkflowToolBridgeTraversalResult({
+        conversationId: params.conversationId,
+        queryText: params.queryText,
+        graph: this.servingGraph,
+      });
+    if (!bridgedTraversalResult) {
       return null;
     }
 
     const traversalResult = filterRetrievedCorrectionNodes({
       queryText: params.queryText,
-      traversalResult: compileResult.traversalResult,
+      traversalResult: bridgedTraversalResult,
       lookupNode: (nodeId: string) => this.servingGraph.getNode(nodeId) ?? null,
       config: {
         directAnswerNoFire: this.config.directAnswerNoFire,
@@ -2349,7 +2505,13 @@ export class BrainService {
         this.lastQueryInterruption = interruption ? { ...interruption } : null;
       },
     });
-    if (!liveCompile.traversalResult) {
+    const effectiveTraversalResult = liveCompile.traversalResult
+      ?? buildWorkflowToolBridgeTraversalResult({
+        conversationId: params.conversationId,
+        queryText: params.queryText,
+        graph: this.servingGraph,
+      });
+    if (!effectiveTraversalResult) {
       if (!recordedCacheOutcome && (cachedEntry || knownPrefetchKey)) {
         this.notePrefetchDecision(this.buildPrefetchDecision({
           state: "miss",
@@ -2383,7 +2545,10 @@ export class BrainService {
       queryText: params.queryText,
       budgetChars: params.budgetChars,
       agentIdentity: params.agentIdentity,
-      compileResult: liveCompile,
+      compileResult: {
+        ...liveCompile,
+        traversalResult: effectiveTraversalResult,
+      },
     });
   }
 

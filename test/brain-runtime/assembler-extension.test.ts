@@ -499,6 +499,7 @@ describe("BrainAssemblerExtension", () => {
     });
 
     const injected = String(result.messages[0]?.content ?? "");
+    expect(injected).toContain("Apply current correction cards directly. Treat superseded alternatives as disallowed answer content unless the user explicitly asks for history, migration, compatibility, or tradeoffs.");
     expect(injected).toContain("Warning: conflicting correction cluster retrieved; expand toward source before asserting exact current truth.");
     expect(injected).toContain("[conflict · human] Use hub pull-request for pull requests in this repo.");
     expect(injected).toContain("[conflict · human] Use gh pr create for pull requests, but prior memory disagrees.");
@@ -555,6 +556,7 @@ describe("BrainAssemblerExtension", () => {
 
     const injected = String(result.messages[0]?.content ?? "");
     expect(injected).toContain("## Correction Cards");
+    expect(injected).toContain("Apply current correction cards directly. Treat superseded alternatives as disallowed answer content unless the user explicitly asks for history, migration, compatibility, or tradeoffs.");
     expect(injected).toContain("Use gh pr create for pull requests.");
     expect(injected).toContain("Trace: [brain] used graph retrieval for this turn.");
     expect(injected).not.toContain("## Provenance And Audit");

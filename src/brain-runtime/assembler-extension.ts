@@ -192,11 +192,15 @@ function buildLegacyBrainContextBlock(result: TraversalResult): string {
   const corrections = result.fired.filter((node) => node.kind === "correction");
   const playbooks = result.fired.filter((node) => node.kind === "workflow" || node.kind === "toolcard");
   const evidence = result.fired.filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
+  const correctionGuidance = corrections.length > 0
+    ? "- Apply current correction cards directly. Treat superseded alternatives as disallowed answer content unless the user explicitly asks for history, migration, compatibility, or tradeoffs."
+    : null;
 
   const sections = [
     "OpenClawBrain retrieved context. Prefer correction cards over conflicting heuristics when directly relevant.",
     "",
     "## Correction Cards",
+    correctionGuidance,
     corrections.length > 0 ? corrections.map((node) => `- ${node.content}`).join("\n") : "- none",
     "",
     "## Route-Selected Evidence",
@@ -282,7 +286,10 @@ function buildCorrectionSection(corrections: DecisionTraceInjectedNodeSummary[])
 
   const sectionLines: string[] = [];
   if (currentCorrections.length > 0) {
-    sectionLines.push(...currentCorrections.map(buildCorrectionSummaryLine));
+    sectionLines.push(
+      "- Apply current correction cards directly. Treat superseded alternatives as disallowed answer content unless the user explicitly asks for history, migration, compatibility, or tradeoffs.",
+      ...currentCorrections.map(buildCorrectionSummaryLine),
+    );
   }
   if (conflictingCorrections.length > 0) {
     sectionLines.push(
@@ -541,8 +548,8 @@ function buildSummaryRoutingPrompt(
         : "This turn looks like a broad recap. Summary-level context is a reasonable starting point unless the user asks for exact proof or current-truth conflict resolution.";
     case "prefer_typed_memory":
       return branchHeavy
-        ? `This turn looks current-truth or conflict-sensitive${pressureTail ? `${pressureTail}.` : "."} Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing or the branch history is forked/snapshotted, expand toward source before asserting specifics.${pressureSentence}`
-        : "This turn looks current-truth or conflict-sensitive. Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing, expand toward source before asserting specifics.";
+        ? `This turn looks current-truth or conflict-sensitive${pressureTail ? `${pressureTail}.` : "."} Prefer explicit correction cards and typed memory over summary recap; when a current correction resolves a choice, answer with that current choice only and do not mention superseded or legacy alternatives unless the user explicitly asks for history, migration, compatibility, or tradeoffs. If typed memory is missing or the branch history is forked/snapshotted, expand toward source before asserting specifics.${pressureSentence}`
+        : "This turn looks current-truth or conflict-sensitive. Prefer explicit correction cards and typed memory over summary recap; when a current correction resolves a choice, answer with that current choice only and do not mention superseded or legacy alternatives unless the user explicitly asks for history, migration, compatibility, or tradeoffs. If typed memory is missing, expand toward source before asserting specifics.";
     case "expand_to_source":
       return branchHeavy
         ? `This turn looks precision-sensitive against branch-heavy compacted history${pressureTail}. Use summaries only to locate the region, then expand toward source material and snapshots before asserting exact details.${pressureSentence}`

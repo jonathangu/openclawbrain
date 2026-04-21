@@ -82,6 +82,8 @@ function makeCorrectionNode(params: {
   content: string;
   state: "current" | "superseded" | "conflicting";
   subjectKey?: string;
+  predicate?: "fact" | "preference" | "workflow" | "alias" | "other";
+  sourceConversationId?: number;
   createdAt?: number;
 }): BrainNode {
   const createdAt = params.createdAt ?? Date.now();
@@ -100,9 +102,10 @@ function makeCorrectionNode(params: {
         schemaVersion: 1,
         subjectKey: params.subjectKey ?? "codeword",
         subjectText: params.subjectKey ?? "codeword",
-        predicate: "fact",
+        predicate: params.predicate ?? "fact",
         state: params.state,
         sourceAuthority: "user_explicit",
+        ...(typeof params.sourceConversationId === "number" ? { sourceConversationId: params.sourceConversationId } : {}),
         support: {
           explicitSourceCount: 2,
           derivedSourceCount: 0,
@@ -3042,6 +3045,111 @@ describe("BrainService", () => {
 
     expect(result).not.toBeNull();
     expect(result?.fired.map((node) => node.nodeId)).toEqual(["corr_current"]);
+  });
+
+  it("bridges a current explicit workflow/tool preference when traversal returns null", async () => {
+    const brainRoot = makeTempDir("openclawbrain-workflow-tool-bridge-state-");
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    const graph = new BrainGraph();
+    const current = makeCorrectionNode({
+      id: "corr_current",
+      content: "Use docker compose v2 commands with me, not old docker-compose syntax.",
+      state: "current",
+      subjectKey: "old_docker_compose_syntax",
+      predicate: "preference",
+      sourceConversationId: 42,
+      createdAt: 2,
+    });
+    graph.addNode(current);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult | null;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "What command should I use to follow logs for the web service?",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: null,
+        queryEmbedding: embed("follow logs web service"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.fired.map((node) => node.nodeId)).toEqual(["corr_current"]);
+  });
+
+  it("does not bridge an unrelated workflow/tool preference when traversal returns null", async () => {
+    const brainRoot = makeTempDir("openclawbrain-workflow-tool-bridge-state-");
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    const graph = new BrainGraph();
+    const current = makeCorrectionNode({
+      id: "corr_current",
+      content: "Use Vitest now, not Jest.",
+      state: "current",
+      subjectKey: "test_runner",
+      predicate: "preference",
+      sourceConversationId: 42,
+      createdAt: 2,
+    });
+    graph.addNode(current);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult | null;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "What command should I use to follow logs for the web service?",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: null,
+        queryEmbedding: embed("follow logs web service"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).toBeNull();
   });
 
   it("suppresses the synthetic workspace sentinel when correction memory is also retrieved", async () => {
