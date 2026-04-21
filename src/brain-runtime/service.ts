@@ -670,21 +670,51 @@ function tokenizeCorrectionBridgeText(text: string): Set<string> {
   );
 }
 
-function isWorkflowToolBridgeQueryText(queryText: string): boolean {
-  if (!isTypedMemorySensitiveQueryText(queryText)) {
-    return false;
-  }
+type PreferenceBridgeIntent = "workflow_tool" | "package_manager" | "test_runner";
+
+const PACKAGE_MANAGER_BRIDGE_TOKENS = new Set([
+  "npm",
+  "pnpm",
+  "yarn",
+  "bun",
+  "poetry",
+  "pipenv",
+  "pip",
+  "uv",
+]);
+
+const TEST_RUNNER_BRIDGE_TOKENS = new Set([
+  "vitest",
+  "jest",
+  "mocha",
+  "ava",
+  "pytest",
+  "unittest",
+  "nose",
+]);
+
+function detectPreferenceBridgeIntent(queryText: string): PreferenceBridgeIntent | null {
   const normalized = normalizeCorrectionText(queryText).toLowerCase();
-  return /\b(command|syntax|cli|tool)\b/i.test(normalized);
+  if (!normalized) {
+    return null;
+  }
+
+  if (isTypedMemorySensitiveQueryText(queryText) && /\b(command|syntax|cli|tool)\b/i.test(normalized)) {
+    return "workflow_tool";
+  }
+
+  if (/\b(install|add|dependency|dependencies|package|packages|project)\b/i.test(normalized)) {
+    return "package_manager";
+  }
+
+  if (/\b(test|tests|testing|spec|specs|watch)\b/i.test(normalized)) {
+    return "test_runner";
+  }
+
+  return null;
 }
 
-function scoreWorkflowToolBridgeCandidate(queryText: string, node: BrainNode, correctionMemory: RetrievedCorrectionMemoryState): number {
-  const queryTokens = tokenizeCorrectionBridgeText(queryText);
-  if (queryTokens.size === 0) {
-    return 0;
-  }
-
-  const candidateTokens = tokenizeCorrectionBridgeText(`${node.content} ${correctionMemory.subjectText}`);
+function countCorrectionBridgeOverlap(queryTokens: Set<string>, candidateTokens: Set<string>): number {
   let overlap = 0;
   for (const token of queryTokens) {
     if (candidateTokens.has(token)) {
@@ -694,12 +724,49 @@ function scoreWorkflowToolBridgeCandidate(queryText: string, node: BrainNode, co
   return overlap;
 }
 
+function countBridgeLexiconMatches(candidateTokens: Set<string>, lexicon: Set<string>): number {
+  let matches = 0;
+  for (const token of candidateTokens) {
+    if (lexicon.has(token)) {
+      matches += 1;
+    }
+  }
+  return matches;
+}
+
+function scoreWorkflowToolBridgeCandidate(params: {
+  queryText: string;
+  node: BrainNode;
+  correctionMemory: RetrievedCorrectionMemoryState;
+  intent: PreferenceBridgeIntent;
+}): number {
+  const queryTokens = tokenizeCorrectionBridgeText(params.queryText);
+  if (queryTokens.size === 0) {
+    return 0;
+  }
+
+  const candidateTokens = tokenizeCorrectionBridgeText(`${params.node.content} ${params.correctionMemory.subjectText}`);
+  const overlap = countCorrectionBridgeOverlap(queryTokens, candidateTokens);
+  if (params.intent === "workflow_tool") {
+    return overlap;
+  }
+
+  if (params.intent === "package_manager") {
+    const packageManagerMatches = countBridgeLexiconMatches(candidateTokens, PACKAGE_MANAGER_BRIDGE_TOKENS);
+    return packageManagerMatches > 0 ? Math.max(overlap, packageManagerMatches) : 0;
+  }
+
+  const testRunnerMatches = countBridgeLexiconMatches(candidateTokens, TEST_RUNNER_BRIDGE_TOKENS);
+  return testRunnerMatches > 0 ? Math.max(overlap, testRunnerMatches) : 0;
+}
+
 function buildWorkflowToolBridgeTraversalResult(params: {
   conversationId: number;
   queryText: string;
   graph: BrainGraph;
 }): TraverseResult | null {
-  if (!isWorkflowToolBridgeQueryText(params.queryText)) {
+  const intent = detectPreferenceBridgeIntent(params.queryText);
+  if (!intent) {
     return null;
   }
 
@@ -716,7 +783,12 @@ function buildWorkflowToolBridgeTraversalResult(params: {
     .filter((entry) => entry.correctionMemory.predicate === "preference" || entry.correctionMemory.predicate === "workflow")
     .map((entry) => ({
       ...entry,
-      score: scoreWorkflowToolBridgeCandidate(params.queryText, entry.node, entry.correctionMemory),
+      score: scoreWorkflowToolBridgeCandidate({
+        queryText: params.queryText,
+        node: entry.node,
+        correctionMemory: entry.correctionMemory,
+        intent,
+      }),
     }))
     .filter((entry) => entry.score > 0)
     .sort((left, right) => {
@@ -764,7 +836,7 @@ function buildWorkflowToolBridgeTraversalResult(params: {
     trajectory: [],
     seedScores: [],
     contextChars: best.node.content.length,
-    footer: "Brain · 0 seed candidates · explicit workflow/tool bridge · 1 fired",
+    footer: "Brain · 0 seed candidates · explicit preference bridge · 1 fired",
     interruption: null,
   };
 }

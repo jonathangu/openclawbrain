@@ -3152,6 +3152,217 @@ describe("BrainService", () => {
     expect(result).toBeNull();
   });
 
+  it("bridges a current package-manager preference for install queries when traversal returns null", async () => {
+    const brainRoot = makeTempDir("openclawbrain-workflow-tool-bridge-state-");
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    const graph = new BrainGraph();
+    const current = makeCorrectionNode({
+      id: "corr_current",
+      content: "Use pnpm now, not npm.",
+      state: "current",
+      subjectKey: "npm",
+      predicate: "preference",
+      sourceConversationId: 42,
+      createdAt: 2,
+    });
+    graph.addNode(current);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult | null;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "How should I install react in the project?",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: null,
+        queryEmbedding: embed("install react project"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.fired.map((node) => node.nodeId)).toEqual(["corr_current"]);
+  });
+
+  it("bridges a current dependency-manager preference for add queries when traversal returns null", async () => {
+    const brainRoot = makeTempDir("openclawbrain-workflow-tool-bridge-state-");
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    const graph = new BrainGraph();
+    const current = makeCorrectionNode({
+      id: "corr_current",
+      content: "Use Poetry now, not Pipenv.",
+      state: "current",
+      subjectKey: "pipenv",
+      predicate: "preference",
+      sourceConversationId: 42,
+      createdAt: 2,
+    });
+    graph.addNode(current);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult | null;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "How should I add requests to the project?",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: null,
+        queryEmbedding: embed("add requests project"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.fired.map((node) => node.nodeId)).toEqual(["corr_current"]);
+  });
+
+  it("bridges a current test-runner preference for test queries when traversal returns null", async () => {
+    const brainRoot = makeTempDir("openclawbrain-workflow-tool-bridge-state-");
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    const graph = new BrainGraph();
+    const current = makeCorrectionNode({
+      id: "corr_current",
+      content: "Use Vitest now, not Jest.",
+      state: "current",
+      subjectKey: "jest",
+      predicate: "preference",
+      sourceConversationId: 42,
+      createdAt: 2,
+    });
+    graph.addNode(current);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult | null;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "Show a minimal JavaScript test for sum(1, 2) === 3.",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: null,
+        queryEmbedding: embed("javascript test sum"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.fired.map((node) => node.nodeId)).toEqual(["corr_current"]);
+  });
+
+  it("does not bridge an unrelated package-manager preference for test queries when traversal returns null", async () => {
+    const brainRoot = makeTempDir("openclawbrain-workflow-tool-bridge-state-");
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    const graph = new BrainGraph();
+    const current = makeCorrectionNode({
+      id: "corr_current",
+      content: "Use pnpm now, not npm.",
+      state: "current",
+      subjectKey: "npm",
+      predicate: "preference",
+      sourceConversationId: 42,
+      createdAt: 2,
+    });
+    graph.addNode(current);
+
+    const privateService = service as unknown as {
+      servingGraph: BrainGraph;
+      persistTraversalCompileResult: (params: {
+        conversationId: number;
+        queryText: string;
+        budgetChars: number;
+        compileResult: {
+          traversalResult: TraverseResult | null;
+          queryEmbedding: Float32Array | null;
+          queryEmbeddingSource: "provided" | "runtime";
+          embeddingMs: number;
+          routeSelectionMs: number;
+          totalQueryMs: number;
+          queryInterruption: null;
+        };
+      }) => Promise<Awaited<ReturnType<BrainService["query"]>>>;
+    };
+    privateService.servingGraph = graph;
+
+    const result = await privateService.persistTraversalCompileResult({
+      conversationId: 42,
+      queryText: "Show a minimal JavaScript test for sum(1, 2) === 3.",
+      budgetChars: 4000,
+      compileResult: {
+        traversalResult: null,
+        queryEmbedding: embed("javascript test sum"),
+        queryEmbeddingSource: "provided",
+        embeddingMs: 0,
+        routeSelectionMs: 0,
+        totalQueryMs: 0,
+        queryInterruption: null,
+      },
+    });
+
+    expect(result).toBeNull();
+  });
+
   it("suppresses the synthetic workspace sentinel when correction memory is also retrieved", async () => {
     const brainRoot = makeTempDir("openclawbrain-sentinel-suppression-state-");
     const service = new BrainService({
