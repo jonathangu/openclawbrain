@@ -261,7 +261,9 @@ export async function createOcbAdapter(): Promise<{
           score: Number((1 - (index * 0.05)).toFixed(4)),
           age_seconds: corrections.find((correction) => correction.instruction === node.content)?.ageSeconds ?? 0,
         }));
-        const injected_text = retrieved.map((item) => `- ${item.content}`).join("\n");
+        const injected_text = retrieved.length > 0
+          ? "The user previously corrected or stated a preference:\n" + retrieved.map((item) => `- ${item.content}`).join("\n")
+          : "";
 
         return {
           fire: retrieved.length > 0,
