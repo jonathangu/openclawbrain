@@ -1560,16 +1560,17 @@ export class LcmContextEngine implements ContextEngine {
           : 128_000;
       const maxContextChars = normalizeOptionalMaxContextChars(params.maxContextChars);
       const agentIdentity = this.resolveBrainAgentIdentity(params.sessionKey);
+      let conversation = await this.conversationStore.getConversationBySessionId(
+        params.sessionId,
+      );
 
       const brainDecision = this.brainAssembler?.decide({
         tokenBudget,
+        conversationId: conversation?.conversationId,
         liveMessages: params.messages,
       });
       const shouldRouteThroughBrain =
         brainDecision?.mode === "use_brain" || brainDecision?.mode === "shadow";
-      let conversation = await this.conversationStore.getConversationBySessionId(
-        params.sessionId,
-      );
       if (!conversation && shouldRouteThroughBrain) {
         conversation = await this.conversationStore.getOrCreateConversation(params.sessionId);
       }

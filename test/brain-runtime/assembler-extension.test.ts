@@ -295,6 +295,7 @@ function createBrainStub(overrides?: {
   budgetFraction?: number;
   lastQueryInterruption?: BrainInterruptionMetadata | null;
   lastPrefetchDecision?: Record<string, unknown> | null;
+  hasExplicitPreferenceBridgeCandidate?: boolean;
   query?: (params: {
     conversationId: number;
     queryText: string;
@@ -309,6 +310,10 @@ function createBrainStub(overrides?: {
     isShadowMode: () => overrides?.shadowMode ?? false,
     getCompileDeadlineMs: () => overrides?.compileDeadlineMs ?? null,
     getBudgetFraction: () => overrides?.budgetFraction ?? 0.3,
+    hasExplicitPreferenceBridgeCandidate: vi.fn(
+      ({ conversationId }: { conversationId?: number | null; queryText: string }) =>
+        typeof conversationId === "number" && (overrides?.hasExplicitPreferenceBridgeCandidate ?? false),
+    ),
     getLastQueryInterruption: () => overrides?.lastQueryInterruption ?? null,
     getLastPrefetchDecision: () => overrides?.lastPrefetchDecision ?? null,
     schedulePrefetch: vi.fn(async () => null),
@@ -415,6 +420,35 @@ describe("BrainAssemblerExtension", () => {
       brainDropStage: "decision",
       compileElapsedMs: expect.any(Number),
     }));
+  });
+
+  it("uses brain for short static lookup queries when a current explicit preference bridge exists", async () => {
+    const brain = createBrainStub({
+      hasExplicitPreferenceBridgeCandidate: true,
+      query: async () => makeTraversalResult(),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "show a minimal JavaScript test for sum(1, 2) === 3" }],
+        estimatedTokens: 12,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "show a minimal JavaScript test for sum(1, 2) === 3" }],
+    });
+
+    expect(result.brainDecision?.mode).toBe("use_brain");
+    expect(brain.hasExplicitPreferenceBridgeCandidate).toHaveBeenCalledWith({
+      conversationId: 42,
+      queryText: "show a minimal JavaScript test for sum(1, 2) === 3",
+    });
   });
 
   it("returns unchanged assembly when disabled or uninitialized", async () => {

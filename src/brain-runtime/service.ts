@@ -1656,6 +1656,23 @@ export class BrainService {
     return this.config.budgetFraction;
   }
 
+  hasExplicitPreferenceBridgeCandidate(params: {
+    conversationId?: number | null;
+    queryText: string;
+  }): boolean {
+    if (typeof params.conversationId !== "number") {
+      return false;
+    }
+    if (!this.isEnabled() || this.servingGraph.nodeCount() === 0) {
+      return false;
+    }
+    return buildWorkflowToolBridgeTraversalResult({
+      conversationId: params.conversationId,
+      queryText: params.queryText,
+      graph: this.servingGraph,
+    }) !== null;
+  }
+
   getLastQueryInterruption(): BrainInterruptionMetadata | null {
     return this.lastQueryInterruption ? { ...this.lastQueryInterruption } : null;
   }

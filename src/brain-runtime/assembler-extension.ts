@@ -950,6 +950,7 @@ export class BrainAssemblerExtension {
 
   decide(params: {
     tokenBudget: number;
+    conversationId?: number | null;
     liveMessages: AgentMessage[];
   }): BrainAssemblyDecision {
     const latestUserMessage = [...params.liveMessages]
@@ -983,7 +984,13 @@ export class BrainAssemblerExtension {
         || normalized.includes(".json")
         || normalized.includes("/"));
     if (looksStaticLookup) {
-      return { mode: "skip_short_static_lookup", queryText };
+      const hasExplicitPreferenceBridge = this.brain.hasExplicitPreferenceBridgeCandidate({
+        conversationId: params.conversationId,
+        queryText,
+      });
+      if (!hasExplicitPreferenceBridge) {
+        return { mode: "skip_short_static_lookup", queryText };
+      }
     }
 
     return { mode: this.brain.isShadowMode() ? "shadow" : "use_brain", queryText };
@@ -1001,6 +1008,7 @@ export class BrainAssemblerExtension {
     const compileDeadlineMs = resolveCompileDeadlineMs(this.brain.getCompileDeadlineMs());
     const decision = this.decide({
       tokenBudget: params.tokenBudget,
+      conversationId: params.conversationId,
       liveMessages: params.liveMessages,
     });
     const summaryRouting = decideSummaryRouting({
