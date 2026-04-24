@@ -203,6 +203,27 @@ function makeRedactedCorrectionStructuredTraversalResult(): TraversalResult {
   return result;
 }
 
+function makeDirectArtifactChoiceStructuredTraversalResult(): TraversalResult {
+  const result = makeStructuredTraversalResult();
+  result.fired[0] = {
+    nodeId: "bn_choice",
+    kind: "correction",
+    content: "Use git restore, not git checkout, when undoing file changes.",
+    tokenCount: 12,
+  };
+  const routeTrace = result.trace.routeTrace!;
+  routeTrace.injectedNodeSummaries = [
+    {
+      ...routeTrace.injectedNodeSummaries[0],
+      nodeId: "bn_choice",
+      contentPreview: "Use git restore, not git checkout, when undoing file changes.",
+      sourceUri: "MEMORY.md",
+    },
+    ...routeTrace.injectedNodeSummaries.slice(1),
+  ];
+  return result;
+}
+
 function makeConflictAwareStructuredTraversalResult(): TraversalResult {
   const result = makeStructuredTraversalResult();
   const routeTrace = result.trace.routeTrace!;
@@ -549,6 +570,36 @@ describe("BrainAssemblerExtension", () => {
     expect(injected).toContain("Use gh pr create for pull requests and include the tail-marker-never-rendered suffix");
     expect(injected).not.toContain("[redacted source_content chars=27 sha256=deadbeefdeadbeef]");
     expect(injected).toContain("## Provenance And Audit");
+  });
+
+  it("uses the tighter direct-artifact block for general how-should-i command asks", async () => {
+    const brain = createBrainStub({
+      query: async () => makeDirectArtifactChoiceStructuredTraversalResult(),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How should I discard changes in a tracked file?" }],
+    });
+
+    const injected = String(result.messages[0]?.content ?? "");
+    expect(injected).toContain("## Direct Answer Discipline");
+    expect(injected).toContain("Make the selected tool/framework explicit in the syntax you return; do not rely on implicit defaults.");
+    expect(injected).toContain("Required current-choice token(s): `git restore`.");
+    expect(injected).toContain("Forbidden superseded token(s): `git checkout`.");
+    expect(injected).toContain("If the answer contains any forbidden superseded token, the answer is wrong.");
+    expect(injected).not.toContain("## Provenance And Audit");
   });
 
   it("renders conflicting correction clusters with an explicit source-expansion warning", async () => {

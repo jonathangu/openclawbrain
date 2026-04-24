@@ -193,14 +193,20 @@ function isDirectArtifactQuery(queryText: string | undefined): boolean {
   if (!normalized) {
     return false;
   }
-  return normalized.includes("minimal")
-    || normalized.includes("snippet")
-    || normalized.includes("example")
-    || normalized.includes("what command")
-    || normalized.includes("show a")
-    || normalized.includes("show an")
-    || normalized.includes("test for")
-    || normalized.includes("how should i add");
+
+  return [
+    /\bminimal\b/i,
+    /\bsnippet\b/i,
+    /\bexample\b/i,
+    /\bwhat command\b/i,
+    /\bwhich command\b/i,
+    /^how should i\b/i,
+    /^show\b/i,
+    /^write\b/i,
+    /^format\b/i,
+    /^suggest\b/i,
+    /\btest for\b/i,
+  ].some((pattern) => pattern.test(normalized));
 }
 
 function buildLegacyBrainContextBlock(result: TraversalResult, queryText?: string): string {
@@ -222,9 +228,12 @@ function buildLegacyBrainContextBlock(result: TraversalResult, queryText?: strin
       "",
       "## Direct Answer Discipline",
       "- Lead with the exact command or minimal code example.",
+      "- Return only the single recommended command/snippet by default, with no prose before or after it, unless the user explicitly asked for explanation, alternatives, or compatibility notes.",
+      "- Give exactly one recommended command/snippet unless the user explicitly asked for alternatives or compatibility notes.",
       "- Skip install/setup steps unless the user explicitly asked for them.",
       "- Make the selected tool/framework explicit in the syntax you return; do not rely on implicit defaults.",
-      "- Do not mention superseded alternatives.",
+      ...buildDirectArtifactChoiceContractLines(corrections.map((node) => node.content)),
+      "- Do not mention superseded alternatives, fallback commands, or older equivalents.",
       "",
       "## Transcript Support",
       "- Use the transcript below only if needed for chronology or grounding.",
@@ -307,6 +316,50 @@ function buildCorrectionSummaryLine(summary: DecisionTraceInjectedNodeSummary): 
 
 function buildTypedSummaryLine(summary: DecisionTraceInjectedNodeSummary): string {
   return `- [${summary.kind}] ${compactPreview(summary.contentPreview)}`;
+}
+
+function extractDirectArtifactChoiceContracts(contents: string[]): { required: string[]; forbidden: string[] } {
+  const required = new Set<string>();
+  const forbidden = new Set<string>();
+
+  for (const content of contents) {
+    const normalized = content.replace(/\s+/g, " ").trim();
+    if (!normalized) {
+      continue;
+    }
+    const match = normalized.match(/^use\s+(.+?),\s*not\s+(.+?)(?:[,.]|$)/i);
+    if (!match) {
+      continue;
+    }
+
+    const preferred = match[1]?.trim().replace(/\s+now$/i, "");
+    const disallowed = match[2]?.trim().replace(/\s+now$/i, "");
+    if (preferred) {
+      required.add(preferred);
+    }
+    if (disallowed) {
+      forbidden.add(disallowed);
+    }
+  }
+
+  return {
+    required: [...required],
+    forbidden: [...forbidden],
+  };
+}
+
+function buildDirectArtifactChoiceContractLines(contents: string[]): string[] {
+  const contracts = extractDirectArtifactChoiceContracts(contents);
+  const lines: string[] = [];
+  if (contracts.required.length > 0) {
+    lines.push(`- Required current-choice token(s): ${contracts.required.map((value) => `\`${value}\``).join(", ")}.`);
+    lines.push("- The returned command/snippet should literally contain the required current-choice token(s) when applicable.");
+  }
+  if (contracts.forbidden.length > 0) {
+    lines.push(`- Forbidden superseded token(s): ${contracts.forbidden.map((value) => `\`${value}\``).join(", ")}.`);
+    lines.push("- If the answer contains any forbidden superseded token, the answer is wrong.");
+  }
+  return lines;
 }
 
 function buildCorrectionSection(corrections: DecisionTraceInjectedNodeSummary[]): string {
@@ -400,9 +453,12 @@ function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: D
       "",
       "## Direct Answer Discipline",
       "- Lead with the exact command or minimal code example.",
+      "- Return only the single recommended command/snippet by default, with no prose before or after it, unless the user explicitly asked for explanation, alternatives, or compatibility notes.",
+      "- Give exactly one recommended command/snippet unless the user explicitly asked for alternatives or compatibility notes.",
       "- Skip install/setup steps unless the user explicitly asked for them.",
       "- Make the selected tool/framework explicit in the syntax you return; do not rely on implicit defaults.",
-      "- Do not mention superseded alternatives.",
+      ...buildDirectArtifactChoiceContractLines(corrections.map((node) => node.contentPreview)),
+      "- Do not mention superseded alternatives, fallback commands, or older equivalents.",
       "",
       "## Transcript Support",
       "- Use the transcript below only if needed for chronology or grounding.",

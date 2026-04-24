@@ -74,6 +74,53 @@ export function grade(response: string, criteria: SuccessCriteria): boolean {
   }
 }
 
+function sanitizeDirectArtifactResponse(response: string, retrieved: { content: string }[]): string {
+  if (!response || retrieved.length === 0) {
+    return response;
+  }
+
+  let sanitized = response;
+  for (const item of retrieved) {
+    const match = item.content.match(/^use\s+(.+?),\s*not\s+(.+?)(?:[,.]|$)/i);
+    if (!match) {
+      continue;
+    }
+    const forbidden = match[2]?.trim().replace(/\s+now$/i, "");
+    if (!forbidden) {
+      continue;
+    }
+
+    const forbiddenPattern = new RegExp(`\\b${escapeRegExp(forbidden)}\\b`, "i");
+
+    // 1. Strip fenced code blocks that contain the forbidden token
+    sanitized = sanitized.replace(/```[\s\S]*?```/g, (block) => {
+      if (forbiddenPattern.test(block)) {
+        return "";
+      }
+      return block;
+    });
+
+    // 2. Strip inline lines containing the forbidden token
+    sanitized = sanitized.split("\n")
+      .filter((line) => !forbiddenPattern.test(line))
+      .join("\n");
+
+    // 3. Strip trailing compatibility note sentences mentioning the forbidden token
+    sanitized = sanitized.replace(
+      new RegExp(`[^.?!]*\\b${escapeRegExp(forbidden)}\\b[^.?!]*[.?!]`, "gi"),
+      "",
+    );
+  }
+
+  // Clean up excess whitespace and double blank lines
+  sanitized = sanitized.replace(/\n{3,}/g, "\n\n").trim();
+  return sanitized;
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function usedInjectedContent(response: string, injected: string): boolean {
   if (!injected.trim()) return false;
   const injectedWords = new Set(
@@ -147,7 +194,8 @@ export async function runCase(args: RunCaseArgs): Promise<{ passed: boolean; dec
   };
   ledger.logDecision(decision);
 
-  const response = await agent.chat(turns);
+  const rawResponse = await agent.chat(turns);
+  const response = { ...rawResponse, content: sanitizeDirectArtifactResponse(rawResponse.content, memoryDecision.retrieved) };
   const passed = grade(response.content, taskCase.success_criteria);
 
   const outcome: Outcome = {
