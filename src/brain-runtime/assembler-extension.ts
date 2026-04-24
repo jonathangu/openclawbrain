@@ -188,7 +188,22 @@ function extractText(content: unknown): string {
     .trim();
 }
 
-function buildLegacyBrainContextBlock(result: TraversalResult): string {
+function isDirectArtifactQuery(queryText: string | undefined): boolean {
+  const normalized = queryText?.trim().toLowerCase() ?? "";
+  if (!normalized) {
+    return false;
+  }
+  return normalized.includes("minimal")
+    || normalized.includes("snippet")
+    || normalized.includes("example")
+    || normalized.includes("what command")
+    || normalized.includes("show a")
+    || normalized.includes("show an")
+    || normalized.includes("test for")
+    || normalized.includes("how should i add");
+}
+
+function buildLegacyBrainContextBlock(result: TraversalResult, queryText?: string): string {
   const corrections = result.fired.filter((node) => node.kind === "correction");
   const playbooks = result.fired.filter((node) => node.kind === "workflow" || node.kind === "toolcard");
   const evidence = result.fired.filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
@@ -196,8 +211,31 @@ function buildLegacyBrainContextBlock(result: TraversalResult): string {
     ? "- Apply current correction cards directly. Treat superseded alternatives as disallowed answer content unless the user explicitly asks for history, migration, compatibility, or tradeoffs."
     : null;
 
+  if (corrections.length > 0 && isDirectArtifactQuery(queryText)) {
+    return [
+      "OpenClawBrain retrieved context. Prefer correction cards over conflicting heuristics when directly relevant.",
+      "If the user asked for a direct command, snippet, or minimal example, answer with the concrete artifact first. Use a short code block or exact command before any explanation.",
+      "",
+      "## Correction Cards",
+      correctionGuidance,
+      corrections.map((node) => `- ${node.content}`).join("\n"),
+      "",
+      "## Direct Answer Discipline",
+      "- Lead with the exact command or minimal code example.",
+      "- Skip install/setup steps unless the user explicitly asked for them.",
+      "- Make the selected tool/framework explicit in the syntax you return; do not rely on implicit defaults.",
+      "- Do not mention superseded alternatives.",
+      "",
+      "## Transcript Support",
+      "- Use the transcript below only if needed for chronology or grounding.",
+      "",
+      `Trace: ${result.trace.footer}`,
+    ].join("\n");
+  }
+
   const sections = [
     "OpenClawBrain retrieved context. Prefer correction cards over conflicting heuristics when directly relevant.",
+    "If the user asked for a direct command, snippet, or minimal example, lead with the concrete answer first and skip setup/install steps unless explicitly asked.",
     "",
     "## Correction Cards",
     correctionGuidance,
@@ -344,7 +382,7 @@ function buildModelFacingInjectedNodeSummaries(
   });
 }
 
-function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: DecisionRouteTrace): string {
+function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: DecisionRouteTrace, queryText?: string): string {
   const modelFacingSummaries = buildModelFacingInjectedNodeSummaries(result, routeTrace);
   const corrections = modelFacingSummaries.filter((node) => node.kind === "correction");
   const playbooks = modelFacingSummaries
@@ -352,8 +390,28 @@ function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: D
   const evidence = modelFacingSummaries
     .filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
 
+  if (corrections.length > 0 && isDirectArtifactQuery(queryText)) {
+    return [
+      "OpenClawBrain retrieved context. Prefer correction cards over conflicting heuristics when directly relevant.",
+      "If the user asked for a direct command, snippet, or minimal example, answer with the concrete artifact first. Use a short code block or exact command before any explanation.",
+      "",
+      "## Correction Cards",
+      buildCorrectionSection(corrections),
+      "",
+      "## Direct Answer Discipline",
+      "- Lead with the exact command or minimal code example.",
+      "- Skip install/setup steps unless the user explicitly asked for them.",
+      "- Make the selected tool/framework explicit in the syntax you return; do not rely on implicit defaults.",
+      "- Do not mention superseded alternatives.",
+      "",
+      "## Transcript Support",
+      "- Use the transcript below only if needed for chronology or grounding.",
+    ].join("\n");
+  }
+
   const sections = [
     "OpenClawBrain retrieved context. Prefer correction cards over conflicting heuristics when directly relevant.",
+    "If the user asked for a direct command, snippet, or minimal example, lead with the concrete answer first and skip setup/install steps unless explicitly asked.",
     "",
     "## Correction Cards",
     buildCorrectionSection(corrections),
@@ -425,12 +483,12 @@ function buildCompactStructuredBrainContext(
   ].join("\n");
 }
 
-function buildBrainContextBlock(result: TraversalResult): string {
+function buildBrainContextBlock(result: TraversalResult, queryText?: string): string {
   const routeTrace = resolveModelFacingRouteTrace(result);
   if (!routeTrace || routeTrace.injectedNodeSummaries.length === 0) {
-    return buildLegacyBrainContextBlock(result);
+    return buildLegacyBrainContextBlock(result, queryText);
   }
-  return buildStructuredBrainContextBlock(result, routeTrace);
+  return buildStructuredBrainContextBlock(result, routeTrace, queryText);
 }
 
 function buildPartialServeNotice(stage: InterruptionStage): string {
@@ -922,6 +980,7 @@ function applyStructuredNodeBudget(params: {
 function applyStructuredMaxContextChars(
   result: TraversalResult,
   routeTrace: DecisionRouteTrace,
+  queryText: string | undefined,
   maxContextChars?: number,
 ): BudgetedBrainContext {
   const modelFacingNodeSummaries = buildModelFacingInjectedNodeSummaries(result, routeTrace);
@@ -929,7 +988,7 @@ function applyStructuredMaxContextChars(
     routeTrace,
     modelFacingNodeSummaries,
     maxContextChars,
-    buildFullContext: () => buildStructuredBrainContextBlock(result, routeTrace),
+    buildFullContext: () => buildStructuredBrainContextBlock(result, routeTrace, queryText),
     buildCompactContext: (fittedNodeSummaries) => buildCompactStructuredBrainContext(fittedNodeSummaries),
     dropReason: "omitted_for_max_context_chars",
   });
@@ -961,13 +1020,14 @@ function buildInterruptedBudgetedBrainContext(
 
 function buildBudgetedBrainContext(
   result: TraversalResult,
+  queryText: string | undefined,
   maxContextChars?: number,
 ): BudgetedBrainContext {
   const routeTrace = resolveModelFacingRouteTrace(result);
   if (routeTrace && routeTrace.injectedNodeSummaries.length > 0) {
-    return applyStructuredMaxContextChars(result, routeTrace, maxContextChars);
+    return applyStructuredMaxContextChars(result, routeTrace, queryText, maxContextChars);
   }
-  return applyLegacyMaxContextChars(buildBrainContextBlock(result), maxContextChars);
+  return applyLegacyMaxContextChars(buildBrainContextBlock(result, queryText), maxContextChars);
 }
 
 function applyMaxContextChars(text: string, maxContextChars?: number): BudgetedBrainContext {
@@ -977,6 +1037,29 @@ function applyMaxContextChars(text: string, maxContextChars?: number): BudgetedB
 function mergeSystemPromptAddition(...parts: Array<string | undefined>): string | undefined {
   const merged = parts.filter(Boolean).join("\n\n");
   return merged || undefined;
+}
+
+function buildDirectAnswerShapePrompt(queryText: string): string | undefined {
+  const normalized = queryText.trim().toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+
+  const asksForConcreteArtifact =
+    normalized.includes("minimal")
+    || normalized.includes("snippet")
+    || normalized.includes("example")
+    || normalized.includes("what command")
+    || normalized.includes("show a")
+    || normalized.includes("show an")
+    || normalized.includes("test for")
+    || normalized.includes("how should i add");
+
+  if (!asksForConcreteArtifact) {
+    return undefined;
+  }
+
+  return "When the user asks for a direct command, snippet, or minimal example, answer with the concrete artifact first. Prefer a short code block or exact command before any explanation. Do not prepend installation/setup steps unless the user explicitly asks for them.";
 }
 
 export class BrainAssemblerExtension {
@@ -1412,6 +1495,7 @@ export class BrainAssemblerExtension {
 
     const budgetedBrainContext = buildBudgetedBrainContext(
       result,
+      decision.queryText,
       params.maxContextChars,
     );
     const beforeInjectionCheckpoint = captureCompileCheckpoint(compileStartedAt, compileDeadlineMs);
@@ -1596,6 +1680,7 @@ export class BrainAssemblerExtension {
         : params.assembled.estimatedTokens,
       systemPromptAddition: mergeSystemPromptAddition(
         params.assembled.systemPromptAddition,
+        buildDirectAnswerShapePrompt(decision.queryText),
         brainMessage
           ? "OpenClawBrain sections are ranked by trust: correction cards, evidence, playbooks, then transcript support."
           : undefined,
