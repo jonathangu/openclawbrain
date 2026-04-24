@@ -203,6 +203,7 @@ export async function createOcbAdapter(): Promise<{
     fire: boolean;
     retrieved: RetrievedItem[];
     injected_text: string;
+    prompt_turns?: ChatTurn[];
     gate_score: number | null;
     gate_threshold: number | null;
   }>;
@@ -289,10 +290,19 @@ export async function createOcbAdapter(): Promise<{
             ? "The user previously corrected or stated a preference:\n" + retrieved.map((item) => `- ${item.content}`).join("\n")
             : "");
 
+        const prompt_turns = assembled.brainDecision?.mode === "use_brain"
+          ? assembled.messages
+              .filter((message): message is { role: "system" | "user" | "assistant"; content: string } =>
+                (message.role === "system" || message.role === "user" || message.role === "assistant") && typeof message.content === "string",
+              )
+              .map((message) => ({ role: message.role, content: message.content }))
+          : undefined;
+
         return {
           fire: retrieved.length > 0,
           retrieved,
           injected_text,
+          prompt_turns,
           gate_score: null,
           gate_threshold: null,
         };

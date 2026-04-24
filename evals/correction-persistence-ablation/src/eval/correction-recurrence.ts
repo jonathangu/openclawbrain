@@ -118,13 +118,17 @@ export async function runCase(args: RunCaseArgs): Promise<{ passed: boolean; dec
   const memoryDecision = await backend.decide(history, taskCase.query);
 
   const turns: ChatTurn[] = [...history];
-  if (memoryDecision.fire && memoryDecision.injected_text) {
-    turns.push({
-      role: "system",
-      content: `Relevant memory:\n${memoryDecision.injected_text}`,
-    });
+  if (memoryDecision.fire && memoryDecision.prompt_turns && memoryDecision.prompt_turns.length > 0) {
+    turns.push(...memoryDecision.prompt_turns);
+  } else {
+    if (memoryDecision.fire && memoryDecision.injected_text) {
+      turns.push({
+        role: "system",
+        content: `Relevant memory:\n${memoryDecision.injected_text}`,
+      });
+    }
+    turns.push({ role: "user", content: taskCase.query });
   }
-  turns.push({ role: "user", content: taskCase.query });
 
   const decision: Decision = {
     decision_id,

@@ -5,6 +5,7 @@ export interface MemoryDecision {
   fire: boolean;
   retrieved: RetrievedItem[];
   injected_text: string;
+  prompt_turns?: ChatTurn[];
   gate_score: number | null;
   gate_threshold: number | null;
 }
@@ -157,6 +158,7 @@ export class FullOcbBackend implements MemoryBackendImpl {
       fire: result.fire,
       retrieved: result.retrieved,
       injected_text: result.injected_text,
+      prompt_turns: result.prompt_turns,
       gate_score: result.gate_score,
       gate_threshold: result.gate_threshold,
     };
