@@ -190,6 +190,19 @@ function makeStructuredTraversalResult(): TraversalResult {
   };
 }
 
+function makeRedactedCorrectionStructuredTraversalResult(): TraversalResult {
+  const result = makeStructuredTraversalResult();
+  const routeTrace = result.trace.routeTrace!;
+  routeTrace.injectedNodeSummaries = [
+    {
+      ...routeTrace.injectedNodeSummaries[0],
+      contentPreview: "[redacted source_content chars=27 sha256=deadbeefdeadbeef]",
+    },
+    ...routeTrace.injectedNodeSummaries.slice(1),
+  ];
+  return result;
+}
+
 function makeConflictAwareStructuredTraversalResult(): TraversalResult {
   const result = makeStructuredTraversalResult();
   const routeTrace = result.trace.routeTrace!;
@@ -511,6 +524,33 @@ describe("BrainAssemblerExtension", () => {
     expect(injected).not.toContain("tail-marker-never-rendered after you understand the failure");
   });
 
+  it("restores raw correction text in model-facing context when trace previews are redacted", async () => {
+    const brain = createBrainStub({
+      query: async () => makeRedactedCorrectionStructuredTraversalResult(),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    const injected = String(result.messages[0]?.content ?? "");
+    expect(injected).toContain("Use gh pr create for pull requests and include the tail-marker-never-rendered suffix");
+    expect(injected).not.toContain("[redacted source_content chars=27 sha256=deadbeefdeadbeef]");
+    expect(injected).toContain("## Provenance And Audit");
+  });
+
   it("renders conflicting correction clusters with an explicit source-expansion warning", async () => {
     const brain = createBrainStub({
       query: async () => makeConflictAwareStructuredTraversalResult(),
@@ -562,7 +602,7 @@ describe("BrainAssemblerExtension", () => {
     });
 
     const injected = String(result.messages[0]?.content ?? "");
-    expect(injected).toContain("[human] Use gh pr create for pull requests.");
+    expect(injected).toContain("[human] Use gh pr create for pull requests and include the tail-marker-never-rendered suffix");
     expect(injected).not.toContain("Use hub pull-request for pull requests.");
     expect(injected).toContain("`bn_superseded` [correction/superseded/human] from MEMORY.md");
   });
@@ -938,7 +978,7 @@ describe("BrainAssemblerExtension", () => {
 
     const injected = String(result.messages[0]?.content ?? "");
     expect(injected).toContain("[brain]");
-    expect(injected).toContain("Use gh pr create for pull requests, keep the flow operator-auditable");
+    expect(injected).toContain("Use gh pr create for pull requests and include the tail-marker-never-rendered suffix");
     expect(injected).not.toContain("Deployment evidence tail-marker-never-rendered");
     expect(injected).not.toContain("Check CI, inspect logs, then retry tail-marker-never-rendered");
     expect(result.brainDecision).toEqual(expect.objectContaining({

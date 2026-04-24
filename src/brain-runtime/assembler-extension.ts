@@ -319,11 +319,33 @@ function buildAuditOverview(routeTrace: DecisionRouteTrace): string {
   return `- Pack ${routeTrace.activePackId ?? "unknown"} · ${routeTrace.sourceSummary.injectedCount} injected nodes · ${sourceLabel}`;
 }
 
+function buildModelFacingInjectedNodeSummaries(
+  result: TraversalResult,
+  routeTrace: DecisionRouteTrace,
+): DecisionTraceInjectedNodeSummary[] {
+  const rawFiredByNodeId = new Map(result.fired.map((node) => [node.nodeId, node]));
+  return routeTrace.injectedNodeSummaries.map((summary) => {
+    if (summary.kind !== "correction") {
+      return summary;
+    }
+    const rawNode = rawFiredByNodeId.get(summary.nodeId);
+    if (!rawNode?.content) {
+      return summary;
+    }
+    return {
+      ...summary,
+      contentPreview: rawNode.content,
+      tokenCount: rawNode.tokenCount,
+    };
+  });
+}
+
 function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: DecisionRouteTrace): string {
-  const corrections = routeTrace.injectedNodeSummaries.filter((node) => node.kind === "correction");
-  const playbooks = routeTrace.injectedNodeSummaries
+  const modelFacingSummaries = buildModelFacingInjectedNodeSummaries(result, routeTrace);
+  const corrections = modelFacingSummaries.filter((node) => node.kind === "correction");
+  const playbooks = modelFacingSummaries
     .filter((node) => node.kind === "workflow" || node.kind === "toolcard");
-  const evidence = routeTrace.injectedNodeSummaries
+  const evidence = modelFacingSummaries
     .filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
 
   const sections = [
@@ -353,12 +375,14 @@ function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: D
   return sections.join("\n");
 }
 
-function orderedInjectedNodeSummaries(routeTrace: DecisionRouteTrace): DecisionTraceInjectedNodeSummary[] {
-  const corrections = routeTrace.injectedNodeSummaries
+function orderedInjectedNodeSummaries(
+  injectedNodeSummaries: DecisionTraceInjectedNodeSummary[],
+): DecisionTraceInjectedNodeSummary[] {
+  const corrections = injectedNodeSummaries
     .filter((node) => node.kind === "correction" && !isSupersededCorrectionSummary(node));
-  const evidence = routeTrace.injectedNodeSummaries
+  const evidence = injectedNodeSummaries
     .filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
-  const playbooks = routeTrace.injectedNodeSummaries
+  const playbooks = injectedNodeSummaries
     .filter((node) => node.kind === "workflow" || node.kind === "toolcard");
   return [...corrections, ...evidence, ...playbooks];
 }
@@ -460,10 +484,11 @@ function buildStructuredPartialBrainContextBlock(
   routeTrace: DecisionRouteTrace,
   stage: InterruptionStage,
 ): string {
-  const corrections = routeTrace.injectedNodeSummaries.filter((node) => node.kind === "correction");
-  const playbooks = routeTrace.injectedNodeSummaries
+  const modelFacingSummaries = buildModelFacingInjectedNodeSummaries(result, routeTrace);
+  const corrections = modelFacingSummaries.filter((node) => node.kind === "correction");
+  const playbooks = modelFacingSummaries
     .filter((node) => node.kind === "workflow" || node.kind === "toolcard");
-  const evidence = routeTrace.injectedNodeSummaries
+  const evidence = modelFacingSummaries
     .filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
 
   const sections = [
@@ -809,13 +834,14 @@ function withCompileReport(
 
 function applyStructuredNodeBudget(params: {
   routeTrace: DecisionRouteTrace,
+  modelFacingNodeSummaries: DecisionTraceInjectedNodeSummary[];
   maxContextChars?: number;
   buildFullContext: () => string;
   buildCompactContext: (fittedNodeSummaries: DecisionTraceInjectedNodeSummary[]) => string;
   dropReason: BrainFittingDropReason;
 }): BudgetedBrainContext {
   const fullText = params.buildFullContext();
-  const retrievedNodeCount = params.routeTrace.injectedNodeSummaries.length;
+  const retrievedNodeCount = params.modelFacingNodeSummaries.length;
   const baseDetails = {
     fitStrategy: "structured_node_budget" as const,
     retrievedNodeCount,
@@ -862,7 +888,7 @@ function applyStructuredNodeBudget(params: {
     };
   }
 
-  const orderedNodes = orderedInjectedNodeSummaries(params.routeTrace);
+  const orderedNodes = orderedInjectedNodeSummaries(params.modelFacingNodeSummaries);
   const fittedNodeSummaries: DecisionTraceInjectedNodeSummary[] = [];
   for (const summary of orderedNodes) {
     const candidateContext = params.buildCompactContext([...fittedNodeSummaries, summary]);
@@ -894,8 +920,10 @@ function applyStructuredMaxContextChars(
   routeTrace: DecisionRouteTrace,
   maxContextChars?: number,
 ): BudgetedBrainContext {
+  const modelFacingNodeSummaries = buildModelFacingInjectedNodeSummaries(result, routeTrace);
   return applyStructuredNodeBudget({
     routeTrace,
+    modelFacingNodeSummaries,
     maxContextChars,
     buildFullContext: () => buildStructuredBrainContextBlock(result, routeTrace),
     buildCompactContext: (fittedNodeSummaries) => buildCompactStructuredBrainContext(fittedNodeSummaries),
@@ -912,8 +940,10 @@ function buildInterruptedBudgetedBrainContext(
   if (!routeTrace || routeTrace.injectedNodeSummaries.length === 0) {
     return applyLegacyMaxContextChars(buildPartialBrainContextBlock(result, stage), maxContextChars);
   }
+  const modelFacingNodeSummaries = buildModelFacingInjectedNodeSummaries(result, routeTrace);
   return applyStructuredNodeBudget({
     routeTrace,
+    modelFacingNodeSummaries,
     maxContextChars,
     buildFullContext: () => buildStructuredPartialBrainContextBlock(result, routeTrace, stage),
     buildCompactContext: (fittedNodeSummaries) => buildCompactStructuredPartialBrainContext({
