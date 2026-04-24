@@ -319,6 +319,10 @@ function buildAuditOverview(routeTrace: DecisionRouteTrace): string {
   return `- Pack ${routeTrace.activePackId ?? "unknown"} · ${routeTrace.sourceSummary.injectedCount} injected nodes · ${sourceLabel}`;
 }
 
+function resolveModelFacingRouteTrace(result: TraversalResult): DecisionRouteTrace | null | undefined {
+  return result.modelFacingRouteTrace ?? result.trace.routeTrace;
+}
+
 function buildModelFacingInjectedNodeSummaries(
   result: TraversalResult,
   routeTrace: DecisionRouteTrace,
@@ -422,7 +426,7 @@ function buildCompactStructuredBrainContext(
 }
 
 function buildBrainContextBlock(result: TraversalResult): string {
-  const routeTrace = result.trace.routeTrace;
+  const routeTrace = resolveModelFacingRouteTrace(result);
   if (!routeTrace || routeTrace.injectedNodeSummaries.length === 0) {
     return buildLegacyBrainContextBlock(result);
   }
@@ -512,7 +516,7 @@ function buildStructuredPartialBrainContextBlock(
 }
 
 function buildPartialBrainContextBlock(result: TraversalResult, stage: InterruptionStage): string {
-  const routeTrace = result.trace.routeTrace;
+  const routeTrace = resolveModelFacingRouteTrace(result);
   if (!routeTrace || routeTrace.injectedNodeSummaries.length === 0) {
     return buildLegacyPartialBrainContextBlock(result, stage);
   }
@@ -936,7 +940,7 @@ function buildInterruptedBudgetedBrainContext(
   stage: InterruptionStage,
   maxContextChars?: number,
 ): BudgetedBrainContext {
-  const routeTrace = result.trace.routeTrace;
+  const routeTrace = resolveModelFacingRouteTrace(result);
   if (!routeTrace || routeTrace.injectedNodeSummaries.length === 0) {
     return applyLegacyMaxContextChars(buildPartialBrainContextBlock(result, stage), maxContextChars);
   }
@@ -959,7 +963,7 @@ function buildBudgetedBrainContext(
   result: TraversalResult,
   maxContextChars?: number,
 ): BudgetedBrainContext {
-  const routeTrace = result.trace.routeTrace;
+  const routeTrace = resolveModelFacingRouteTrace(result);
   if (routeTrace && routeTrace.injectedNodeSummaries.length > 0) {
     return applyStructuredMaxContextChars(result, routeTrace, maxContextChars);
   }

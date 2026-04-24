@@ -1724,6 +1724,8 @@ export interface TraversalResult {
   vetoed: Array<{ nodeId: string; reason: string }>;
   episode: Episode;
   trace: DecisionTrace;
+  /** Raw route trace for model-facing assembly only; persisted/public traces remain redacted. */
+  modelFacingRouteTrace?: DecisionRouteTrace | null;
   interruption?: BrainInterruptionMetadata | null;
 }
 

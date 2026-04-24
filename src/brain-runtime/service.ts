@@ -2394,7 +2394,7 @@ export class BrainService {
     const selectedNodes = traversalResult.firedNodes
       .map((node) => this.servingGraph.getNode(node.nodeId))
       .filter((node): node is BrainNode => !!node);
-    const trace = recordTrace({
+    const rawTrace = recordTrace({
       traversalResult,
       queryText: params.queryText,
       episodeId: episode.id,
@@ -2411,11 +2411,15 @@ export class BrainService {
       queryEmbeddingSource: compileResult.queryEmbeddingSource,
       selectedNodes,
       lookupNode: (nodeId: string) => this.servingGraph.getNode(nodeId) ?? null,
-      persistRawSurfaces: this.config.persistRawSurfaces,
+      persistRawSurfaces: true,
     });
 
+    const trace = this.config.persistRawSurfaces
+      ? rawTrace
+      : redactDecisionTrace(rawTrace, false);
+
     const compileReport = buildBrainCompileReport({
-      routeTrace: redactRouteTrace(trace.routeTrace, params.queryText, false) ?? trace.routeTrace,
+      routeTrace: redactRouteTrace(rawTrace.routeTrace, params.queryText, false) ?? trace.routeTrace,
       decision: {
         traceId: getTraceRetryIdentity(trace)?.traceId ?? trace.id,
         episodeId: episode.id,
@@ -2439,6 +2443,7 @@ export class BrainService {
       vetoed: traversalResult.vetoedNodes,
       episode,
       trace,
+      modelFacingRouteTrace: rawTrace.routeTrace,
       interruption: traversalResult.interruption ?? null,
     };
   }

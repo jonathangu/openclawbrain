@@ -269,6 +269,54 @@ describe("BrainService observations", () => {
     expect(teacherInput?.routeMetadata.persistenceMode).toBe("redacted");
   });
 
+  it("keeps persisted traces redacted while model-facing assembly receives raw injected text", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-observation-assembly-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-observation-assembly-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      [
+        "# Pull Requests",
+        "",
+        "Use gh pr create for pull request workflows and include the exact validation evidence.",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+    (service as unknown as { embeddingClient: (text: string) => Promise<Float32Array> }).embeddingClient = async (text: string) => embed(text);
+
+    const extension = new BrainAssemblerExtension(service);
+    const assembly = await extension.augmentAssembly({
+      conversationId: 71,
+      tokenBudget: 4096,
+      maxContextChars: 240,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    const injected = String(assembly.messages[0]?.content ?? "");
+    expect(injected).toContain("gh pr create");
+    expect(injected).toContain("validation");
+    expect(injected).not.toContain("[redacted source_content chars=");
+
+    const trace = await service.getTrace(String(assembly.brainDecision?.traceId ?? ""));
+    expect(trace?.routeTrace?.persistenceMode).toBe("redacted");
+    expect(trace?.routeTrace?.injectedNodeSummaries[0]?.contentPreview).toContain("[redacted source_content chars=");
+    expect(trace?.routeTrace?.injectedNodeSummaries[0]?.sourceUri ?? null).toBeNull();
+  });
+
   it("persists exact provenance columns from the runtime truth path into observations and teacher input", async () => {
     const workspaceRoot = makeTempDir("openclawbrain-provenance-observation-workspace-");
     const brainRoot = makeTempDir("openclawbrain-provenance-observation-state-");
