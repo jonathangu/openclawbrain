@@ -1,20 +1,17 @@
 # OpenClawBrain
 
-Stop reteaching your agent the same things.
+Selective intervention for OpenClaw.
 
-OpenClawBrain gives OpenClaw a useful memory. It carries forward corrections, preferences, and successful past work so your agent can improve over time without turning every prompt into a giant transcript dump.
-
-OpenClawBrain is now shipping measured improvements, not just architecture. In the latest public update, it went from missing every reviewed case where memory should have been used to catching all `10/10`, without adding extra false positives. And the proof is published, so you can inspect the claim instead of taking it on faith.
+OpenClawBrain is the selective intervention layer behind OpenClaw. The current achievable agenda is narrow on purpose: make current choices stick when the brain should help, stay out of the way when it should not, and give operators honest proof surfaces for what happened.
 
 Current version: **0.4.45** · [Changelog](CHANGELOG.md)
 
 ## Why people use it
 
-- fixes and preferences stick
-- the agent stops starting from zero every session
-- prompts stay smaller and more focused
-- you can check whether it is really loaded and working
-- if the memory layer is unavailable, the agent still runs
+- current corrections and preferences can stick without dumping giant transcripts back into the prompt
+- restraint is part of the product: the brain can stay off when it should
+- the live path serves small promoted packs and fails open if the brain cannot load safely
+- `status --detailed` and `proof` let operators inspect what is real on one OpenClaw home
 
 ## Start here
 
@@ -29,54 +26,65 @@ npx @openclawbrain/cli@0.4.45 proof --openclaw-home ~/.openclaw
 
 Use the same four commands later for upgrades and repairs.
 
-## How it works
+## What It Does Today
 
 In plain English:
 
-1. OpenClawBrain records useful past work, corrections, and outcomes.
-2. It learns in the background which memories actually help.
-3. It prepares a small memory pack that is safe to serve live.
-4. At runtime, OpenClaw gets only the small slice that is likely to help now.
+1. OpenClawBrain records corrections, outcomes, and route evidence.
+2. It learns off the response path which small intervention helps at similar decision points.
+3. It only serves promoted packs.
+4. At runtime, it either injects a small current-relevant slice or stays out of the way.
 
-That means the agent gets continuity without turning every prompt into a giant history dump.
+This is not a claim of broad agent memory. It is a bounded selective-intervention system.
 
-## Latest shipped win
+## Current Bounded Proof
 
-The newest published update is intentionally bounded, but it is a real shipped improvement, not a vague benchmark story.
+The current checked proof surfaces are intentionally narrower than the end-state product story.
 
-- On a reviewed frozen test set, OpenClawBrain went from catching `0/10` of the cases where memory should have helped to catching all `10/10`.
-- At the same time, it stayed disciplined: `0/65` unnecessary activations, `0/69` must-not-fire failures, and `0/403` broad-live regressions on the checked bundle.
-- The product now makes it easier to inspect what happened and why, instead of hiding the result behind internal-only artifacts.
-- We also tightened the internal safety and review path so improvements are easier to verify and harder to ship by accident.
+- The operator install / attach / `status --detailed` / `proof` lane is real on the exercised host surface.
+- The latest checked activation-first bundle separates unique wins from ties instead of flattening them together: `18` better, `7` tied, `0` worse on the reviewed `felt_resume_25` traces.
+- The same bundle kept restraint clean: `0/65` unnecessary activations, `0/69` must-not-fire failures, and `0/403` broad-live replay regressions on the checked guardrail bundle.
+- Broad-live replay ties are guardrail evidence, not product wins.
 
-Honest boundary: this is a real measured improvement on checked bundles. It is not a claim that every live task is already solved.
+Honest boundary: this is proof that bounded selective-intervention lanes and operator truth surfaces exist. It is not a claim that OpenClawBrain already solves broad live answer quality.
 
-## What is different from simple retrieval
+## What Is Next
+
+The near-term agenda is:
+
+- current-choice fidelity
+- restraint / specificity
+- honest proof surfaces
+- operator-story quality
+- tool-capability choice only after the first two lanes are real
+
+## What Is Different From Simple Retrieval
 
 A basic archive can store the past.
 A basic search system can find similar text.
 
-OpenClawBrain tries to answer a harder question:
+OpenClawBrain is trying to answer a narrower and more useful question:
 
-> What small piece of past context will actually help with this run?
+> What small intervention helps this run right now, if any?
 
-That is the whole point.
+That is the current product job.
 
-## Start here
+## Docs
 
 - [Quick start](docs/getting-started/quick-start.md)
 - [Docs index](docs/README.md)
 - [Install / lifecycle](docs/lifecycle.md)
 - [Troubleshooting](docs/operating/troubleshooting.md)
+- [Proof map](docs/proof/README.md)
 - [How it works](https://openclawbrain.ai/how-it-works/)
 
-## For maintainers
+## For Maintainers
 
-The deep architecture and release docs still exist, but they are not the first stop for a newcomer.
-
-- [Architecture overview](docs/architecture/overview.md)
 - [Claims boundary](CLAIMS.md)
 - [Release contract](docs/RELEASE_CONTRACT.md)
+- [Evidence ladder](docs/EVIDENCE.md)
+- [End-state guide](docs/END_STATE.md)
+- [Architecture overview](docs/architecture/overview.md)
 
 ## Contributing
 
@@ -86,4 +94,4 @@ npm test
 npm run release:verify
 ```
 
-If you change the public story, update the README, docs index, and site pages in the same pass.
+If you change the public story, update the README, docs index, and the proof / claims surfaces in the same pass.

@@ -34,6 +34,8 @@ Look for these signals in `status --detailed`:
 - `loadProof=status_probe_ready`
 - `surface ... converge=converged`
 
+These signals tell you the operator lane is healthy for that home. They do not, by themselves, prove current-choice fidelity or broader answer-quality gains.
+
 If the install does not look healthy yet, go straight to [Troubleshooting](../operating/troubleshooting.md).
 
 ## Next

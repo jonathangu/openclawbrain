@@ -1,65 +1,32 @@
 # Proof packaging
 
-This page packages the repo-side public/operator proof surfaces, including the shipped operator proof lane and the target-state Teacher v3 bundle.
+This page maps the repo-side proof surfaces for the current OpenClawBrain agenda.
 
-It is a map, not a claim: **shipped** surfaces are current truth, **target** surfaces are review-only Teacher v3 outputs, and **example** surfaces are docs-only scaffolding.
-
-## Legend
-
-- **shipped** — already exists in the repo or in checked-in evidence; safe to point at as current truth.
-- **target** — derived review surface; useful for packaging and review, not live authority.
-- **example** — intentionally synthetic scaffold; do not treat it as proof.
+Current shipped proof is about operator truth and bounded selective-intervention lanes. Future proof surfaces should extend that ladder deliberately; unique wins and ties are not interchangeable.
 
 ## Shipped proof surfaces
 
-| State | Surface | What it shows | Notes |
-| --- | --- | --- | --- |
-| shipped | `openclawbrain status --openclaw-home <path> --detailed` | live runtime truth | canonical runtime snapshot for that exact OpenClaw home, including explicit nonstandard homes like `./openclaw-cormorantai`, plus the bounded-anytime summary and route-quality summary |
-| shipped | `openclawbrain proof --openclaw-home <path>` | host-anchored operator proof bundle | durable bundle with `summary.md`, `steps.json`, `verdict.json`, runtime-load-proof truth, and `provenance-audit-chain.{md,json}` for that exact OpenClaw home |
-| shipped | `scripts/proof-cron.mjs health` and `scripts/proof-cron.mjs nightly` | proof-health snapshots, bounded-anytime rollups, and economics scorecards | writes health/nightly bundles with bounded summaries plus `economics-scorecard.{json,md}` so cost/performance evidence stays reviewable |
-| shipped | `docs/evidence/YYYY-MM-DD/<git-sha>/` | frozen proof bundle snapshots | checked-in evidence tree; see `docs/evidence/README.md` |
-| shipped | `scripts/verify-proof-smoke.mjs` | proof freshness gate | only enforces when the repo still advertises frozen proof claims |
-| shipped | `docs/internal/recorded-session-replay.md` | replay proof bundle layout | shows the stable proof-bundle contract and worked-trace lane |
-| shipped | `docs/architecture/teacher-v3-proof.md` | Teacher v3 proof contract | explicitly maps shipped vs target-state truth |
+| Surface | What it proves today | Boundary |
+| --- | --- | --- |
+| `openclawbrain status --openclaw-home <path> --detailed` | live runtime truth for one selected OpenClaw home | runtime / load / status truth only |
+| `openclawbrain proof --openclaw-home <path>` | durable operator proof bundle for that home | install / runtime / reporting truth, not a blanket quality claim |
+| `docs/evidence/YYYY-MM-DD/<git-sha>/` | frozen checked bundles | only the exact claims named in each bundle summary |
+| `artifacts/activation-first-gating-retune/T-20260419-269/scorecard.json` | bounded activation-first scorecard with unique wins, ties, restraint counts, and regressions | not a broad live answer-quality claim |
+| `artifacts/activation-first-gating-retune/T-20260419-269/broad-live-comparative-eval/summary.md` | guardrail replay bundle for the checked broad-live lane | ties and no-regression counts are guardrails, not product wins |
+| `scripts/verify-proof-smoke.mjs` | proof-freshness gate for the frozen public lane | smoke boundary, not a full rerun of every proof lane |
 
-## Target-state Teacher v3 packaging
+## Next proof surfaces to add
 
-| State | Surface | What it shows | Notes |
-| --- | --- | --- | --- |
-| target | `scripts/teacher-v3-proof-bundle.mjs` | Teacher v3 bundle writer | code exists, but the emitted bundle is a derived review surface, not live authority |
-| target | `artifacts/teacher-v3-proof/<run-id>/` | workspace output root | development bundle root for review runs |
-| target | `summary.md` | human summary | bounded, comparative, publication-safe |
-| target | `status.json` | machine summary | counts and state only; no raw payload dump |
-| target | `surface-map.json` | shipped-vs-target inventory | each referenced surface is explicitly labeled |
-| target | `proposal-report.json` | machine-readable proposal report | includes lineage, evidence links, and recommendations |
-| target | `verdict.json` | review verdict | reviewable, shadow-only, promotable, rejected, or expired |
+- a later-preference current-choice fidelity bundle on the real runtime path
+- a second restraint or concrete-specificity bundle that pairs a positive recovery with a must-not-fire keep
+- a tool-capability choice bundle only after the first two lanes are frozen
 
-The current writer can seed the bundle from runtime capture when Gate 1 proposal persistence is absent. That is a seam, not a shipped claim, and the bundle should say so plainly in `gate1Seam.note`.
+## Derived and target surfaces
 
-## Worked examples
-
-These examples are for packaging and review only.
-
-### Docs-only scaffold pack
-
-- `artifacts/fixtures/compiled-artifacts/target-state-scaffold/README.md`
-- `artifacts/fixtures/compiled-artifacts/target-state-scaffold/pack.manifest.json`
-- `artifacts/fixtures/compiled-artifacts/target-state-scaffold/artifacts/ca_example_concept_substrate_01/artifact.md`
-- `artifacts/fixtures/compiled-artifacts/target-state-scaffold/artifacts/ca_example_map_of_territory_01/artifact.md`
-- `artifacts/fixtures/compiled-artifacts/target-state-scaffold/artifacts/ca_example_provenance_gap_report_01/artifact.md`
-
-This pack is derived from docs only. It is **not** a runtime proof bundle, **not** a promoted pack, and **not** a replacement for live authority.
-
-### Frozen host/operator proof example
-
-- `docs/evidence/2026-03-16/4ccd71a22418b9170128b8d948f5a95801a10380/`
-- `docs/evidence/README.md`
-- `docs/EVIDENCE.md`
-
-This is the checked-in shipped operator proof lane. Use it as the honest example of what a frozen public proof bundle looks like today.
+- Teacher v3 proposal bundles remain derived review surfaces, not shipped authority.
+- Docs-only scaffolds and examples are packaging aids, not proof.
+- If a target bundle is seeded from another surface because persistence is incomplete, that seam must be explicit in the bundle summary.
 
 ## Honest boundary
 
-If a page, bundle, or artifact is listed under **target** or **example**, do not present it as shipped operator truth.
-
-Shipped operator truth comes from runtime status, operator proof, and frozen evidence bundles. The Teacher v3 package is derived from those surfaces and should stay explicit about the boundary.
+Shipped truth comes from runtime status, operator proof bundles, frozen evidence bundles, and named checked scorecards. Anything else should stay labeled as target, review-only, or example.

@@ -1,6 +1,6 @@
 # OpenClawBrain docs
 
-Start here.
+Start here if you want the current truthful operator lane.
 
 ## Start here
 
@@ -13,7 +13,19 @@ npx @openclawbrain/cli@0.4.45 status --openclaw-home ~/.openclaw --detailed
 npx @openclawbrain/cli@0.4.45 proof --openclaw-home ~/.openclaw
 ```
 
-That same path is also the upgrade and repair path.
+That same path is also the upgrade and repair path. It proves the operator install / runtime / reporting lane for one OpenClaw home; it does not by itself prove broad decision-quality gains.
+
+## What OpenClawBrain Is Right Now
+
+OpenClawBrain is a selective intervention layer for OpenClaw.
+
+The current achievable agenda is:
+
+- current-choice fidelity
+- restraint / specificity
+- honest proof surfaces
+- operator-story quality
+- tool-capability choice later
 
 ## New users
 
@@ -22,27 +34,18 @@ That same path is also the upgrade and repair path.
 - [Troubleshooting](operating/troubleshooting.md)
 - [Current release notes (0.4.45)](release-notes-0.4.45.md)
 
-## What OpenClawBrain is
+## Proof and claims
 
-OpenClawBrain is a memory layer for OpenClaw.
-
-It helps the agent:
-- remember corrections
-- carry forward preferences
-- reuse successful past work
-- keep the live prompt small and focused
+- [Proof map](proof/README.md)
+- [Claims boundary](../CLAIMS.md)
+- [Release contract](RELEASE_CONTRACT.md)
+- [Evidence ladder](EVIDENCE.md)
 
 ## If you want the deeper explanation
 
 - [How it works](https://openclawbrain.ai/how-it-works/)
 - [Architecture overview](architecture/overview.md)
-- [Proof docs](proof/README.md)
 
 ## Maintainer notes
 
-These are useful, but not the first stop for a newcomer:
-
-- [Claims boundary](../CLAIMS.md)
-- [Release contract](RELEASE_CONTRACT.md)
-- [End state notes](END_STATE.md)
-- [Evidence notes](EVIDENCE.md)
+- [End-state guide](END_STATE.md)

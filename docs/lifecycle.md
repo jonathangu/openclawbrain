@@ -23,6 +23,8 @@ That same command path is used for:
 Use `status --detailed` for the fast check.
 Use `proof` when you want a saved bundle.
 
+That bundle is the canonical operator proof surface for the selected home. It is install / runtime / reporting evidence, not a blanket decision-quality claim.
+
 Healthy installs should show:
 - `STATUS ok`
 - `loadProof=status_probe_ready`

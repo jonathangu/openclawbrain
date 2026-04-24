@@ -1,6 +1,6 @@
 # @openclawbrain/cli
 
-Operator CLI internals for OpenClawBrain.
+Operator CLI internals for the current OpenClawBrain selective-intervention lane.
 
 The public front door is one command pinned to one OpenClaw home:
 
@@ -19,6 +19,8 @@ openclawbrain proof --openclaw-home ~/.openclaw
 ```
 
 The intended canonical lane is the same install command with optional `--proof`. Until that lands cleanly across the operator surfaces, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
+
+Those surfaces prove install / runtime / reporting truth for one selected home. They are not, by themselves, a broad answer-quality claim.
 
 This package is part of the internal split architecture. Public docs should lead with OpenClawBrain and the `openclawbrain install` lane, not with package-pair trivia.
 

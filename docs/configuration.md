@@ -1,6 +1,6 @@
 # Configuration guide
 
-OpenClawBrain works with either the default install path or an explicit nonstandard home. Most operators only need `openclawbrain install --openclaw-home <path>`, a gateway restart, a status check for that same home, and proof only when they need durable operator evidence. The live path serves promoted packs so useful context stays bounded while learning stays off the response path.
+OpenClawBrain configuration is centered on one selected OpenClaw home, a bounded live path, and honest proof surfaces. The current product job is selective intervention: preserve a current correction or other small relevant slice when it helps, stay out when it does not, and keep the operator truth inspectable.
 
 ## Default operator flow
 
@@ -14,7 +14,7 @@ openclaw gateway restart
 openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 ```
 
-`status --detailed` is the quick verify surface.
+`status --detailed` is the quick verify surface for that home.
 
 When you need durable operator evidence today, run:
 
@@ -24,15 +24,28 @@ openclawbrain proof --openclaw-home ./openclaw-cormorantai
 
 The intended canonical lane is the same install command with optional `--proof`. Until that flag lands cleanly across the operator surfaces, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
 
+That bundle proves install / runtime / reporting truth for the selected home. It does not, by itself, prove broader decision-quality gains.
+
 If you only need the minimal happy path, stop there and use [Quick start](getting-started/quick-start.md).
 
-## Canonical context-management model
+## Runtime posture
+
+The live path is intentionally narrow:
+
+- serve only promoted packs
+- fail open if runtime context cannot be prepared safely
+- keep learning off the response path; `brainWorkerMode=child` is the supported serving boundary
+- use `OPENCLAWBRAIN_SHADOW_MODE` when you want to inspect decisions without injecting brain context
+
+The near-term decision lanes to care about are current-choice fidelity and restraint / specificity, not broad "memory coverage."
+
+## Canonical serve-time model
 
 OpenClawBrain does not have a separate operator-only "tier" model for context. The real serve-time model is:
 
 - **Hot context** = the ordered summary spine plus the protected fresh tail of raw messages. `LCM_FRESH_TAIL_COUNT` controls how many latest raw messages stay protected from compaction and truncation.
 - **Summary freshness** = lineage state on each summary. `fresh` can start recall. `stale_source`, `stale_branch`, `stale_pack`, `superseded`, and `tombstoned` mean the summary is a locator map, not proof, so exact or current-truth claims should expand back to source.
-- **Prefetch** = an opportunistic traversal cache, not a second memory tier. It is keyed by query digest, active pack version, budget class, summary-routing mode, and kind. It can be reused on a hit, but pack, routing, or budget changes can make it stale or invalidated before serve time.
+- **Prefetch** = an opportunistic traversal cache, not a second serve-time tier. It is keyed by query digest, active pack version, budget class, summary-routing mode, and kind. It can be reused on a hit, but pack, routing, or budget changes can make it stale or invalidated before serve time.
 - **Budget controls** = `LCM_FRESH_TAIL_COUNT` protects the raw tail, `OPENCLAWBRAIN_BUDGET_FRACTION` splits learned-query budget from the turn budget, and `LCM_MAX_EXPAND_TOKENS` caps expand-to-source work. Per-turn status and trace surfaces report `queryBudgetChars`, `maxContextChars`, `injectedChars`, and `droppedChars` when serve-time clipping happens.
 
 In the runtime and internal CLI JSON status surfaces, this model is grouped under `contextManagement`. Use that as the canonical status vocabulary.
@@ -58,6 +71,8 @@ This is a practical starting point for local embeddings and the supervised child
 }
 ```
 
+These defaults optimize bounded local serving and operator inspectability, not max-recall behavior.
+
 Why these defaults:
 
 - `brainEmbeddingProvider=ollama` keeps embeddings local
@@ -67,6 +82,8 @@ Why these defaults:
 ## Optional teacher wiring
 
 Teacher wiring is separate from brain activation. Making a model available in Ollama is not the same thing as telling OpenClawBrain to use it as the teacher. `BRAIN LOADED` proves the runtime hook is attached; teacher configuration is a separate status-tracked surface.
+
+Teacher wiring is optional and not part of the current frozen public proof boundary.
 
 A conceptual teacher configuration looks like this:
 
