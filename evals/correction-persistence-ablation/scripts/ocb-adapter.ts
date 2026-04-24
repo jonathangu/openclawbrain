@@ -2,6 +2,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
+import { BrainAssemblerExtension } from "../../../src/brain-runtime/assembler-extension.js";
 import { BrainService } from "../../../src/brain-runtime/service.js";
 import { proposeUserCorrectionFast } from "../../../src/brain-runtime/user-memory-proposals.js";
 import type { LcmDependencies } from "../../../src/types.js";
@@ -234,6 +235,7 @@ export async function createOcbAdapter(): Promise<{
         );
 
         const service = new BrainService({ deps: createDeps(brainRoot) });
+        const extension = new BrainAssemblerExtension(service);
         await service.init({ workspaceRoot, embedFn: embed });
         (service as unknown as { embeddingClient: (text: string) => Promise<Float32Array> }).embeddingClient = embed;
 
@@ -261,9 +263,31 @@ export async function createOcbAdapter(): Promise<{
           score: Number((1 - (index * 0.05)).toFixed(4)),
           age_seconds: corrections.find((correction) => correction.instruction === node.content)?.ageSeconds ?? 0,
         }));
-        const injected_text = retrieved.length > 0
-          ? "The user previously corrected or stated a preference:\n" + retrieved.map((item) => `- ${item.content}`).join("\n")
+
+        const assembled = await extension.augmentAssembly({
+          conversationId: CONVERSATION_ID,
+          tokenBudget: 4096,
+          maxContextChars: 4000,
+          assembled: {
+            messages: [{ role: "user", content: query }],
+            estimatedTokens: 0,
+            stats: {
+              rawMessageCount: 1,
+              summaryCount: 0,
+              totalContextItems: 1,
+            },
+          },
+          liveMessages: [{ role: "user", content: query }],
+        });
+
+        const candidateInjectedText = typeof assembled.messages[0]?.content === "string"
+          ? assembled.messages[0].content
           : "";
+        const injected_text = assembled.brainDecision?.mode === "use_brain" && assembled.messages.length > 1
+          ? candidateInjectedText
+          : (retrieved.length > 0
+            ? "The user previously corrected or stated a preference:\n" + retrieved.map((item) => `- ${item.content}`).join("\n")
+            : "");
 
         return {
           fire: retrieved.length > 0,
