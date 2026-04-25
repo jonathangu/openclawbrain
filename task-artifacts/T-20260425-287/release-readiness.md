@@ -124,3 +124,32 @@ Aligned locally on the integration branch:
 2. Merge/push the release commit to `origin/main` only when Jonathan approves that external write.
 3. Rerun `npm run release:plan` from the mainline commit; it should clear once HEAD is reachable from `origin/main`.
 4. Only then proceed to npm publish/tag/GitHub release/install/restart/proof, with the normal explicit approval boundary.
+
+## Final pre-publish verification after package-surface fix
+
+A full release verification pass initially caught a real package-surface drift:
+
+- `packages/openclaw/openclaw.plugin.json` still reported `0.4.47` while `packages/openclaw/package.json` reported `0.4.48`.
+
+Fixed before publishing by aligning:
+
+- `packages/openclaw/openclaw.plugin.json` → `0.4.48`
+- `docs/getting-started/quick-start.md` CLI examples → `0.4.48`
+- `docs/lifecycle.md` CLI examples → `0.4.48`
+
+Then reran:
+
+```bash
+npm run release:verify
+```
+
+Result: passed.
+
+Included gates:
+
+- dependency policy clean
+- root `npm test`: `116` files / `748` tests passed
+- proof smoke ok
+- root `npm pack --dry-run` for `@jonathangu/openclawbrain@0.4.48`
+- OpenClaw package verify: `85` node tests passed + tarball verified for `@openclawbrain/openclaw@0.4.48`
+- CLI package verify: `184` node tests passed + tarball verified for `@openclawbrain/cli@0.4.48`
