@@ -90,10 +90,22 @@ Wave 1 specifically follows this order:
 
 1. export a canonical machine bundle
 2. emit a Graphify projection bundle from the same source set
-3. build Graphify-derived compiled artifacts
-4. only then consider any bounded import slice
+3. run Graphify through a managed, recorded, off-path runner
+4. build Graphify-derived compiled artifacts
+5. only then consider any bounded import slice
 
 Import is therefore a later consumer of compiled artifacts, not a replacement for them.
+
+Repo-native helper: `npm run graphify:bridge -- --output-root <dir> --run-id <id>` runs the first safe vertical slice and writes only artifacts:
+
+- `source-bundle/canonical/` — canonical machine export
+- `source-bundle/projection/` — Graphify-facing projection export
+- `source-bundle/corpus-manifest.json` — dual-source manifest with canonical-over-projection authority
+- `graphify-run/managed-run/` — managed Graphify runner metadata and graph outputs
+- `compiled-artifact-pack/` — OCB-shaped pack with `map_of_territory`, `concept_page`, `neighborhood_summary`, and `provenance_gap_report`
+- `bridge-status.json` / `summary.md` — boundary and provenance summary
+
+The helper does not read from or write to `before_prompt_build`, live traversal, correction memory, or promotion state.
 
 ## 5) Output classes A-E
 
