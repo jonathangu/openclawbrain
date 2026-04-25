@@ -4,7 +4,7 @@ Selective intervention for OpenClaw.
 
 OpenClawBrain is the selective intervention layer behind OpenClaw. The current achievable agenda is narrow on purpose: make current choices stick when the brain should help, stay out of the way when it should not, and give operators honest proof surfaces for what happened.
 
-Current version: **0.4.46** · [Changelog](CHANGELOG.md)
+Current version: **0.4.47** · [Changelog](CHANGELOG.md)
 
 ## Why people use it
 
@@ -18,10 +18,10 @@ Current version: **0.4.46** · [Changelog](CHANGELOG.md)
 If you already have OpenClaw and Node.js 20+, this is the simplest path:
 
 ```bash
-npx @openclawbrain/cli@0.4.46 install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.47 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.46 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.46 proof --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.47 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.47 proof --openclaw-home ~/.openclaw
 ```
 
 Use the same four commands later for upgrades and repairs.
@@ -43,6 +43,7 @@ The current checked proof surfaces are intentionally narrower than the end-state
 
 - The operator install / attach / `status --detailed` / `proof` lane is real on the exercised host surface: latest bundle verdict `success_and_proven`, severity `none`, warnings `0`.
 - The protected current-choice lane remains clean: `full-ocb 5/5`, `regret=0`, `harm=0`.
+- Newer explicit preferences now supersede older preferences in the same durable slot, including versioned tool/model choices such as `Codex GPT-5.4` → `Codex GPT-5.5`.
 - The broader specificity/restraint cohort now passes `full-ocb 12/12`, with `regret=0` and `harm=0`.
 - The first bounded tool-capability choice proof passes for `weather.current_conditions`: must-fire current weather/rain chooses `tool_capability`; must-not-fire weather definition chooses `stop_local`.
 - Broad-live replay ties and route-level capability choice are guardrail evidence, not product wins.

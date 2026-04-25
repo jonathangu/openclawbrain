@@ -4,6 +4,28 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.47
+
+`0.4.47` is the explicit-preference precedence release: it packages the post-`0.4.46` fix that keeps the newest durable preference current when an older versioned tool/model preference would otherwise still retrieve.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.47`
+- `@openclawbrain/cli@0.4.47`
+
+**Changes**
+
+- treats newer explicit preferences for the same durable subject as replacements instead of sibling current memories
+- recognizes explicit rejection of an older preference value as deterministic supersession, including versioned model/tool choices such as `Codex GPT-5.4` → `Codex GPT-5.5`
+- serves only the current explicit preference for normal current-truth queries after supersession
+- documents the correction/routing precedence rule that newer explicit preferences supersede older values in the same durable slot
+- adds regression coverage for the Codex model preference handoff and superseded-node exclusion
+- aligns README, docs, release notes, and split-package version surfaces to `0.4.47`
+
+**Full release note**
+
+- [docs/release-notes-0.4.47.md](docs/release-notes-0.4.47.md)
+
 ## 0.4.46
 
 `0.4.46` is the bounded selective-intervention proof release: it keeps current-choice fidelity protected, broadens specificity/restraint proof, cleans the exercised one-home operator proof, and adds the first route-level tool-capability choice proof without claiming broad memory or live weather execution.

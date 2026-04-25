@@ -66,13 +66,14 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 
 - a real live runtime path exists with promoted-pack serving, explicit skip / shadow modes, and fail-open behavior
 - the child-worker learner boundary, replay-gated promotion, and raw evidence pipeline all exist
-- split packages `@openclawbrain/openclaw@0.4.46` and `@openclawbrain/cli@0.4.46` are published
+- split packages `@openclawbrain/openclaw@0.4.47` and `@openclawbrain/cli@0.4.47` are published
 - the operator install / status / proof lane is real on the exercised host surface
 - deterministic session-bound `brain_teach` proof exists
 - the checked activation-first bundle separates `18` unique wins, `7` ties, and `0` regressions on reviewed felt traces
 - the same bundle keeps restraint clean: `0/65` unnecessary activations and `0/69` must-not-fire failures
 - the paired checked broad-live guardrail bundle shows `0/403` regressions
 - the protected current-choice lane remains `full-ocb 5/5` with `regret=0` and `harm=0`
+- newer explicit preferences supersede older preferences in the same durable slot for current-truth queries, including versioned model/tool choices such as `Codex GPT-5.4` → `Codex GPT-5.5`
 - the broader specificity/restraint cohort passes `full-ocb 12/12` with `regret=0` and `harm=0`
 - the first route-level tool-capability choice proof passes for `weather.current_conditions`, with a must-fire current weather/rain case and a must-not-fire weather-definition case
 

@@ -7,10 +7,10 @@ Start here if you want the current truthful operator lane.
 If you want to try OpenClawBrain for the first time, use this command path:
 
 ```bash
-npx @openclawbrain/cli@0.4.46 install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.47 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.46 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.46 proof --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.47 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.47 proof --openclaw-home ~/.openclaw
 ```
 
 That same path is also the upgrade and repair path. It proves the operator install / runtime / reporting lane for one OpenClaw home; it does not by itself prove broad decision-quality gains.
@@ -22,6 +22,7 @@ OpenClawBrain is a selective intervention layer for OpenClaw.
 The current achievable agenda is:
 
 - current-choice fidelity
+- explicit-preference precedence for current durable choices
 - restraint / specificity
 - honest proof surfaces
 - operator-story quality
@@ -32,7 +33,7 @@ The current achievable agenda is:
 - [Quick start](getting-started/quick-start.md)
 - [Lifecycle](lifecycle.md)
 - [Troubleshooting](operating/troubleshooting.md)
-- [Current release notes (0.4.46)](release-notes-0.4.46.md)
+- [Current release notes (0.4.47)](release-notes-0.4.47.md)
 
 ## Proof and claims
 
