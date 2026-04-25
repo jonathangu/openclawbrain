@@ -4,6 +4,14 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.48
+
+Release notes: [docs/release-notes-0.4.48.md](docs/release-notes-0.4.48.md)
+
+- Strengthen cold-start candidate-artifact replay selection with bounded multi-select and a deterministic cold-start scorecard.
+- Add learned-route activation-usefulness accounting for beneficial wins, harmful activations, neutral ties, missed opportunities, and proxy cost deltas.
+- Add a narrow shadow-only Teacher v3 graph-maintenance proposal lifecycle with durable replay and rollback evidence.
+
 ## 0.4.47
 
 `0.4.47` is the explicit-preference precedence release: it packages the post-`0.4.46` fix that keeps the newest durable preference current when an older versioned tool/model preference would otherwise still retrieve.

@@ -9,59 +9,99 @@
       "id": "cold-start-approved-prior",
       "lane": "cold-start",
       "required": true,
-      "evidenceType": ["test", "artifact", "lane-report"],
+      "evidenceType": [
+        "test",
+        "artifact",
+        "lane-report"
+      ],
       "acceptableEvidence": [
         "focused cold-start loader/trainer/runtime/replay tests pass",
         "artifact identifies approved export or synthetic fixture and eligibility counts",
         "lane report states sample-vs-real boundary"
       ],
-      "status": "pending"
+      "status": "passed",
+      "evidence": [
+        "integration-merge-report.md: cold-start focused 4 files / 24 tests passed",
+        "post-review focused cold-start loader/replay/runtime/trainer/scorecard set: 6 files / 32 tests passed",
+        "coldstart-scorecard/summary.md and scorecard.json record frozen-scorecard boundary"
+      ]
     },
     {
       "id": "learned-route-centrality",
       "lane": "learned-route",
       "required": true,
-      "evidenceType": ["test", "eval-or-proof-artifact", "lane-report"],
+      "evidenceType": [
+        "test",
+        "eval-or-proof-artifact",
+        "lane-report"
+      ],
       "acceptableEvidence": [
         "learned route mission or named focused subset passes",
         "route attribution separates learned_route, approved prior, graph prior/import, vector_only, and no_brain/fail-open",
         "comparative counts split better/tied/worse and keep-clean negatives"
       ],
-      "status": "pending"
+      "status": "passed",
+      "evidence": [
+        "integration-merge-report.md: replay/route focused 3 files / 19 tests passed",
+        "npm run test:learned-route-mission: 8 files / 45 tests passed",
+        "route-report.md documents beneficial/harmful/neutral/missed/cost labels and deterministic-fixture boundary"
+      ]
     },
     {
       "id": "graph-maintenance-off-path",
       "lane": "graph-maintenance",
       "required": true,
-      "evidenceType": ["test", "registry-artifact", "lane-report"],
+      "evidenceType": [
+        "test",
+        "registry-artifact",
+        "lane-report"
+      ],
       "acceptableEvidence": [
         "graphify scheduler/registry/training-bridge tests pass for touched surfaces",
         "registry artifact links source bundle, outputs, retention policy, and replay notes",
         "lane report confirms no hot-path dependency and EXTRACTED-only import boundary"
       ],
-      "status": "pending"
+      "status": "passed_with_scoped_claim",
+      "evidence": [
+        "integration-merge-report.md: Teacher graph-maintenance focused 4 files / 10 tests and extended Teacher v3 8 files / 30 tests passed",
+        "post-review graphify/Teacher set: 6 files / 13 tests passed",
+        "teacher-graph-report.md confirms shadow-only lifecycle; release copy scopes out broad Graphify registry/retention/import claims"
+      ]
     },
     {
       "id": "merged-claim-boundary",
       "lane": "integration",
       "required": true,
-      "evidenceType": ["release-readiness-report"],
+      "evidenceType": [
+        "release-readiness-report"
+      ],
       "acceptableEvidence": [
         "release-readiness.md names lane commits, commands, artifacts, public claims, and forbidden overclaims",
         "unmet lane bars are scoped out of release copy rather than implied shipped"
       ],
-      "status": "pending"
+      "status": "passed",
+      "evidence": [
+        "release-readiness.md names lane commits, commands, artifacts, allowed claims, and forbidden claims",
+        "docs/release-notes-0.4.48.md uses bounded release language and explicit non-claims"
+      ]
     },
     {
       "id": "release-version-alignment",
       "lane": "release-prep",
       "required": true,
-      "evidenceType": ["command"],
+      "evidenceType": [
+        "command"
+      ],
       "acceptableEvidence": [
         "npm run release:verify:docs-drift passes after version/docs alignment",
         "npm run release:plan passes after package versions/release notes/changelog are aligned"
       ],
-      "status": "pending"
+      "status": "blocked_on_origin_main_before_publish",
+      "evidence": [
+        "npm run release:verify:docs-drift passed clean for 0.4.48",
+        "versions/docs/changelog/release notes aligned locally",
+        "npm run release:plan blocks only because HEAD is not reachable from origin/main; no publish should occur until the release commit is on main and release:plan is rerun"
+      ]
     }
   ],
   "forbiddenClaims": [
@@ -84,5 +124,7 @@
     "npm run test:learned-route-mission",
     "npm run proof:frozen-eval-gate (only if public decision-quality claims broaden)",
     "npm test or documented focused-subset/full-test blocker before publish"
-  ]
+  ],
+  "releaseReadiness": "task-artifacts/T-20260425-287/release-readiness.md",
+  "updatedAt": "2026-04-25T07:55:00-07:00"
 }

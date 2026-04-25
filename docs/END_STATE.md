@@ -66,7 +66,7 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 
 - a real live runtime path exists with promoted-pack serving, explicit skip / shadow modes, and fail-open behavior
 - the child-worker learner boundary, replay-gated promotion, and raw evidence pipeline all exist
-- split packages `@openclawbrain/openclaw@0.4.47` and `@openclawbrain/cli@0.4.47` are published
+- split packages `@openclawbrain/openclaw@0.4.48` and `@openclawbrain/cli@0.4.48` are published
 - the operator install / status / proof lane is real on the exercised host surface
 - deterministic session-bound `brain_teach` proof exists
 - the checked activation-first bundle separates `18` unique wins, `7` ties, and `0` regressions on reviewed felt traces
