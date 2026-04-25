@@ -1,0 +1,88 @@
+{
+  "schema": "openclawbrain.release_integration_checklist.v1",
+  "task": "T-20260425-287",
+  "targetPublicVersion": "0.4.48",
+  "baseCommit": "b141a335",
+  "contract": "task-artifacts/T-20260425-287/integration-contract.md",
+  "requiredItems": [
+    {
+      "id": "cold-start-approved-prior",
+      "lane": "cold-start",
+      "required": true,
+      "evidenceType": ["test", "artifact", "lane-report"],
+      "acceptableEvidence": [
+        "focused cold-start loader/trainer/runtime/replay tests pass",
+        "artifact identifies approved export or synthetic fixture and eligibility counts",
+        "lane report states sample-vs-real boundary"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "learned-route-centrality",
+      "lane": "learned-route",
+      "required": true,
+      "evidenceType": ["test", "eval-or-proof-artifact", "lane-report"],
+      "acceptableEvidence": [
+        "learned route mission or named focused subset passes",
+        "route attribution separates learned_route, approved prior, graph prior/import, vector_only, and no_brain/fail-open",
+        "comparative counts split better/tied/worse and keep-clean negatives"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "graph-maintenance-off-path",
+      "lane": "graph-maintenance",
+      "required": true,
+      "evidenceType": ["test", "registry-artifact", "lane-report"],
+      "acceptableEvidence": [
+        "graphify scheduler/registry/training-bridge tests pass for touched surfaces",
+        "registry artifact links source bundle, outputs, retention policy, and replay notes",
+        "lane report confirms no hot-path dependency and EXTRACTED-only import boundary"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "merged-claim-boundary",
+      "lane": "integration",
+      "required": true,
+      "evidenceType": ["release-readiness-report"],
+      "acceptableEvidence": [
+        "release-readiness.md names lane commits, commands, artifacts, public claims, and forbidden overclaims",
+        "unmet lane bars are scoped out of release copy rather than implied shipped"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "release-version-alignment",
+      "lane": "release-prep",
+      "required": true,
+      "evidenceType": ["command"],
+      "acceptableEvidence": [
+        "npm run release:verify:docs-drift passes after version/docs alignment",
+        "npm run release:plan passes after package versions/release notes/changelog are aligned"
+      ],
+      "status": "pending"
+    }
+  ],
+  "forbiddenClaims": [
+    "broad memory is solved",
+    "Graphify is live runtime truth authority",
+    "cold-start proves trained-home quality",
+    "wins from ties/no-regression evidence",
+    "0.4.48 shipped before publish/tag/release/install proof"
+  ],
+  "recommendedMergeOrder": [
+    "cold-start",
+    "learned-route",
+    "graph-maintenance",
+    "integration-release-prep"
+  ],
+  "validationCommands": [
+    "git diff --check",
+    "npm run release:verify:docs-drift",
+    "npm run release:plan",
+    "npm run test:learned-route-mission",
+    "npm run proof:frozen-eval-gate (only if public decision-quality claims broaden)",
+    "npm test or documented focused-subset/full-test blocker before publish"
+  ]
+}
