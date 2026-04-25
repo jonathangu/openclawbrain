@@ -512,7 +512,7 @@ function hasPackagedHookSource(pluginInspectText, openclawHome) {
 function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, coverageSnapshot, openclawHome }) {
     const failedSteps = steps.filter((step) => step.resultClass !== "success" && step.skipped !== true);
     const failedDetailedStatusStep = failedSteps.find((step) => step.stepId === "05-detailed-status");
-    const gatewayHealthy = /Runtime:\s+running/m.test(gatewayStatus) && /RPC probe:\s+ok/m.test(gatewayStatus);
+    const gatewayHealthy = /Runtime:\s+running/m.test(gatewayStatus) && /(?:RPC|Connectivity) probe:\s+ok/m.test(gatewayStatus);
     const pluginLoaded = /Status:\s+loaded/m.test(pluginInspect);
     const packagedHookPath = hasPackagedHookSource(pluginInspect, openclawHome);
     const breadcrumbLoaded = breadcrumbs.afterBundleStart.some((entry) => entry.kind === "loaded");
@@ -562,7 +562,7 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     }
     if (!gatewayHealthy) {
         warningCodes.push("gateway_health");
-        warnings.push("gateway status did not confirm runtime running and RPC probe ok");
+        warnings.push("gateway status did not confirm runtime running and connectivity probe ok");
     }
     if (!pluginLoaded) {
         warningCodes.push("plugin_loaded");
@@ -657,8 +657,8 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
     if (steps.find((step) => step.stepId === "02-restart")?.skipped === true || steps.find((step) => step.stepId === "02-restart")?.resultClass === "success") {
         passed.push("restart step completed or was intentionally skipped");
     }
-    if (/Runtime:\s+running/m.test(gatewayStatusText) && /RPC probe:\s+ok/m.test(gatewayStatusText)) {
-        passed.push("gateway status showed runtime running and RPC probe ok");
+    if (/Runtime:\s+running/m.test(gatewayStatusText) && /(?:RPC|Connectivity) probe:\s+ok/m.test(gatewayStatusText)) {
+        passed.push("gateway status showed runtime running and connectivity probe ok");
     }
     if (/Status:\s+loaded/m.test(pluginInspectText)) {
         passed.push("plugin inspect showed OpenClawBrain loaded");

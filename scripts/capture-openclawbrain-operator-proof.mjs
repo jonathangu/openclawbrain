@@ -373,7 +373,7 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     };
   }
 
-  const gatewayHealthy = /Runtime:\s+running/m.test(gatewayStatus) && /RPC probe:\s+ok/m.test(gatewayStatus);
+  const gatewayHealthy = /Runtime:\s+running/m.test(gatewayStatus) && /(?:RPC|Connectivity) probe:\s+ok/m.test(gatewayStatus);
   const pluginLoaded = /Status:\s+loaded/m.test(pluginInspect);
   const generatedShadowHookPath = canonicalizeExistingProofPath(path.join(openclawHome, "extensions", "openclawbrain", "index.ts"));
   const sourceMatch = pluginInspect.match(/^Source:\s+(.+)$/m);
@@ -444,8 +444,8 @@ function buildSummary({
   if (steps.find((step) => step.stepId === "02-restart")?.skipped === true || steps.find((step) => step.stepId === "02-restart")?.resultClass === "success") {
     passed.push("restart step completed or was intentionally skipped");
   }
-  if (/Runtime:\s+running/m.test(gatewayStatusText) && /RPC probe:\s+ok/m.test(gatewayStatusText)) {
-    passed.push("gateway status showed runtime running and RPC probe ok");
+  if (/Runtime:\s+running/m.test(gatewayStatusText) && /(?:RPC|Connectivity) probe:\s+ok/m.test(gatewayStatusText)) {
+    passed.push("gateway status showed runtime running and connectivity probe ok");
   }
   if (/Status:\s+loaded/m.test(pluginInspectText)) {
     passed.push("plugin inspect showed OpenClawBrain loaded");
