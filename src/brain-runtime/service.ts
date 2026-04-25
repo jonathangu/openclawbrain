@@ -394,6 +394,7 @@ type ParsedCorrectionDraft = {
   subjectText: string;
   predicate: CorrectionMemoryPredicateV1;
   valueKey: string | null;
+  rejectedValueKey?: string | null;
   confidence: number;
   needsSourceExpansion: boolean;
 };
@@ -431,6 +432,55 @@ function normalizeSubjectKey(text: string): string {
   return normalized || "other";
 }
 
+function normalizePreferenceText(text: string): string {
+  return trimInstructionPunctuation(text)
+    .replace(/^(?:the\s+)?(?:latest|current|newest|new|preferred)\s+/i, "")
+    .replace(/\s+(?:now|first|by default|as default|as the default)$/i, "")
+    .trim();
+}
+
+function inferPreferenceValueText(text: string): string {
+  const normalized = normalizePreferenceText(text);
+  const forMatch = normalized.match(/^(.+?)\s+for\s+.+?$/i);
+  return trimInstructionPunctuation(forMatch?.[1] ?? normalized);
+}
+
+function inferPreferenceSubjectText(preferredText: string, rejectedText: string): string {
+  const preferred = normalizePreferenceText(preferredText);
+  const rejected = normalizePreferenceText(rejectedText);
+  const preferredLower = preferred.toLowerCase();
+  const rejectedLower = rejected.toLowerCase();
+
+  const forMatch = preferred.match(/\bfor\s+(.+?)$/i);
+  if (forMatch?.[1]) {
+    return trimInstructionPunctuation(forMatch[1]);
+  }
+
+  // Model/tool-family preferences often change version while keeping the same
+  // durable subject. "Use Codex GPT-5.4" followed by "Use latest Codex
+  // GPT-5.5" should be one preference slot, not two unrelated memories.
+  if (/\bcodex\b/i.test(preferred) || /\bcodex\b/i.test(rejected)) {
+    return "Codex";
+  }
+
+  if (preferred && rejected) {
+    const left = preferredLower.split(/[^a-z0-9.]+/g).filter(Boolean);
+    const right = rejectedLower.split(/[^a-z0-9.]+/g).filter(Boolean);
+    const common: string[] = [];
+    for (let i = 0; i < Math.min(left.length, right.length); i += 1) {
+      if (left[i] !== right[i]) {
+        break;
+      }
+      common.push(left[i] ?? "");
+    }
+    if (common.length > 0) {
+      return common.join(" ");
+    }
+  }
+
+  return rejected || preferred;
+}
+
 function hasCorrectionAmbiguityCue(text: string): boolean {
   return /\b(maybe|perhaps|probably|possibly|guess|think|might|could|either|or)\b|\?|\//i.test(text);
 }
@@ -457,12 +507,13 @@ function parseCorrectionDraft(instruction: string): ParsedCorrectionDraft {
     const preferredText = trimInstructionPunctuation(preferenceMatch[1] ?? "");
     const rejectedText = trimInstructionPunctuation(preferenceMatch[2] ?? "");
     const needsSourceExpansion = hasCorrectionAmbiguityCue(`${preferredText} ${rejectedText}`.trim());
-    const subjectText = rejectedText || preferredText;
+    const subjectText = inferPreferenceSubjectText(preferredText, rejectedText);
     return {
       subjectKey: normalizeSubjectKey(subjectText),
       subjectText,
       predicate: "preference",
-      valueKey: normalizeSubjectKey(preferredText),
+      valueKey: normalizeSubjectKey(inferPreferenceValueText(preferredText)),
+      rejectedValueKey: rejectedText ? normalizeSubjectKey(inferPreferenceValueText(rejectedText)) : null,
       confidence: needsSourceExpansion ? 0.64 : 0.9,
       needsSourceExpansion,
     };
@@ -1078,7 +1129,12 @@ function withCorrectionMemory(
 }
 
 function isDeterministicReplacement(newDraft: ParsedCorrectionDraft, existingDraft: ParsedCorrectionDraft): boolean {
-  return newDraft.subjectKey === existingDraft.subjectKey
+  const sameSubject = newDraft.subjectKey === existingDraft.subjectKey;
+  const explicitlyRejectsExistingValue = typeof newDraft.rejectedValueKey === "string"
+    && newDraft.rejectedValueKey.length > 0
+    && newDraft.rejectedValueKey === existingDraft.valueKey;
+
+  return (sameSubject || explicitlyRejectsExistingValue)
     && newDraft.predicate === existingDraft.predicate
     && !newDraft.needsSourceExpansion
     && !existingDraft.needsSourceExpansion
@@ -3044,7 +3100,10 @@ export class BrainService {
           draft: parseCorrectionDraft(node.content),
         };
       })
-      .filter((record) => record.sourceAuthority === "user_explicit" && record.draft.subjectKey === draft.subjectKey);
+      .filter((record) => record.sourceAuthority === "user_explicit" && (
+        record.draft.subjectKey === draft.subjectKey
+        || isDeterministicReplacement(draft, record.draft)
+      ));
 
     const explicitSourceCount = 1 + siblingRecords.length;
     const derivedSourceCount = 0;

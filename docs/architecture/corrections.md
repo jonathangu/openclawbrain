@@ -90,7 +90,7 @@ It should be traceable back to the exact user turn that justified it.
 
 ## Correction precedence
 
-Typed corrections are meant to outrank stale abstractions when the question is current-truth or conflict-sensitive.
+Typed corrections are meant to outrank stale abstractions when the question is current-truth or conflict-sensitive. Newer explicit preferences also supersede older preferences in the same durable slot, even when the changed value is a versioned tool/model choice such as `Codex GPT-5.4` → `Codex GPT-5.5`.
 
 A useful precedence ladder is:
 

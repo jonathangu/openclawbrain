@@ -101,6 +101,7 @@ Operationally:
 
 - if summary and correction agree, answer directly
 - if summary and correction conflict, correction wins
+- if newer explicit preferences share the same durable subject, or explicitly reject the older value, mark the older preference superseded and serve only the current one for normal current-truth queries
 - if no correction exists and the query is exact or chronological, expand before answering
 - if expansion evidence is mixed, answer with uncertainty and provenance
 

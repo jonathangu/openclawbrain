@@ -25,6 +25,9 @@ function embed(text: string): Float32Array {
   if (normalized.includes("codeword")) {
     return new Float32Array([1, 0, 0.5]);
   }
+  if (normalized.includes("codex") || normalized.includes("gpt-5")) {
+    return new Float32Array([0, 1, 1]);
+  }
 
   return new Float32Array([0.2, 0.2, 0.2]);
 }
@@ -228,5 +231,106 @@ describe("explicit user correction demo", () => {
       sourceMessageId: 3,
       via: "brain_teach_user_correction",
     });
+  });
+
+  it("makes the newer explicit Codex model preference current and supersedes the stale one", async () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    const workspaceRoot = makeTempDir("openclawbrain-codex-preference-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-codex-preference-state-");
+
+    writeFileSync(
+      join(workspaceRoot, "PREFERENCES.md"),
+      "# Demo\n\nCodex preference regression workspace.\n",
+      "utf8",
+    );
+
+    const fetchMock = vi.fn(async (_input: unknown, init?: { body?: unknown }) => {
+      const rawBody = typeof init?.body === "string" ? init.body : "{}";
+      const parsed = JSON.parse(rawBody) as { input?: string | string[] };
+      const input = Array.isArray(parsed.input) ? parsed.input[0] : parsed.input ?? "";
+      return {
+        ok: true,
+        json: async () => ({
+          data: [{ embedding: Array.from(embed(String(input))) }],
+        }),
+      };
+    });
+
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const stale = await service.teach({
+      instruction: "Use Codex GPT-5.4 first.",
+      conversationId: 23,
+      kind: "correction",
+      tags: ["demo", "codex", "preference"],
+      metadata: {
+        sourceAuthority: "user_explicit",
+        sourceQuote: "use codex gpt 5.4",
+        sourceMessageId: 10,
+        via: "brain_teach_user_correction",
+      },
+      via: "brain_teach_user_correction",
+    });
+
+    const current = await service.teach({
+      instruction: "Use latest Codex GPT-5.5 first.",
+      conversationId: 23,
+      kind: "correction",
+      tags: ["demo", "codex", "preference"],
+      metadata: {
+        sourceAuthority: "user_explicit",
+        sourceQuote: "now I want the latest codex gpt 5.5",
+        sourceMessageId: 20,
+        via: "brain_teach_user_correction",
+      },
+      via: "brain_teach_user_correction",
+    });
+
+    const nodes = (service as unknown as {
+      store: {
+        getAllNodes: () => Array<{
+          id: string;
+          metadata?: Record<string, unknown>;
+        }>;
+      };
+    }).store.getAllNodes();
+    const staleNode = nodes.find((node) => node.id === stale.nodeId);
+    const currentNode = nodes.find((node) => node.id === current.nodeId);
+
+    expect(staleNode?.metadata?.correctionMemory).toMatchObject({
+      subjectKey: "codex",
+      predicate: "preference",
+      state: "superseded",
+      supersededByNodeId: current.nodeId,
+    });
+    expect(currentNode?.metadata?.correctionMemory).toMatchObject({
+      subjectKey: "codex",
+      predicate: "preference",
+      state: "current",
+      supersedesNodeIds: [stale.nodeId],
+    });
+
+    const result = await service.query({
+      conversationId: 23,
+      queryText: "Which Codex model should I use now?",
+      budgetChars: 4000,
+      queryEmbedding: embed("which codex model should I use now"),
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.fired.map((node) => node.nodeId)).toContain(current.nodeId);
+    expect(result?.fired.map((node) => node.nodeId)).not.toContain(stale.nodeId);
+    expect(result?.fired.some((node) => node.content.includes("GPT-5.5"))).toBe(true);
+    expect(result?.fired.some((node) => node.content.includes("GPT-5.4"))).toBe(false);
   });
 });
