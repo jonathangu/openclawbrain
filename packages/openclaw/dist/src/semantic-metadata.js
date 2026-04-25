@@ -67,4 +67,3 @@ export function buildFeedbackSemanticMetadata(sourceKind, kind, content) {
         sourceKind
     };
 }
-//# sourceMappingURL=semantic-metadata.js.map

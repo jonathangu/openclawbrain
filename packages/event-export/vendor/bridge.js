@@ -501,4 +501,3 @@ export function validateNormalizedEventExportBridge(value) {
     }
     return errors;
 }
-//# sourceMappingURL=bridge.js.map

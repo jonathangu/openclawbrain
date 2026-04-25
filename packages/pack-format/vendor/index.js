@@ -1208,4 +1208,3 @@ export function loadPack(rootDir) {
         router
     };
 }
-//# sourceMappingURL=index.js.map

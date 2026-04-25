@@ -1186,4 +1186,3 @@ export function parseDaemonArgs(argv) {
     }
     return { command: "daemon", subcommand, activationRoot: path.resolve(activationRoot), json, help };
 }
-//# sourceMappingURL=daemon.js.map

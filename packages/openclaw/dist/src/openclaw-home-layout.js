@@ -179,4 +179,3 @@ export function describeOpenClawHomeInspection(inspection) {
     }
     return `${layout}; target profile unresolved; configured profiles=${configuredProfiles}`;
 }
-//# sourceMappingURL=openclaw-home-layout.js.map

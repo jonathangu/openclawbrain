@@ -3347,4 +3347,3 @@ export function validateKernelSurface(surface) {
     return { severity, findings };
 }
 export const FIXTURE_FEEDBACK_EVENT = FIXTURE_FEEDBACK_EVENTS[0];
-//# sourceMappingURL=index.js.map

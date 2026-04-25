@@ -303,4 +303,3 @@ function isRecord(value) {
 function describeUnknownError(error) {
     return error instanceof Error ? error.message : String(error);
 }
-//# sourceMappingURL=provider-config.js.map

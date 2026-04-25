@@ -187,4 +187,3 @@ export function resolveActivationRoot(options = {}) {
     }
     throw new Error(`No brain found. ${buildInstallGuidance()}`);
 }
-//# sourceMappingURL=resolve-activation-root.js.map

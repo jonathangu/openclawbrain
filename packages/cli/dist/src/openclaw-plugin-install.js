@@ -417,4 +417,3 @@ export function resolveOpenClawHomeFromExtensionEntryPath(extensionEntryPath) {
     }
     return null;
 }
-//# sourceMappingURL=openclaw-plugin-install.js.map

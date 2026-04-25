@@ -323,4 +323,3 @@ function shapeDiagnostic(diagnostic) {
 function isRecord(value) {
     return typeof value === "object" && value !== null;
 }
-//# sourceMappingURL=runtime-guard.js.map

@@ -121,4 +121,3 @@ export default function register(api) {
         });
     }
 }
-//# sourceMappingURL=index.js.map

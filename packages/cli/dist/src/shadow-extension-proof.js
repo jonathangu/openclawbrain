@@ -220,4 +220,3 @@ function describeValue(value) {
 function isRecord(value) {
     return typeof value === "object" && value !== null;
 }
-//# sourceMappingURL=shadow-extension-proof.js.map

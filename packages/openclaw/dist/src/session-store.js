@@ -267,4 +267,3 @@ function expectNumber(value, path) {
     }
     return value;
 }
-//# sourceMappingURL=session-store.js.map

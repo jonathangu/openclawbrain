@@ -5520,4 +5520,3 @@ export function persistBaseline(activationRoot, state) {
     const filePath = path.join(activationRoot, BASELINE_STATE_FILENAME);
     writeFileSync(filePath, JSON.stringify(state, null, 2) + "\n", "utf8");
 }
-//# sourceMappingURL=index.js.map

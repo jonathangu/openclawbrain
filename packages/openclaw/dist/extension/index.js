@@ -234,4 +234,3 @@ const openclawbrainPlugin = {
     register
 };
 export default openclawbrainPlugin;
-//# sourceMappingURL=index.js.map

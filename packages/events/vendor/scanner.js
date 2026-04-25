@@ -780,4 +780,3 @@ export function scanSession(rawSession, options = {}) {
         warnings: [...new Set(warnings)]
     };
 }
-//# sourceMappingURL=scanner.js.map

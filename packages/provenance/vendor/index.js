@@ -47,4 +47,3 @@ export function buildArtifactProvenance(input) {
     return provenance;
 }
 export { validateLearningSurface };
-//# sourceMappingURL=index.js.map

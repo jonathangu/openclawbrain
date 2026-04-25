@@ -228,4 +228,3 @@ function describeUnknownError(error) {
 function isRecord(value) {
     return typeof value === "object" && value !== null;
 }
-//# sourceMappingURL=ollama-client.js.map

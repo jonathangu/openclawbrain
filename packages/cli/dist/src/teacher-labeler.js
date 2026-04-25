@@ -440,4 +440,3 @@ export function createTeacherLabeler(config) {
     }
     return createOllamaTeacherLabeler(config);
 }
-//# sourceMappingURL=teacher-labeler.js.map

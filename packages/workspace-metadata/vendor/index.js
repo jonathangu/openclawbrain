@@ -45,4 +45,3 @@ export function workspaceManifestDigest(input) {
     return createWorkspaceMetadata(input).manifestDigest;
 }
 export { FIXTURE_WORKSPACE_METADATA, validateWorkspaceMetadata };
-//# sourceMappingURL=index.js.map

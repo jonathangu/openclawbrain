@@ -39,4 +39,3 @@ export function readLearningSpineLogEntries(rootDir, stream) {
         .filter((line) => line.length > 0)
         .map((line) => JSON.parse(line));
 }
-//# sourceMappingURL=learning-spine-logs.js.map
