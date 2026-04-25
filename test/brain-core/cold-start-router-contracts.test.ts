@@ -42,6 +42,7 @@ import {
   validatePromotionDecisionV1,
   validateReplayRunRecordV1,
   validateRouterArtifactManifestV1,
+  validateRouteDecisionRowAgainstDataRegistryEntryV1,
   validateRouteDecisionRowV1,
   validateTeacherLabelContractV1,
   validateVerifierContractV1,
@@ -449,6 +450,30 @@ describe("cold-start router contracts", () => {
     const proofValidation = validateProofBundleV1(invalidProofBundle);
     expect(proofValidation.valid).toBe(false);
     expect(proofValidation.issues.join("\n")).toContain("required_files missing");
+  });
+
+  it("reviews route-decision row provenance against the governed dataset registry entry", () => {
+    expect(
+      validateRouteDecisionRowAgainstDataRegistryEntryV1({
+        row: routeDecisionRow,
+        registryEntry: dataRegistryEntry,
+      }),
+    ).toMatchObject({ valid: true });
+
+    const mismatchedSnapshot: RouteDecisionRowV1 = {
+      ...routeDecisionRow,
+      provenance: {
+        ...routeDecisionRow.provenance,
+        source_snapshot_ref: "snapshot:wrong@sha256:999",
+      },
+    };
+    const validation = validateRouteDecisionRowAgainstDataRegistryEntryV1({
+      row: mismatchedSnapshot,
+      registryEntry: dataRegistryEntry,
+    });
+
+    expect(validation.valid).toBe(false);
+    expect(validation.issues.join("\n")).toContain("source_snapshot_ref must match registry immutable_snapshot_ref");
   });
 
   it("blocks verifier contracts that declare a pass without a failing check", () => {

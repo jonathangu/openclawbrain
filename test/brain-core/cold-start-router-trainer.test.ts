@@ -236,6 +236,22 @@ function makeReplayScopedFeltRouteRow(datasetId: string): RouteDecisionRowV1 {
   };
 }
 
+function makeReplayScopedFeltRegistryEntry(datasetId: string): DataRegistryEntryV1 {
+  return {
+    ...makeActivationFirstRegistryEntry(datasetId),
+    source_family: "agent_traces",
+    license: "internal_local_only",
+    immutable_snapshot_ref: `snapshot:${datasetId}@sha256:replay-scoped-felt-training`,
+    exact_files: ["recorded-session-replay.json"],
+    file_hashes: {
+      "recorded-session-replay.json": "sha256:replay-scoped-felt-training",
+    },
+    allowed_uses: ["route supervision", "replay scoped felt lane fixture"],
+    disallowed_uses: ["redistribution"],
+    notes: ["replay scoped felt fixture"],
+  };
+}
+
 function makePolicySupervisionRowFixture(params: {
   rowId: string;
   traceId: string;
@@ -429,6 +445,42 @@ describe("cold-start router trainer", () => {
     expect(runtimeSelection.stopped).toBe(false);
     expect(runtimeSelection.selectedCandidateIds).toEqual(["mem:shipping_history"]);
     expect(runtimeSelection.decisionSummary.activated).toBe(true);
+  });
+
+  it("skips route rows whose provenance no longer matches the approved registry entry", () => {
+    const outputDir = createTempRoot("cold-start-router-provenance-review");
+    const loadedExport = loadAndFilterColdStartRouterApprovedExportV1(approvedExportPath);
+    const staleSnapshotRow: RouteDecisionRowV1 = {
+      ...loadedExport.routeRows[1],
+      row_id: "router_fixture_row_002_stale_snapshot",
+      provenance: {
+        ...loadedExport.routeRows[1].provenance,
+        source_snapshot_ref: "snapshot:stale@sha256:not-reviewed",
+      },
+    };
+
+    const result = trainColdStartRouterArtifactV1({
+      artifactId: "router-artifact-provenance-review-smoke",
+      artifactVersion: "0.0.1",
+      packType: "base",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.44",
+      registryEntries: loadedExport.registryEntries,
+      routeRows: [loadedExport.routeRows[0], staleSnapshotRow],
+      outputDir,
+      routerIdentity: "router:provenance-review:base",
+      createdAt: "2026-04-25T12:00:00Z",
+    });
+
+    expect(result.model.training).toMatchObject({
+      totalRows: 2,
+      eligibleRows: 1,
+      usedRows: 1,
+      skippedRows: 1,
+    });
+    expect(result.model.training.skippedRowDetails[0]).toMatchObject({
+      rowId: "router_fixture_row_002_stale_snapshot",
+      reason: expect.stringContaining("registry provenance review failed"),
+    });
   });
 
   it("overweights beneficial CONTINUE rows so greedy retrains lean activation-first", () => {
@@ -715,7 +767,7 @@ describe("cold-start router trainer", () => {
       artifactVersion: "0.0.1",
       packType: "base",
       compatibleRuntimeVersion: "openclawbrain-runtime@0.4.44",
-      registryEntries: [makeActivationFirstRegistryEntry(datasetId)],
+      registryEntries: [makeReplayScopedFeltRegistryEntry(datasetId)],
       routeRows: [replayRow],
       outputDir: createTempRoot("cold-start-router-scoped-felt-training"),
       routerIdentity: `router:${datasetId}`,
@@ -753,7 +805,7 @@ describe("cold-start router trainer", () => {
       artifactVersion: "0.0.1",
       packType: "base",
       compatibleRuntimeVersion: "openclawbrain-runtime@0.4.44",
-      registryEntries: [makeActivationFirstRegistryEntry(datasetId)],
+      registryEntries: [makeReplayScopedFeltRegistryEntry(datasetId)],
       routeRows: [replayRow],
       outputDir: createTempRoot("cold-start-router-scoped-felt-policy-baseline"),
       routerIdentity: `router:${datasetId}:baseline`,
@@ -772,7 +824,7 @@ describe("cold-start router trainer", () => {
       artifactVersion: "0.0.1",
       packType: "base",
       compatibleRuntimeVersion: "openclawbrain-runtime@0.4.44",
-      registryEntries: [makeActivationFirstRegistryEntry(datasetId)],
+      registryEntries: [makeReplayScopedFeltRegistryEntry(datasetId)],
       routeRows: [replayRow],
       policySupervisionRows: [
         makePolicySupervisionRowFixture({

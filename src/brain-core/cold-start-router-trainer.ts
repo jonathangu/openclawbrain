@@ -29,6 +29,7 @@ import {
   COLD_START_STOP_LABELS_V1,
   summarizeRouterArtifactManifestV1,
   validateDataRegistryEntryV1,
+  validateRouteDecisionRowAgainstDataRegistryEntryV1,
   validateRouteDecisionRowV1,
   validateRouterArtifactManifestV1,
 } from "./cold-start-router-contracts.ts";
@@ -628,11 +629,16 @@ function resolvePositiveCandidateIds(row: RouteDecisionRowV1): Set<string> {
   return toolCandidates.length === 1 ? new Set(toolCandidates) : new Set();
 }
 
+function isPendingSnapshotRef(snapshotRef: string): boolean {
+  return snapshotRef.startsWith("pending:") || snapshotRef.startsWith("pending://");
+}
+
 function isEligibleRegistryEntry(entry: DataRegistryEntryV1): boolean {
   return entry.approval_status === "approved_train"
     && entry.commercial_use_status === "allowed"
     && entry.redistribution_status === "allowed"
-    && (entry.pii_risk === "none" || entry.pii_risk === "low");
+    && (entry.pii_risk === "none" || entry.pii_risk === "low")
+    && !isPendingSnapshotRef(entry.immutable_snapshot_ref);
 }
 
 function bumpFeatureCount(map: Map<string, { positive: number; negative: number; support: number }>, featureKey: string, isPositive: boolean, weight: number): void {
@@ -1497,6 +1503,17 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
         rowId: row.row_id,
         datasetId: row.dataset_id,
         reason: `dataset ${row.dataset_id} is not eligible for training (${registryEntry.approval_status}, ${registryEntry.commercial_use_status}, ${registryEntry.redistribution_status}, ${registryEntry.pii_risk})`,
+      });
+      continue;
+    }
+
+    const registryReview = validateRouteDecisionRowAgainstDataRegistryEntryV1({ row, registryEntry });
+    if (!registryReview.valid) {
+      stats.skipped += 1;
+      skippedRows.push({
+        rowId: row.row_id,
+        datasetId: row.dataset_id,
+        reason: `registry provenance review failed: ${registryReview.issues.join("; ")}`,
       });
       continue;
     }

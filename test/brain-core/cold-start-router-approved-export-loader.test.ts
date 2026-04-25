@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   loadAndFilterColdStartRouterApprovedExportV1,
+  loadColdStartRouterApprovedExportV1,
+  reviewColdStartRouterApprovedTrainingSetV1,
   summarizeColdStartRouterApprovedExportV1,
 } from "../../src/brain-core/cold-start-router-approved-export-loader.js";
 
@@ -58,5 +60,33 @@ describe("cold-start router approved export loader", () => {
         approvedRowCount: 2,
       },
     });
+  });
+
+  it("skips approved rows whose provenance no longer matches the governed registry snapshot", () => {
+    const bundle = loadColdStartRouterApprovedExportV1(approvedExportPath);
+    const registryEntry = bundle.registry_entries.find((entry) => entry.dataset_id === "router_fixture_train_v1")!;
+    const routeRow = bundle.route_rows.find((row) => row.row_id === "router_fixture_row_001")!;
+    const reviewed = reviewColdStartRouterApprovedTrainingSetV1({
+      exportId: "test-provenance-review",
+      generatedAt: bundle.generated_at,
+      registryEntries: [registryEntry],
+      routeRows: [
+        {
+          ...routeRow,
+          provenance: {
+            ...routeRow.provenance,
+            source_snapshot_ref: "snapshot:stale@sha256:not-the-reviewed-snapshot",
+          },
+        },
+      ],
+    });
+
+    expect(reviewed.summary).toMatchObject({
+      approvedRegistryEntryCount: 1,
+      approvedRowCount: 0,
+      skippedRowCount: 1,
+    });
+    expect(reviewed.skippedRows[0]?.reason).toContain("registry provenance review failed");
+    expect(reviewed.skippedRows[0]?.reason).toContain("source_snapshot_ref must match registry immutable_snapshot_ref");
   });
 });

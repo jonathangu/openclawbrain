@@ -10,6 +10,7 @@ import {
   RouteDecisionRowSchemaV1,
   type RouteDecisionRowV1,
   validateDataRegistryEntryV1,
+  validateRouteDecisionRowAgainstDataRegistryEntryV1,
   validateRouteDecisionRowV1,
 } from "./cold-start-router-contracts.ts";
 
@@ -87,11 +88,16 @@ function normalizeStringArray(values: readonly string[] | undefined): string[] {
   return [...new Set(values.map((value) => normalizeText(value)).filter((value) => value.length > 0))].sort();
 }
 
+function isPendingSnapshotRef(snapshotRef: string): boolean {
+  return snapshotRef.startsWith("pending:") || snapshotRef.startsWith("pending://");
+}
+
 function isApprovedRegistryEntry(entry: DataRegistryEntryV1): boolean {
   return entry.approval_status === "approved_train"
     && entry.commercial_use_status === "allowed"
     && entry.redistribution_status === "allowed"
-    && (entry.pii_risk === "none" || entry.pii_risk === "low");
+    && (entry.pii_risk === "none" || entry.pii_risk === "low")
+    && !isPendingSnapshotRef(entry.immutable_snapshot_ref);
 }
 
 function validateExportBundle(bundle: unknown): ColdStartRouterApprovedExportV1 {
@@ -106,13 +112,17 @@ export function loadColdStartRouterApprovedExportV1(filePath: string): ColdStart
   return validateExportBundle(JSON.parse(readFileSync(filePath, "utf8")) as unknown);
 }
 
-export function loadAndFilterColdStartRouterApprovedExportV1(filePath: string): ColdStartRouterApprovedExportLoadResultV1 {
-  const bundle = loadColdStartRouterApprovedExportV1(filePath);
+export function reviewColdStartRouterApprovedTrainingSetV1(params: {
+  exportId: string;
+  generatedAt: string;
+  registryEntries: DataRegistryEntryV1[];
+  routeRows: RouteDecisionRowV1[];
+}): Omit<ColdStartRouterApprovedExportLoadResultV1, "bundle"> {
   const skippedRegistryEntries: ColdStartRouterApprovedExportRegistrySkipV1[] = [];
   const registryEntries: DataRegistryEntryV1[] = [];
-  const eligibleDatasetIds = new Set<string>();
+  const eligibleRegistryByDataset = new Map<string, DataRegistryEntryV1>();
 
-  for (const registryEntry of bundle.registry_entries) {
+  for (const registryEntry of params.registryEntries) {
     const validation = validateDataRegistryEntryV1(registryEntry);
     if (!validation.valid) {
       throw new Error(`invalid registry entry ${registryEntry.dataset_id}: ${validation.issues.join("; ")}`);
@@ -121,18 +131,18 @@ export function loadAndFilterColdStartRouterApprovedExportV1(filePath: string): 
     if (!isApprovedRegistryEntry(registryEntry)) {
       skippedRegistryEntries.push({
         datasetId: registryEntry.dataset_id,
-        reason: `registry entry not eligible for training (${registryEntry.approval_status}, ${registryEntry.commercial_use_status}, ${registryEntry.redistribution_status}, ${registryEntry.pii_risk})`,
+        reason: `registry entry not eligible for training (${registryEntry.approval_status}, ${registryEntry.commercial_use_status}, ${registryEntry.redistribution_status}, ${registryEntry.pii_risk}, snapshot=${registryEntry.immutable_snapshot_ref})`,
       });
       continue;
     }
 
     registryEntries.push(registryEntry);
-    eligibleDatasetIds.add(registryEntry.dataset_id);
+    eligibleRegistryByDataset.set(registryEntry.dataset_id, registryEntry);
   }
 
   const skippedRows: ColdStartRouterApprovedExportRowSkipV1[] = [];
   const routeRows: RouteDecisionRowV1[] = [];
-  for (const row of bundle.route_rows) {
+  for (const row of params.routeRows) {
     const validation = validateRouteDecisionRowV1(row);
     if (!validation.valid) {
       throw new Error(`invalid route row ${row.row_id}: ${validation.issues.join("; ")}`);
@@ -157,7 +167,8 @@ export function loadAndFilterColdStartRouterApprovedExportV1(filePath: string): 
       continue;
     }
 
-    if (!eligibleDatasetIds.has(row.dataset_id)) {
+    const registryEntry = eligibleRegistryByDataset.get(row.dataset_id);
+    if (!registryEntry) {
       skippedRows.push({
         rowId: row.row_id,
         datasetId: row.dataset_id,
@@ -166,15 +177,25 @@ export function loadAndFilterColdStartRouterApprovedExportV1(filePath: string): 
       continue;
     }
 
+    const review = validateRouteDecisionRowAgainstDataRegistryEntryV1({ row, registryEntry });
+    if (!review.valid) {
+      skippedRows.push({
+        rowId: row.row_id,
+        datasetId: row.dataset_id,
+        reason: `registry provenance review failed: ${review.issues.join("; ")}`,
+      });
+      continue;
+    }
+
     routeRows.push(row);
   }
 
   const summary: ColdStartRouterApprovedExportSummaryV1 = {
-    exportId: bundle.export_id,
-    generatedAt: bundle.generated_at,
-    rawRegistryEntryCount: bundle.registry_entries.length,
+    exportId: params.exportId,
+    generatedAt: params.generatedAt,
+    rawRegistryEntryCount: params.registryEntries.length,
     approvedRegistryEntryCount: registryEntries.length,
-    rawRowCount: bundle.route_rows.length,
+    rawRowCount: params.routeRows.length,
     approvedRowCount: routeRows.length,
     skippedRegistryEntryCount: skippedRegistryEntries.length,
     skippedRowCount: skippedRows.length,
@@ -182,12 +203,26 @@ export function loadAndFilterColdStartRouterApprovedExportV1(filePath: string): 
   };
 
   return {
-    bundle,
     registryEntries,
     routeRows,
     skippedRegistryEntries,
     skippedRows,
     summary,
+  };
+}
+
+export function loadAndFilterColdStartRouterApprovedExportV1(filePath: string): ColdStartRouterApprovedExportLoadResultV1 {
+  const bundle = loadColdStartRouterApprovedExportV1(filePath);
+  const reviewed = reviewColdStartRouterApprovedTrainingSetV1({
+    exportId: bundle.export_id,
+    generatedAt: bundle.generated_at,
+    registryEntries: bundle.registry_entries,
+    routeRows: bundle.route_rows,
+  });
+
+  return {
+    bundle,
+    ...reviewed,
   };
 }
 

@@ -671,6 +671,55 @@ export function validateRouteDecisionRowV1(value: unknown): ContractValidationRe
   return base;
 }
 
+export function validateRouteDecisionRowAgainstDataRegistryEntryV1(params: {
+  row: unknown;
+  registryEntry: unknown;
+}): ContractValidationResultV1 {
+  const contract = "cold_start_route_decision_row_registry_review.v1";
+  const rowValidation = validateRouteDecisionRowV1(params.row);
+  const registryValidation = validateDataRegistryEntryV1(params.registryEntry);
+  const issues: string[] = [];
+
+  if (!rowValidation.valid) {
+    issues.push(...rowValidation.issues.map((issue) => `${contract}/row: ${issue}`));
+  }
+  if (!registryValidation.valid) {
+    issues.push(...registryValidation.issues.map((issue) => `${contract}/registry_entry: ${issue}`));
+  }
+  if (issues.length > 0) {
+    return { contract, valid: false, issues };
+  }
+
+  const row = params.row as RouteDecisionRowV1;
+  const registryEntry = params.registryEntry as DataRegistryEntryV1;
+
+  if (row.dataset_id !== registryEntry.dataset_id) {
+    issues.push(`${contract}/dataset_id mismatch: row=${row.dataset_id} registry=${registryEntry.dataset_id}`);
+  }
+  if (row.provenance.dataset !== row.dataset_id) {
+    issues.push(`${contract}/provenance.dataset must equal row.dataset_id (${row.dataset_id})`);
+  }
+  if (row.provenance.dataset !== registryEntry.dataset_id) {
+    issues.push(`${contract}/provenance.dataset must equal registry dataset_id (${registryEntry.dataset_id})`);
+  }
+  if (row.provenance.source_license !== registryEntry.license) {
+    issues.push(`${contract}/provenance.source_license must match registry license (${registryEntry.license})`);
+  }
+  if (row.provenance.source_family !== undefined && row.provenance.source_family !== registryEntry.source_family) {
+    issues.push(`${contract}/provenance.source_family must match registry source_family (${registryEntry.source_family})`);
+  }
+  if (row.provenance.source_snapshot_ref !== undefined && row.provenance.source_snapshot_ref !== registryEntry.immutable_snapshot_ref) {
+    issues.push(`${contract}/provenance.source_snapshot_ref must match registry immutable_snapshot_ref (${registryEntry.immutable_snapshot_ref})`);
+  }
+  if (row.provenance.review_status !== registryEntry.approval_status) {
+    issues.push(`${contract}/provenance.review_status must match registry approval_status (${registryEntry.approval_status})`);
+  }
+
+  return issues.length === 0
+    ? { contract, valid: true, issues: [] }
+    : { contract, valid: false, issues };
+}
+
 export function validateTeacherLabelContractV1(value: unknown): ContractValidationResultV1 {
   return validateSchema("cold_start_teacher_label.v1", TeacherLabelContractSchemaV1, value);
 }
