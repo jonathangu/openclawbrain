@@ -379,13 +379,33 @@ export function scoreColdStartRouteRowFromArtifactBundleV1(params: {
 export function selectColdStartRouteCandidateIdsFromArtifactBundleV1(params: {
   artifactBundle: ColdStartRouterRuntimeArtifactBundleV1;
   row: RouteDecisionRowV1;
+  /**
+   * Optional replay/serving budget for callers that can safely consume more than
+   * one context block. The default remains one to preserve the historical cold
+   * start router contract for direct runtime callers.
+   */
+  maxCandidateIds?: number | null;
+  /**
+   * When selecting multiple candidates, keep only candidates close enough to the
+   * top router score. This prevents broad over-firing while fixing the replay
+   * under-selection case where one useful block was too narrow.
+   */
+  multiSelectScoreWindow?: number | null;
 }): ColdStartRouterSelectionResultV1 {
   const scoring = scoreColdStartRouteRowFromArtifactBundleV1(params);
   const bestTraverse = scoring.rankedCandidates[0] ?? null;
   const stopped = !scoring.decisionSummary.activated;
+  const requestedLimit = Math.max(1, Math.floor(params.maxCandidateIds ?? 1));
+  const scoreWindow = Math.max(0, params.multiSelectScoreWindow ?? 0.35);
+  const selectedCandidateIds = stopped || bestTraverse === null
+    ? []
+    : scoring.rankedCandidates
+      .filter((candidate) => bestTraverse.score - candidate.score <= scoreWindow)
+      .slice(0, requestedLimit)
+      .map((candidate) => candidate.candidate.candidate_id);
   return {
     ...scoring,
-    selectedCandidateIds: stopped || bestTraverse === null ? [] : [bestTraverse.candidate.candidate_id],
+    selectedCandidateIds,
     stopped,
   };
 }

@@ -111,6 +111,8 @@ export interface LearnedRouteCandidateArtifactOverrideV1 {
   artifactDir: string;
   mode?: "selection_override" | "graph_walk_score_boost" | "served_live_policy_spike" | "served_pack_adapter";
   replayCursorPath?: string[];
+  maxCandidateIds?: number | null;
+  multiSelectScoreWindow?: number | null;
 }
 
 export interface WriteRecordedSessionReplayProofLaneInputV1 {
@@ -939,6 +941,8 @@ function createLearnedRouteSelectionOverride(
       const selection = selectColdStartRouteCandidateIdsFromArtifactBundleV1({
         artifactBundle,
         row,
+        maxCandidateIds: input.maxCandidateIds ?? selectionInput.maxBlocks,
+        multiSelectScoreWindow: input.multiSelectScoreWindow,
       });
       return {
         selectedBlockIds: selection.selectedCandidateIds,

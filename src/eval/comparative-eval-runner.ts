@@ -438,6 +438,8 @@ export interface RunComparativeEvalInput {
   learnedRouteCandidateArtifactDir?: string;
   learnedRouteCandidateArtifactMode?: LearnedRouteCandidateArtifactOverrideV1["mode"];
   learnedRouteCandidateReplayCursorPath?: string[];
+  learnedRouteCandidateMaxCandidateIds?: number | null;
+  learnedRouteCandidateMultiSelectScoreWindow?: number | null;
 }
 
 const DEFAULT_COMPARATIVE_EVAL_POLICY_THRESHOLDS: ComparativeEvalPolicyThresholdsV1 = {
@@ -1868,6 +1870,12 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
             ...(input.learnedRouteCandidateReplayCursorPath?.length
               ? { replayCursorPath: input.learnedRouteCandidateReplayCursorPath }
               : {}),
+            ...(input.learnedRouteCandidateMaxCandidateIds == null
+              ? {}
+              : { maxCandidateIds: input.learnedRouteCandidateMaxCandidateIds }),
+            ...(input.learnedRouteCandidateMultiSelectScoreWindow == null
+              ? {}
+              : { multiSelectScoreWindow: input.learnedRouteCandidateMultiSelectScoreWindow }),
           }
         : null;
     laneDescriptor = writeRecordedSessionReplayProofLane({

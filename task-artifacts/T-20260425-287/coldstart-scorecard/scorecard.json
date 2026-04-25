@@ -1,0 +1,117 @@
+{
+  "contract": "cold_start_scorecard.v1",
+  "generatedAt": "2026-04-25T14:30:00.000Z",
+  "manifestPath": "/Users/guclaw/.openclaw/workspace/worktrees/ocb-048-coldstart/evals/recorded-session-replay/canonical-frozen-20/manifest.json",
+  "candidateArtifactDir": "/Users/guclaw/.openclaw/workspace/worktrees/ocb-048-coldstart/artifacts/activation-first-gating-retune/T-20260419-269/candidate-artifact",
+  "traceCount": 20,
+  "modes": [
+    {
+      "mode": "no_brain",
+      "sourceEval": "baseline",
+      "sourceMode": "no_brain",
+      "meanQualityScore": 0,
+      "totalPhraseHitCount": 0,
+      "totalPhraseCount": 74,
+      "phraseHitRate": 0,
+      "totalSelectedContextBlockCount": 0,
+      "totalSelectedContextChars": 0,
+      "estimatedPromptTokens": 0,
+      "warningCount": 0
+    },
+    {
+      "mode": "graph_prior_only",
+      "sourceEval": "baseline",
+      "sourceMode": "graph_prior_only",
+      "meanQualityScore": 92.8,
+      "totalPhraseHitCount": 65,
+      "totalPhraseCount": 74,
+      "phraseHitRate": 0.878378,
+      "totalSelectedContextBlockCount": 135,
+      "totalSelectedContextChars": 26125,
+      "estimatedPromptTokens": 6539,
+      "warningCount": 0
+    },
+    {
+      "mode": "cold_start_prior_single",
+      "sourceEval": "cold_start_prior_single",
+      "sourceMode": "learned_route",
+      "meanQualityScore": 92.05,
+      "totalPhraseHitCount": 64,
+      "totalPhraseCount": 74,
+      "phraseHitRate": 0.864865,
+      "totalSelectedContextBlockCount": 45,
+      "totalSelectedContextChars": 12501,
+      "estimatedPromptTokens": 3129,
+      "warningCount": 20
+    },
+    {
+      "mode": "cold_start_prior",
+      "sourceEval": "cold_start_prior",
+      "sourceMode": "learned_route",
+      "meanQualityScore": 92.8,
+      "totalPhraseHitCount": 65,
+      "totalPhraseCount": 74,
+      "phraseHitRate": 0.878378,
+      "totalSelectedContextBlockCount": 48,
+      "totalSelectedContextChars": 13101,
+      "estimatedPromptTokens": 3279,
+      "warningCount": 20
+    },
+    {
+      "mode": "learned_route",
+      "sourceEval": "baseline",
+      "sourceMode": "learned_route",
+      "meanQualityScore": 97.3,
+      "totalPhraseHitCount": 71,
+      "totalPhraseCount": 74,
+      "phraseHitRate": 0.959459,
+      "totalSelectedContextBlockCount": 135,
+      "totalSelectedContextChars": 27592,
+      "estimatedPromptTokens": 6906,
+      "warningCount": 0
+    }
+  ],
+  "deltas": [
+    {
+      "leftMode": "no_brain",
+      "rightMode": "cold_start_prior",
+      "meanQualityDeltaRightMinusLeft": 92.8,
+      "phraseHitDeltaRightMinusLeft": 65,
+      "selectedContextBlockDeltaRightMinusLeft": 48,
+      "selectedContextCharDeltaRightMinusLeft": 13101,
+      "promptTokenDeltaRightMinusLeft": 3279
+    },
+    {
+      "leftMode": "cold_start_prior_single",
+      "rightMode": "cold_start_prior",
+      "meanQualityDeltaRightMinusLeft": 0.75,
+      "phraseHitDeltaRightMinusLeft": 1,
+      "selectedContextBlockDeltaRightMinusLeft": 3,
+      "selectedContextCharDeltaRightMinusLeft": 600,
+      "promptTokenDeltaRightMinusLeft": 150
+    },
+    {
+      "leftMode": "graph_prior_only",
+      "rightMode": "cold_start_prior",
+      "meanQualityDeltaRightMinusLeft": 0,
+      "phraseHitDeltaRightMinusLeft": 0,
+      "selectedContextBlockDeltaRightMinusLeft": -87,
+      "selectedContextCharDeltaRightMinusLeft": -13024,
+      "promptTokenDeltaRightMinusLeft": -3260
+    },
+    {
+      "leftMode": "cold_start_prior",
+      "rightMode": "learned_route",
+      "meanQualityDeltaRightMinusLeft": 4.5,
+      "phraseHitDeltaRightMinusLeft": 6,
+      "selectedContextBlockDeltaRightMinusLeft": 87,
+      "selectedContextCharDeltaRightMinusLeft": 14491,
+      "promptTokenDeltaRightMinusLeft": 3627
+    }
+  ],
+  "verdict": {
+    "usefulContextWin": true,
+    "noOverfireVsGraphPrior": true,
+    "summary": "cold_start_prior recovers useful context versus the single-block prior and matches graph_prior_only recall without selecting more context (-13024 chars)."
+  }
+}
