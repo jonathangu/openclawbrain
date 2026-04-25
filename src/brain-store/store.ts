@@ -71,6 +71,7 @@ import type {
 } from "../brain-core/teacher-v3-contracts.js";
 import {
   describeTeacherCanaryActivationGuardV1,
+  describeTeacherProposalReplayGateReviewModeV1,
   diffTeacherProposalV1,
   normalizeTeacherProposalV1,
   summarizeTeacherProposalV1,
@@ -2655,6 +2656,20 @@ export class BrainStore {
 
   // ─── Teacher Proposals ───
 
+  private validateTeacherProposalSafety(proposal: TeacherProposal): void {
+    const normalized = normalizeTeacherProposalV1(proposal);
+    const requiredReviewMode = describeTeacherProposalReplayGateReviewModeV1(normalized.proposalClass);
+    if ((normalized.safeClassMode ?? requiredReviewMode) !== requiredReviewMode) {
+      throw new Error(`teacher proposal ${normalized.proposalId} safeClassMode must be ${requiredReviewMode} for ${normalized.proposalClass}`);
+    }
+    if (normalized.replayGate && normalized.replayGate.reviewMode !== requiredReviewMode) {
+      throw new Error(`teacher proposal ${normalized.proposalId} replayGate reviewMode must be ${requiredReviewMode} for ${normalized.proposalClass}`);
+    }
+    if (requiredReviewMode === "shadow_only" && (normalized.status === "promotable" || normalized.status === "promoted")) {
+      throw new Error(`teacher proposal ${normalized.proposalId} is ${normalized.proposalClass} and must remain shadow-only; status ${normalized.status} is not allowed`);
+    }
+  }
+
   private validateTeacherCanaryActivation(proposal: TeacherProposal): void {
     const guard = describeTeacherCanaryActivationGuardV1({
       proposalId: proposal.proposalId,
@@ -2672,6 +2687,7 @@ export class BrainStore {
 
   insertTeacherProposal(proposal: TeacherProposal): void {
     const now = Date.now();
+    this.validateTeacherProposalSafety(proposal);
     this.validateTeacherCanaryActivation(proposal);
     const record = this.toTeacherProposalRow(proposal, now, now);
     this.db.prepare(`
@@ -2748,6 +2764,7 @@ export class BrainStore {
     const updated: TeacherProposal = {
       ...existing,
       status: params.status,
+      lifecycleState: params.status === existing.status ? existing.lifecycleState : undefined,
       resolvedAt: resolvedAt ?? undefined,
       freshnessTs: resolvedAt ?? existing.freshnessTs ?? existing.createdAt,
       proofBundle: params.proofBundle === undefined ? existing.proofBundle : params.proofBundle ?? undefined,
@@ -2755,6 +2772,7 @@ export class BrainStore {
       canaryRollout: params.canaryRollout === undefined ? existing.canaryRollout : params.canaryRollout ?? undefined,
       replaySummary: params.replaySummary === undefined ? existing.replaySummary : params.replaySummary ?? undefined,
     };
+    this.validateTeacherProposalSafety(updated);
     this.validateTeacherCanaryActivation(updated);
     const existingCreatedAt = Number.isFinite(Date.parse(existing.createdAt)) ? Date.parse(existing.createdAt) : Date.now();
     const record = this.toTeacherProposalRow(updated, existingCreatedAt, Date.now());

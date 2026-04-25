@@ -1,0 +1,391 @@
+{
+  "contract": "teacher_v3_graph_maintenance_example_proof.v1",
+  "generatedAt": "2026-04-25T14:02:00Z",
+  "durableBoundary": "Inspectable example only: persisted proposal shape + shadow replay summary; no live graph self-editing activation.",
+  "proposal": {
+    "schemaVersion": 1,
+    "proposalId": "prop_graph_add_edge_01",
+    "proposalClass": "mutation",
+    "proposalKind": "add_edge",
+    "lane": "mutation",
+    "status": "shadow_scored",
+    "lifecycleState": "replayed",
+    "safeClassMode": "shadow_only",
+    "lineage": {
+      "proposalClass": "mutation",
+      "basePackVersion": 48,
+      "baseGraphHash": "sha256:base-graph-before-add-edge",
+      "producerVersion": "teacher-v3@0.4.48",
+      "producerBuildId": "t287-lane-c",
+      "promptHash": "sha256:teacher-graph-maintenance-prompt",
+      "templateId": "teacher-v3/graph-maintenance/add-edge-v1",
+      "scope": "teacher-v3-graph-maintenance",
+      "profile": "shadow-only",
+      "idempotencyKey": "teacher-v3::graph-maintenance::add-edge::concept_teacher_v3::concept_graph_prior",
+      "sourceBundleId": "bundle_teacher_graph_maintenance_01"
+    },
+    "subjectIds": [
+      "concept_teacher_v3",
+      "concept_graph_prior"
+    ],
+    "evidence": [
+      {
+        "evidenceId": "evi_graph_maintenance_add_edge_01",
+        "sourceKind": "file",
+        "sourceId": "docs/architecture/teacher-v3.md#teacher-as-compiler",
+        "authority": "raw_source",
+        "derivation": "teacher_mutation_proposal",
+        "excerpt": "Teacher v3 may propose structural graph changes off-path, behind replay gates.",
+        "sourceHash": "sha256:graph-maintenance-add-edge",
+        "capturedAt": "2026-04-25T14:00:00Z"
+      }
+    ],
+    "payload": {
+      "kind": "add_edge",
+      "sourceNodeId": "concept_teacher_v3",
+      "targetNodeId": "concept_graph_prior",
+      "edgeKind": "learned",
+      "safeClassMode": "shadow_only",
+      "liveSelfEditingEnabled": false
+    },
+    "expectedEffect": {
+      "retrieval": "better",
+      "truthRisk": "low",
+      "tokenBudget": "same"
+    },
+    "confidence": 0.82,
+    "replaySuites": [
+      "teacher-v3-graph-maintenance-shadow",
+      "teacher-v3-rollback-smoke"
+    ],
+    "replaySuiteIds": [
+      "teacher-v3-graph-maintenance-shadow",
+      "teacher-v3-rollback-smoke"
+    ],
+    "rollbackKey": "rollback:teacher-v3:graph-maintenance:add-edge:01",
+    "replayGate": {
+      "proposalClass": "mutation",
+      "reviewMode": "shadow_only",
+      "dimensions": {
+        "truthInvariants": {
+          "name": "truth_invariants",
+          "summary": "Mutation lane: keep derived output subordinate to explicit authority.",
+          "requirements": [
+            "Explicit correction memory still outranks teacher synthesis.",
+            "The live path stays read-only to the proposal.",
+            "Evidence refs stay attached to any non-trivial claim."
+          ]
+        },
+        "attributionFloor": {
+          "name": "attribution_floor",
+          "summary": "Mutation lane: every proposed change needs clear evidence coverage.",
+          "requirements": [
+            "Every proposal carries durable evidence refs.",
+            "Source ids must be stable record ids, not display labels.",
+            "Unattributed payload stays out of promotion."
+          ]
+        },
+        "boundedness": {
+          "name": "boundedness",
+          "summary": "Mutation lane: keep the reviewable surface compact and inspectable.",
+          "requirements": [
+            "Proposal subject sets stay finite and small.",
+            "Payloads avoid raw corpus dumps and unbounded excerpts.",
+            "Replay fits inside a single review pass."
+          ]
+        },
+        "reversibility": {
+          "name": "reversibility",
+          "summary": "Mutation lane: preserve rollback and replay identity.",
+          "requirements": [
+            "RollbackKey identifies the reversible path.",
+            "Prior state remains recoverable for replay.",
+            "Rejected or superseded proposals keep lineage."
+          ]
+        }
+      }
+    },
+    "createdAt": "2026-04-25T14:00:00Z",
+    "freshnessTs": "2026-04-25T14:02:00Z",
+    "replaySummary": {
+      "replayId": "treplay_graph_prop_graph_add_edge_01",
+      "proposalId": "prop_graph_add_edge_01",
+      "proposalClass": "mutation",
+      "status": "shadow_scored",
+      "reviewMode": "shadow_only",
+      "basePackVersion": 48,
+      "baseGraphHash": "sha256:base-graph-before-add-edge",
+      "candidatePackVersion": null,
+      "candidatePackId": null,
+      "candidateGraphHash": "sha256:5c83de1f08a5e4804ff6fbc81c9987b80a2628d94240af040f04bc6a1adcf70a",
+      "beforeScore": 0.5,
+      "afterScore": 0.56,
+      "scoreDelta": 0.06,
+      "before": {
+        "phase": "before",
+        "surfaceState": "shipped",
+        "packVersion": null,
+        "packId": null,
+        "graphHash": "sha256:9a803be598f524d6436f9ecaab34f961a998621e08c5449da0d1b8298fda3a26",
+        "nodeCount": 3,
+        "edgeCount": 1,
+        "health": {
+          "firedPerQuery": null,
+          "dormantPercent": null,
+          "orphanCount": null
+        },
+        "notes": [
+          "base graph loaded for shadow replay",
+          "live graph remains read-only"
+        ]
+      },
+      "after": {
+        "phase": "after",
+        "surfaceState": "target",
+        "packVersion": null,
+        "packId": null,
+        "graphHash": "sha256:5c83de1f08a5e4804ff6fbc81c9987b80a2628d94240af040f04bc6a1adcf70a",
+        "nodeCount": 3,
+        "edgeCount": 2,
+        "health": {
+          "firedPerQuery": null,
+          "dormantPercent": null,
+          "orphanCount": null
+        },
+        "notes": [
+          "candidate graph exists only inside shadow replay",
+          "rollbackRestored=true"
+        ]
+      },
+      "classSummary": {
+        "proposalId": "prop_graph_add_edge_01",
+        "proposalClass": "mutation",
+        "reviewMode": "shadow_only",
+        "shadowOnly": true,
+        "promotionBypass": false,
+        "rollbackKey": "rollback:teacher-v3:graph-maintenance:add-edge:01",
+        "applied": true,
+        "reversible": true,
+        "replayOutcome": "applied",
+        "kind": "mutation",
+        "promotionDiscipline": "shadow_only",
+        "subjectCount": 2,
+        "evidenceCount": 1,
+        "counterevidenceCount": 0,
+        "replaySuites": [
+          "teacher-v3-graph-maintenance-shadow",
+          "teacher-v3-rollback-smoke"
+        ],
+        "candidatePackVersion": null,
+        "candidatePackId": null,
+        "candidateGraphHash": "sha256:5c83de1f08a5e4804ff6fbc81c9987b80a2628d94240af040f04bc6a1adcf70a",
+        "rollback": {
+          "strategy": "reset_shadow_candidate_state",
+          "restored": true,
+          "before": {
+            "nodeCount": 3,
+            "edgeCount": 2
+          },
+          "after": {
+            "nodeCount": 3,
+            "edgeCount": 1
+          },
+          "summary": "Rollback restored the candidate graph to the base graph."
+        },
+        "summary": "Mutation replay stayed shadow-only on the candidate graph (1/1 application(s) applied) and rollback restored the base graph without any promotion bypass.",
+        "notes": [
+          "graph maintenance mutation was replayed against a cloned candidate graph",
+          "mutation/forgetting classes are not promotable by this lifecycle",
+          "applicationCount=1"
+        ]
+      },
+      "summary": "Graph maintenance add_edge proposal prop_graph_add_edge_01 was persisted as a mutation proposal, replayed in shadow-only mode, and rollback restored=true; no live self-editing was enabled.",
+      "createdAt": "2026-04-25T14:02:00Z",
+      "updatedAt": "2026-04-25T14:02:00Z"
+    }
+  },
+  "replaySummary": {
+    "replayId": "treplay_graph_prop_graph_add_edge_01",
+    "proposalId": "prop_graph_add_edge_01",
+    "proposalClass": "mutation",
+    "status": "shadow_scored",
+    "reviewMode": "shadow_only",
+    "basePackVersion": 48,
+    "baseGraphHash": "sha256:base-graph-before-add-edge",
+    "candidatePackVersion": null,
+    "candidatePackId": null,
+    "candidateGraphHash": "sha256:5c83de1f08a5e4804ff6fbc81c9987b80a2628d94240af040f04bc6a1adcf70a",
+    "beforeScore": 0.5,
+    "afterScore": 0.56,
+    "scoreDelta": 0.06,
+    "before": {
+      "phase": "before",
+      "surfaceState": "shipped",
+      "packVersion": null,
+      "packId": null,
+      "graphHash": "sha256:9a803be598f524d6436f9ecaab34f961a998621e08c5449da0d1b8298fda3a26",
+      "nodeCount": 3,
+      "edgeCount": 1,
+      "health": {
+        "firedPerQuery": null,
+        "dormantPercent": null,
+        "orphanCount": null
+      },
+      "notes": [
+        "base graph loaded for shadow replay",
+        "live graph remains read-only"
+      ]
+    },
+    "after": {
+      "phase": "after",
+      "surfaceState": "target",
+      "packVersion": null,
+      "packId": null,
+      "graphHash": "sha256:5c83de1f08a5e4804ff6fbc81c9987b80a2628d94240af040f04bc6a1adcf70a",
+      "nodeCount": 3,
+      "edgeCount": 2,
+      "health": {
+        "firedPerQuery": null,
+        "dormantPercent": null,
+        "orphanCount": null
+      },
+      "notes": [
+        "candidate graph exists only inside shadow replay",
+        "rollbackRestored=true"
+      ]
+    },
+    "classSummary": {
+      "proposalId": "prop_graph_add_edge_01",
+      "proposalClass": "mutation",
+      "reviewMode": "shadow_only",
+      "shadowOnly": true,
+      "promotionBypass": false,
+      "rollbackKey": "rollback:teacher-v3:graph-maintenance:add-edge:01",
+      "applied": true,
+      "reversible": true,
+      "replayOutcome": "applied",
+      "kind": "mutation",
+      "promotionDiscipline": "shadow_only",
+      "subjectCount": 2,
+      "evidenceCount": 1,
+      "counterevidenceCount": 0,
+      "replaySuites": [
+        "teacher-v3-graph-maintenance-shadow",
+        "teacher-v3-rollback-smoke"
+      ],
+      "candidatePackVersion": null,
+      "candidatePackId": null,
+      "candidateGraphHash": "sha256:5c83de1f08a5e4804ff6fbc81c9987b80a2628d94240af040f04bc6a1adcf70a",
+      "rollback": {
+        "strategy": "reset_shadow_candidate_state",
+        "restored": true,
+        "before": {
+          "nodeCount": 3,
+          "edgeCount": 2
+        },
+        "after": {
+          "nodeCount": 3,
+          "edgeCount": 1
+        },
+        "summary": "Rollback restored the candidate graph to the base graph."
+      },
+      "summary": "Mutation replay stayed shadow-only on the candidate graph (1/1 application(s) applied) and rollback restored the base graph without any promotion bypass.",
+      "notes": [
+        "graph maintenance mutation was replayed against a cloned candidate graph",
+        "mutation/forgetting classes are not promotable by this lifecycle",
+        "applicationCount=1"
+      ]
+    },
+    "summary": "Graph maintenance add_edge proposal prop_graph_add_edge_01 was persisted as a mutation proposal, replayed in shadow-only mode, and rollback restored=true; no live self-editing was enabled.",
+    "createdAt": "2026-04-25T14:02:00Z",
+    "updatedAt": "2026-04-25T14:02:00Z"
+  },
+  "shadowReplay": {
+    "proposalId": "prop_graph_add_edge_01",
+    "proposalClass": "mutation",
+    "reviewMode": "shadow_only",
+    "shadowOnly": true,
+    "promotionBypass": false,
+    "rollbackKey": "rollback:teacher-v3:graph-maintenance:add-edge:01",
+    "applied": true,
+    "reversible": true,
+    "replayOutcome": "applied",
+    "summary": "Mutation replay stayed shadow-only on the candidate graph (1/1 application(s) applied) and rollback restored the base graph without any promotion bypass.",
+    "candidateStateKind": "graph",
+    "before": {
+      "nodeCount": 3,
+      "edgeCount": 1
+    },
+    "after": {
+      "nodeCount": 3,
+      "edgeCount": 2
+    },
+    "applications": [
+      {
+        "index": 0,
+        "proposalId": "shadow_prop_graph_add_edge_01",
+        "proposalKind": "connect",
+        "applied": true,
+        "reversible": true,
+        "reason": null,
+        "before": {
+          "nodeCount": 3,
+          "edgeCount": 1
+        },
+        "after": {
+          "nodeCount": 3,
+          "edgeCount": 2
+        },
+        "operationKinds": [
+          "insert_edge"
+        ]
+      }
+    ],
+    "rollback": {
+      "strategy": "reset_shadow_candidate_state",
+      "restored": true,
+      "before": {
+        "nodeCount": 3,
+        "edgeCount": 2
+      },
+      "after": {
+        "nodeCount": 3,
+        "edgeCount": 1
+      },
+      "summary": "Rollback restored the candidate graph to the base graph."
+    }
+  },
+  "lifecycle": {
+    "contract": "teacher_v3_graph_maintenance_lifecycle.v1",
+    "proposalId": "prop_graph_add_edge_01",
+    "proposalClass": "mutation",
+    "proposalKind": "add_edge",
+    "lifecycleState": "replayed",
+    "status": "shadow_scored",
+    "safeClassMode": "shadow_only",
+    "subjectIds": [
+      "concept_teacher_v3",
+      "concept_graph_prior"
+    ],
+    "evidenceIds": [
+      "evi_graph_maintenance_add_edge_01"
+    ],
+    "expectedEffect": {
+      "retrieval": "better",
+      "truthRisk": "low",
+      "tokenBudget": "same"
+    },
+    "replaySuites": [
+      "teacher-v3-graph-maintenance-shadow",
+      "teacher-v3-rollback-smoke"
+    ],
+    "rollbackKey": "rollback:teacher-v3:graph-maintenance:add-edge:01",
+    "replaySummaryId": "treplay_graph_prop_graph_add_edge_01",
+    "replayOutcome": "applied",
+    "rollbackRestored": true,
+    "promotionBypass": false,
+    "liveSelfEditingEnabled": false,
+    "summary": "Persisted graph maintenance add_edge prop_graph_add_edge_01 reached replayed through shadow replay with rollbackRestored=true.",
+    "boundary": "This lifecycle persists and replays a proposal; it does not write to the live graph or allow mutation/forgetting promotion."
+  }
+}

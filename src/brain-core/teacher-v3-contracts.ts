@@ -403,6 +403,8 @@ export interface TeacherProposalV1 {
   status: ProposalStatus;
   /** Target-state lifecycle used by the structural-proposal tranche. */
   lifecycleState?: TeacherProposalLifecycleStateV1;
+  /** Class-derived safety mode persisted with graph-maintenance proposals. */
+  safeClassMode?: TeacherProposalReplayGateReviewModeV1;
   lineage: ProposalLineageV1;
   subjectIds: string[];
   evidence: EvidenceRefV1[];
@@ -545,6 +547,7 @@ export interface TeacherProposalSummaryV1 {
   lane?: ProposalClass;
   status: ProposalStatus;
   lifecycleState: TeacherProposalLifecycleStateV1;
+  safeClassMode: TeacherProposalReplayGateReviewModeV1;
   lineage: TeacherProposalLineageSummaryV1;
   subjectIds: string[];
   subjectCount: number;
@@ -713,6 +716,7 @@ export function normalizeTeacherProposalV1(proposal: TeacherProposalV1): Teacher
     schemaVersion: proposal.schemaVersion ?? 1,
     proposalKind,
     lifecycleState,
+    safeClassMode: proposal.safeClassMode ?? describeTeacherProposalReplayGateReviewModeV1(proposal.proposalClass),
     replaySuites: replaySuiteIds,
     replaySuiteIds,
     freshnessTs: proposal.freshnessTs ?? proposal.resolvedAt ?? proposal.createdAt,
@@ -740,6 +744,7 @@ export function summarizeTeacherProposalV1(
     lane: normalizedProposal.lane,
     status: normalizedProposal.status,
     lifecycleState,
+    safeClassMode: normalizedProposal.safeClassMode ?? describeTeacherProposalReplayGateReviewModeV1(normalizedProposal.proposalClass),
     lineage: cloneProposalLineage(normalizedProposal.lineage),
     subjectIds: [...normalizedProposal.subjectIds],
     subjectCount: normalizedProposal.subjectIds.length,
