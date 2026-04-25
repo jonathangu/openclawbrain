@@ -534,6 +534,37 @@ describe("recorded session replay proof lane", () => {
       beneficialActivationCount: 1,
       precision: expect.any(Number),
     });
+    expect(descriptor.summaryTables.scorecard.activationUsefulness).toMatchObject({
+      available: true,
+      observedTurnCount: 5,
+      firedTurnCount: 5,
+      shouldHaveFiredTurnCount: 1,
+      uniqueBeneficialWinCount: 1,
+      harmfulActivationCount: 0,
+      neutralActivationCount: 4,
+      noOpTieCount: 4,
+      missedBeneficialOpportunityCount: 0,
+      promptTokenDeltaCandidateMinusBaseline: 93,
+      labels: {
+        beneficial: "fired_and_learned_route_better_than_graph_prior_only",
+        harmful: "fired_and_learned_route_worse_than_graph_prior_only",
+        neutral: "fired_and_learned_route_tied_graph_prior_only",
+        missedBeneficialOpportunity: "did_not_fire_but_learned_route_better_than_graph_prior_only",
+      },
+    });
+    const beneficialTurn = descriptor.summaryTables.turns.find((turn) => turn.turnId === "plan-turn-3");
+    expect(beneficialTurn?.activationUsefulness).toMatchObject({
+      didLearnedRoutingFire: true,
+      shouldHaveFired: true,
+      usefulness: "beneficial",
+      relationVsBaseline: "better",
+      costDelta: {
+        promptTokensCandidateMinusBaseline: expect.any(Number),
+        contextCharsCandidateMinusBaseline: expect.any(Number),
+      },
+    });
+    const tieTurns = descriptor.summaryTables.turns.filter((turn) => turn.activationUsefulness.usefulness === "neutral");
+    expect(tieTurns).toHaveLength(4);
     expect(descriptor.summaryTables.scorecard.successAdjustedEconomics).toMatchObject({
       available: true,
       candidateEstimatedPromptCostUsdPerSuccess: expect.any(Number),
@@ -561,6 +592,7 @@ describe("recorded session replay proof lane", () => {
     const laneRoot = path.join(artifactRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.laneDir);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/Explainable Scorecard/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/optimize-over objective: maximize_learned_route_value_vs_graph_prior_only/);
+    expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/activation usefulness: 1 unique beneficial win\(s\), 0 harmful activation\(s\), 4 neutral activation tie\(s\)/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.summary)).toMatch(/optimize-over labels: beneficial=learned_route_better_than_graph_prior_only/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/diagnostic top-rank/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/Diagnostic Pairwise Deltas/);

@@ -194,6 +194,7 @@ interface RecordedSessionReplayProofLaneTurnSummaryRowV1 {
   candidateTieOrBetterVsBaseline: boolean | null;
   candidateRegressionVsBaseline: boolean | null;
   candidateRegressionVsFloor: boolean | null;
+  activationUsefulness: RecordedSessionReplayProofLaneActivationUsefulnessTurnLabelV1;
   ranking: Array<{
     mode: ReplayLaneMode;
     qualityScore: number;
@@ -370,6 +371,55 @@ export interface RecordedSessionReplayProofLaneOptimizeOverV1 {
   limitations: string[];
 }
 
+export type RecordedSessionReplayProofLaneActivationUsefulnessLabelV1 =
+  | "beneficial"
+  | "harmful"
+  | "neutral"
+  | "missed_beneficial_opportunity"
+  | "correct_abstention"
+  | "unobserved";
+
+export interface RecordedSessionReplayProofLaneActivationCostDeltaV1 {
+  promptTokensCandidateMinusBaseline: number | null;
+  promptCostUsdCandidateMinusBaseline: number | null;
+  contextCharsCandidateMinusBaseline: number | null;
+  contextBlocksCandidateMinusBaseline: number | null;
+}
+
+export interface RecordedSessionReplayProofLaneActivationUsefulnessTurnLabelV1 {
+  didLearnedRoutingFire: boolean | null;
+  shouldHaveFired: boolean | null;
+  usefulness: RecordedSessionReplayProofLaneActivationUsefulnessLabelV1;
+  relationVsBaseline: ReplayLaneRelation | null;
+  costDelta: RecordedSessionReplayProofLaneActivationCostDeltaV1;
+}
+
+export interface RecordedSessionReplayProofLaneActivationUsefulnessV1 {
+  available: boolean;
+  observedTurnCount: number;
+  firedTurnCount: number;
+  shouldHaveFiredTurnCount: number;
+  uniqueBeneficialWinCount: number;
+  harmfulActivationCount: number;
+  neutralActivationCount: number;
+  noOpTieCount: number;
+  missedBeneficialOpportunityCount: number;
+  correctAbstentionCount: number;
+  promptTokenDeltaCandidateMinusBaseline: number | null;
+  promptCostUsdDeltaCandidateMinusBaseline: number | null;
+  contextCharsDeltaCandidateMinusBaseline: number | null;
+  contextBlocksDeltaCandidateMinusBaseline: number | null;
+  labels: {
+    beneficial: "fired_and_learned_route_better_than_graph_prior_only";
+    harmful: "fired_and_learned_route_worse_than_graph_prior_only";
+    neutral: "fired_and_learned_route_tied_graph_prior_only";
+    missedBeneficialOpportunity: "did_not_fire_but_learned_route_better_than_graph_prior_only";
+    correctAbstention: "did_not_fire_and_learned_route_not_better_than_graph_prior_only";
+  };
+  summary: string;
+  limitations: string[];
+}
+
 export interface RecordedSessionReplayProofLaneExplainableScorecardV1 {
   candidateMode: "learned_route";
   baselineMode: "graph_prior_only";
@@ -388,6 +438,7 @@ export interface RecordedSessionReplayProofLaneExplainableScorecardV1 {
   correctionAbsorption: RecordedSessionReplayProofLaneCorrectionAbsorptionV1;
   activationPrecision: RecordedSessionReplayProofLaneActivationPrecisionV1;
   activationPrecisionProxy: RecordedSessionReplayProofLaneActivationPrecisionProxyV1;
+  activationUsefulness: RecordedSessionReplayProofLaneActivationUsefulnessV1;
   successAdjustedEconomics: RecordedSessionReplayProofLaneSuccessAdjustedEconomicsV1;
   failOpen: RecordedSessionReplayProofLaneFailOpenV1;
   diagnostics: {
@@ -1327,6 +1378,116 @@ function formatOutcomeBreakdown(value: RecordedSessionReplayProofLaneOutcomeBrea
   return `${value.betterCount} better, ${value.tiedCount} tied, ${value.worseCount} worse`;
 }
 
+function sumNullable(values: Array<number | null>): number | null {
+  if (values.length === 0 || values.some((value) => value === null)) {
+    return null;
+  }
+  return roundValue(values.reduce<number>((sum, value) => sum + (value ?? 0), 0));
+}
+
+function buildActivationCostDelta(
+  candidateTurn: RecordedSessionReplayProofLaneTurnModeRowV1 | null,
+  baselineTurn: RecordedSessionReplayProofLaneTurnModeRowV1 | null,
+): RecordedSessionReplayProofLaneActivationCostDeltaV1 {
+  return {
+    promptTokensCandidateMinusBaseline: candidateTurn?.estimatedPromptTokens !== null
+      && candidateTurn?.estimatedPromptTokens !== undefined
+      && baselineTurn?.estimatedPromptTokens !== null
+      && baselineTurn?.estimatedPromptTokens !== undefined
+      ? candidateTurn.estimatedPromptTokens - baselineTurn.estimatedPromptTokens
+      : null,
+    promptCostUsdCandidateMinusBaseline: candidateTurn?.estimatedPromptCostUsd !== null
+      && candidateTurn?.estimatedPromptCostUsd !== undefined
+      && baselineTurn?.estimatedPromptCostUsd !== null
+      && baselineTurn?.estimatedPromptCostUsd !== undefined
+      ? roundValue(candidateTurn.estimatedPromptCostUsd - baselineTurn.estimatedPromptCostUsd)
+      : null,
+    contextCharsCandidateMinusBaseline: candidateTurn && baselineTurn
+      ? candidateTurn.selectedContextCharCount - baselineTurn.selectedContextCharCount
+      : null,
+    contextBlocksCandidateMinusBaseline: candidateTurn && baselineTurn
+      ? candidateTurn.selectedContextBlockCount - baselineTurn.selectedContextBlockCount
+      : null,
+  };
+}
+
+function buildActivationUsefulnessTurnLabel(
+  candidateTurn: RecordedSessionReplayProofLaneTurnModeRowV1 | null,
+  baselineTurn: RecordedSessionReplayProofLaneTurnModeRowV1 | null,
+  relationVsBaseline: ReplayLaneRelation | null,
+): RecordedSessionReplayProofLaneActivationUsefulnessTurnLabelV1 {
+  const didLearnedRoutingFire = candidateTurn?.activationTaken ?? null;
+  const shouldHaveFired = relationVsBaseline === null ? null : relationVsBaseline === "better";
+  let usefulness: RecordedSessionReplayProofLaneActivationUsefulnessLabelV1 = "unobserved";
+  if (didLearnedRoutingFire !== null && shouldHaveFired !== null) {
+    if (didLearnedRoutingFire && relationVsBaseline === "better") {
+      usefulness = "beneficial";
+    } else if (didLearnedRoutingFire && relationVsBaseline === "worse") {
+      usefulness = "harmful";
+    } else if (didLearnedRoutingFire && relationVsBaseline === "tied") {
+      usefulness = "neutral";
+    } else if (!didLearnedRoutingFire && relationVsBaseline === "better") {
+      usefulness = "missed_beneficial_opportunity";
+    } else {
+      usefulness = "correct_abstention";
+    }
+  }
+  return {
+    didLearnedRoutingFire,
+    shouldHaveFired,
+    usefulness,
+    relationVsBaseline,
+    costDelta: buildActivationCostDelta(candidateTurn, baselineTurn),
+  };
+}
+
+function buildActivationUsefulnessSummary(
+  turns: RecordedSessionReplayProofLaneTurnSummaryRowV1[],
+): RecordedSessionReplayProofLaneActivationUsefulnessV1 {
+  const labels = turns.map((turn) => turn.activationUsefulness);
+  const observedLabels = labels.filter((label) => label.didLearnedRoutingFire !== null && label.shouldHaveFired !== null);
+  const firedLabels = observedLabels.filter((label) => label.didLearnedRoutingFire === true);
+  const shouldFireLabels = observedLabels.filter((label) => label.shouldHaveFired === true);
+  const beneficialLabels = observedLabels.filter((label) => label.usefulness === "beneficial");
+  const harmfulLabels = observedLabels.filter((label) => label.usefulness === "harmful");
+  const neutralLabels = observedLabels.filter((label) => label.usefulness === "neutral");
+  const missedLabels = observedLabels.filter((label) => label.usefulness === "missed_beneficial_opportunity");
+  const correctAbstentionLabels = observedLabels.filter((label) => label.usefulness === "correct_abstention");
+
+  const firedCostDeltas = firedLabels.map((label) => label.costDelta);
+  return {
+    available: observedLabels.length > 0,
+    observedTurnCount: observedLabels.length,
+    firedTurnCount: firedLabels.length,
+    shouldHaveFiredTurnCount: shouldFireLabels.length,
+    uniqueBeneficialWinCount: beneficialLabels.length,
+    harmfulActivationCount: harmfulLabels.length,
+    neutralActivationCount: neutralLabels.length,
+    noOpTieCount: labels.filter((label) => label.relationVsBaseline === "tied").length,
+    missedBeneficialOpportunityCount: missedLabels.length,
+    correctAbstentionCount: correctAbstentionLabels.length,
+    promptTokenDeltaCandidateMinusBaseline: sumNullable(firedCostDeltas.map((delta) => delta.promptTokensCandidateMinusBaseline)),
+    promptCostUsdDeltaCandidateMinusBaseline: sumNullable(firedCostDeltas.map((delta) => delta.promptCostUsdCandidateMinusBaseline)),
+    contextCharsDeltaCandidateMinusBaseline: sumNullable(firedCostDeltas.map((delta) => delta.contextCharsCandidateMinusBaseline)),
+    contextBlocksDeltaCandidateMinusBaseline: sumNullable(firedCostDeltas.map((delta) => delta.contextBlocksCandidateMinusBaseline)),
+    labels: {
+      beneficial: "fired_and_learned_route_better_than_graph_prior_only",
+      harmful: "fired_and_learned_route_worse_than_graph_prior_only",
+      neutral: "fired_and_learned_route_tied_graph_prior_only",
+      missedBeneficialOpportunity: "did_not_fire_but_learned_route_better_than_graph_prior_only",
+      correctAbstention: "did_not_fire_and_learned_route_not_better_than_graph_prior_only",
+    },
+    summary: observedLabels.length > 0
+      ? `activation usefulness: ${beneficialLabels.length} unique beneficial win(s), ${harmfulLabels.length} harmful activation(s), ${neutralLabels.length} neutral activation tie(s), ${missedLabels.length} missed beneficial opportunity turn(s), ${correctAbstentionLabels.length} correct abstention(s); fired prompt-token delta ${sumNullable(firedCostDeltas.map((delta) => delta.promptTokensCandidateMinusBaseline)) ?? "n/a"}`
+      : "activation usefulness is unavailable because replay turns did not emit activationTaken",
+    limitations: [
+      "didLearnedRoutingFire is true only when replay emitted activationTaken=true for learned_route",
+      "shouldHaveFired is derived from deterministic replay quality vs graph_prior_only, not an independent human oracle",
+      "cost deltas are prompt/context proxies for fired activations only; null means the underlying estimate was unavailable",
+    ],
+  };
+}
+
 function buildExplainableScorecard(
   params: {
     requestedTraceCount: number;
@@ -1455,6 +1616,7 @@ function buildExplainableScorecard(
   const baselinePromptCostUsdPerSuccess = roundAverage(baselinePromptCostUsdOnWins, winTraces.length);
   const candidateLatencyMsPerSuccess = floorAverage(candidateLatencyMsOnWins, winTraces.length);
   const baselineLatencyMsPerSuccess = floorAverage(baselineLatencyMsOnWins, winTraces.length);
+  const activationUsefulness = buildActivationUsefulnessSummary(params.turns);
 
   return {
     candidateMode,
@@ -1554,6 +1716,7 @@ function buildExplainableScorecard(
         "selectionDigest divergence can overcount activation when learned_route mode never used a learned route function",
       ],
     },
+    activationUsefulness,
     successAdjustedEconomics: {
       available: winTraces.length > 0,
       successUnit: winTraces.length > 0 ? "validated_trace" : null,
@@ -1810,6 +1973,12 @@ function buildTraceAnalysis(
     const candidateTurn = turnModes.find((row) => row.mode === "learned_route");
     const baselineTurn = turnModes.find((row) => row.mode === "graph_prior_only");
     const floorTurn = turnModes.find((row) => row.mode === "no_brain");
+    const candidateRelationVsBaseline = candidateTurn && baselineTurn
+      ? relationFromScores(candidateTurn.qualityScore, baselineTurn.qualityScore)
+      : null;
+    const candidateRelationVsFloor = candidateTurn && floorTurn
+      ? relationFromScores(candidateTurn.qualityScore, floorTurn.qualityScore)
+      : null;
     return {
       traceId: descriptor.bundle.traceId,
       bundleDir,
@@ -1819,12 +1988,8 @@ function buildTraceAnalysis(
       feedbackKinds: traceFeedbackKinds(traceTurn),
       scoreSpread: scoreSpread(turnModes),
       topModes: buildTopScoreModes(turnModes),
-      candidateRelationVsBaseline: candidateTurn && baselineTurn
-        ? relationFromScores(candidateTurn.qualityScore, baselineTurn.qualityScore)
-        : null,
-      candidateRelationVsFloor: candidateTurn && floorTurn
-        ? relationFromScores(candidateTurn.qualityScore, floorTurn.qualityScore)
-        : null,
+      candidateRelationVsBaseline,
+      candidateRelationVsFloor,
       candidateTieOrBetterVsBaseline: candidateTurn && baselineTurn
         ? candidateTurn.qualityScore >= baselineTurn.qualityScore
         : null,
@@ -1834,6 +1999,7 @@ function buildTraceAnalysis(
       candidateRegressionVsFloor: candidateTurn && floorTurn
         ? candidateTurn.qualityScore < floorTurn.qualityScore
         : null,
+      activationUsefulness: buildActivationUsefulnessTurnLabel(candidateTurn ?? null, baselineTurn ?? null, candidateRelationVsBaseline),
       ranking,
       modes: turnModes,
     };
@@ -2268,6 +2434,7 @@ function buildLaneReadme(
   lines.push(`- correction absorption: ${scorecard.correctionAbsorption.summary}`);
   lines.push(`- activation precision: ${scorecard.activationPrecision.summary}`);
   lines.push(`- activation precision proxy: ${scorecard.activationPrecisionProxy.summary}`);
+  lines.push(`- activation usefulness: ${scorecard.activationUsefulness.summary}`);
   lines.push(`- success-adjusted economics: ${scorecard.successAdjustedEconomics.summary}`);
   lines.push(`- fail-open: ${scorecard.failOpen.summary}`);
   lines.push("");
@@ -2399,6 +2566,7 @@ function buildLaneSummary(
   lines.push(`- correction absorption: ${scorecard.correctionAbsorption.summary}`);
   lines.push(`- activation precision: ${scorecard.activationPrecision.summary}`);
   lines.push(`- activation precision proxy: ${scorecard.activationPrecisionProxy.summary}`);
+  lines.push(`- activation usefulness: ${scorecard.activationUsefulness.summary}`);
   lines.push(`- success-adjusted economics: ${scorecard.successAdjustedEconomics.summary}`);
   lines.push(`- fail-open: ${scorecard.failOpen.summary}`);
   lines.push("");
