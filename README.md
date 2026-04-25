@@ -4,7 +4,7 @@ Selective intervention for OpenClaw.
 
 OpenClawBrain is the selective intervention layer behind OpenClaw. The current achievable agenda is narrow on purpose: make current choices stick when the brain should help, stay out of the way when it should not, and give operators honest proof surfaces for what happened.
 
-Current version: **0.4.45** · [Changelog](CHANGELOG.md)
+Current version: **0.4.46** · [Changelog](CHANGELOG.md)
 
 ## Why people use it
 
@@ -18,10 +18,10 @@ Current version: **0.4.45** · [Changelog](CHANGELOG.md)
 If you already have OpenClaw and Node.js 20+, this is the simplest path:
 
 ```bash
-npx @openclawbrain/cli@0.4.45 install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.46 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.45 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.45 proof --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.46 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.46 proof --openclaw-home ~/.openclaw
 ```
 
 Use the same four commands later for upgrades and repairs.
@@ -41,22 +41,23 @@ This is not a claim of broad agent memory. It is a bounded selective-interventio
 
 The current checked proof surfaces are intentionally narrower than the end-state product story.
 
-- The operator install / attach / `status --detailed` / `proof` lane is real on the exercised host surface.
-- The latest checked activation-first bundle separates unique wins from ties instead of flattening them together: `18` better, `7` tied, `0` worse on the reviewed `felt_resume_25` traces.
-- The same bundle kept restraint clean: `0/65` unnecessary activations, `0/69` must-not-fire failures, and `0/403` broad-live replay regressions on the checked guardrail bundle.
-- Broad-live replay ties are guardrail evidence, not product wins.
+- The operator install / attach / `status --detailed` / `proof` lane is real on the exercised host surface: latest bundle verdict `success_and_proven`, severity `none`, warnings `0`.
+- The protected current-choice lane remains clean: `full-ocb 5/5`, `regret=0`, `harm=0`.
+- The broader specificity/restraint cohort now passes `full-ocb 12/12`, with `regret=0` and `harm=0`.
+- The first bounded tool-capability choice proof passes for `weather.current_conditions`: must-fire current weather/rain chooses `tool_capability`; must-not-fire weather definition chooses `stop_local`.
+- Broad-live replay ties and route-level capability choice are guardrail evidence, not product wins.
 
-Honest boundary: this is proof that bounded selective-intervention lanes and operator truth surfaces exist. It is not a claim that OpenClawBrain already solves broad live answer quality.
+Honest boundary: this is proof that bounded selective-intervention, operator truth, and one route-level capability-choice lane exist. It is not a claim that OpenClawBrain already solves broad live answer quality or executes live weather tools end to end.
 
 ## What Is Next
 
 The near-term agenda is:
 
-- current-choice fidelity
-- restraint / specificity
-- honest proof surfaces
-- operator-story quality
-- tool-capability choice only after the first two lanes are real
+- generalizing capability-choice beyond the first weather lane
+- keeping current-choice fidelity protected
+- keeping restraint / specificity honest
+- improving proof surfaces without broad-memory claims
+- making the operator story boring across more homes
 
 ## What Is Different From Simple Retrieval
 

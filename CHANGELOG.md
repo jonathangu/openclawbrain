@@ -4,6 +4,28 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.46
+
+`0.4.46` is the bounded selective-intervention proof release: it keeps current-choice fidelity protected, broadens specificity/restraint proof, cleans the exercised one-home operator proof, and adds the first route-level tool-capability choice proof without claiming broad memory or live weather execution.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.46`
+- `@openclawbrain/cli@0.4.46`
+
+**Changes**
+
+- keeps the later-preference/current-choice lane at `full-ocb 5/5`, with `regret=0` and `harm=0`
+- expands the specificity/restraint cohort to `full-ocb 12/12`, with `regret=0` and `harm=0`
+- accepts current gateway-health wording so the one-home operator proof is clean: `success_and_proven`, severity `none`, warnings `0`
+- adds the bounded `weather.current_conditions` capability-choice lane with paired must-fire and must-not-fire route-level proof
+- restores the tiny checked cold-start router sample fixture required by the release verification suite
+- aligns README, docs, release notes, and split-package version surfaces to `0.4.46`
+
+**Full release note**
+
+- [docs/release-notes-0.4.46.md](docs/release-notes-0.4.46.md)
+
 ## 0.4.45
 
 `0.4.45` is the status hot-path release: it keeps the shipped proof and hardening story from `0.4.44`, but makes plain human `openclawbrain status` cheaper, calmer, and more trustworthy on real hosts.

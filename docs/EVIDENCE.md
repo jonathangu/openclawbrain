@@ -7,7 +7,7 @@ The current achievable agenda is narrow on purpose:
 - current-choice fidelity
 - restraint / specificity
 - honest operator proof surfaces
-- tool-capability choice later
+- route-level capability choice, starting with the bounded weather lane
 
 The point is not to accumulate logs for their own sake. The point is to make the repo's claims auditable without flattening ties into wins or using vague "memory got better" language.
 

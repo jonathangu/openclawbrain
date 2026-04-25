@@ -13,10 +13,10 @@ This is the shortest supported path from a working OpenClaw install to a verifie
 Keep the same `--openclaw-home` value through the whole flow.
 
 ```bash
-npx @openclawbrain/cli@0.4.45 install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.46 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.45 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.45 proof --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.46 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.46 proof --openclaw-home ~/.openclaw
 ```
 
 What these commands do:
