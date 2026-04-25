@@ -1258,6 +1258,7 @@ function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
       ? summaryTables.traces
       : [];
   const scorecard = summaryTables?.scorecard ?? null;
+  const optimizeOver = scorecard?.optimizeOver ?? null;
   const traceOutcomeVsBaseline = scorecard?.traceOutcomeVsBaseline ?? null;
   const traceTieOrBetterVsBaseline = scorecard?.traceTieOrBetterVsBaseline ?? null;
   const regressionVsBaseline = scorecard?.regressionVsBaseline ?? null;
@@ -1318,6 +1319,15 @@ function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
             total: Number(traceOutcomeVsBaseline.totalCount ?? requestedTraceCount ?? successfulTraceCount ?? 0),
           }
         : null,
+      optimizeOverObjective: typeof optimizeOver?.objective === "string" ? optimizeOver.objective : null,
+      optimizeOverSummary: typeof optimizeOver?.summary === "string" ? optimizeOver.summary : null,
+      optimizeOverLabels: optimizeOver?.labels ?? null,
+      optimizeOverRequestedTraceCount: Number(optimizeOver?.traceDenominator?.requestedTraceCount ?? requestedTraceCount ?? Number.NaN),
+      optimizeOverSuccessfulTraceCount: Number(optimizeOver?.traceDenominator?.successfulTraceCount ?? successfulTraceCount ?? Number.NaN),
+      optimizeOverFailedTraceCount: Number(optimizeOver?.traceDenominator?.failedTraceCount ?? failedTraceCount ?? Number.NaN),
+      optimizeOverComparableTraceCount: Number(optimizeOver?.traceDenominator?.comparableTraceCount ?? traceOutcomeVsBaseline?.totalCount ?? Number.NaN),
+      optimizeOverComparableTraceCoverageRate: Number(optimizeOver?.traceDenominator?.comparableTraceCoverageRate ?? Number.NaN),
+      optimizeOverComparableTurnCount: Number(optimizeOver?.turnDenominator?.comparableTurnCount ?? scorecard?.comparableTurnCount ?? Number.NaN),
       candidateTieOrBetterVsBaselineCount: Number(traceTieOrBetterVsBaseline?.count ?? 0),
       candidateTieOrBetterVsBaselineRate: Number(traceTieOrBetterVsBaseline?.rate ?? Number.NaN),
       regressionVsBaselineCount: Number(regressionVsBaseline?.count ?? 0),
@@ -2628,6 +2638,27 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
             successfulTraceCount: replayFocusMetrics?.successfulTraceCount ?? null,
             failedTraceCount: replayFocusMetrics?.failedTraceCount ?? null,
             candidateUtilityVsBaselineCounts: replayFocusCounts,
+            optimizeOverObjective: replayFocusMetrics?.optimizeOverObjective ?? null,
+            optimizeOverSummary: replayFocusMetrics?.optimizeOverSummary ?? null,
+            optimizeOverLabels: replayFocusMetrics?.optimizeOverLabels ?? null,
+            optimizeOverRequestedTraceCount: Number.isFinite(replayFocusMetrics?.optimizeOverRequestedTraceCount)
+              ? Number(replayFocusMetrics.optimizeOverRequestedTraceCount)
+              : null,
+            optimizeOverSuccessfulTraceCount: Number.isFinite(replayFocusMetrics?.optimizeOverSuccessfulTraceCount)
+              ? Number(replayFocusMetrics.optimizeOverSuccessfulTraceCount)
+              : null,
+            optimizeOverFailedTraceCount: Number.isFinite(replayFocusMetrics?.optimizeOverFailedTraceCount)
+              ? Number(replayFocusMetrics.optimizeOverFailedTraceCount)
+              : null,
+            optimizeOverComparableTraceCount: Number.isFinite(replayFocusMetrics?.optimizeOverComparableTraceCount)
+              ? Number(replayFocusMetrics.optimizeOverComparableTraceCount)
+              : replayFocusTotal,
+            optimizeOverComparableTraceCoverageRate: Number.isFinite(replayFocusMetrics?.optimizeOverComparableTraceCoverageRate)
+              ? Number(replayFocusMetrics.optimizeOverComparableTraceCoverageRate)
+              : null,
+            optimizeOverComparableTurnCount: Number.isFinite(replayFocusMetrics?.optimizeOverComparableTurnCount)
+              ? Number(replayFocusMetrics.optimizeOverComparableTurnCount)
+              : null,
             tieOrBetterRate: replayFocusTieOrBetterRate,
             regressionRate: replayFocusRegressionRate,
             requiredContextRecallSummary: replayFocusMetrics?.requiredContextRecallSummary ?? null,
@@ -3143,6 +3174,18 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- replay focus path: ${replayFocus?.relativePath ?? aggregate.latestBundles.recordedSessionReplay?.relativePath ?? "n/a"}`);
   if (Number.isFinite(replayFocus?.successfulTraceCount) || Number.isFinite(replayFocus?.requestedTraceCount)) {
     lines.push(`- replay focus traces: ${replayFocus?.successfulTraceCount ?? "n/a"}/${replayFocus?.requestedTraceCount ?? "n/a"} succeeded`);
+  }
+  if (replayFocus?.optimizeOverObjective) {
+    lines.push(`- optimize-over objective: ${replayFocus.optimizeOverObjective}`);
+  }
+  if (replayFocus?.optimizeOverLabels) {
+    lines.push(`- optimize-over labels: beneficial=${replayFocus.optimizeOverLabels.beneficial ?? "n/a"} neutral=${replayFocus.optimizeOverLabels.neutral ?? "n/a"} regression=${replayFocus.optimizeOverLabels.regression ?? "n/a"}`);
+  }
+  if (Number.isFinite(replayFocus?.optimizeOverComparableTraceCount) || Number.isFinite(replayFocus?.optimizeOverRequestedTraceCount) || Number.isFinite(replayFocus?.optimizeOverComparableTurnCount)) {
+    lines.push(`- optimize-over denominator: traces=${replayFocus?.optimizeOverComparableTraceCount ?? "n/a"}/${replayFocus?.optimizeOverRequestedTraceCount ?? "n/a"} requested (coverage ${replayFocus?.optimizeOverComparableTraceCoverageRate ?? "n/a"}); turns=${replayFocus?.optimizeOverComparableTurnCount ?? "n/a"}; failed=${replayFocus?.optimizeOverFailedTraceCount ?? "n/a"}`);
+  }
+  if (replayFocus?.optimizeOverSummary) {
+    lines.push(`- optimize-over summary: ${replayFocus.optimizeOverSummary}`);
   }
   lines.push(`- optimize-over learned_route vs graph_prior_only: better=${replayFocusCounts?.better ?? 0} tied=${replayFocusCounts?.tied ?? 0} worse=${replayFocusCounts?.worse ?? 0}`);
   lines.push(`- optimize-over tie-or-better rate: ${replayFocus?.tieOrBetterRate ?? "n/a"}`);

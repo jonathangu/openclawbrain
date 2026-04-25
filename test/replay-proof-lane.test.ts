@@ -502,6 +502,31 @@ describe("recorded session replay proof lane", () => {
       rate: 0,
       totalCount: 2,
     });
+    expect(descriptor.summaryTables.scorecard.optimizeOver).toMatchObject({
+      candidateMode: "learned_route",
+      baselineMode: "graph_prior_only",
+      objective: "maximize_learned_route_value_vs_graph_prior_only",
+      traceDenominator: {
+        requestedTraceCount: 2,
+        successfulTraceCount: 2,
+        failedTraceCount: 0,
+        comparableTraceCount: 2,
+        comparableTraceCoverageRate: 1,
+      },
+      turnDenominator: {
+        comparableTurnCount: 5,
+      },
+      labels: {
+        beneficial: "learned_route_better_than_graph_prior_only",
+        neutral: "learned_route_tied_graph_prior_only",
+        regression: "learned_route_worse_than_graph_prior_only",
+      },
+      traceCounts: {
+        beneficial: 1,
+        neutral: 1,
+        regression: 0,
+      },
+    });
     expect(descriptor.summaryTables.scorecard.activationPrecision).toMatchObject({
       available: true,
       observedTurnCount: 5,
@@ -535,6 +560,8 @@ describe("recorded session replay proof lane", () => {
 
     const laneRoot = path.join(artifactRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.laneDir);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/Explainable Scorecard/);
+    expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/optimize-over objective: maximize_learned_route_value_vs_graph_prior_only/);
+    expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.summary)).toMatch(/optimize-over labels: beneficial=learned_route_better_than_graph_prior_only/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/diagnostic top-rank/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/Diagnostic Pairwise Deltas/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/internal deterministic replay diagnostics/);

@@ -335,10 +335,44 @@ export interface RecordedSessionReplayProofLaneFailOpenV1 {
   summary: string;
 }
 
+export interface RecordedSessionReplayProofLaneOptimizeOverV1 {
+  candidateMode: "learned_route";
+  baselineMode: "graph_prior_only";
+  objective: "maximize_learned_route_value_vs_graph_prior_only";
+  traceDenominator: {
+    requestedTraceCount: number;
+    successfulTraceCount: number;
+    failedTraceCount: number;
+    comparableTraceCount: number;
+    comparableTraceCoverageRate: number | null;
+  };
+  turnDenominator: {
+    comparableTurnCount: number;
+  };
+  labels: {
+    beneficial: "learned_route_better_than_graph_prior_only";
+    neutral: "learned_route_tied_graph_prior_only";
+    regression: "learned_route_worse_than_graph_prior_only";
+  };
+  traceCounts: {
+    beneficial: number;
+    neutral: number;
+    regression: number;
+  };
+  turnCounts: {
+    beneficial: number;
+    neutral: number;
+    regression: number;
+  };
+  summary: string;
+  limitations: string[];
+}
+
 export interface RecordedSessionReplayProofLaneExplainableScorecardV1 {
   candidateMode: "learned_route";
   baselineMode: "graph_prior_only";
   floorMode: "no_brain";
+  optimizeOver: RecordedSessionReplayProofLaneOptimizeOverV1;
   comparableTraceCount: number;
   comparableTurnCount: number;
   traceOutcomeVsBaseline: RecordedSessionReplayProofLaneOutcomeBreakdownV1;
@@ -1291,6 +1325,8 @@ function formatOutcomeBreakdown(value: RecordedSessionReplayProofLaneOutcomeBrea
 
 function buildExplainableScorecard(
   params: {
+    requestedTraceCount: number;
+    failedTraceCount: number;
     modes: RecordedSessionReplayProofLaneModeSummaryRowV1[];
     traces: RecordedSessionReplayProofLaneTraceSummaryRowV1[];
     turns: RecordedSessionReplayProofLaneTurnSummaryRowV1[];
@@ -1307,6 +1343,12 @@ function buildExplainableScorecard(
     .filter((relation): relation is ReplayLaneRelation => relation !== null);
   const traceOutcomeVsBaseline = buildOutcomeBreakdown(traceRelationsVsBaseline);
   const turnOutcomeVsBaseline = buildOutcomeBreakdown(turnRelationsVsBaseline);
+  const optimizeOverLabels = {
+    beneficial: "learned_route_better_than_graph_prior_only" as const,
+    neutral: "learned_route_tied_graph_prior_only" as const,
+    regression: "learned_route_worse_than_graph_prior_only" as const,
+  };
+  const comparableTraceCoverageRate = roundRate(params.traces.length, params.requestedTraceCount);
   const regressionVsBaseline = buildCountRate(
     params.traces.filter((trace) => trace.candidateRegressionVsBaseline === true).length,
     params.traces.length,
@@ -1414,6 +1456,37 @@ function buildExplainableScorecard(
     candidateMode,
     baselineMode,
     floorMode,
+    optimizeOver: {
+      candidateMode,
+      baselineMode,
+      objective: "maximize_learned_route_value_vs_graph_prior_only",
+      traceDenominator: {
+        requestedTraceCount: params.requestedTraceCount,
+        successfulTraceCount: params.traces.length,
+        failedTraceCount: params.failedTraceCount,
+        comparableTraceCount: traceOutcomeVsBaseline.totalCount,
+        comparableTraceCoverageRate,
+      },
+      turnDenominator: {
+        comparableTurnCount: turnOutcomeVsBaseline.totalCount,
+      },
+      labels: optimizeOverLabels,
+      traceCounts: {
+        beneficial: traceOutcomeVsBaseline.betterCount,
+        neutral: traceOutcomeVsBaseline.tiedCount,
+        regression: traceOutcomeVsBaseline.worseCount,
+      },
+      turnCounts: {
+        beneficial: turnOutcomeVsBaseline.betterCount,
+        neutral: turnOutcomeVsBaseline.tiedCount,
+        regression: turnOutcomeVsBaseline.worseCount,
+      },
+      summary: `optimize-over ${candidateMode} vs ${baselineMode}: ${traceOutcomeVsBaseline.betterCount} beneficial, ${traceOutcomeVsBaseline.tiedCount} neutral, ${traceOutcomeVsBaseline.worseCount} regression trace(s) across ${traceOutcomeVsBaseline.totalCount}/${params.requestedTraceCount} requested traces`,
+      limitations: [
+        "optimize-over labels are pairwise replay labels against graph_prior_only, not diagnostic winnerMode labels",
+        "failed replay traces are retained in denominator coverage but excluded from pairwise outcome counts",
+      ],
+    },
     comparableTraceCount: params.traces.length,
     comparableTurnCount: params.turns.length,
     traceOutcomeVsBaseline,
@@ -1862,7 +1935,7 @@ function buildSummaryTables(
     requestedTraceCount,
     successfulTraceCount: analyses.length,
     failedTraceCount,
-    scorecard: buildExplainableScorecard({ modes, traces, turns }),
+    scorecard: buildExplainableScorecard({ requestedTraceCount, failedTraceCount, modes, traces, turns }),
     modes,
     traces,
     turns,
@@ -2177,6 +2250,10 @@ function buildLaneReadme(
   }
   lines.push("");
   lines.push("## Explainable Scorecard");
+  lines.push(`- optimize-over objective: ${scorecard.optimizeOver.objective}`);
+  lines.push(`- optimize-over labels: beneficial=${scorecard.optimizeOver.labels.beneficial}, neutral=${scorecard.optimizeOver.labels.neutral}, regression=${scorecard.optimizeOver.labels.regression}`);
+  lines.push(`- optimize-over denominator: ${scorecard.optimizeOver.traceDenominator.comparableTraceCount}/${scorecard.optimizeOver.traceDenominator.requestedTraceCount} requested traces comparable (coverage ${scorecard.optimizeOver.traceDenominator.comparableTraceCoverageRate ?? "n/a"}); ${scorecard.optimizeOver.turnDenominator.comparableTurnCount} comparable turns`);
+  lines.push(`- optimize-over summary: ${scorecard.optimizeOver.summary}`);
   lines.push(`- learned_route tie-or-better vs graph_prior_only (traces): ${formatCountRate(scorecard.traceTieOrBetterVsBaseline)}`);
   lines.push(`- learned_route vs graph_prior_only (traces): ${formatOutcomeBreakdown(scorecard.traceOutcomeVsBaseline)}`);
   lines.push(`- learned_route tie-or-better vs graph_prior_only (turns): ${formatCountRate(scorecard.turnTieOrBetterVsBaseline)}`);
@@ -2304,6 +2381,10 @@ function buildLaneSummary(
   }
   lines.push("");
   lines.push("## Explainable Scorecard");
+  lines.push(`- optimize-over objective: ${scorecard.optimizeOver.objective}`);
+  lines.push(`- optimize-over labels: beneficial=${scorecard.optimizeOver.labels.beneficial}, neutral=${scorecard.optimizeOver.labels.neutral}, regression=${scorecard.optimizeOver.labels.regression}`);
+  lines.push(`- optimize-over denominator: ${scorecard.optimizeOver.traceDenominator.comparableTraceCount}/${scorecard.optimizeOver.traceDenominator.requestedTraceCount} requested traces comparable (coverage ${scorecard.optimizeOver.traceDenominator.comparableTraceCoverageRate ?? "n/a"}); ${scorecard.optimizeOver.turnDenominator.comparableTurnCount} comparable turns`);
+  lines.push(`- optimize-over summary: ${scorecard.optimizeOver.summary}`);
   lines.push(`- learned_route tie-or-better vs graph_prior_only (traces): ${formatCountRate(scorecard.traceTieOrBetterVsBaseline)}`);
   lines.push(`- learned_route vs graph_prior_only (traces): ${formatOutcomeBreakdown(scorecard.traceOutcomeVsBaseline)}`);
   lines.push(`- learned_route tie-or-better vs graph_prior_only (turns): ${formatCountRate(scorecard.turnTieOrBetterVsBaseline)}`);

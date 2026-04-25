@@ -94,6 +94,19 @@ function buildRuntimeModeReplayLaneBundle() {
         worse: 2,
         total: 18,
       },
+      optimizeOverObjective: "maximize_learned_route_value_vs_graph_prior_only",
+      optimizeOverSummary: "optimize-over learned_route vs graph_prior_only: 9 beneficial, 7 neutral, 2 regression trace(s) across 18/18 requested traces",
+      optimizeOverLabels: {
+        beneficial: "learned_route_better_than_graph_prior_only",
+        neutral: "learned_route_tied_graph_prior_only",
+        regression: "learned_route_worse_than_graph_prior_only",
+      },
+      optimizeOverRequestedTraceCount: 18,
+      optimizeOverSuccessfulTraceCount: 18,
+      optimizeOverFailedTraceCount: 0,
+      optimizeOverComparableTraceCount: 18,
+      optimizeOverComparableTraceCoverageRate: 1,
+      optimizeOverComparableTurnCount: 36,
       candidateTieOrBetterVsBaselineCount: 16,
       candidateTieOrBetterVsBaselineRate: 0.888889,
       regressionVsBaselineCount: 2,
@@ -139,6 +152,41 @@ function buildRuntimeModeReplayLaneBundle() {
         candidateMode: "learned_route",
         baselineMode: "graph_prior_only",
         floorMode: "no_brain",
+        optimizeOver: {
+          candidateMode: "learned_route",
+          baselineMode: "graph_prior_only",
+          objective: "maximize_learned_route_value_vs_graph_prior_only",
+          traceDenominator: {
+            requestedTraceCount: 18,
+            successfulTraceCount: 18,
+            failedTraceCount: 0,
+            comparableTraceCount: 18,
+            comparableTraceCoverageRate: 1,
+          },
+          turnDenominator: {
+            comparableTurnCount: 36,
+          },
+          labels: {
+            beneficial: "learned_route_better_than_graph_prior_only",
+            neutral: "learned_route_tied_graph_prior_only",
+            regression: "learned_route_worse_than_graph_prior_only",
+          },
+          traceCounts: {
+            beneficial: 9,
+            neutral: 7,
+            regression: 2,
+          },
+          turnCounts: {
+            beneficial: 20,
+            neutral: 12,
+            regression: 4,
+          },
+          summary: "optimize-over learned_route vs graph_prior_only: 9 beneficial, 7 neutral, 2 regression trace(s) across 18/18 requested traces",
+          limitations: [
+            "optimize-over labels are pairwise replay labels against graph_prior_only, not diagnostic winnerMode labels",
+            "failed replay traces are retained in denominator coverage but excluded from pairwise outcome counts",
+          ],
+        },
         traceOutcomeVsBaseline: {
           betterCount: 9,
           tiedCount: 7,
@@ -1162,6 +1210,15 @@ describe("proof cron runtime-mode proof tables", () => {
       available: true,
       bundleId: "replay-lane-runtime-mode-proof",
     });
+    expect(aggregate.replayMetrics.focus).toMatchObject({
+      optimizeOverObjective: "maximize_learned_route_value_vs_graph_prior_only",
+      optimizeOverLabels: {
+        beneficial: "learned_route_better_than_graph_prior_only",
+      },
+      optimizeOverComparableTraceCount: 18,
+      optimizeOverRequestedTraceCount: 18,
+      optimizeOverComparableTurnCount: 36,
+    });
 
     const healthMarkdown = formatHealthMarkdown(health);
     const nightlyMarkdown = formatNightlyMarkdown(aggregate);
@@ -1185,6 +1242,11 @@ describe("proof cron runtime-mode proof tables", () => {
     expect(healthMarkdown).toContain("| vector_only | 12/4/2 | 22/8/6 | +6 | +2 | +4 | +6 |");
     expect(healthMarkdown).toContain("| no_brain | 18/0/0 | 30/6/0 | +24 | +8 | +10 | +6 |");
 
+    expect(nightlyMarkdown).toContain("## Replay optimize-over metrics");
+    expect(nightlyMarkdown).toContain("optimize-over objective: maximize_learned_route_value_vs_graph_prior_only");
+    expect(nightlyMarkdown).toContain("optimize-over labels: beneficial=learned_route_better_than_graph_prior_only");
+    expect(nightlyMarkdown).toContain("optimize-over denominator: traces=18/18 requested (coverage 1); turns=36; failed=0");
+    expect(nightlyMarkdown).toContain("optimize-over summary: optimize-over learned_route vs graph_prior_only: 9 beneficial, 7 neutral, 2 regression trace(s) across 18/18 requested traces");
     expect(nightlyMarkdown).toContain("## Runtime-mode proof lane");
     expect(nightlyMarkdown).toContain("bundle=replay-lane-runtime-mode-proof");
     expect(nightlyMarkdown).toContain(
