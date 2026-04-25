@@ -8319,6 +8319,47 @@ function buildOperatorSurfaceReportWithDetailLevel(input, detailLevel) {
         findings
     };
 }
+export const CONTEXT_FEEDBACK_HELPFUL_MIN = 0.25;
+export const CONTEXT_FEEDBACK_HARMFUL_MAX = -0.25;
+export function classifyContextFeedbackVerdict(score) {
+    if (score >= CONTEXT_FEEDBACK_HELPFUL_MIN) {
+        return "helpful";
+    }
+    if (score <= CONTEXT_FEEDBACK_HARMFUL_MAX) {
+        return "harmful";
+    }
+    return "irrelevant";
+}
+export function buildEmptyContextFeedbackSummary() {
+    return {
+        scoreBands: {
+            helpfulMin: CONTEXT_FEEDBACK_HELPFUL_MIN,
+            harmfulMax: CONTEXT_FEEDBACK_HARMFUL_MAX,
+        },
+        verdictCounts: { helpful: 0, irrelevant: 0, harmful: 0 },
+        coverage: {
+            routeTraceCount: 0,
+            identifiedRouteTraceCount: 0,
+            unidentifiedRouteTraceCount: 0,
+            agentIdentityCoverage: 0,
+            observationCount: 0,
+            completedObservationCount: 0,
+            supervisedTraceCount: 0,
+            unsupervisedTraceCount: 0,
+            observationCoverage: 0,
+            supervisionCoverage: 0,
+            pendingFollowupCount: 0,
+            pendingTeacherCount: 0,
+        },
+        agents: [],
+        latest: null,
+        focus: {
+            action: "monitor",
+            detail: "no traced routes recorded yet",
+        },
+        detail: "no traced routes recorded yet",
+    };
+}
 export function describeCurrentProfileBrainStatusWithReport(input) {
     const report = buildOperatorSurfaceReport(input);
     return {

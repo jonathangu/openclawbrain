@@ -17,3 +17,22 @@ test("plugin package only exposes runtime surface", () => {
   assert.doesNotMatch(indexSource, /describeCurrentProfileBrainStatus/);
   assert.doesNotMatch(indexSource, /runDaemonCommand/);
 });
+
+const indexDtsSource = readFileSync(path.join(__dirname, "..", "src", "index.d.ts"), "utf8");
+
+test("type surface exports bounded serving interruption truth", () => {
+  assert.match(indexDtsSource, /export interface InterruptionAccounting/);
+  assert.match(indexDtsSource, /droppedFrontierNodeIds/);
+  assert.match(indexDtsSource, /droppedProposalNodeIds/);
+  assert.match(indexDtsSource, /budgetUtilization/);
+  assert.match(indexDtsSource, /droppedProposalReasons/);
+});
+
+test("type surface exports context feedback truth", () => {
+  assert.match(indexDtsSource, /export type ContextFeedbackVerdict/);
+  assert.match(indexDtsSource, /export interface ContextFeedbackSummary/);
+  assert.match(indexDtsSource, /export interface ContextFeedbackCoverageSummary/);
+  assert.match(indexDtsSource, /export interface ContextFeedbackAgentCoverageSummary/);
+  assert.match(indexDtsSource, /verdictCounts/);
+  assert.match(indexDtsSource, /supervisionCoverage/);
+});

@@ -1938,6 +1938,81 @@ interface OperatorSurfaceReport {
     manyProfile: OperatorManyProfileSupportSummary;
     findings: OperatorDoctorFinding[];
 }
+/**
+ * Accounting summary for bounded-anytime serving interruptions.
+ */
+export interface InterruptionAccounting {
+    droppedFrontierNodeIds: string[];
+    droppedProposalNodeIds: string[];
+    interruptedExpansionSourceNodeId: string | null;
+    completedExpansionCount: number;
+    maxExpansions: number;
+    budgetUsed: number;
+    remainingBudgetChars: number;
+    budgetTotal: number;
+    budgetUtilization: number;
+    droppedProposalCount: number;
+    droppedProposalReasons: Record<string, number>;
+}
+export type ContextFeedbackVerdict = "helpful" | "irrelevant" | "harmful";
+export type ContextFeedbackFocusAction = "review_harmful_context" | "capture_follow_up" | "wait_for_teacher" | "increase_feedback_coverage" | "monitor";
+export interface ContextFeedbackCoverageSummary {
+    routeTraceCount: number;
+    identifiedRouteTraceCount: number;
+    unidentifiedRouteTraceCount: number;
+    agentIdentityCoverage: number;
+    observationCount: number;
+    completedObservationCount: number;
+    supervisedTraceCount: number;
+    unsupervisedTraceCount: number;
+    observationCoverage: number;
+    supervisionCoverage: number;
+    pendingFollowupCount: number;
+    pendingTeacherCount: number;
+}
+export interface ContextFeedbackLatestVerdict {
+    traceId: string;
+    episodeId: string;
+    observationId: string | null;
+    agentIdentity: unknown | null;
+    source: string;
+    verdict: ContextFeedbackVerdict;
+    score: number;
+    confidence: number;
+    reason: string | null;
+    bindingMode: string | null;
+    createdAt: number;
+}
+export interface ContextFeedbackAgentCoverageSummary {
+    agentIdentity: unknown;
+    routeTraceCount: number;
+    supervisedTraceCount: number;
+    unsupervisedTraceCount: number;
+    supervisionCoverage: number;
+    verdictCounts: Record<ContextFeedbackVerdict, number>;
+    latestTraceAt: number | null;
+    latestVerdictAt: number | null;
+    detail: string;
+}
+export interface ContextFeedbackSummary {
+    scoreBands: {
+        helpfulMin: number;
+        harmfulMax: number;
+    };
+    verdictCounts: Record<ContextFeedbackVerdict, number>;
+    coverage: ContextFeedbackCoverageSummary;
+    agents: ContextFeedbackAgentCoverageSummary[];
+    latest: ContextFeedbackLatestVerdict | null;
+    focus: {
+        action: ContextFeedbackFocusAction;
+        detail: string;
+    };
+    detail: string;
+}
+export declare const CONTEXT_FEEDBACK_HELPFUL_MIN: number;
+export declare const CONTEXT_FEEDBACK_HARMFUL_MAX: number;
+export declare function classifyContextFeedbackVerdict(score: number): ContextFeedbackVerdict;
+export declare function buildEmptyContextFeedbackSummary(): ContextFeedbackSummary;
 export interface CurrentProfileBrainStatusInput extends OperatorSurfaceInput {
     brainAttachmentPolicy?: RuntimeTurnBrainAttachmentPolicyV1 | null;
     profileId?: string | null;
