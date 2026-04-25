@@ -1,0 +1,29 @@
+{
+  "taskId": "T-20260425-285",
+  "status": "done",
+  "completedAt": "2026-04-25T13:24:00Z",
+  "result": "Harvested all low-risk valuable OpenClawBrain residue, pruned local branch clutter, and verified publish readiness for 0.4.47.",
+  "harvestedCommits": [
+    "bd8a4b57 Harvest package truth surfaces",
+    "80b4f48d Map canonical package release seam for T-20260331-077",
+    "008a89ac Update task artifacts with commit SHA",
+    "249a3470 Add sanitized real-trace replay corpus"
+  ],
+  "branchCleanup": {
+    "deletedMergedOrPatchEquivalentLocalBranches": 122,
+    "deletedStaleOrSupersededLocalBranchesAfterAudit": 70,
+    "remainingLocalBranches": ["main"],
+    "worktrees": "primary checkout only"
+  },
+  "subagentAudit": {
+    "label": "ocb-harvest-branch-audit",
+    "verdict": "no low-risk cherry-picks recommended; remaining branch residue was duplicate, semantically harvested, superseded, or stale target-state implementation"
+  },
+  "verification": {
+    "releaseVerify": "passed: npm run release:verify (743 root Vitest tests, proof smoke, root dry-run pack, openclaw package 85 node tests + tarball, cli package 184 node tests + tarball)",
+    "docsDrift": "passed: npm run release:verify:docs-drift",
+    "diffCheck": "passed: git diff --check",
+    "registry": "npm registry still has @openclawbrain/cli 0.4.46 and @openclawbrain/openclaw 0.4.46; local packages are 0.4.47"
+  },
+  "publishReadiness": "ready after committing/pushing local harvest state; npm publish itself not run"
+}
