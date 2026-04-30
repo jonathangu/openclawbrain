@@ -15,10 +15,12 @@ Smoke commands validate pipeline mechanics only. They must not claim product evi
 
 ## Canonical Commands
 
-| Command | Purpose | Required behavior |
+| Command | Purpose | Current implementation / required behavior |
 |---|---|---|
 | `pnpm ocb:results:schema-test` | Validate results schema package tests. | Fails on invalid ledger rows, enum violations, or trusted derived fields. |
-| `pnpm ocb:traces:validate` | Validate trace manifest and admitted trace coverage. | Smoke passes with labeled synthetic traces; production fails closed under 40 admitted real traces or unmet slice minimums. |
+| `pnpm ocb:traces:validate` | Validate trace manifest and admitted trace coverage. | `node scripts/traces/validate.mjs --mode smoke`; smoke passes with labeled synthetic traces. |
+| `pnpm ocb:traces:validate:smoke` | Explicit smoke trace validation. | `node scripts/traces/validate.mjs --mode smoke`. |
+| `pnpm ocb:traces:validate:production` | Explicit production trace gate. | `node scripts/traces/validate.mjs --mode production`; fails closed under 40 admitted real traces or unmet slice minimums. |
 | `pnpm ocb:eval:run` | Run the ablation ladder. | Runs `none`, `correction-only`, `correction+heuristics`, and `full-ocb` uniformly. |
 | `pnpm ocb:eval:make-blind-packets` | Generate blind judge packets. | Removes backend labels and randomizes output order per trace. |
 | `pnpm ocb:judgments:import` | Import completed judgments. | Validates required judge fields and rejects missing production judgments. |
@@ -117,6 +119,7 @@ Commands must avoid interactive prompts and record enough metadata to reproduce 
 - eval harness commit
 - model ID
 - prompt hash
-- OCB config hash
-- memory snapshot ID and timestamp
-- tool fixture version when applicable
+- memory snapshot ID
+- config hash
+- cost measurement mode
+- trace provenance/admission metadata

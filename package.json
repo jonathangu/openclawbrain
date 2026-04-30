@@ -1,10 +1,18 @@
 {
   "name": "openclawbrain",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.2",
+  "description": "OpenClawBrain V5 evidence scoreboard pipeline workspace.",
   "scripts": {
     "ocb:results:schema-test": "node --test packages/results-schema/test/*.test.ts",
-    "ocb:ledger:validate": "node packages/results-schema/src/ledger.ts"
+    "ocb:ledger:validate": "node packages/results-schema/src/ledger.ts",
+    "ocb:traces:validate": "node scripts/traces/validate.mjs --mode smoke",
+    "ocb:traces:validate:smoke": "node scripts/traces/validate.mjs --mode smoke",
+    "ocb:traces:validate:production": "node scripts/traces/validate.mjs --mode production"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
