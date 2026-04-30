@@ -1,7 +1,7 @@
 {
-  "name": "openclawbrain",
+  "name": "openclawbrain-workspace",
   "version": "0.1.0",
-  "private": false,
+  "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.2",
   "description": "OpenClawBrain: local, profile-bound selective intervention layer for OpenClaw.",
@@ -33,18 +33,15 @@
     "ocb:e2e:production": "node scripts/ocb-e2e-production.mjs",
     "test:runtime-policy": "node --test packages/runtime-policy/test/*.test.mjs",
     "test:proof-store": "node --test packages/proof-store/test/*.test.mjs",
-    "test:openclaw-plugin": "node --test packages/openclaw-plugin/test/*.test.mjs",
+    "test:openclaw-plugin": "pnpm --dir packages/openclaw-plugin test",
     "test:installer": "node --test packages/installer/test/*.test.mjs",
     "test:cli": "node --test packages/cli/test/*.test.mjs",
-    "test:product": "pnpm test:runtime-policy && pnpm test:proof-store && pnpm test:openclaw-plugin && pnpm test:openclaw-integration && pnpm test:installer && pnpm test:cli",
+    "test:product": "pnpm test:openclaw-plugin",
     "test:openclaw-integration": "node --test packages/openclaw-integration/test/*.test.mjs",
     "test": "node scripts/test-package.mjs"
   },
   "engines": {
     "node": ">=22.6.0"
-  },
-  "bin": {
-    "openclawbrain": "packages/cli/src/index.mjs"
   },
   "files": [
     "packages/runtime-policy/src",
@@ -54,22 +51,15 @@
     "packages/openclaw-plugin/src",
     "packages/openclaw-plugin/openclaw.plugin.json",
     "packages/openclaw-plugin/package.json",
-    "packages/openclaw-integration/src",
-    "packages/openclaw-integration/package.json",
-    "packages/installer/src",
-    "packages/installer/package.json",
-    "packages/cli/src",
-    "packages/cli/package.json",
     "docs/RUNTIME_PRODUCT_V0.md",
-    "README.md",
-    "openclaw.plugin.json"
+    "README.md"
   ],
   "openclaw": {
     "extensions": [
-      "./packages/openclaw-plugin/src/index.mjs"
-    ],
-    "runtimeExtensions": [
-      "./packages/openclaw-plugin/src/index.mjs"
+      "./packages/openclaw-plugin/dist/index.js"
     ]
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

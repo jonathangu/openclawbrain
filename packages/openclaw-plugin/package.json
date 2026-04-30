@@ -1,1 +1,32 @@
-{"name":"@openclawbrain/openclaw-plugin","version":"0.1.0","private":true,"type":"module","exports":"./src/index.mjs","scripts":{"test":"node --test test/*.test.mjs"}}
+{
+  "name": "openclawbrain",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Local, agent-scoped selective intervention plugin for OpenClaw.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "openclaw.plugin.json"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ]
+  },
+  "scripts": {
+    "check": "node scripts/build.mjs --check",
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/build.mjs && node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

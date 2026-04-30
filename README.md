@@ -1,86 +1,98 @@
 # OpenClawBrain
 
-A local, profile-bound selective intervention layer for OpenClaw.
+OpenClawBrain is a local, agent-scoped selective intervention plugin for OpenClaw.
 
-OpenClawBrain helps an OpenClaw profile:
+It helps an OpenClaw agent:
 
-- remember user corrections,
+- remember corrections,
 - continue bounded work,
-- supply relevant context,
+- use relevant local context,
+- verify before claiming on tool-heavy turns,
 - stay silent on direct answers,
-- show local proof of what it did.
+- expose local proof of what it did.
 
-It is not a general intelligence layer. It is not a cloud memory service. It does not upload raw transcripts.
+It is not a cloud memory service, a general intelligence layer, or a replacement for OpenClaw's memory/context engine. It does not upload raw transcripts or store raw user text.
 
-## Install target
+## Product package
+
+The v0.1 product is one native OpenClaw plugin package:
+
+```text
+packages/openclaw-plugin
+```
+
+Publishable package name:
+
+```text
+openclawbrain
+```
+
+The older `packages/runtime-policy`, `packages/proof-store`, `packages/openclaw-integration`, `packages/installer`, and `packages/cli` scaffolds are not the v0.1 product path. Their useful implementation ideas have been collapsed into `packages/openclaw-plugin`.
+
+## Install / enable
 
 ```bash
-npm install -g openclawbrain
-openclawbrain install
-openclawbrain enable --profile main --agent main
-openclawbrain status --profile main
+openclaw plugins install openclawbrain
+openclaw plugins enable openclawbrain
+openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.mode '"conservative"' --strict-json
+openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+openclaw config validate
+openclaw gateway restart
+openclaw plugins inspect openclawbrain --json
 ```
 
-Then, after real usage:
+Local development:
 
 ```bash
-openclawbrain proof --profile main
+pnpm --dir packages/openclaw-plugin build
+openclaw plugins install -l ./packages/openclaw-plugin
 ```
 
-## Runtime shape
+Do not configure OpenClawBrain with a root `openclawbrain` key. Runtime config belongs only under:
 
-OpenClawBrain ships as one user-visible package with internal workspaces:
-
-- `packages/runtime-policy` — pure deterministic selected product policy.
-- `packages/proof-store` — local redacted proof/status store.
-- `packages/openclaw-plugin` — native OpenClaw plugin entry, manifest, prompt hooks, lifecycle hooks, and status HTTP route.
-- `packages/openclaw-integration` — compatibility adapter export for the profile-bound OpenClaw integration surface.
-- `packages/installer` — thin wrapper around OpenClaw plugin/config commands.
-- `packages/cli` — `openclawbrain` command shell.
-
-OpenClaw config belongs under the plugin entry:
-
-```json5
-{
-  plugins: {
-    entries: {
-      openclawbrain: {
-        enabled: true,
-        hooks: {
-          allowPromptInjection: true,
-          allowConversationAccess: true,
-        },
-        config: {
-          mode: "conservative",
-          openclawProfile: "main",
-          activationRoot: "~/.openclawbrain/activation/main",
-          proofEvents: true,
-          rawTranscriptUpload: false,
-          scopes: { agents: ["main"], sessionKeys: [] },
-        },
-      },
-    },
-  },
-}
+```text
+plugins.entries.openclawbrain.config
 ```
 
-Do not configure OpenClawBrain with an unknown root `openclawbrain` key.
+## Local activation files
 
-## Proof
+OpenClawBrain reads only fixed local files under the agent activation root:
+
+```text
+~/.openclawbrain/activation/${agentId}/context.md
+~/.openclawbrain/activation/${agentId}/corrections.md
+~/.openclawbrain/activation/${agentId}/tool-guidance.md
+```
+
+Files are read lazily only when policy fires. Symlinks and oversized files are rejected before reading.
+
+## Status and proof
+
+The plugin registers first-class OpenClaw surfaces beyond hooks:
+
+```text
+/plugins/openclawbrain/status
+/plugins/openclawbrain/proof?limit=20
+```
+
+Proof events are local redacted JSONL under the activation root. Proof records use precise privacy claims:
+
+- `rawTranscriptStored: false`
+- `rawUserTextStored: false`
+- `redactionApplied: true`
+- `hashesOnlyForUserText: true`
+
+## Development gates
 
 ```bash
-openclawbrain proof --profile main
+pnpm --dir packages/openclaw-plugin check
+pnpm --dir packages/openclaw-plugin build
+npm pack --dry-run --workspace packages/openclaw-plugin
+pnpm test:product
+pnpm ocb:traces:production-status
+pnpm ocb:e2e:smoke
+pnpm ocb:e2e:production
 ```
 
-Proof events are local, redacted JSONL. The proof surface reports decisions like `stay_silent`, `correction_only`, `full_context`, and `proof_only` without storing raw private transcripts. Scope is recorded as `openclawProfile` + `agentId` + `sessionKeyHash`, not just a human label like `main`.
-
-v0 uses prompt hooks for bounded injection and does not replace OpenClaw's context engine. If prompt injection is disabled for the plugin, OpenClawBrain fails closed and records a `stay_silent` proof event.
-
-## Disable / uninstall
-
-```bash
-openclawbrain disable --profile main
-openclawbrain uninstall --profile main
-```
-
-`v0.1.0` in this repository is a local productization scaffold, not a published npm release yet.
+`v0.1.0` is committed locally in this repository. It has not been published to npm.

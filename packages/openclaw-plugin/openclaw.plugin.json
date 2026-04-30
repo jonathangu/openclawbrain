@@ -1,36 +1,42 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "description": "Local, profile-bound, conservative intervention layer with redacted proof events.",
+  "version": "0.1.0",
+  "description": "Local, agent-scoped selective intervention layer with redacted proof events.",
   "activation": { "onStartup": true },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "enabled": { "type": "boolean", "default": true },
+      "enabled": { "type": "boolean", "default": false },
       "mode": { "type": "string", "enum": ["off", "proof-only", "conservative", "active"], "default": "conservative" },
-      "openclawProfile": { "type": "string", "default": "main" },
-      "activationRoot": { "type": "string", "default": "~/.openclawbrain/activation/main" },
+      "activationRoot": { "type": "string", "default": "~/.openclawbrain/activation/${agentId}" },
       "proofEvents": { "type": "boolean", "default": true },
+      "proofRetentionEvents": { "type": "integer", "minimum": 50, "maximum": 50000, "default": 1000 },
+      "maxContextChars": { "type": "integer", "minimum": 500, "maximum": 20000, "default": 3000 },
+      "includeActivationContext": { "type": "boolean", "default": true },
       "rawTranscriptUpload": { "type": "boolean", "const": false, "default": false },
       "scopes": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "agents": { "type": "array", "items": { "type": "string" }, "default": ["main"] },
-          "sessionKeys": { "type": "array", "items": { "type": "string" }, "default": [] }
-        }
-      },
-      "candidateMemories": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string" }, "kind": { "type": "string" }, "text": { "type": "string" }, "relevance": { "type": "number" }, "stale": { "type": "boolean" }, "conflict": { "type": "boolean" } } } }
+          "agents": { "type": "array", "items": { "type": "string" }, "default": ["main"] }
+        },
+        "default": { "agents": ["main"] }
+      }
     }
   },
+  "hooks": {
+    "before_prompt_build": { "allowPromptInjection": false },
+    "model_call_started": {},
+    "model_call_ended": {},
+    "gateway_start": {},
+    "gateway_stop": {}
+  },
   "uiHints": {
-    "mode": { "label": "Runtime Mode", "help": "Conservative stays silent unless the selected evidence policy says a bounded correction/context intervention is useful." },
-    "openclawProfile": { "label": "OpenClaw Profile", "help": "Config/profile scope used with agent id and session key hash in proof events." },
-    "activationRoot": { "label": "Activation Root", "help": "Profile-local OpenClawBrain proof/status directory." },
-    "proofEvents": { "label": "Proof Events", "help": "Write redacted local proof events for status/proof commands." },
-    "rawTranscriptUpload": { "label": "Raw Transcript Upload", "help": "Always false in v0.1." },
-    "scopes.agents": { "label": "Scoped Agents", "help": "Agent/profile ids this plugin may affect. Empty means all agents in this OpenClaw profile." },
-    "scopes.sessionKeys": { "label": "Scoped Session Keys", "help": "Optional exact session keys to allow; proof stores only hashes." }
+    "enabled": { "label": "Enabled", "help": "Defaults off; enable per OpenClaw plugin entry config." },
+    "mode": { "label": "Runtime Mode", "help": "Conservative stays silent unless bounded correction/context intervention is useful." },
+    "activationRoot": { "label": "Activation Root", "help": "Local agent-scoped directory for context.md, corrections.md, tool-guidance.md, proof-events.jsonl, and status.json." },
+    "rawTranscriptUpload": { "label": "Raw Transcript Upload", "help": "Must remain false; true fails closed." }
   }
 }
