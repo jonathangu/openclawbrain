@@ -183,6 +183,8 @@ Exit gate:
 
 Start **Phase 1: Runtime integration**.
 
+The detailed productization plan is now in [`docs/PRODUCTIZATION_PLAN.md`](./PRODUCTIZATION_PLAN.md). Treat it as the canonical next-phase build order and release shape.
+
 First concrete milestone:
 
 > Build a profile-bound OpenClawBrain runtime adapter that applies the selected policy to real OpenClaw turns and writes redacted proof events, behind an opt-in profile config flag.
