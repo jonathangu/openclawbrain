@@ -1,0 +1,66 @@
+{
+  "schema_version": "ocb.blind-judge-packet.v1",
+  "packet_id": "packet-0ba86e3ac1bb",
+  "trace_id": "session-log-019-correction-follow-up",
+  "labels_hidden": true,
+  "evidence_label": null,
+  "prompt": {
+    "title": "Pelican correction-follow-up agent-turn evidence",
+    "user_goal": "User supplied a correction or preference that should influence follow-up behavior in a Pelican session.",
+    "input_messages": [
+      {
+        "role": "user",
+        "content": "User supplied a correction or preference that should influence follow-up behavior in a Pelican session."
+      },
+      {
+        "role": "assistant",
+        "content": "Redacted prior assistant response exists in the source session log; evaluate only the intervention value, not private transcript details."
+      }
+    ],
+    "slices": [
+      "correction-follow-up"
+    ]
+  },
+  "candidates": [
+    {
+      "candidate_id": "candidate-2fac4ee7793f",
+      "answer": "Use the available correction, slice, and read-only fixture context while preserving the evidence limits for this trace.",
+      "intervention": "full-context",
+      "rationale": [
+        "This is a deterministic eval adapter, not a new OpenClawBrain runtime.",
+        "Goal: User supplied a correction or preference that should influence follow-up behavior in a Pelican session.",
+        "Expected behavior: Apply the explicit correction or stable preference.",
+        "Correction: Follow the current correction, avoid stale-memory leakage, and state any remaining blocker honestly."
+      ],
+      "warnings": []
+    },
+    {
+      "candidate_id": "candidate-99b894ed3b8c",
+      "answer": "Apply correction: Follow the current correction, avoid stale-memory leakage, and state any remaining blocker honestly.",
+      "intervention": "heuristic",
+      "rationale": [
+        "Correction memory matched: Current user correction or higher-authority instruction should override older context.",
+        "Slices considered: correction-follow-up"
+      ],
+      "warnings": []
+    },
+    {
+      "candidate_id": "candidate-ab9aff18bf1f",
+      "answer": "No OpenClawBrain intervention was applied for this trace.",
+      "intervention": "none",
+      "rationale": [
+        "Baseline adapter intentionally emits no memory/correction help."
+      ],
+      "warnings": []
+    },
+    {
+      "candidate_id": "candidate-b7fa343ad410",
+      "answer": "Apply correction: Follow the current correction, avoid stale-memory leakage, and state any remaining blocker honestly.",
+      "intervention": "correction",
+      "rationale": [
+        "Correction memory matched: Current user correction or higher-authority instruction should override older context."
+      ],
+      "warnings": []
+    }
+  ]
+}

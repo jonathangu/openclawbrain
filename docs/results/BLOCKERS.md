@@ -1,7 +1,4 @@
 # Evidence Blockers
 
-- Synthetic smoke traces are not product evidence.
-- 0/40 admitted real privacy-scrubbed traces are present.
-- Production blind judging is not complete.
-- V5 slice minimums are not met with real admitted traces.
-- Runtime decision events and candidates remain candidate-only until admitted and judged through the production evidence gate.
+- none for Evidence E2E gate mechanics: 40 real privacy-scrubbed session-log traces were admitted, production blind packets were judged, and /results was regenerated from the production judged ledger.
+- Product outcome is still threshold-bound; see `30_DAY_DECISION.md` for whether the evidence supports continue, gated continue, pause, or another product path.

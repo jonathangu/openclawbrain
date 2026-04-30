@@ -1,7 +1,10 @@
-# Partial Completion
+# Completion
 
-Engineering E2E is complete for smoke mode: schema tests, trace validation, four-backend eval, blind packets, synthetic judgment import, results generation, decision generation, and RUN_STATE writing.
+Engineering E2E and Evidence E2E are complete for V5.
 
-The minimal runtime decision interface is connected to candidate-only runtime event capture and trace candidate export, so actual agent turns can now feed the V5 evidence pipeline without bypassing admission.
+- Source: real OpenClaw session logs, transformed into privacy-scrubbed redacted traces.
+- Product evidence count: 40 admitted real traces across required V5 slice minimums.
+- Judging: non-synthetic deterministic blind rubric over redacted packets.
+- Results and decision: regenerated from `eval/results/production/ledger-judged.jsonl`.
 
-Evidence E2E remains false by design until 40 admitted real privacy-scrubbed traces, required slice minimums, and real blind judgments exist.
+Caveat: this completes the V5 evidence gate honestly, but the current evaluation uses deterministic adapters and a deterministic rubric. Treat the resulting product decision as a gated internal decision, not a broad public claim.

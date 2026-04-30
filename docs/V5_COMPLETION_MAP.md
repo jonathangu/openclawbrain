@@ -78,6 +78,9 @@ If missing, produce blockers and keep `evidence_e2e_complete=false`.
 - `pnpm ocb:results:generate`
 - `pnpm ocb:decision:generate`
 - `pnpm ocb:e2e:smoke`
+- `pnpm ocb:traces:from-session-logs`
+- `pnpm ocb:judgments:judge-production`
+- `pnpm ocb:e2e:production`
 
 Equivalent command names are allowed only if mapped in `docs/results/COMMANDS.md`.
 
@@ -89,7 +92,8 @@ Equivalent command names are allowed only if mapped in `docs/results/COMMANDS.md
 - `eval/results/<run-id>/RUN_STATE.json`
 - `docs/results/index.md`
 - `docs/results/summary.json`
-- `docs/results/30_DAY_DECISION.synthetic.md`
+- `docs/results/30_DAY_DECISION.blocked.md` for smoke/incomplete evidence
+- `docs/results/30_DAY_DECISION.md` for production Evidence E2E
 
 ## Stop conditions
 

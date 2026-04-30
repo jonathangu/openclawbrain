@@ -1,0 +1,20 @@
+{
+  "schema_version": "ocb.backend-output.v1",
+  "trace_id": "session-log-018-correction-follow-up",
+  "backend_id": "full-ocb",
+  "adapter_kind": "eval_fixture_adapter",
+  "generated_at": "2026-04-30T08:30:06.763Z",
+  "intervention": "full-context",
+  "answer": "Use the available correction, slice, and read-only fixture context while preserving the evidence limits for this trace.",
+  "rationale": [
+    "This is a deterministic eval adapter, not a new OpenClawBrain runtime.",
+    "Goal: User supplied a correction or preference that should influence follow-up behavior in a Pelican session.",
+    "Expected behavior: Apply the explicit correction or stable preference.",
+    "Correction: Follow the current correction, avoid stale-memory leakage, and state any remaining blocker honestly."
+  ],
+  "tool_results": [],
+  "external_mutation_allowed": false,
+  "model_id": null,
+  "cost_usd": null,
+  "warnings": []
+}

@@ -28,6 +28,7 @@ export interface EvalRunOptions {
   tracesPath: string;
   fixturesPath: string;
   resultsRoot: string;
+  allowProductEvidence: boolean;
 }
 
 export interface EvalRunSummary {
@@ -62,6 +63,7 @@ interface DraftLedgerRow {
   cost_measurement_mode: "not_measured_local_eval_adapter";
   model_id: null;
   memory_snapshot_id: null;
+  privacy_scrubbed: boolean;
   reproducibility: ReproducibilityMetadata;
   warnings: string[];
 }
@@ -72,7 +74,7 @@ export async function runEvalHarness(options: EvalRunOptions): Promise<EvalRunSu
   await mkdir(outputRoot, { recursive: true });
 
   const [traces, fixtures, reproducibility] = await Promise.all([
-    loadTraces(options.tracesPath, { mode: options.mode }),
+    loadTraces(options.tracesPath, { mode: options.mode, allowProductEvidence: options.allowProductEvidence }),
     loadToolFixtures(options.fixturesPath),
     captureReproducibilityMetadata({
       runId: options.runId,
@@ -115,6 +117,7 @@ export async function runEvalHarness(options: EvalRunOptions): Promise<EvalRunSu
         cost_measurement_mode: "not_measured_local_eval_adapter",
         model_id: null,
         memory_snapshot_id: null,
+        privacy_scrubbed: trace.privacy_scrubbed,
         reproducibility,
         warnings: result.warnings,
       });
@@ -179,7 +182,7 @@ function defaultRunId(mode: TraceMode): string {
 function defaultTracesPath(mode: TraceMode): string {
   return mode === "smoke"
     ? "packages/eval-harness/fixtures/smoke-traces.jsonl"
-    : "eval/traces/manifest.jsonl";
+    : "eval/traces/production.jsonl";
 }
 
 function parseArgs(args: string[]): EvalRunOptions {
@@ -208,6 +211,7 @@ function parseArgs(args: string[]): EvalRunOptions {
     tracesPath: parsed.traces ?? defaultTracesPath(mode),
     fixturesPath: parsed.fixtures ?? "packages/eval-harness/fixtures/tool-fixtures.json",
     resultsRoot: parsed.out ?? "eval/results",
+    allowProductEvidence: parsed["allow-product-evidence"] === "true" || process.env.OCB_ALLOW_PRODUCT_EVIDENCE === "1",
   };
 }
 

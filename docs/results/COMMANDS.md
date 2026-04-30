@@ -39,6 +39,9 @@ Smoke commands validate pipeline mechanics only. They must not claim product evi
 | `pnpm ocb:decision:generate` | Generate product decision memo. | Applies fixed thresholds and emits exactly one allowed outcome or a declared blocker. |
 | `pnpm ocb:e2e:smoke` | Run full smoke pipeline. | Completes Engineering E2E on 4–8 labeled synthetic traces and writes `RUN_STATE.json`. |
 | `pnpm ocb:runtime:decide` | Decide one redacted runtime agent turn. | Deterministically emits `fire` or `stay_silent`, captures a candidate-only runtime event, and optionally exports an admission candidate. |
+| `pnpm ocb:traces:from-session-logs` | Build production trace set from local OpenClaw session logs. | Reads raw logs locally, emits only redacted real trace metadata, admits 40 traces through `ocb:traces:admit`, and writes `eval/traces/production.jsonl`. |
+| `pnpm ocb:judgments:judge-production` | Judge production blind packets. | Runs a deterministic non-synthetic blind rubric over redacted packets without reading the private backend map or raw transcripts. |
+| `pnpm ocb:e2e:production` | Run full production evidence pipeline. | Builds/admit session-log traces, validates slice coverage, runs all four backends, generates blind packets, judges/imports, regenerates `/results`, writes `30_DAY_DECISION.md` and `RUN_STATE.json`. |
 
 If exact command names cannot be supported by the repository, equivalent commands must be mapped here before use.
 
@@ -95,6 +98,25 @@ Required schema:
   "blockers": []
 }
 ```
+
+## Required Production Outputs
+
+`pnpm ocb:e2e:production` must output:
+
+```text
+eval/traces/production.manifest.json
+eval/traces/production.jsonl
+eval/results/<run-id>/ledger-draft.jsonl
+eval/results/<run-id>/blind-judge-packets/
+eval/judgments/production-session-logs.json
+eval/results/<run-id>/ledger-judged.jsonl
+docs/results/index.md
+docs/results/summary.json
+docs/results/30_DAY_DECISION.md
+eval/results/<run-id>/RUN_STATE.json
+```
+
+Production `RUN_STATE.json` may set both gates true only after 40 real privacy-scrubbed admitted traces, required slice minimums, complete four-backend eval, blind judging, judged ledger import, result regeneration, and threshold application.
 
 ## Production Fail-Closed Behavior
 

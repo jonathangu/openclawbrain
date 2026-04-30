@@ -1,53 +1,45 @@
 {
   "generated_by": "packages/results-site/src/generate.ts",
   "generated_at": null,
-  "source": "eval/results/smoke/ledger-judged.synthetic.jsonl",
+  "source": "eval/results/production/ledger-judged.jsonl",
   "warnings": [],
-  "labels": [
-    "NOT PRODUCT EVIDENCE",
-    "SYNTHETIC PIPELINE VALIDATION ONLY"
-  ],
+  "labels": [],
   "engineering_e2e_complete": true,
-  "evidence_e2e_complete": false,
-  "product_decision": "BLOCKED: no product decision; collect real admitted redacted traces and complete judging.",
-  "product_decision_kind": "blocked",
+  "evidence_e2e_complete": true,
+  "product_decision": "CONTINUE GATED: evidence is complete, but utility threshold is not met.",
+  "product_decision_kind": "continue_gated",
   "thresholds": {
-    "minimum_40_real_admitted_traces": false,
-    "required_slices_present": false,
-    "privacy_scrubbed_for_product_rows": false,
-    "judging_complete_for_product_rows": false,
-    "harm_rate_at_or_below_5_percent": false,
+    "minimum_40_real_admitted_traces": true,
+    "required_slices_present": true,
+    "privacy_scrubbed_for_product_rows": true,
+    "judging_complete_for_product_rows": true,
+    "harm_rate_at_or_below_5_percent": true,
     "win_rate_at_or_above_60_percent": false
   },
   "threshold_basis": {
-    "minimum_40_real_admitted_traces": "0/40 traces",
-    "required_slices_present": "0/6 required slices",
-    "privacy_scrubbed_for_product_rows": "0/0 product rows",
-    "judging_complete_for_product_rows": "0/0 product rows",
-    "harm_rate_at_or_below_5_percent": "0/0 harms; max 5%",
-    "win_rate_at_or_above_60_percent": "0/0 wins; min 60%"
+    "minimum_40_real_admitted_traces": "40/40 traces",
+    "required_slices_present": "6/6 required slices",
+    "privacy_scrubbed_for_product_rows": "160/160 product rows",
+    "judging_complete_for_product_rows": "160/160 product rows",
+    "harm_rate_at_or_below_5_percent": "0/160 harms; max 5%",
+    "win_rate_at_or_above_60_percent": "56/160 wins; min 60%"
   },
   "blockers": [
-    "minimum_40_real_admitted_traces",
-    "required_slices_present",
-    "privacy_scrubbed_for_product_rows",
-    "judging_complete_for_product_rows",
-    "harm_rate_at_or_below_5_percent",
     "win_rate_at_or_above_60_percent"
   ],
   "stats": {
-    "totalRows": 24,
-    "totalTraces": 6,
-    "productEvidenceRows": 0,
-    "syntheticOrSmokeRows": 24,
-    "negativeRows": 0,
-    "unjudgedRows": 24
+    "totalRows": 160,
+    "totalTraces": 40,
+    "productEvidenceRows": 160,
+    "syntheticOrSmokeRows": 0,
+    "negativeRows": 64,
+    "unjudgedRows": 0
   },
   "denominators": {
-    "ledger_rows": 24,
-    "distinct_traces": 6,
+    "ledger_rows": 160,
+    "distinct_traces": 40,
     "required_product_traces": 40,
-    "negative_rows": "0/24",
-    "synthetic_or_smoke_rows": "24/24"
+    "negative_rows": "64/160",
+    "synthetic_or_smoke_rows": "0/160"
   }
 }

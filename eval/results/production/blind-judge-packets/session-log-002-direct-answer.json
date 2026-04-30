@@ -1,0 +1,65 @@
+{
+  "schema_version": "ocb.blind-judge-packet.v1",
+  "packet_id": "packet-ceb576fcc921",
+  "trace_id": "session-log-002-direct-answer",
+  "labels_hidden": true,
+  "evidence_label": null,
+  "prompt": {
+    "title": "Pelican direct-answer agent-turn evidence",
+    "user_goal": "User asked for a concise direct answer in a Pelican assistant session.",
+    "input_messages": [
+      {
+        "role": "user",
+        "content": "User asked for a concise direct answer in a Pelican assistant session."
+      },
+      {
+        "role": "assistant",
+        "content": "Redacted prior assistant response exists in the source session log; evaluate only the intervention value, not private transcript details."
+      }
+    ],
+    "slices": [
+      "direct-answer"
+    ]
+  },
+  "candidates": [
+    {
+      "candidate_id": "candidate-6da49af0626c",
+      "answer": "No correction memory was available for this trace.",
+      "intervention": "none",
+      "rationale": [
+        "Correction-only adapter stays silent when no correction is present."
+      ],
+      "warnings": []
+    },
+    {
+      "candidate_id": "candidate-9fc53c82d50a",
+      "answer": "Use the available correction, slice, and read-only fixture context while preserving the evidence limits for this trace.",
+      "intervention": "full-context",
+      "rationale": [
+        "This is a deterministic eval adapter, not a new OpenClawBrain runtime.",
+        "Goal: User asked for a concise direct answer in a Pelican assistant session.",
+        "Expected behavior: Answer directly without unnecessary memory activation."
+      ],
+      "warnings": []
+    },
+    {
+      "candidate_id": "candidate-b8db60d1be23",
+      "answer": "No OpenClawBrain intervention was applied for this trace.",
+      "intervention": "none",
+      "rationale": [
+        "Baseline adapter intentionally emits no memory/correction help."
+      ],
+      "warnings": []
+    },
+    {
+      "candidate_id": "candidate-f6f4e2700449",
+      "answer": "No intervention is recommended by correction+heuristics.",
+      "intervention": "none",
+      "rationale": [
+        "No correction memory matched.",
+        "Slices considered: direct-answer"
+      ],
+      "warnings": []
+    }
+  ]
+}

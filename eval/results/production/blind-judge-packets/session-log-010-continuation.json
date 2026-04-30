@@ -1,0 +1,65 @@
+{
+  "schema_version": "ocb.blind-judge-packet.v1",
+  "packet_id": "packet-151fc302b379",
+  "trace_id": "session-log-010-continuation",
+  "labels_hidden": true,
+  "evidence_label": null,
+  "prompt": {
+    "title": "Pelican continuation agent-turn evidence",
+    "user_goal": "User asked the assistant to continue or finish an active Pelican workstream end to end.",
+    "input_messages": [
+      {
+        "role": "user",
+        "content": "User asked the assistant to continue or finish an active Pelican workstream end to end."
+      },
+      {
+        "role": "assistant",
+        "content": "Redacted prior assistant response exists in the source session log; evaluate only the intervention value, not private transcript details."
+      }
+    ],
+    "slices": [
+      "continuation"
+    ]
+  },
+  "candidates": [
+    {
+      "candidate_id": "candidate-4154d81d65ca",
+      "answer": "Use the available correction, slice, and read-only fixture context while preserving the evidence limits for this trace.",
+      "intervention": "full-context",
+      "rationale": [
+        "This is a deterministic eval adapter, not a new OpenClawBrain runtime.",
+        "Goal: User asked the assistant to continue or finish an active Pelican workstream end to end.",
+        "Expected behavior: Use current task state to continue without asking for redundant context."
+      ],
+      "warnings": []
+    },
+    {
+      "candidate_id": "candidate-591712771a75",
+      "answer": "No correction memory was available for this trace.",
+      "intervention": "none",
+      "rationale": [
+        "Correction-only adapter stays silent when no correction is present."
+      ],
+      "warnings": []
+    },
+    {
+      "candidate_id": "candidate-d703057cb52c",
+      "answer": "No intervention is recommended by correction+heuristics.",
+      "intervention": "none",
+      "rationale": [
+        "No correction memory matched.",
+        "Slices considered: continuation"
+      ],
+      "warnings": []
+    },
+    {
+      "candidate_id": "candidate-e597eb30e765",
+      "answer": "No OpenClawBrain intervention was applied for this trace.",
+      "intervention": "none",
+      "rationale": [
+        "Baseline adapter intentionally emits no memory/correction help."
+      ],
+      "warnings": []
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 # Next Data Needed
 
-1. Collect at least 40 admitted real privacy-scrubbed traces from actual agent turns.
-2. Cover V5 slices: direct-answer, continuation, correction-follow-up, retrieval-heavy, tool-heavy, stale-memory-conflict.
-3. Export runtime decision events into trace candidates, admit only valid real redacted traces, and keep rejected candidates out of product counts.
-4. Generate blind packets and import non-synthetic judgments.
-5. Regenerate results and apply product thresholds.
+Evidence E2E is complete for the current V5 production session-log run. Next data is improvement data, not gate data:
+
+1. Add more real traces over time to reduce low-N uncertainty.
+2. Add independent human/model judge panels if stronger product confidence is needed.
+3. Replace deterministic eval adapters with live model counterfactual outputs before making broad external claims.

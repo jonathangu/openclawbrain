@@ -151,6 +151,8 @@ export async function importJudgments(options: ImportOptions): Promise<{ ok: tru
       blind_candidate_id: judgment.candidate_id,
       judge_status: "complete",
       judge_score: judgment.overall_score,
+      outcome: outcomeForScore(judgment.overall_score),
+      utility_delta: utilityForScore(judgment.overall_score),
       judge_id: judgment.judge_id ?? "unknown-judge",
       judge_notes: judgment.notes ?? "",
       judgment: {
@@ -165,6 +167,20 @@ export async function importJudgments(options: ImportOptions): Promise<{ ok: tru
   });
   await writeFile(options.outputPath, `${judgedRows.map((row) => JSON.stringify(row)).join("\n")}\n`, "utf8");
   return { ok: true, output_path: options.outputPath, ledger_rows: judgedRows.length, judgment_count: byCandidate.size };
+}
+
+function outcomeForScore(score: number): "loss" | "tie" | "win" {
+  if (score >= 4) return "win";
+  if (score <= 2) return "loss";
+  return "tie";
+}
+
+function utilityForScore(score: number): number {
+  if (score >= 5) return 2;
+  if (score >= 4) return 1;
+  if (score <= 1) return -2;
+  if (score <= 2) return -1;
+  return 0;
 }
 
 async function main(): Promise<void> {

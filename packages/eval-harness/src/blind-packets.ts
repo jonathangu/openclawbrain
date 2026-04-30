@@ -10,6 +10,8 @@ interface MakeBlindPacketOptions {
   runDir: string;
   tracesPath: string;
   outDir: string;
+  mode: "smoke" | "production";
+  allowProductEvidence: boolean;
 }
 
 interface LedgerRow {
@@ -50,7 +52,7 @@ export async function makeBlindPackets(options: MakeBlindPacketOptions): Promise
   private_map_path: string;
 }> {
   const ledgerRows = await readLedger(join(options.runDir, "ledger-draft.jsonl"));
-  const traces = await loadTraces(options.tracesPath, { mode: "smoke" });
+  const traces = await loadTraces(options.tracesPath, { mode: options.mode, allowProductEvidence: options.allowProductEvidence });
   const tracesById = new Map(traces.map((trace) => [trace.trace_id, trace]));
   const rowsByTrace = groupRowsByTrace(ledgerRows);
   const privateMap: Record<string, { trace_id: string; backend_id: BackendId }> = {};
@@ -143,10 +145,13 @@ function parseArgs(args: string[]): MakeBlindPacketOptions {
   }
   const runId = parsed["run-id"] ?? "smoke-pr4";
   const runDir = parsed["run-dir"] ?? join("eval/results", runId);
+  const mode = parsed.mode === "production" ? "production" : "smoke";
   return {
     runDir,
-    tracesPath: parsed.traces ?? "packages/eval-harness/fixtures/smoke-traces.jsonl",
+    tracesPath: parsed.traces ?? (mode === "production" ? "eval/traces/production.jsonl" : "packages/eval-harness/fixtures/smoke-traces.jsonl"),
     outDir: parsed.out ?? join(runDir, "blind-judge-packets"),
+    mode,
+    allowProductEvidence: parsed["allow-product-evidence"] === "true" || process.env.OCB_ALLOW_PRODUCT_EVIDENCE === "1",
   };
 }
 
