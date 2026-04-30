@@ -122,3 +122,26 @@ A runtime event must be redacted before export and include:
 - `reproducibility.deterministic=true`
 
 The exporter rejects raw/unredacted fields and secret-like keys or values. It produces candidate JSON only; `ocb:traces:admit --admit` remains the gate that decides whether the trace counts as product evidence.
+
+## Runtime Capture Hook Contract
+
+Live runtime integrations should first write redacted observations through:
+
+```bash
+pnpm ocb:runtime:capture-event -- --event <redacted-runtime-event.json>
+```
+
+This creates a stable `ocb.runtime.event.v1` event plus a local manifest under `eval/runtime-events/`. These files are ignored by git and remain candidate-only:
+
+```text
+CANDIDATE ONLY / NOT PRODUCT EVIDENCE
+```
+
+The expected live flow is:
+
+1. Runtime emits a redacted event with no raw message fields and no secret-like keys or values.
+2. `ocb:runtime:capture-event` stores the stable event and manifest row.
+3. `ocb:runtime:export-candidate` converts the captured event to a trace candidate.
+4. `ocb:traces:admit --admit` decides whether the candidate counts toward production evidence.
+
+This keeps live capture, admission, and product evidence separate.

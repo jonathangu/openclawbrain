@@ -156,3 +156,10 @@ Runtime export requires `privacy_scrubbed=true`, `contains_real_user_data=false`
 - `pnpm ocb:traces:production-status:test` verifies missing/partial manifests report honest blockers.
 
 `pnpm ocb:traces:validate:production` now targets `eval/traces/production.manifest.json` by default so production collection is separated from synthetic smoke traces.
+
+## Runtime event capture
+
+- `pnpm ocb:runtime:capture-event -- --event <redacted-runtime-event.json>` validates and stores a stable runtime event under `eval/runtime-events/`.
+- `pnpm ocb:runtime:capture-event:test` verifies candidate-only event capture, manifest writing, export handoff, and raw/secret rejection.
+
+Captured runtime events are private/generated artifacts and are ignored by git. They are candidate-only and do not count as product evidence until exported and admitted.
