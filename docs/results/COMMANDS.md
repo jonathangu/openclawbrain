@@ -149,3 +149,10 @@ Admission writes production trace `input.json`/`provenance.json` plus `eval/trac
 - `pnpm ocb:runtime:export-candidate:test` validates runtime export, admission handoff, and fail-closed raw/secret guards.
 
 Runtime export requires `privacy_scrubbed=true`, `contains_real_user_data=false`, deterministic reproducibility metadata, preassigned V5 slice, and no raw/unredacted/secret-like fields. It does not itself make Evidence E2E complete; production validation still requires the full admitted trace set and real judging.
+
+## Production trace status
+
+- `pnpm ocb:traces:production-status` reports admitted real privacy-scrubbed product trace counts, per-slice counts, blockers, and `evidence_e2e_complete` from `eval/traces/production.manifest.json`.
+- `pnpm ocb:traces:production-status:test` verifies missing/partial manifests report honest blockers.
+
+`pnpm ocb:traces:validate:production` now targets `eval/traces/production.manifest.json` by default so production collection is separated from synthetic smoke traces.

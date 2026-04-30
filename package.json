@@ -10,7 +10,7 @@
     "ocb:ledger:validate": "node packages/results-schema/src/ledger.ts",
     "ocb:traces:validate": "node scripts/traces/validate.mjs --mode smoke",
     "ocb:traces:validate:smoke": "node scripts/traces/validate.mjs --mode smoke",
-    "ocb:traces:validate:production": "node scripts/traces/validate.mjs --mode production",
+    "ocb:traces:validate:production": "node scripts/traces/validate.mjs --mode production --manifest eval/traces/production.manifest.json",
     "ocb:eval:run": "node packages/eval-harness/src/run.ts",
     "ocb:eval:make-blind-packets": "node packages/eval-harness/src/blind-packets.ts",
     "ocb:eval:smoke": "pnpm ocb:eval:run -- --mode smoke --run-id smoke-pr4",
@@ -21,7 +21,9 @@
     "ocb:traces:admit": "node scripts/traces/admit.mjs",
     "ocb:traces:admit:test": "node --test scripts/traces/admit.test.mjs",
     "ocb:runtime:export-candidate": "node scripts/runtime/export-candidate.mjs",
-    "ocb:runtime:export-candidate:test": "node --test scripts/runtime/export-candidate.test.mjs"
+    "ocb:runtime:export-candidate:test": "node --test scripts/runtime/export-candidate.test.mjs",
+    "ocb:traces:production-status": "node scripts/traces/status.mjs",
+    "ocb:traces:production-status:test": "node --test scripts/traces/status.test.mjs"
   },
   "engines": {
     "node": ">=22.6.0"
