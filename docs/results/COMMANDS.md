@@ -5,6 +5,16 @@ This is the canonical V5 command surface contract. Commands must be non-interact
 ## Evidence Warning
 
 Smoke, fixture, synthetic, repo-derived, or adversarial validation data must display:
+# Results Command Surface
+
+PR4 adds the eval harness command surface used by later scoreboard lanes.
+
+| Canonical command | Status | Notes |
+|---|---:|---|
+| `pnpm ocb:eval:run` | implemented | Runs all four eval backends against fixture-backed traces and writes `ledger-draft.jsonl`. |
+| `pnpm ocb:eval:make-blind-packets` | implemented | Generates label-hidden blind judge packets from an eval run. |
+
+Smoke fixtures in this lane are labeled:
 
 ```text
 NOT PRODUCT EVIDENCE
@@ -21,8 +31,8 @@ Smoke commands validate pipeline mechanics only. They must not claim product evi
 | `pnpm ocb:traces:validate` | Validate trace manifest and admitted trace coverage. | `node scripts/traces/validate.mjs --mode smoke`; smoke passes with labeled synthetic traces. |
 | `pnpm ocb:traces:validate:smoke` | Explicit smoke trace validation. | `node scripts/traces/validate.mjs --mode smoke`. |
 | `pnpm ocb:traces:validate:production` | Explicit production trace gate. | `node scripts/traces/validate.mjs --mode production`; fails closed under 40 admitted real traces or unmet slice minimums. |
-| `pnpm ocb:eval:run` | Run the ablation ladder. | Runs `none`, `correction-only`, `correction+heuristics`, and `full-ocb` uniformly. |
-| `pnpm ocb:eval:make-blind-packets` | Generate blind judge packets. | Removes backend labels and randomizes output order per trace. |
+| `pnpm ocb:eval:run` | Run the ablation ladder. | `node packages/eval-harness/src/run.ts`; runs `none`, `correction-only`, `correction+heuristics`, and `full-ocb` uniformly. |
+| `pnpm ocb:eval:make-blind-packets` | Generate blind judge packets. | `node packages/eval-harness/src/blind-packets.ts`; removes backend labels and randomizes output order per trace. |
 | `pnpm ocb:judgments:import` | Import completed judgments. | Validates required judge fields and rejects missing production judgments. |
 | `pnpm ocb:ledger:validate` | Validate judged ledger rows. | Recomputes derived values and rejects hand-edited inconsistencies. |
 | `pnpm ocb:results:generate` | Generate `/results` artifacts. | Generates results from ledger rows only, including warnings and per-slice tables. |
