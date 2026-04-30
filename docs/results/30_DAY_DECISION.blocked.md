@@ -5,7 +5,7 @@
 
 Decision: **BLOCKED: no product decision; collect real admitted redacted traces and complete judging.**
 
-Source: eval/results/smoke-pr5/ledger-judged.synthetic.jsonl
+Source: eval/results/smoke/ledger-judged.synthetic.jsonl
 
 ## Thresholds
 
@@ -31,7 +31,7 @@ Source: eval/results/smoke-pr5/ledger-judged.synthetic.jsonl
 
 | Gate | Value | Basis / Denominator |
 |---|---:|---|
-| engineering_e2e_complete | false | 0/1 RUN_STATE engineering gate |
+| engineering_e2e_complete | true | 1/1 RUN_STATE engineering gate |
 | evidence_e2e_complete | false | 0/6 thresholds |
 | admitted real product traces | 0/40 | required traces |
 | judged product rows | 0/24 | judged rows / all rows |

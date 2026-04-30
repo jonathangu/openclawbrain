@@ -4,7 +4,7 @@
 > **NOT PRODUCT EVIDENCE**  
 > **SYNTHETIC PIPELINE VALIDATION ONLY**
 
-Source ledger: eval/results/smoke-pr5/ledger-judged.synthetic.jsonl
+Source ledger: eval/results/smoke/ledger-judged.synthetic.jsonl
 
 Decision: **BLOCKED: no product decision; collect real admitted redacted traces and complete judging.**
 
@@ -12,7 +12,7 @@ Decision: **BLOCKED: no product decision; collect real admitted redacted traces 
 
 | Gate | Value | Basis / Denominator |
 |---|---:|---|
-| engineering_e2e_complete | false | 0/1 RUN_STATE engineering gate |
+| engineering_e2e_complete | true | 1/1 RUN_STATE engineering gate |
 | evidence_e2e_complete | false | 0/6 thresholds |
 | admitted real product traces | 0/40 | required traces |
 | total ledger rows | 24/24 | rows / rows |
