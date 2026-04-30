@@ -101,7 +101,7 @@ OpenClawBrain config lives under the plugin entry, never as an unknown root key:
 ## First-run target
 
 ```bash
-openclaw plugins install openclawbrain
+openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
 openclaw config set plugins.entries.openclawbrain.config.mode '"conservative"' --strict-json
@@ -118,4 +118,4 @@ pnpm --dir packages/openclaw-plugin build
 openclaw plugins install -l ./packages/openclaw-plugin
 ```
 
-The public install path is complete only after tarball/fresh install, live OpenClaw inspect, a real turn, status/proof verification, and disable path pass. `v0.1.0` in this repo is not yet published to npm.
+The public install path is complete only after tarball/fresh install, live OpenClaw inspect, a real turn, status/proof verification, and disable path pass. `v0.1.0` in this repo is not yet published to ClawHub or npm. Public release must follow `docs/RELEASE_RUNBOOK.md`, including ClawHub slug-collision and provenance gates.

@@ -32,7 +32,7 @@ The older `packages/runtime-policy`, `packages/proof-store`, `packages/openclaw-
 ## Install / enable
 
 ```bash
-openclaw plugins install openclawbrain
+openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
 openclaw config set plugins.entries.openclawbrain.config.mode '"conservative"' --strict-json
@@ -95,4 +95,4 @@ pnpm ocb:e2e:smoke
 pnpm ocb:e2e:production
 ```
 
-`v0.1.0` is committed locally in this repository. It has not been published to npm.
+`v0.1.0` is committed locally in this repository. It has not been published to ClawHub or npm. The release runbook is [`docs/RELEASE_RUNBOOK.md`](./docs/RELEASE_RUNBOOK.md); public release remains blocked until the ClawHub `openclawbrain` slug collision and provenance gates are resolved.

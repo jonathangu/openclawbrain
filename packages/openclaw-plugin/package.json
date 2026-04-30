@@ -18,8 +18,19 @@
   ],
   "openclaw": {
     "extensions": [
+      "./src/index.ts"
+    ],
+    "runtimeExtensions": [
       "./dist/index.js"
-    ]
+    ],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2",
+      "minGatewayVersion": "2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24-beta.2",
+      "pluginSdkVersion": "2026.3.24-beta.2"
+    }
   },
   "scripts": {
     "check": "node scripts/build.mjs --check",
@@ -28,5 +39,14 @@
   },
   "engines": {
     "node": ">=22.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonathangu/openclawbrain.git",
+    "directory": "packages/openclaw-plugin"
+  },
+  "homepage": "https://github.com/jonathangu/openclawbrain#readme",
+  "bugs": {
+    "url": "https://github.com/jonathangu/openclawbrain/issues"
   }
 }

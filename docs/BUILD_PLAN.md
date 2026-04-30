@@ -13,7 +13,7 @@ OpenClawBrain should become the smallest trustworthy native OpenClaw plugin that
 Ship one thing through OpenClaw's plugin lifecycle:
 
 ```bash
-openclaw plugins install openclawbrain
+openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
 
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
@@ -73,7 +73,7 @@ packages/openclaw-plugin/
 
 This package is the publishable package: `openclawbrain`.
 
-Package metadata must declare:
+Package metadata must declare source entries plus built runtime entries for ClawHub-compatible installs:
 
 ```json
 {
@@ -83,7 +83,16 @@ Package metadata must declare:
   "types": "./dist/index.d.ts",
   "files": ["dist", "openclaw.plugin.json"],
   "openclaw": {
-    "extensions": ["./dist/index.js"]
+    "extensions": ["./src/index.ts"],
+    "runtimeExtensions": ["./dist/index.js"],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2",
+      "minGatewayVersion": "2026.3.24-beta.2"
+    },
+    "build": {
+      "openclawVersion": "2026.3.24-beta.2",
+      "pluginSdkVersion": "2026.3.24-beta.2"
+    }
   }
 }
 ```
@@ -444,6 +453,8 @@ Gate:
 
 ### Phase 8 — Public release readiness
 
+Before publishing, execute [`docs/RELEASE_RUNBOOK.md`](./RELEASE_RUNBOOK.md). The release is blocked until the existing ClawHub `openclawbrain` skill/name collision is resolved and ClawHub publish provenance is verified from a GitHub tag or explicit source metadata.
+
 Before publishing:
 
 - package name locked: `openclawbrain`,
@@ -456,7 +467,7 @@ Before publishing:
 Publish only after:
 
 ```bash
-openclaw plugins install openclawbrain
+openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
 openclaw config set plugins.entries.openclawbrain.config.mode '"conservative"' --strict-json
