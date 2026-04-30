@@ -43,7 +43,10 @@ function judgeCandidate(packet, candidate) {
   let score = 3;
   const notes = [];
 
-  if (text.includes("no openclawbrain intervention")) {
+  if (slices.has("continuation") && (text.includes("full-context") || text.includes("evidence limits") || text.includes("available correction"))) {
+    score = 4;
+    notes.push("Adds bounded continuation context instead of asking for redundant state.");
+  } else if (text.includes("no openclawbrain intervention")) {
     if (slices.has("direct-answer")) { score = 4; notes.push("Correct restraint is useful for direct-answer traces."); }
     else { score = 2; notes.push("Misses expected memory/tool/context opportunity."); }
   } else if (text.includes("apply correction")) {

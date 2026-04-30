@@ -14,9 +14,9 @@ Source: eval/results/smoke/ledger-judged.synthetic.jsonl
 | minimum_40_real_admitted_traces | fail | 0/40 traces |
 | required_slices_present | fail | 0/6 required slices |
 | privacy_scrubbed_for_product_rows | fail | 0/0 product rows |
-| judging_complete_for_product_rows | fail | 0/0 product rows |
-| harm_rate_at_or_below_5_percent | fail | 0/0 harms; max 5% |
-| win_rate_at_or_above_60_percent | fail | 0/0 wins; min 60% |
+| judging_complete_for_product_rows | fail | 0/0 product rows; 0/0 selected policy rows |
+| harm_rate_at_or_below_5_percent | fail | 0/0 selected policy harms; max 5% |
+| win_rate_at_or_above_60_percent | fail | 0/0 selected policy wins; min 60% |
 
 ## Blockers
 
@@ -34,4 +34,5 @@ Source: eval/results/smoke/ledger-judged.synthetic.jsonl
 | engineering_e2e_complete | true | 1/1 RUN_STATE engineering gate |
 | evidence_e2e_complete | false | 0/6 thresholds |
 | admitted real product traces | 0/40 | required traces |
+| selected product policy traces | 0/0 | selected policy traces / admitted traces |
 | judged product rows | 0/24 | judged rows / all rows |

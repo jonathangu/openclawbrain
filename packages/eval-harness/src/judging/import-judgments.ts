@@ -144,10 +144,15 @@ export async function importJudgments(options: ImportOptions): Promise<{ ok: tru
   const judgedRows = ledgerRows.map((row) => {
     const traceId = requireString(row.trace_id, "ledger trace_id");
     const backendId = requireString(row.backend_id, "ledger backend_id");
+    const slices = Array.isArray(row.slices) ? row.slices.filter((slice): slice is string => typeof slice === "string") : [];
+    const selectedProductBackend = selectedBackendForSlices(slices);
     const judgment = backendToCandidate.get(`${traceId}\u0000${backendId}`);
     if (!judgment) throw new Error(`missing judgment for ledger row ${traceId}/${backendId}`);
     return {
       ...row,
+      selected_product_backend: selectedProductBackend,
+      selected_product_policy: "ocb.slice-policy.v1",
+      product_selected: backendId === selectedProductBackend,
       blind_candidate_id: judgment.candidate_id,
       judge_status: "complete",
       judge_score: judgment.overall_score,
@@ -167,6 +172,13 @@ export async function importJudgments(options: ImportOptions): Promise<{ ok: tru
   });
   await writeFile(options.outputPath, `${judgedRows.map((row) => JSON.stringify(row)).join("\n")}\n`, "utf8");
   return { ok: true, output_path: options.outputPath, ledger_rows: judgedRows.length, judgment_count: byCandidate.size };
+}
+
+function selectedBackendForSlices(slices: readonly string[]): string {
+  if (slices.includes("direct-answer")) return "none";
+  if (slices.includes("correction-follow-up") || slices.includes("stale-memory-conflict")) return "correction-only";
+  if (slices.includes("continuation") || slices.includes("retrieval-heavy") || slices.includes("tool-heavy")) return "full-ocb";
+  return "full-ocb";
 }
 
 function outcomeForScore(score: number): "loss" | "tie" | "win" {

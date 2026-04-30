@@ -47,6 +47,9 @@ export type LedgerRow = {
   failure_modes?: string[];
   harm_flags?: string[];
   negative_result?: boolean;
+  product_selected?: boolean;
+  selected_product_backend?: string;
+  selected_product_policy?: string;
   [key: string]: unknown;
 };
 
@@ -68,6 +71,9 @@ export type NormalizedRow = {
   failureModes: string[];
   harmFlags: string[];
   negativeResult: boolean;
+  productSelected: boolean | null;
+  selectedProductBackend: string | null;
+  selectedProductPolicy: string | null;
   raw: LedgerRow;
 };
 
@@ -101,6 +107,9 @@ export function normalizeRow(row: LedgerRow, sourceFile: string, lineNumber: num
     failureModes,
     harmFlags,
     negativeResult: row.negative_result === true || outcome === "loss" || outcome === "harm" || (utilityDelta !== null && utilityDelta < 0),
+    productSelected: typeof row.product_selected === "boolean" ? row.product_selected : null,
+    selectedProductBackend: stringValue(row.selected_product_backend) || null,
+    selectedProductPolicy: stringValue(row.selected_product_policy) || null,
     raw: row,
   };
 }

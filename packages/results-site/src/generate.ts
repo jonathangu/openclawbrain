@@ -114,6 +114,7 @@ function buildSummary(loaded: LoadResult, decision: ReturnType<typeof deriveDeci
   const stats = buildStats(loaded.rows);
   const syntheticSmoke = loaded.rows.filter((row) => row.provenanceType === "synthetic" || row.mode === "smoke" || !row.countsAsProductEvidence).length;
   const negativeRows = loaded.rows.filter((row) => row.negativeResult || row.harmFlags.length > 0).length;
+  const selectedRows = productScoredRows(loaded.rows);
 
   return {
     generated_by: "packages/results-site/src/generate.ts",
@@ -135,12 +136,14 @@ function buildSummary(loaded: LoadResult, decision: ReturnType<typeof deriveDeci
       required_product_traces: PRODUCT_TRACE_THRESHOLD,
       negative_rows: `${negativeRows}/${loaded.rows.length}`,
       synthetic_or_smoke_rows: `${syntheticSmoke}/${loaded.rows.length}`,
+      selected_product_policy_rows: `${selectedRows.length}/${loaded.rows.length}`,
     },
   };
 }
 
 function renderIndex(loaded: LoadResult, decision: ReturnType<typeof deriveDecision>): string {
   const stats = buildStats(loaded.rows);
+  const selectedRows = productScoredRows(loaded.rows);
   const tables = renderAllTables(loaded.rows);
   const hasSyntheticOrEmpty = stats.syntheticOrSmokeRows > 0 || loaded.rows.length === 0;
   const warnings = loaded.warnings.length > 0 ? loaded.warnings.map((warning) => `- ${warning}`).join("\n") : "- none";
@@ -166,6 +169,7 @@ Decision: **${decision.decision}**
 | admitted real product traces | ${decision.traceCounts.admittedRealProductTraces}/${PRODUCT_TRACE_THRESHOLD} | required traces |
 | total ledger rows | ${stats.totalRows}/${stats.totalRows} | rows / rows |
 | distinct traces | ${stats.totalTraces}/${stats.totalTraces} | traces / traces |
+| selected product policy rows | ${selectedRows.length}/${decision.traceCounts.admittedRealProductTraces} | selected policy rows / admitted traces |
 | negative rows | ${negativeRows}/${stats.totalRows} | negative rows / all rows |
 
 ## Thresholds
@@ -184,12 +188,18 @@ ${warnings}
 
 ## Uncertainty Snapshot
 
-- Win rows: ${renderRateWithInterval(loaded.rows.filter((row) => row.outcome === "win").length, loaded.rows.length)}
-- Harm rows: ${renderRateWithInterval(loaded.rows.filter((row) => row.outcome === "harm" || row.harmFlags.length > 0).length, loaded.rows.length)}
+- Selected policy win rows: ${renderRateWithInterval(selectedRows.filter((row) => row.outcome === "win").length, selectedRows.length)}
+- Selected policy harm rows: ${renderRateWithInterval(selectedRows.filter((row) => row.outcome === "harm" || row.harmFlags.length > 0).length, selectedRows.length)}
 - Negative rows: ${renderRateWithInterval(negativeRows, loaded.rows.length)}
 
 ${tables.map((table) => `## ${table.title}\n\n${table.markdown}`).join("\n\n")}
 `;
+}
+
+function productScoredRows(rows: NormalizedRow[]): NormalizedRow[] {
+  const productRows = rows.filter((row) => row.admitted && row.provenanceType === "real" && row.countsAsProductEvidence === true);
+  const selectedRows = productRows.filter((row) => row.productSelected === true);
+  return selectedRows.length > 0 ? selectedRows : productRows;
 }
 
 function deterministicGeneratedAt(): string | null {

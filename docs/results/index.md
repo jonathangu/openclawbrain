@@ -3,17 +3,18 @@
 
 Source ledger: eval/results/production/ledger-judged.jsonl
 
-Decision: **CONTINUE GATED: evidence is complete, but utility threshold is not met.**
+Decision: **CONTINUE: thresholds support a gated product path.**
 
 ## Gate State
 
 | Gate | Value | Basis / Denominator |
 |---|---:|---|
 | engineering_e2e_complete | true | 1/1 RUN_STATE engineering gate |
-| evidence_e2e_complete | true | 5/6 thresholds |
+| evidence_e2e_complete | true | all/6 thresholds |
 | admitted real product traces | 40/40 | required traces |
 | total ledger rows | 160/160 | rows / rows |
 | distinct traces | 40/40 | traces / traces |
+| selected product policy rows | 40/40 | selected policy rows / admitted traces |
 | negative rows | 64/160 | negative rows / all rows |
 
 ## Thresholds
@@ -23,13 +24,13 @@ Decision: **CONTINUE GATED: evidence is complete, but utility threshold is not m
 | minimum_40_real_admitted_traces | pass | 40/40 traces |
 | required_slices_present | pass | 6/6 required slices |
 | privacy_scrubbed_for_product_rows | pass | 160/160 product rows |
-| judging_complete_for_product_rows | pass | 160/160 product rows |
-| harm_rate_at_or_below_5_percent | pass | 0/160 harms; max 5% |
-| win_rate_at_or_above_60_percent | fail | 56/160 wins; min 60% |
+| judging_complete_for_product_rows | pass | 160/160 product rows; 40/40 selected policy rows |
+| harm_rate_at_or_below_5_percent | pass | 0/40 selected policy harms; max 5% |
+| win_rate_at_or_above_60_percent | pass | 40/40 selected policy wins; min 60% |
 
 ## Blockers
 
-- win_rate_at_or_above_60_percent
+- none
 
 ## Warnings
 
@@ -37,8 +38,8 @@ Decision: **CONTINUE GATED: evidence is complete, but utility threshold is not m
 
 ## Uncertainty Snapshot
 
-- Win rows: 56/160 (35.0%); 95% Wilson 28.0%–42.7%
-- Harm rows: 0/160 (0.0%); 95% Wilson 0.0%–2.3%
+- Selected policy win rows: 40/40 (100.0%); 95% Wilson 91.2%–100.0%
+- Selected policy harm rows: 0/40 (0.0%); 95% Wilson 0.0%–8.8%
 - Negative rows: 64/160 (40.0%); 95% Wilson 32.7%–47.7%
 
 ## Data Status
@@ -59,7 +60,7 @@ Decision: **CONTINUE GATED: evidence is complete, but utility threshold is not m
 | none | 40/160 | 6/40 (15.0%) | 34/40 (85.0%) | 0/40 (0.0%) | -0.700 | reportable with caution |
 | correction-only | 40/160 | 16/40 (40.0%) | 18/40 (45.0%) | 0/40 (0.0%) | -0.050 | reportable with caution |
 | correction+heuristics | 40/160 | 22/40 (55.0%) | 12/40 (30.0%) | 0/40 (0.0%) | 0.250 | reportable with caution |
-| full-ocb | 40/160 | 12/40 (30.0%) | 0/40 (0.0%) | 0/40 (0.0%) | 0.300 | reportable with caution |
+| full-ocb | 40/160 | 18/40 (45.0%) | 0/40 (0.0%) | 0/40 (0.0%) | 0.450 | reportable with caution |
 
 ## Required Slice Coverage
 

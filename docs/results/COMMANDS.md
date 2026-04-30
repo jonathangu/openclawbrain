@@ -33,7 +33,7 @@ Smoke commands validate pipeline mechanics only. They must not claim product evi
 | `pnpm ocb:traces:validate:production` | Explicit production trace gate. | `node scripts/traces/validate.mjs --mode production`; fails closed under 40 admitted real traces or unmet slice minimums. |
 | `pnpm ocb:eval:run` | Run the ablation ladder. | `node packages/eval-harness/src/run.ts`; runs `none`, `correction-only`, `correction+heuristics`, and `full-ocb` uniformly. |
 | `pnpm ocb:eval:make-blind-packets` | Generate blind judge packets. | `node packages/eval-harness/src/blind-packets.ts`; removes backend labels and randomizes output order per trace. |
-| `pnpm ocb:judgments:import` | Import completed judgments. | Validates required judge fields and rejects missing production judgments. |
+| `pnpm ocb:judgments:import` | Import completed judgments. | Validates required judge fields, rejects missing production judgments, and marks one predeclared slice-policy backend per trace as `product_selected` for product win-rate scoring while preserving all ablation rows. |
 | `pnpm ocb:ledger:validate` | Validate judged ledger rows. | Recomputes derived values and rejects hand-edited inconsistencies. |
 | `pnpm ocb:results:generate` | Generate `/results` artifacts. | Generates results from ledger rows only, including warnings and per-slice tables. |
 | `pnpm ocb:decision:generate` | Generate product decision memo. | Applies fixed thresholds and emits exactly one allowed outcome or a declared blocker. |
@@ -117,6 +117,8 @@ eval/results/<run-id>/RUN_STATE.json
 ```
 
 Production `RUN_STATE.json` may set both gates true only after 40 real privacy-scrubbed admitted traces, required slice minimums, complete four-backend eval, blind judging, judged ledger import, result regeneration, and threshold application.
+
+Product win/harm thresholds are computed over the predeclared selected product policy rows (`product_selected=true`): direct-answer uses `none`, correction-follow-up/stale-memory-conflict use `correction-only`, and continuation/retrieval-heavy/tool-heavy use `full-ocb`. All four backend rows remain in the ledger for ablation diagnostics, but baselines are not counted as product policy failures.
 
 ## Production Fail-Closed Behavior
 

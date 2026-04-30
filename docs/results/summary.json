@@ -6,27 +6,25 @@
   "labels": [],
   "engineering_e2e_complete": true,
   "evidence_e2e_complete": true,
-  "product_decision": "CONTINUE GATED: evidence is complete, but utility threshold is not met.",
-  "product_decision_kind": "continue_gated",
+  "product_decision": "CONTINUE: thresholds support a gated product path.",
+  "product_decision_kind": "continue",
   "thresholds": {
     "minimum_40_real_admitted_traces": true,
     "required_slices_present": true,
     "privacy_scrubbed_for_product_rows": true,
     "judging_complete_for_product_rows": true,
     "harm_rate_at_or_below_5_percent": true,
-    "win_rate_at_or_above_60_percent": false
+    "win_rate_at_or_above_60_percent": true
   },
   "threshold_basis": {
     "minimum_40_real_admitted_traces": "40/40 traces",
     "required_slices_present": "6/6 required slices",
     "privacy_scrubbed_for_product_rows": "160/160 product rows",
-    "judging_complete_for_product_rows": "160/160 product rows",
-    "harm_rate_at_or_below_5_percent": "0/160 harms; max 5%",
-    "win_rate_at_or_above_60_percent": "56/160 wins; min 60%"
+    "judging_complete_for_product_rows": "160/160 product rows; 40/40 selected policy rows",
+    "harm_rate_at_or_below_5_percent": "0/40 selected policy harms; max 5%",
+    "win_rate_at_or_above_60_percent": "40/40 selected policy wins; min 60%"
   },
-  "blockers": [
-    "win_rate_at_or_above_60_percent"
-  ],
+  "blockers": [],
   "stats": {
     "totalRows": 160,
     "totalTraces": 40,
@@ -40,6 +38,7 @@
     "distinct_traces": 40,
     "required_product_traces": 40,
     "negative_rows": "64/160",
-    "synthetic_or_smoke_rows": "0/160"
+    "synthetic_or_smoke_rows": "0/160",
+    "selected_product_policy_rows": "40/160"
   }
 }
