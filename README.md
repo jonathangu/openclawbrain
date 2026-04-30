@@ -1,30 +1,83 @@
 # OpenClawBrain
 
-OpenClawBrain is starting over from a blank repository.
+A local, profile-bound selective intervention layer for OpenClaw.
 
-This rebuild should move slowly, patiently, and honestly. The goal is not to recreate the old project or make broad claims about being generally smarter. The goal is to build a small, reliable intervention layer for OpenClaw that helps at important decision points.
+OpenClawBrain helps an OpenClaw profile:
 
-## North star
+- remember user corrections,
+- continue bounded work,
+- supply relevant context,
+- stay silent on direct answers,
+- show local proof of what it did.
 
-OpenClawBrain learns when to help, what tiny piece of context or workflow is useful, and when to stay quiet.
+It is not a general intelligence layer. It is not a cloud memory service. It does not upload raw transcripts.
 
-A good intervention may be:
+## Install target
 
-- a specific remembered fact that changes the next action,
-- a tool or workflow choice that prevents wasted motion,
-- a restraint signal that says not to interrupt or not to act,
-- a proof surface that lets the operator see why a choice was made.
+```bash
+npm install -g openclawbrain
+openclawbrain install
+openclawbrain enable --profile main
+openclawbrain status --profile main
+```
 
-## Principles
+Then, after real usage:
 
-1. Start from observable runtime behavior, not inherited architecture.
-2. Prefer one useful bounded loop over a large abstract system.
-3. Keep claims smaller than the evidence.
-4. Make restraint first-class: silence can be the correct output.
-5. Preserve operator trust through clear proof, reversibility, and boring reliability.
+```bash
+openclawbrain proof --profile main
+```
 
-## First milestone
+## Runtime shape
 
-Build the smallest dogfoodable loop that can improve one real OpenClaw decision path and show honest evidence of whether it helped.
+OpenClawBrain ships as one user-visible package with internal workspaces:
 
-No old OpenClawBrain code, artifacts, docs, or plans are source material for this rebuild unless Jonathan explicitly asks.
+- `packages/runtime-policy` — pure deterministic selected product policy.
+- `packages/proof-store` — local redacted proof/status store.
+- `packages/openclaw-plugin` — native OpenClaw plugin entry and manifest.
+- `packages/openclaw-integration` — compatibility adapter export for the profile-bound OpenClaw integration surface.
+- `packages/installer` — thin wrapper around OpenClaw plugin/config commands.
+- `packages/cli` — `openclawbrain` command shell.
+
+OpenClaw config belongs under the plugin entry:
+
+```json5
+{
+  plugins: {
+    entries: {
+      openclawbrain: {
+        enabled: true,
+        hooks: {
+          allowPromptInjection: true,
+          allowConversationAccess: true,
+        },
+        config: {
+          mode: "conservative",
+          activationRoot: "~/.openclawbrain/activation/main",
+          proofEvents: true,
+          rawTranscriptUpload: false,
+          scopes: { agents: ["main"] },
+        },
+      },
+    },
+  },
+}
+```
+
+Do not configure OpenClawBrain with an unknown root `openclawbrain` key.
+
+## Proof
+
+```bash
+openclawbrain proof --profile main
+```
+
+Proof events are local, redacted JSONL. The proof surface reports decisions like `stay_silent`, `correction_only`, `full_context`, and `proof_only` without storing raw private transcripts.
+
+## Disable / uninstall
+
+```bash
+openclawbrain disable --profile main
+openclawbrain uninstall --profile main
+```
+
+`v0.1.0` in this repository is a local productization scaffold, not a published npm release yet.

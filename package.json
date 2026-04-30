@@ -1,10 +1,10 @@
 {
   "name": "openclawbrain",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "private": false,
   "type": "module",
   "packageManager": "pnpm@10.28.2",
-  "description": "OpenClawBrain V5 evidence scoreboard pipeline workspace.",
+  "description": "OpenClawBrain: local, profile-bound selective intervention layer for OpenClaw.",
   "scripts": {
     "ocb:results:schema-test": "node --test packages/results-schema/test/*.test.ts",
     "ocb:ledger:validate": "node packages/results-schema/src/ledger.ts",
@@ -30,9 +30,46 @@
     "ocb:runtime:decide:test": "node --test scripts/runtime/decide.test.mjs",
     "ocb:traces:from-session-logs": "node scripts/evidence/build-session-log-production-traces.mjs",
     "ocb:judgments:judge-production": "node scripts/evidence/judge-blind-packets.mjs",
-    "ocb:e2e:production": "node scripts/ocb-e2e-production.mjs"
+    "ocb:e2e:production": "node scripts/ocb-e2e-production.mjs",
+    "test:runtime-policy": "node --test packages/runtime-policy/test/*.test.mjs",
+    "test:proof-store": "node --test packages/proof-store/test/*.test.mjs",
+    "test:openclaw-plugin": "node --test packages/openclaw-plugin/test/*.test.mjs",
+    "test:installer": "node --test packages/installer/test/*.test.mjs",
+    "test:cli": "node --test packages/cli/test/*.test.mjs",
+    "test:product": "pnpm test:runtime-policy && pnpm test:proof-store && pnpm test:openclaw-plugin && pnpm test:openclaw-integration && pnpm test:installer && pnpm test:cli",
+    "test:openclaw-integration": "node --test packages/openclaw-integration/test/*.test.mjs",
+    "test": "node scripts/test-package.mjs"
   },
   "engines": {
     "node": ">=22.6.0"
+  },
+  "bin": {
+    "openclawbrain": "packages/cli/src/index.mjs"
+  },
+  "files": [
+    "packages/runtime-policy/src",
+    "packages/runtime-policy/package.json",
+    "packages/proof-store/src",
+    "packages/proof-store/package.json",
+    "packages/openclaw-plugin/src",
+    "packages/openclaw-plugin/openclaw.plugin.json",
+    "packages/openclaw-plugin/package.json",
+    "packages/openclaw-integration/src",
+    "packages/openclaw-integration/package.json",
+    "packages/installer/src",
+    "packages/installer/package.json",
+    "packages/cli/src",
+    "packages/cli/package.json",
+    "docs/RUNTIME_PRODUCT_V0.md",
+    "README.md",
+    "openclaw.plugin.json"
+  ],
+  "openclaw": {
+    "extensions": [
+      "./packages/openclaw-plugin/src/index.mjs"
+    ],
+    "runtimeExtensions": [
+      "./packages/openclaw-plugin/src/index.mjs"
+    ]
   }
 }
