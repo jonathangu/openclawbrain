@@ -21,6 +21,11 @@ const REQUIRED = Object.freeze({
   "tool-heavy": 6,
   "stale-memory-conflict": 8,
 });
+const PREFERRED_PROFILE_MINIMUMS = Object.freeze({
+  main: 8,
+  pelican: 8,
+  bountiful: 8,
+});
 const PRIMARY = new Set(["correction-follow-up", "continuation", "stale-memory-conflict"]);
 const SECRET_RE = /(sk-[a-zA-Z0-9_-]{12,}|xox[baprs]-[a-zA-Z0-9-]{12,}|AKIA[0-9A-Z]{12,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|password\s*=|api[_-]?key\s*=)/iu;
 
@@ -28,7 +33,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const codeCommit = await readGitCommit();
   const turns = await collectTurns(args.sessionsRoot);
-  const selected = selectBalancedTurns(turns, REQUIRED);
+  const selected = selectBalancedTurns(turns, REQUIRED, PREFERRED_PROFILE_MINIMUMS);
   if (selected.length < totalRequired(REQUIRED)) throw new Error(`only selected ${selected.length}/${totalRequired(REQUIRED)} traces`);
   await mkdir(resolveProject(args.candidateDir), { recursive: true });
 
@@ -46,11 +51,14 @@ async function main() {
   await writeFile(resolveProject(args.productionJsonl), `${traceRows.map((row) => JSON.stringify(row)).join("\n")}\n`, "utf8");
   await ensureProductionFixture();
   const counts = countBy(selected, (turn) => turn.slice);
+  const profiles = countBy(selected, (turn) => turn.agent);
   console.log(JSON.stringify({
     ok: true,
     source: "sanitized OpenClaw session logs",
     selected_trace_count: selected.length,
     by_slice: counts,
+    by_profile: profiles,
+    profile_policy: PREFERRED_PROFILE_MINIMUMS,
     candidates_dir: args.candidateDir,
     production_jsonl: args.productionJsonl,
     manifest: args.manifest,
@@ -167,7 +175,7 @@ function classifyProject(text, agent) {
   return "general OpenClaw";
 }
 
-function selectBalancedTurns(turns, required) {
+function selectBalancedTurns(turns, required, preferredProfileMinimums) {
   const selected = [];
   const seenSessions = new Map();
   const ocbCap = 12;
@@ -195,7 +203,44 @@ function selectBalancedTurns(turns, required) {
       seenSessions.set(turn.sessionId, (seenSessions.get(turn.sessionId) ?? 0) + 1);
     }
   }
-  return selected.slice(0, totalRequired(required));
+  return rebalanceProfiles(selected.slice(0, totalRequired(required)), turns, preferredProfileMinimums);
+}
+
+function rebalanceProfiles(selected, turns, preferredProfileMinimums) {
+  const key = (turn) => `${turn.file}:${turn.turnIndex}`;
+  const selectedKeys = new Set(selected.map(key));
+  const availableProfiles = new Set(turns.map((turn) => turn.agent));
+
+  for (const [profile, minimum] of Object.entries(preferredProfileMinimums)) {
+    if (!availableProfiles.has(profile)) continue;
+    while ((countBy(selected, (turn) => turn.agent)[profile] ?? 0) < minimum) {
+      const neededSlices = [...new Set(turns.filter((turn) => turn.agent === profile).map((turn) => turn.slice))];
+      let replaced = false;
+      for (const slice of neededSlices) {
+        const candidate = turns.find((turn) => turn.agent === profile && turn.slice === slice && !selectedKeys.has(key(turn)));
+        if (!candidate) continue;
+        const profileCounts = countBy(selected, (turn) => turn.agent);
+        const replaceIndex = selected.findIndex((turn) =>
+          turn.slice === slice &&
+          turn.agent !== profile &&
+          !isProtectedProfile(turn.agent, profileCounts, preferredProfileMinimums),
+        );
+        if (replaceIndex === -1) continue;
+        selectedKeys.delete(key(selected[replaceIndex]));
+        selected[replaceIndex] = candidate;
+        selectedKeys.add(key(candidate));
+        replaced = true;
+        break;
+      }
+      if (!replaced) break;
+    }
+  }
+  return selected;
+}
+
+function isProtectedProfile(profile, profileCounts, preferredProfileMinimums) {
+  const minimum = preferredProfileMinimums[profile];
+  return typeof minimum === "number" && (profileCounts[profile] ?? 0) <= minimum;
 }
 
 function buildCandidate(turn, ordinal, codeCommit) {

@@ -56,6 +56,7 @@ async function writeRunState() {
   const manifest = JSON.parse(await readFile("eval/traces/production.manifest.json", "utf8"));
   const admitted = manifest.traces.filter((trace) => trace.admitted && trace.provenance_type === "real" && trace.counts_as_product_evidence);
   const bySlice = Object.fromEntries(["direct-answer", "continuation", "correction-follow-up", "retrieval-heavy", "tool-heavy", "stale-memory-conflict"].map((slice) => [slice, admitted.filter((trace) => trace.slice === slice).length]));
+  const byProfile = await countProfiles();
   const allSliceMinimumsMet = bySlice["direct-answer"] >= 6 && bySlice.continuation >= 6 && bySlice["correction-follow-up"] >= 8 && bySlice["retrieval-heavy"] >= 6 && bySlice["tool-heavy"] >= 6 && bySlice["stale-memory-conflict"] >= 8;
   await writeFile(join(runDir, "RUN_STATE.json"), `${JSON.stringify({
     schema_version: "ocb.run_state.v1",
@@ -68,6 +69,7 @@ async function writeRunState() {
     real_trace_count: admitted.length,
     synthetic_trace_count: 0,
     by_slice: bySlice,
+    by_profile: byProfile,
     all_slice_minimums_met: allSliceMinimumsMet,
     all_backends_run: draftRows === packetCount * 4,
     blind_packets_generated: packetCount > 0,
@@ -84,7 +86,21 @@ async function writeCompletionArtifacts() {
   await mkdir(docsResultsDir, { recursive: true });
   await writeFile(join(docsResultsDir, "BLOCKERS.md"), `# Evidence Blockers\n\n- none for Evidence E2E gate mechanics: 40 real privacy-scrubbed session-log traces were admitted, production blind packets were judged, and /results was regenerated from the production judged ledger.\n- Product outcome is still threshold-bound; see \`30_DAY_DECISION.md\` for whether the evidence supports continue, gated continue, pause, or another product path.\n`, "utf8");
   await writeFile(join(docsResultsDir, "NEXT_DATA_NEEDED.md"), `# Next Data Needed\n\nEvidence E2E is complete for the current V5 production session-log run. Next data is improvement data, not gate data:\n\n1. Add more real traces over time to reduce low-N uncertainty.\n2. Add independent human/model judge panels if stronger product confidence is needed.\n3. Replace deterministic eval adapters with live model counterfactual outputs before making broad external claims.\n`, "utf8");
-  await writeFile(join(docsResultsDir, "PARTIAL_COMPLETION.md"), `# Completion\n\nEngineering E2E and Evidence E2E are complete for V5.\n\n- Source: real OpenClaw session logs, transformed into privacy-scrubbed redacted traces.\n- Product evidence count: 40 admitted real traces across required V5 slice minimums.\n- Judging: non-synthetic deterministic blind rubric over redacted packets.\n- Results and decision: regenerated from \`eval/results/${runId}/ledger-judged.jsonl\`.\n\nCaveat: this completes the V5 evidence gate honestly, but the current evaluation uses deterministic adapters and a deterministic rubric. Treat the resulting product decision as a gated internal decision, not a broad public claim.\n`, "utf8");
+  const byProfile = await countProfiles();
+  await writeFile(join(docsResultsDir, "PARTIAL_COMPLETION.md"), `# Completion\n\nEngineering E2E and Evidence E2E are complete for V5.\n\n- Source: real OpenClaw session logs, transformed into privacy-scrubbed redacted traces.\n- Profile coverage: ${Object.entries(byProfile).map(([profile, count]) => `${profile} ${count}`).join(", ")}.\n- Product evidence count: 40 admitted real traces across required V5 slice minimums.\n- Judging: non-synthetic deterministic blind rubric over redacted packets.\n- Results and decision: regenerated from \`eval/results/${runId}/ledger-judged.jsonl\`.\n\nCaveat: this completes the V5 evidence gate honestly, but the current evaluation uses deterministic adapters and a deterministic rubric. Treat the resulting product decision as a gated internal decision, not a broad public claim.\n`, "utf8");
+}
+
+async function countProfiles() {
+  const manifest = JSON.parse(await readFile("eval/traces/production.manifest.json", "utf8"));
+  const counts = {};
+  for (const trace of manifest.traces ?? []) {
+    if (!trace.admitted) continue;
+    const input = JSON.parse(await readFile(join(trace.path, trace.input_file), "utf8"));
+    const match = String(input.current_context_redacted ?? "").match(/Session source=([^;]+);/u);
+    const profile = match?.[1] ?? "unknown";
+    counts[profile] = (counts[profile] ?? 0) + 1;
+  }
+  return Object.fromEntries(Object.entries(counts).sort(([left], [right]) => left.localeCompare(right)));
 }
 
 async function verifyArtifacts() {
