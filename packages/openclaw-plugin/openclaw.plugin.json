@@ -9,18 +9,28 @@
     "properties": {
       "enabled": { "type": "boolean", "default": true },
       "mode": { "type": "string", "enum": ["off", "proof-only", "conservative", "active"], "default": "conservative" },
+      "openclawProfile": { "type": "string", "default": "main" },
       "activationRoot": { "type": "string", "default": "~/.openclawbrain/activation/main" },
       "proofEvents": { "type": "boolean", "default": true },
       "rawTranscriptUpload": { "type": "boolean", "const": false, "default": false },
-      "scopes": { "type": "object", "additionalProperties": false, "properties": { "agents": { "type": "array", "items": { "type": "string" } } } },
+      "scopes": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "agents": { "type": "array", "items": { "type": "string" }, "default": ["main"] },
+          "sessionKeys": { "type": "array", "items": { "type": "string" }, "default": [] }
+        }
+      },
       "candidateMemories": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string" }, "kind": { "type": "string" }, "text": { "type": "string" }, "relevance": { "type": "number" }, "stale": { "type": "boolean" }, "conflict": { "type": "boolean" } } } }
     }
   },
   "uiHints": {
     "mode": { "label": "Runtime Mode", "help": "Conservative stays silent unless the selected evidence policy says a bounded correction/context intervention is useful." },
+    "openclawProfile": { "label": "OpenClaw Profile", "help": "Config/profile scope used with agent id and session key hash in proof events." },
     "activationRoot": { "label": "Activation Root", "help": "Profile-local OpenClawBrain proof/status directory." },
     "proofEvents": { "label": "Proof Events", "help": "Write redacted local proof events for status/proof commands." },
     "rawTranscriptUpload": { "label": "Raw Transcript Upload", "help": "Always false in v0.1." },
-    "scopes.agents": { "label": "Scoped Agents", "help": "Agent/profile ids this plugin may affect. Empty means all agents in this OpenClaw profile." }
+    "scopes.agents": { "label": "Scoped Agents", "help": "Agent/profile ids this plugin may affect. Empty means all agents in this OpenClaw profile." },
+    "scopes.sessionKeys": { "label": "Scoped Session Keys", "help": "Optional exact session keys to allow; proof stores only hashes." }
   }
 }

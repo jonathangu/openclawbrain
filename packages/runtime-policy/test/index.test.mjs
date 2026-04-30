@@ -9,10 +9,14 @@ test('selected product policy stays silent for direct-answer turns', () => {
 });
 
 test('selected product policy injects correction only for stale-memory conflict', () => {
-  const decision = decideOpenClawBrainIntervention({ profileId: 'family', runtimeMode: 'conservative', redactedTurn: { turnId: 't2', turnType: 'stale-memory-conflict', summary: 'Ambiguous family email task' }, candidateMemories: [{ id: 'correction-redacted', kind: 'correction', text: 'avoid using work email for family-related tasks', relevance: 0.99 }] });
+  const decision = decideOpenClawBrainIntervention({ profileId: 'family', openclawProfile: 'FamilyProfile', agentId: 'family-agent', sessionKey: 'session-redacted', runtimeMode: 'conservative', redactedTurn: { turnId: 't2', turnType: 'stale-memory-conflict', summary: 'Ambiguous family email task' }, candidateMemories: [{ id: 'correction-redacted', kind: 'correction', text: 'avoid using work email for family-related tasks', relevance: 0.99 }] });
   assert.equal(decision.kind, 'correction_only');
   assert.match(decision.message, /Relevant user correction/);
   assert.equal(decision.proof.profile_id, 'family');
+  assert.equal(decision.proof.openclaw_profile, 'FamilyProfile');
+  assert.equal(decision.proof.agent_id, 'family-agent');
+  assert.match(decision.proof.session_key_hash, /^sha256:/);
+  assert.equal(decision.proof.contains_real_user_data, false);
 });
 
 test('selected product policy injects bounded context for continuation', () => {

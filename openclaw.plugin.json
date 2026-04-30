@@ -9,10 +9,18 @@
     "properties": {
       "enabled": { "type": "boolean", "default": true },
       "mode": { "type": "string", "enum": ["off", "proof-only", "conservative", "active"], "default": "conservative" },
+      "openclawProfile": { "type": "string", "default": "main" },
       "activationRoot": { "type": "string", "default": "~/.openclawbrain/activation/main" },
       "proofEvents": { "type": "boolean", "default": true },
       "rawTranscriptUpload": { "type": "boolean", "const": false, "default": false },
-      "scopes": { "type": "object", "additionalProperties": false, "properties": { "agents": { "type": "array", "items": { "type": "string" } } } },
+      "scopes": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "agents": { "type": "array", "items": { "type": "string" }, "default": ["main"] },
+          "sessionKeys": { "type": "array", "items": { "type": "string" }, "default": [] }
+        }
+      },
       "candidateMemories": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string" }, "kind": { "type": "string" }, "text": { "type": "string" }, "relevance": { "type": "number" }, "stale": { "type": "boolean" }, "conflict": { "type": "boolean" } } } }
     }
   }

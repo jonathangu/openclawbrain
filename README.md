@@ -17,7 +17,7 @@ It is not a general intelligence layer. It is not a cloud memory service. It doe
 ```bash
 npm install -g openclawbrain
 openclawbrain install
-openclawbrain enable --profile main
+openclawbrain enable --profile main --agent main
 openclawbrain status --profile main
 ```
 
@@ -33,7 +33,7 @@ OpenClawBrain ships as one user-visible package with internal workspaces:
 
 - `packages/runtime-policy` — pure deterministic selected product policy.
 - `packages/proof-store` — local redacted proof/status store.
-- `packages/openclaw-plugin` — native OpenClaw plugin entry and manifest.
+- `packages/openclaw-plugin` — native OpenClaw plugin entry, manifest, prompt hooks, lifecycle hooks, and status HTTP route.
 - `packages/openclaw-integration` — compatibility adapter export for the profile-bound OpenClaw integration surface.
 - `packages/installer` — thin wrapper around OpenClaw plugin/config commands.
 - `packages/cli` — `openclawbrain` command shell.
@@ -52,10 +52,11 @@ OpenClaw config belongs under the plugin entry:
         },
         config: {
           mode: "conservative",
+          openclawProfile: "main",
           activationRoot: "~/.openclawbrain/activation/main",
           proofEvents: true,
           rawTranscriptUpload: false,
-          scopes: { agents: ["main"] },
+          scopes: { agents: ["main"], sessionKeys: [] },
         },
       },
     },
@@ -71,7 +72,9 @@ Do not configure OpenClawBrain with an unknown root `openclawbrain` key.
 openclawbrain proof --profile main
 ```
 
-Proof events are local, redacted JSONL. The proof surface reports decisions like `stay_silent`, `correction_only`, `full_context`, and `proof_only` without storing raw private transcripts.
+Proof events are local, redacted JSONL. The proof surface reports decisions like `stay_silent`, `correction_only`, `full_context`, and `proof_only` without storing raw private transcripts. Scope is recorded as `openclawProfile` + `agentId` + `sessionKeyHash`, not just a human label like `main`.
+
+v0 uses prompt hooks for bounded injection and does not replace OpenClaw's context engine. If prompt injection is disabled for the plugin, OpenClawBrain fails closed and records a `stay_silent` proof event.
 
 ## Disable / uninstall
 
