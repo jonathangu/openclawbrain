@@ -88,15 +88,16 @@ async function writeRunState({ resultsGenerated, decisionGenerated }) {
       "Synthetic smoke traces are not product evidence.",
       "Need at least 40 admitted real privacy-scrubbed traces across V5 slice minimums.",
       "Need completed non-synthetic blind judgments for production evidence.",
+      "Runtime decision events and candidates are candidate-only until admitted and judged.",
     ],
   }, null, 2)}\n`, "utf8");
 }
 
 async function writeBlockerArtifacts() {
   await mkdir(docsResultsDir, { recursive: true });
-  await writeFile(join(docsResultsDir, "BLOCKERS.md"), `# Evidence Blockers\n\n- Synthetic smoke traces are not product evidence.\n- 0/40 admitted real privacy-scrubbed traces are present.\n- Production blind judging is not complete.\n- V5 slice minimums are not met with real admitted traces.\n`, "utf8");
-  await writeFile(join(docsResultsDir, "NEXT_DATA_NEEDED.md"), `# Next Data Needed\n\n1. Collect at least 40 admitted real privacy-scrubbed traces.\n2. Cover V5 slices: direct-answer, continuation, correction-follow-up, retrieval-heavy, tool-heavy, stale-memory-conflict.\n3. Generate blind packets and import non-synthetic judgments.\n4. Regenerate results and apply product thresholds.\n`, "utf8");
-  await writeFile(join(docsResultsDir, "PARTIAL_COMPLETION.md"), `# Partial Completion\n\nEngineering E2E is complete for smoke mode: schema tests, trace validation, four-backend eval, blind packets, synthetic judgment import, results generation, decision generation, and RUN_STATE writing.\n\nEvidence E2E remains false by design until real admitted traces and real judgments exist.\n`, "utf8");
+  await writeFile(join(docsResultsDir, "BLOCKERS.md"), `# Evidence Blockers\n\n- Synthetic smoke traces are not product evidence.\n- 0/40 admitted real privacy-scrubbed traces are present.\n- Production blind judging is not complete.\n- V5 slice minimums are not met with real admitted traces.\n- Runtime decision events and candidates remain candidate-only until admitted and judged through the production evidence gate.\n`, "utf8");
+  await writeFile(join(docsResultsDir, "NEXT_DATA_NEEDED.md"), `# Next Data Needed\n\n1. Collect at least 40 admitted real privacy-scrubbed traces from actual agent turns.\n2. Cover V5 slices: direct-answer, continuation, correction-follow-up, retrieval-heavy, tool-heavy, stale-memory-conflict.\n3. Export runtime decision events into trace candidates, admit only valid real redacted traces, and keep rejected candidates out of product counts.\n4. Generate blind packets and import non-synthetic judgments.\n5. Regenerate results and apply product thresholds.\n`, "utf8");
+  await writeFile(join(docsResultsDir, "PARTIAL_COMPLETION.md"), `# Partial Completion\n\nEngineering E2E is complete for smoke mode: schema tests, trace validation, four-backend eval, blind packets, synthetic judgment import, results generation, decision generation, and RUN_STATE writing.\n\nThe minimal runtime decision interface is connected to candidate-only runtime event capture and trace candidate export, so actual agent turns can now feed the V5 evidence pipeline without bypassing admission.\n\nEvidence E2E remains false by design until 40 admitted real privacy-scrubbed traces, required slice minimums, and real blind judgments exist.\n`, "utf8");
 }
 
 async function verifyArtifacts() {

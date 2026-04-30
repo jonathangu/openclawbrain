@@ -38,6 +38,7 @@ Smoke commands validate pipeline mechanics only. They must not claim product evi
 | `pnpm ocb:results:generate` | Generate `/results` artifacts. | Generates results from ledger rows only, including warnings and per-slice tables. |
 | `pnpm ocb:decision:generate` | Generate product decision memo. | Applies fixed thresholds and emits exactly one allowed outcome or a declared blocker. |
 | `pnpm ocb:e2e:smoke` | Run full smoke pipeline. | Completes Engineering E2E on 4–8 labeled synthetic traces and writes `RUN_STATE.json`. |
+| `pnpm ocb:runtime:decide` | Decide one redacted runtime agent turn. | Deterministically emits `fire` or `stay_silent`, captures a candidate-only runtime event, and optionally exports an admission candidate. |
 
 If exact command names cannot be supported by the repository, equivalent commands must be mapped here before use.
 
@@ -51,7 +52,7 @@ eval/results/<run-id>/blind-judge-packets/
 eval/results/<run-id>/ledger-judged.synthetic.jsonl
 docs/results/index.md
 docs/results/summary.json
-docs/results/30_DAY_DECISION.synthetic.md
+docs/results/30_DAY_DECISION.blocked.md
 eval/results/<run-id>/RUN_STATE.json
 ```
 
@@ -163,3 +164,11 @@ Runtime export requires `privacy_scrubbed=true`, `contains_real_user_data=false`
 - `pnpm ocb:runtime:capture-event:test` verifies candidate-only event capture, manifest writing, export handoff, and raw/secret rejection.
 
 Captured runtime events are private/generated artifacts and are ignored by git. They are candidate-only and do not count as product evidence until exported and admitted.
+
+## Runtime decision interface
+
+- `pnpm ocb:runtime:decide -- --input <redacted-decision-input.json>` deterministically decides `fire` or `stay_silent` for one redacted agent turn and stores the resulting runtime event through `ocb:runtime:capture-event`.
+- `pnpm ocb:runtime:decide -- --input <redacted-decision-input.json> --candidate-out <trace-candidate.json>` also runs `ocb:runtime:export-candidate` against the captured event.
+- `pnpm ocb:runtime:decide:test` verifies fire, restraint/silence, privacy rejection, malformed input rejection, and candidate export compatibility.
+
+The decision interface is intentionally minimal: it uses explicit redacted inputs, a deterministic threshold over redacted memory candidates, reproducibility metadata, and no external mutating services. Its outputs remain candidate-only until the normal trace admission, production validation, and judging gates pass.
