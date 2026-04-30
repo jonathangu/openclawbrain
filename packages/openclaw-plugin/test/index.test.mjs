@@ -195,6 +195,8 @@ test('plugin registers native surfaces, primary hook, optional hook safely, and 
   assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/status'));
   assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/proof'));
   assert.equal(services[0].id, 'openclawbrain');
+  assert.equal(typeof services[0].start, 'function');
+  assert.equal(typeof services[0].stop, 'function');
 
   const withoutHookDiscovery = [];
   plugin.register({ pluginConfig: { enabled: true }, on: (name, fn) => withoutHookDiscovery.push([name, fn]) });

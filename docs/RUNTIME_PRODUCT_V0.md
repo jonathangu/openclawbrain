@@ -118,4 +118,4 @@ pnpm --dir packages/openclaw-plugin build
 openclaw plugins install -l ./packages/openclaw-plugin
 ```
 
-The public install path is complete only after tarball/fresh install, live OpenClaw inspect, a real turn, status/proof verification, and disable path pass. `v0.1.0` is the native plugin release candidate. Public release follows `docs/RELEASE_RUNBOOK.md`: replace the legacy ClawHub Skill with this Code Plugin, verify provenance, then fresh-install `clawhub:openclawbrain`.
+The public install path is complete only after tarball/fresh install, live OpenClaw inspect, a real turn, status/proof verification, and disable path pass. `v0.1.1` is the native plugin release candidate. Public release follows `docs/RELEASE_RUNBOOK.md`: replace the legacy ClawHub Skill with this Code Plugin, verify provenance, then fresh-install `clawhub:openclawbrain`.

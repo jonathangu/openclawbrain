@@ -95,4 +95,4 @@ pnpm ocb:e2e:smoke
 pnpm ocb:e2e:production
 ```
 
-`v0.1.0` is the native plugin release candidate for ClawHub. The legacy ClawHub `openclawbrain` Skill is being replaced by this Code Plugin so the canonical install path is `openclaw plugins install clawhub:openclawbrain`. npm remains optional and is not part of v0.1.
+`v0.1.1` is the native plugin release candidate for ClawHub. The legacy ClawHub `openclawbrain` Skill is being replaced by this Code Plugin so the canonical install path is `openclaw plugins install clawhub:openclawbrain`. npm remains optional and is not part of v0.1.

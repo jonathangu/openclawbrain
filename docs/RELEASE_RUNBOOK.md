@@ -43,7 +43,7 @@ Do not ship a separate installer, root `openclawbrain` config key, or context-en
    - preserve the old listing state in logs/output before mutation;
    - hide/delete/supersede the legacy Skill as needed;
    - publish this package as the canonical `openclawbrain` Code Plugin;
-   - verify package inspect/explore and fresh install resolve to Code Plugin `openclawbrain@0.1.0`.
+   - verify package inspect/explore and fresh install resolve to Code Plugin `openclawbrain@0.1.1`.
 
 3. **Publish with GitHub-tag provenance.** Prefer publishing from a GitHub tag. If local-folder publish is required, pass explicit source repo/commit/ref overrides and verify ClawHub records them.
 
@@ -96,7 +96,7 @@ Metadata gate:
 node -e '
 const p=require("./packages/openclaw-plugin/package.json");
 if (p.name !== "openclawbrain") throw new Error("wrong package name");
-if (p.version !== "0.1.0") throw new Error("wrong package version");
+if (p.version !== "0.1.1") throw new Error("wrong package version");
 if (!p.openclaw?.extensions?.includes("./src/index.ts")) throw new Error("missing source extension");
 if (!p.openclaw?.runtimeExtensions?.includes("./dist/index.js")) throw new Error("missing runtime extension");
 if (!p.openclaw?.compat?.pluginApi) throw new Error("missing plugin API compat");
@@ -141,9 +141,9 @@ Do not make the bundled-disabled lane the only fresh-install gate; it is useful 
 
 ```bash
 git push origin main
-git tag -a openclawbrain-v0.1.0 -m "OpenClawBrain native plugin v0.1.0"
-git push origin openclawbrain-v0.1.0
-git rev-parse openclawbrain-v0.1.0^{commit}
+git tag -a openclawbrain-v0.1.1 -m "OpenClawBrain native plugin v0.1.1"
+git push origin openclawbrain-v0.1.1
+git rev-parse openclawbrain-v0.1.1^{commit}
 ```
 
 Only tag after the package version gate passes. The package version, Git tag, GitHub release title, and ClawHub version must all agree.
@@ -153,17 +153,17 @@ Only tag after the package version gate passes. The package version, Git tag, Gi
 Preferred:
 
 ```bash
-clawhub package publish jonathangu/openclawbrain@openclawbrain-v0.1.0 --dry-run --json
+clawhub package publish jonathangu/openclawbrain@openclawbrain-v0.1.1 --dry-run --json
 ```
 
 If package-root resolution requires a local folder, dry-run with explicit source metadata:
 
 ```bash
-EXPECTED_SHA=$(git rev-parse openclawbrain-v0.1.0^{commit})
+EXPECTED_SHA=$(git rev-parse openclawbrain-v0.1.1^{commit})
 clawhub package publish packages/openclaw-plugin \
   --source-repo jonathangu/openclawbrain \
   --source-commit "$EXPECTED_SHA" \
-  --source-ref refs/tags/openclawbrain-v0.1.0 \
+  --source-ref refs/tags/openclawbrain-v0.1.1 \
   --dry-run \
   --json
 ```
@@ -172,13 +172,13 @@ Dry-run JSON must prove:
 
 - package root = `packages/openclaw-plugin`
 - package name/slug = `openclawbrain` (or the chosen collision-safe slug)
-- version = `0.1.0`
+- version = `0.1.1`
 - format = native OpenClaw plugin
 - manifest id = `openclawbrain`
 - runtime extension = `./dist/index.js`
 - `configSchema` present
 - source repo = `jonathangu/openclawbrain`
-- source ref = `openclawbrain-v0.1.0`
+- source ref = `openclawbrain-v0.1.1`
 - source commit = expected SHA
 - package files exclude test/cache/local proof data
 
@@ -202,7 +202,7 @@ Use `clawhub delete openclawbrain` only if hide does not free/supersede the slug
 Preferred publish:
 
 ```bash
-clawhub package publish jonathangu/openclawbrain@openclawbrain-v0.1.0 --json
+clawhub package publish jonathangu/openclawbrain@openclawbrain-v0.1.1 --json
 ```
 
 Fallback only if dry-run proved exact metadata:
@@ -211,7 +211,7 @@ Fallback only if dry-run proved exact metadata:
 clawhub package publish packages/openclaw-plugin \
   --source-repo jonathangu/openclawbrain \
   --source-commit "$EXPECTED_SHA" \
-  --source-ref refs/tags/openclawbrain-v0.1.0 \
+  --source-ref refs/tags/openclawbrain-v0.1.1 \
   --json
 ```
 

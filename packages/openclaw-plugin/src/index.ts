@@ -102,9 +102,12 @@ function registerLifecycleHooks(api: any, resolve: any) {
 function registerFirstClassSurfaces(api: any, resolve: any) {
   api.registerService?.({
     id: PLUGIN_ID,
-    name: 'OpenClawBrain status and proof service',
-    status: async () => statusPayload(resolve()),
-    proof: async ({ limit }: any = {}) => proofPayload(resolve(), limit)
+    start: async () => {
+      await writeGatewayStatus('service_start', {}, resolve(), api);
+    },
+    stop: async () => {
+      await writeGatewayStatus('service_stop', {}, resolve(), api);
+    }
   });
   api.registerHttpRoute?.({
     path: '/plugins/openclawbrain/status',
