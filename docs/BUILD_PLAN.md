@@ -1,22 +1,26 @@
 # OpenClawBrain Build Plan — Native OpenClaw Plugin
 
 Date: 2026-04-30
-Status: rewritten after product/integration review
+Status: greenlit after OpenClaw-native review
 Decision state: **BUILD A PURE NATIVE OPENCLAW PLUGIN**
 
 ## 0. The one-sentence goal
 
-OpenClawBrain should become the smallest trustworthy native OpenClaw plugin that helps an OpenClaw agent use corrections, continuation context, and verification hints only when useful, while staying local, profile/agent scoped, conservative, and inspectable.
+OpenClawBrain should become the smallest trustworthy native OpenClaw plugin that helps an OpenClaw agent use corrections, continuation context, and verification hints only when useful, while staying local, agent-scoped, conservative, and inspectable.
 
 ## 1. Product shape
 
-Ship one thing:
+Ship one thing through OpenClaw's plugin lifecycle:
 
 ```bash
 openclaw plugins install openclawbrain
 openclaw plugins enable openclawbrain
+
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
-openclaw config set plugins.entries.openclawbrain.config.mode conservative
+openclaw config set plugins.entries.openclawbrain.config.mode '"conservative"' --strict-json
+openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+
+openclaw config validate
 openclaw gateway restart
 openclaw plugins inspect openclawbrain --json
 ```
@@ -25,12 +29,13 @@ No separate installer package for v1.
 No external runtime adapter.
 No root `openclawbrain` config key.
 No context-engine replacement.
+No CLI-first product requirement.
 
 The product lives inside OpenClaw’s plugin lifecycle and is ultimately used through OpenClaw.
 
 ## 2. User-facing promise
 
-OpenClawBrain is a local, profile-bound selective intervention layer for OpenClaw.
+OpenClawBrain is a local, agent-scoped selective intervention layer for OpenClaw.
 
 It helps an OpenClaw agent:
 
@@ -109,6 +114,22 @@ Required config fields:
 - `rawTranscriptUpload`: const `false`
 - `scopes.agents`: default `["main"]`; empty array means all agents
 
+### Hook permissions
+
+Prompt mutation requires explicit plugin hook permission:
+
+```bash
+openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+```
+
+Do not require conversation access by default.
+
+Only set this if a later feature truly needs final-message/full-conversation observation:
+
+```bash
+openclaw config set plugins.entries.openclawbrain.hooks.allowConversationAccess true --strict-json
+```
+
 ### Hook usage
 
 Use prompt hooks, not the context engine:
@@ -116,17 +137,23 @@ Use prompt hooks, not the context engine:
 - `before_prompt_build` — primary v1 injection seam.
 - `agent_turn_prepare` — use only if current OpenClaw runtime exposes it; otherwise treat as future-compatible.
 - `model_call_started` / `model_call_ended` — sanitized model-call telemetry only.
-- `agent_end` — status/proof-adjacent observation where allowed.
 - `gateway_start` / `gateway_stop` — service lifecycle and health/status surface.
+
+Optional only:
+
+- `agent_end` — disabled by default; use only when `plugins.entries.openclawbrain.hooks.allowConversationAccess=true` and the feature truly needs it.
 
 Do not use `before_tool_call` for “tool-heavy verification” in v1. That hook happens after the model chooses a tool. For v1, inject a bounded verification hint before prompt build.
 
-### First-class surface beyond hooks
+### First-class surfaces beyond hooks
 
-Register at least one first-class plugin capability:
+Register first-class plugin capabilities:
 
 - `api.registerService(...)` for OpenClawBrain status/health/proof-store service.
-- `api.registerHttpRoute(...)` for local plugin status/proof inspection, e.g. `/plugins/openclawbrain/status`.
+- `api.registerHttpRoute(...)` for local plugin status inspection: `/plugins/openclawbrain/status`.
+- `api.registerHttpRoute(...)` for local bounded proof inspection: `/plugins/openclawbrain/proof?limit=20`.
+
+The proof route must return recent redacted proof events only, never raw prompts or raw transcripts.
 
 This avoids being merely hook-only and aligns with OpenClaw plugin expectations.
 
@@ -140,7 +167,7 @@ Input:
 - redacted prompt
 - prompt hash
 - timestamp
-- profile id / OpenClaw config identity
+- OpenClaw config/profile identity when available
 - agent id
 - session key hash
 - run id hash
@@ -178,8 +205,12 @@ OpenClawBrain reads only small local activation files under `activationRoot`:
 
 Rules:
 
+- read only fixed filenames, never arbitrary user-provided paths,
 - read only when the policy fires,
-- max file size cap,
+- reject symlinks,
+- reject files over the byte cap before reading,
+- treat `activationRoot` as local-only and never fetch remote URLs,
+- create proof/context directories with owner-only permissions where possible,
 - redact before use,
 - clip to `maxContextChars`,
 - record only redacted memory/file ids in proof,
@@ -223,9 +254,13 @@ Proof event minimum:
   "reasonCode": "...",
   "usedMemoryIdsRedacted": [],
   "rawTranscriptStored": false,
-  "containsRealUserData": false
+  "rawUserTextStored": false,
+  "redactionApplied": true,
+  "hashesOnlyForUserText": true
 }
 ```
+
+Avoid broad claims like `containsRealUserData=false`. Proof metadata is derived from user activity, even when raw user text is not stored. The defensible claim is: no raw transcript storage, redaction applied, and hashes only for user text.
 
 Retention:
 
@@ -233,7 +268,7 @@ Retention:
 
 ## 8. Status/proof UX
 
-Primary status should be available through OpenClaw plugin inspection/status route.
+Primary status should be available through OpenClaw plugin inspection and plugin HTTP routes.
 
 Target operator outputs:
 
@@ -241,7 +276,19 @@ Target operator outputs:
 openclaw plugins inspect openclawbrain --json
 ```
 
-and local route/service status:
+Status route:
+
+```text
+/plugins/openclawbrain/status
+```
+
+Proof route:
+
+```text
+/plugins/openclawbrain/proof?limit=20
+```
+
+Example status payload:
 
 ```json
 {
@@ -257,7 +304,7 @@ and local route/service status:
 }
 ```
 
-A standalone `openclawbrain` CLI is optional after v1 proves native plugin usage. It should not be required for install/enable/status.
+A standalone `openclawbrain` CLI is optional after v1 proves native plugin usage. It should not be required for install/enable/status/proof.
 
 ## 9. Implementation phases
 
@@ -288,12 +335,14 @@ npm pack --dry-run --workspace packages/openclaw-plugin
 Gate:
 
 - unit tests for all turn slices,
-- unit tests for `proof-only`, `off`, `conservative`, and fail-closed raw-upload config.
+- unit tests for `proof-only`, `off`, `conservative`, and fail-closed raw-upload config,
+- proof tests assert `rawTranscriptStored=false`, `rawUserTextStored=false`, `redactionApplied=true`, and `hashesOnlyForUserText=true`.
 
 ### Phase 3 — Context files and injection
 
 - Read `context.md`, `corrections.md`, `tool-guidance.md` only from activation root.
-- Enforce file size and context character limits.
+- Reject symlinks and oversized files before reading.
+- Enforce context character limits.
 - Redact and clip before injection.
 - Return bounded `prependContext` from `before_prompt_build`.
 - No context-engine slot usage.
@@ -303,7 +352,8 @@ Gate:
 - direct-answer returns no prompt mutation,
 - correction-only injects only correction guidance,
 - continuation/tool-heavy/retrieval-heavy inject bounded context,
-- injection disabled returns no mutation and writes proof.
+- injection disabled returns no mutation and writes proof,
+- arbitrary paths and symlinked activation files are rejected.
 
 ### Phase 4 — Proof and status service
 
@@ -311,13 +361,16 @@ Gate:
 - Retain last N events.
 - Write `status.json`.
 - Register service/status route.
-- Observe lifecycle/model-call hooks without storing prompt/response content.
+- Register bounded proof route.
+- Observe model-call hooks without storing prompt/response content.
+- Do not enable `agent_end` unless `allowConversationAccess=true` is explicitly configured.
 
 Gate:
 
 - status route returns JSON,
+- proof route returns bounded redacted recent events,
 - proof log contains no raw prompt,
-- proof contains `agentId`, `sessionKeyHash`, `promptHash`, and `containsRealUserData=false`.
+- proof contains `agentId`, `sessionKeyHash`, `promptHash`, `rawUserTextStored=false`, and `hashesOnlyForUserText=true`.
 
 ### Phase 5 — Native OpenClaw dogfood
 
@@ -327,7 +380,9 @@ Use a disposable/local profile first:
 openclaw plugins install -l ./packages/openclaw-plugin
 openclaw plugins enable openclawbrain
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
-openclaw config set plugins.entries.openclawbrain.config.mode conservative
+openclaw config set plugins.entries.openclawbrain.config.mode '"conservative"' --strict-json
+openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+openclaw config validate
 openclaw gateway restart
 openclaw plugins inspect openclawbrain --json
 ```
@@ -343,6 +398,7 @@ Gate:
 
 - all four proof events written,
 - status route healthy,
+- proof route healthy,
 - no raw transcript stored,
 - no cross-agent activation-root leakage.
 
@@ -356,6 +412,9 @@ npm pack
 openclaw plugins install ./openclawbrain-0.1.0.tgz
 openclaw plugins enable openclawbrain
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.mode '"conservative"' --strict-json
+openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+openclaw config validate
 openclaw gateway restart
 openclaw plugins inspect openclawbrain --json
 ```
@@ -365,7 +424,7 @@ Gate:
 - no repo-relative assumptions,
 - manifest discovered,
 - `dist/index.js` loaded,
-- status/proof route works.
+- status/proof routes work.
 
 ### Phase 7 — Evidence regression
 
@@ -387,12 +446,12 @@ Gate:
 
 Before publishing:
 
-- package name locked: `openclawbrain`
-- license/repository metadata added
-- README rewritten around OpenClaw plugin lifecycle
-- provenance-ready CI path created
-- fresh machine/install path tested
-- uninstall/disable path verified
+- package name locked: `openclawbrain`,
+- license/repository metadata added,
+- README rewritten around OpenClaw plugin lifecycle,
+- provenance-ready CI path created,
+- fresh machine/install path tested,
+- uninstall/disable path verified.
 
 Publish only after:
 
@@ -400,10 +459,13 @@ Publish only after:
 openclaw plugins install openclawbrain
 openclaw plugins enable openclawbrain
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.mode '"conservative"' --strict-json
+openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+openclaw config validate
 openclaw gateway restart
 openclaw plugins inspect openclawbrain --json
 # run real OpenClaw turn
-# inspect status/proof
+# inspect status/proof routes
 openclaw plugins disable openclawbrain
 ```
 
@@ -423,4 +485,4 @@ Do not build yet:
 
 ## 11. Definition of done
 
-OpenClawBrain v0.1 is done when a normal OpenClaw user can install the plugin through OpenClaw, enable it for one agent, run real turns, see conservative bounded interventions, and inspect local proof showing exactly what happened without raw transcript storage.
+OpenClawBrain v0.1 is done when a normal OpenClaw user can install the plugin through OpenClaw, enable it for one agent, run real turns, see conservative bounded interventions, and inspect local status/proof routes showing exactly what happened without raw transcript or raw user-text storage.
