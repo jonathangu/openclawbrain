@@ -10,7 +10,7 @@ const VALID_SLICES = new Set(["direct-answer", "continuation", "correction-follo
 const VALID_PROVENANCE = new Set(["real", "synthetic", "repo-derived", "adversarial"]);
 const SECRET_KEY_RE = /(^|[_-])(api[_-]?key|access[_-]?token|refresh[_-]?token|authorization|cookie|password|secret|private[_-]?key)$/iu;
 const RAW_KEY_RE = /(^|[_-])(raw[_-]?(messages?|transcript|text|content)|unredacted|user[_-]?task[_-]?raw|assistant[_-]?answer[_-]?raw)$/iu;
-const SECRET_VALUE_RE = /(-----BEGIN [A-Z ]*PRIVATE KEY-----|sk-[A-Za-z0-9_-]{12,}|xox[baprs]-[A-Za-z0-9-]{12,}|AKIA[0-9A-Z]{12,}|API_KEY=|PASSWORD=|ACCESS_TOKEN=)/u;
+const SECRET_VALUE_RE = /(-----BEGIN [A-Z ]*PRIVATE KEY-----|(^|[^A-Za-z0-9])sk-[A-Za-z0-9_-]{12,}|xox[baprs]-[A-Za-z0-9-]{12,}|AKIA[0-9A-Z]{12,}|API_KEY=|PASSWORD=|ACCESS_TOKEN=)/u;
 
 export async function exportCandidate(options) {
   const eventPath = required(options.event, "event");
