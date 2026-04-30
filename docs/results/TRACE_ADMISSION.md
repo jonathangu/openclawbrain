@@ -101,3 +101,24 @@ Production mode must fail closed and produce blockers if:
 - judge disagreement threshold is exceeded
 
 Blocker artifacts are honest completion state, not failure.
+
+## Runtime Candidate Export
+
+Runtime capture must emit redacted candidate files before admission. The canonical path is:
+
+```bash
+pnpm ocb:runtime:export-candidate -- --event <redacted-runtime-event.json> --out <trace-candidate.json>
+pnpm ocb:traces:admit -- --candidate <trace-candidate.json> --admit
+```
+
+A runtime event must be redacted before export and include:
+
+- `event_id`, `source`, `title`, `task_type`, `user_task_redacted`
+- preassigned V5 `slice`
+- `expected_memory_opportunity` labeled before backend scoring
+- `privacy_scrubbed=true`
+- `contains_real_user_data=false`
+- `memory_snapshot_id`, `memory_snapshot_created_at`, `ocb_config_hash`, `model_id`, `prompt_hash`, `code_commit`
+- `reproducibility.deterministic=true`
+
+The exporter rejects raw/unredacted fields and secret-like keys or values. It produces candidate JSON only; `ocb:traces:admit --admit` remains the gate that decides whether the trace counts as product evidence.
