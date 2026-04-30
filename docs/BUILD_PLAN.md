@@ -1,981 +1,426 @@
-# OpenClawBrain Build Plan
+# OpenClawBrain Build Plan — Native OpenClaw Plugin
 
 Date: 2026-04-30
-Status: post-evidence, pre-productization
-Decision state: **CONTINUE**
+Status: rewritten after product/integration review
+Decision state: **BUILD A PURE NATIVE OPENCLAW PLUGIN**
 
-## 0. Executive summary
+## 0. The one-sentence goal
 
-OpenClawBrain should stop trying to win as a broad research artifact and start winning as a **small trustworthy runtime product**.
+OpenClawBrain should become the smallest trustworthy native OpenClaw plugin that helps an OpenClaw agent use corrections, continuation context, and verification hints only when useful, while staying local, profile/agent scoped, conservative, and inspectable.
 
-The product to build is:
+## 1. Product shape
 
-- **one install path**
-- **one public version story**
-- **per-profile enablement**
-- **conservative default behavior**
-- **visible local proof of when it helped**
-- **easy disable / uninstall**
+Ship one thing:
 
-The current repo already proves the selected policy is worth continuing:
+```bash
+openclaw plugins install openclawbrain
+openclaw plugins enable openclawbrain
+openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.mode conservative
+openclaw gateway restart
+openclaw plugins inspect openclawbrain --json
+```
 
-- selected product policy wins: `40/40`
-- selected product policy harms: `0/40`
-- `evidence_e2e_complete=true`
-- decision: `CONTINUE`
+No separate installer package for v1.
+No external runtime adapter.
+No root `openclawbrain` config key.
+No context-engine replacement.
 
-What is missing is not more scoreboard work. What is missing is the **runtime + install shell** that lets a normal OpenClaw user install it, turn it on for one profile, get one better turn, and inspect why.
+The product lives inside OpenClaw’s plugin lifecycle and is ultimately used through OpenClaw.
 
----
+## 2. User-facing promise
 
-## 1. Product goal
+OpenClawBrain is a local, profile-bound selective intervention layer for OpenClaw.
 
-### What OpenClawBrain should be
-
-> A local, profile-bound selective intervention layer for OpenClaw.
-
-It should help a profile:
+It helps an OpenClaw agent:
 
 - remember corrections,
 - continue bounded work,
-- add relevant context for retrieval-heavy and tool-heavy turns,
+- use relevant local context,
+- verify before claiming when the turn is tool-heavy,
 - stay silent on direct answers,
-- show local redacted proof of what it did.
+- show local proof of what it did.
 
-### What it should not be
+It is not:
 
-Do **not** position it as:
+- generic agent memory,
+- a cloud memory service,
+- a smarter-brain marketing layer,
+- a replacement for OpenClaw memory/search/context engine,
+- something that should fire every turn.
 
-- general memory for everything
-- a general intelligence upgrade
-- a cloud memory system
-- a product that uploads raw transcripts
-- something that fires on every turn
-
-The winning UX is: **quiet most of the time, useful at the right moments, inspectable after the fact**.
-
----
-
-## 2. Current repo truth and code anchors
-
-These are the current assets to build on instead of replacing blindly.
-
-### Evidence and command surface
-
-- `package.json`
-  - canonical scripts already exist for trace admission, eval, runtime decision capture, evidence runs, and results generation.
-  - important current truth: root package is still `private: true`, so publishing is not ready.
-
-- `docs/results/COMMANDS.md`
-  - canonical contract for the current command surface.
-  - already defines the runtime evidence lane, fail-closed behavior, and required artifacts.
-
-### Current runtime seam
-
-- `scripts/runtime/decide.mjs`
-  - current deterministic runtime decision interface.
-  - already enforces redacted inputs, deterministic output, `fire` vs `stay_silent`, reproducibility metadata, and candidate export.
-  - this is the strongest seed for the future runtime-policy package.
-
-- `scripts/runtime/capture-event.mjs`
-  - current redacted runtime event normalization and capture.
-  - already writes candidate-only runtime events and manifest entries.
-
-- `scripts/runtime/export-candidate.mjs`
-  - converts runtime events into trace-admission candidates.
-  - already fail-closes on raw/unredacted/secret-like fields.
-
-### Eval semantics to preserve
-
-- `packages/eval-harness/src/backend-types.ts`
-  - defines the current backend contract and intervention vocabulary.
-
-- `packages/eval-harness/src/backends/full-ocb.ts`
-  - current full-context eval adapter.
-  - useful as the semantic model for what `full_context` means in the product runtime.
-
-### Product decision logic already proven
-
-- `packages/results-site/src/decision.ts`
-  - critical: scores only `product_selected=true` rows when computing product thresholds.
-  - this is the code embodiment of the current product truth.
-
-- `docs/STATE_AND_NEXT.md`
-- `docs/PRODUCTIZATION_PLAN.md`
-  - current repo docs describing the transition from evidence gate to productization.
-
-### Trace and evidence pipeline to keep intact
-
-- `scripts/traces/admit.mjs`
-- `scripts/traces/status.mjs`
-- `scripts/ocb-e2e-production.mjs`
-- `scripts/evidence/build-session-log-production-traces.mjs`
-- `scripts/evidence/judge-blind-packets.mjs`
-
-These should remain as the evidence spine while the product shell is built around them.
-
----
-
-## 3. Durable product constraints
-
-These are already learned constraints and should become explicit product rules.
-
-1. **One single public install path and version story.**  
-   Source: `memory/2026-04-02.md#L27`.
-
-2. **Safest install shape is per-profile activation roots.**  
-   Example: `~/.openclawbrain/activation/<ProfileName>`.  
-   Source: `memory/2026-03-11.md#L18`.
-
-3. **Install should use a normal shell, not a live agent session.**  
-   Source: `memory/2026-03-11.md#L28`.
-
-4. **OpenClawBrain should attach at the profile boundary, not leak across profiles.**
-
-5. **The product must be allowed to stay silent.** Silence is success on direct-answer turns.
-
-6. **No raw transcript upload.** Redacted proof only.
-
-7. **A truthful plugin should expose at least one first-class service beyond hook-only behavior.**  
-   Source: `memory/2026-04-02.md#L27`.
-
----
-
-## 4. Target product architecture
-
-Build toward this repo shape:
+## 3. Canonical package layout
 
 ```text
-openclawbrain/
-  packages/
-    runtime-policy/
-    openclaw-integration/
-    proof-store/
-    cli/
-    installer/
-  docs/
-  scripts/
-  eval/
-```
-
-### 4.1 `packages/runtime-policy`
-
-Purpose: pure deterministic decision engine.
-
-Owns:
-
-- turn classification to selected product slices
-- selected policy mapping
-- confidence / abstain behavior
-- proof event generation
-- zero side effects
-
-Primary exported function:
-
-```ts
-decideOpenClawBrainIntervention(input): InterventionDecision
-```
-
-### 4.2 `packages/openclaw-integration`
-
-Purpose: bind OpenClawBrain to real OpenClaw profile turns.
-
-Owns:
-
-- reading profile config
-- receiving redacted turn input
-- reading candidate memories / bounded context
-- calling runtime-policy
-- injecting intervention payloads back into the runtime boundary
-- writing proof events
-- exposing a small first-class capability/service for runtime integrity/status
-
-### 4.3 `packages/proof-store`
-
-Purpose: local proof trail storage and rendering.
-
-Owns:
-
-- proof event schema
-- append-only local event writes
-- rotation / retention
-- per-profile event queries
-- `status` and `proof` summaries
-
-### 4.4 `packages/cli`
-
-Purpose: single user-facing command: `openclawbrain`.
-
-Owns:
-
-- install / enable / disable / status / proof / doctor / uninstall
-- human-readable output
-- `--json` machine output where useful
-
-### 4.5 `packages/installer`
-
-Purpose: installation and profile patching logic.
-
-Owns:
-
-- activation-root creation
-- OpenClaw profile patching
-- extension/link placement
-- restart instructions / helper execution
-- uninstall and cleanup behavior
-
----
-
-## 5. Phase-by-phase build plan
-
-## Phase 1 — Extract the runtime policy core
-
-### Goal
-
-Turn the selected evidence policy into a reusable pure package.
-
-### Why first
-
-Right now the repo has a minimal deterministic runtime seam in `scripts/runtime/decide.mjs`, but it is not yet the real selected policy engine. Productization starts by making that policy explicit, typed, tested, and reusable.
-
-### Build steps
-
-#### 1.1 Create `packages/runtime-policy`
-
-Add:
-
-```text
-packages/runtime-policy/
+packages/openclaw-plugin/
   package.json
-  src/types.ts
-  src/classify-turn.ts
-  src/select-policy.ts
-  src/decide.ts
-  src/proof-event.ts
-  test/*.test.ts
+  tsconfig.json
+  openclaw.plugin.json
+  src/
+    index.ts
+    config.ts
+    redact.ts
+    policy.ts
+    context-files.ts
+    proof-store.ts
+    status.ts
 ```
 
-#### 1.2 Define runtime types
+This package is the publishable package: `openclawbrain`.
 
-Recommended types:
-
-```ts
-export type RuntimeMode = "off" | "proof-only" | "conservative" | "active";
-
-export type TurnSlice =
-  | "direct-answer"
-  | "continuation"
-  | "correction-follow-up"
-  | "retrieval-heavy"
-  | "tool-heavy"
-  | "stale-memory-conflict"
-  | "unknown";
-
-export type InterventionDecision =
-  | { kind: "stay_silent"; slice: TurnSlice; proof: ProofEvent }
-  | { kind: "correction_only"; slice: TurnSlice; message: string; proof: ProofEvent }
-  | { kind: "full_context"; slice: TurnSlice; context: string; proof: ProofEvent }
-  | { kind: "proof_only"; slice: TurnSlice; proof: ProofEvent };
-```
-
-#### 1.3 Port current deterministic discipline from existing code
-
-Reuse design constraints from:
-
-- `scripts/runtime/decide.mjs`
-- `scripts/runtime/capture-event.mjs`
-- `scripts/runtime/export-candidate.mjs`
-
-Preserve:
-
-- redacted-only input
-- deterministic reproducibility metadata
-- fail-closed raw/secret rejection
-- explicit `stay_silent`
-- candidate-only proof/event lane
-
-#### 1.4 Implement the selected policy mapping
-
-Hard-code the current product policy first:
-
-| Slice | Product action |
-|---|---|
-| `direct-answer` | `stay_silent` |
-| `correction-follow-up` | `correction_only` |
-| `stale-memory-conflict` | `correction_only` |
-| `continuation` | `full_context` |
-| `retrieval-heavy` | `full_context` |
-| `tool-heavy` | `full_context` |
-| `unknown` | `stay_silent` |
-
-#### 1.5 Add tests
-
-Mirror the style of existing repo tests:
-
-- `scripts/runtime/decide.test.mjs`
-- `scripts/runtime/capture-event.test.mjs`
-- `scripts/runtime/export-candidate.test.mjs`
-- `packages/results-schema/test/*.test.ts`
-
-Required test cases:
-
-- direct-answer => silent
-- correction-follow-up => correction_only
-- stale-memory-conflict => correction_only
-- continuation => full_context
-- retrieval-heavy => full_context
-- tool-heavy => full_context
-- unknown / low-confidence => silent
-- proof-only mode => no intervention, proof emitted
-- malformed / raw input => rejection
-
-### Exit gate
-
-- `packages/runtime-policy` exists and is pure.
-- Product policy is encoded once.
-- Tests cover all six slices plus fail-closed behavior.
-
----
-
-## Phase 2 — Build the proof event model
-
-### Goal
-
-Make the proof trail a first-class product surface, not an afterthought.
-
-### Why
-
-Without proof, users cannot trust selective intervention. The proof command is the trust interface.
-
-### Build steps
-
-#### 2.1 Create `packages/proof-store`
-
-Add:
-
-```text
-packages/proof-store/
-  package.json
-  src/schema.ts
-  src/write-event.ts
-  src/read-events.ts
-  src/render-status.ts
-  src/render-proof.ts
-  test/*.test.ts
-```
-
-#### 2.2 Define proof schema
-
-Recommended event shape:
-
-```ts
-type ProofEvent = {
-  schemaVersion: "ocb.proof.event.v1";
-  profileId: string;
-  eventId: string;
-  timestamp: string;
-  slice: TurnSlice;
-  mode: RuntimeMode;
-  decisionKind: "stay_silent" | "correction_only" | "full_context" | "proof_only";
-  reasonCode: string;
-  usedMemoryIdsRedacted: string[];
-  rawTranscriptStored: false;
-  containsRealUserData: false;
-};
-```
-
-#### 2.3 Reuse current runtime-event discipline
-
-Borrow from:
-
-- `scripts/runtime/capture-event.mjs`
-- `scripts/runtime/export-candidate.mjs`
-
-But split product proof from eval-trace export:
-
-- **proof events** = product trust surface
-- **trace candidates** = evidence pipeline inputs
-
-These are related but should not be conflated.
-
-#### 2.4 Add per-profile local storage
-
-Recommended layout:
-
-```text
-~/.openclawbrain/
-  profiles/
-    main/
-      proof-events.jsonl
-      status.json
-    pelican/
-      proof-events.jsonl
-```
-
-Or if activation-root discipline remains canonical:
-
-```text
-~/.openclawbrain/activation/<ProfileName>/
-  proof-events.jsonl
-  status.json
-```
-
-That shape is consistent with the prior install truth about dedicated activation roots per profile. Source: `memory/2026-03-11.md#L18`.
-
-#### 2.5 Add summary renderers
-
-Need two product renderings:
-
-1. `status`
-2. `proof`
-
-`status` answers:
-
-- is it enabled?
-- which mode?
-- did the adapter load?
-- last decision?
-- are proof events being written?
-
-`proof` answers:
-
-- what decisions happened recently?
-- which ones fired?
-- why?
-- was raw text stored? (must be no)
-
-### Exit gate
-
-- A profile can accumulate proof events.
-- Proof output is human-readable.
-- Storage is local and separated by profile.
-
----
-
-## Phase 3 — Build the OpenClaw runtime adapter
-
-### Goal
-
-Turn the pure policy into real runtime behavior on real turns.
-
-### Why
-n
-This is the actual bridge from research repo to product.
-
-### Build steps
-
-#### 3.1 Create `packages/openclaw-integration`
-
-Add:
-
-```text
-packages/openclaw-integration/
-  package.json
-  src/config.ts
-  src/profile-context.ts
-  src/redaction.ts
-  src/build-input.ts
-  src/apply-decision.ts
-  src/runtime-adapter.ts
-  src/service.ts
-  test/*.test.ts
-```
-
-#### 3.2 Build a redacted turn input builder
-
-Use the runtime decision contract as seed from:
-
-- `scripts/runtime/decide.mjs`
-
-The adapter should construct a `RuntimePolicyInput` from:
-
-- profile id
-- redacted current turn
-- candidate memories
-- tool-context summary
-- runtime mode
-
-#### 3.3 Build injection semantics
-
-Map decisions into real runtime behavior:
-
-- `stay_silent` => inject nothing
-- `correction_only` => inject only the correction payload
-- `full_context` => inject bounded context summary
-- `proof_only` => inject nothing, write proof
-
-Keep this conservative:
-
-- bounded text only
-- no giant transcript dumps
-- no profile mixing
-- no automatic mutation of external systems
-
-#### 3.4 Add first-class service capability
-
-This matters because earlier learned truth says a hook-only plugin is not the right end state. Source: `memory/2026-04-02.md#L27`.
-
-Add a small service owned by the integration package, for example:
-
-- runtime status / heartbeat
-- proof-store integrity check
-- adapter registration and health
-
-That service should be the truthful answer to “what is the plugin actually providing beyond a hook?”
-
-#### 3.5 Add opt-in profile config
-
-Target shape:
+Package metadata must declare:
 
 ```json
 {
-  "openclawbrain": {
-    "enabled": true,
-    "mode": "conservative",
-    "activationRoot": "~/.openclawbrain/activation/main",
-    "proofEvents": true,
-    "rawTranscriptUpload": false
+  "name": "openclawbrain",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist", "openclaw.plugin.json"],
+  "openclaw": {
+    "extensions": ["./dist/index.js"]
   }
 }
 ```
 
-#### 3.6 Dogfood with one profile first
+The old multi-package scaffold can remain as research/reference temporarily, but the v1 product path is the native plugin package above.
 
-Do **not** go broad immediately.
+## 4. Native OpenClaw integration contract
 
-Order:
+### Manifest
 
-1. `main`
-2. `pelican`
-3. `bountiful`
-4. `family`
+`openclaw.plugin.json` owns the schema.
 
-### Code pointers
-
-Current files that should directly shape this phase:
-
-- `scripts/runtime/decide.mjs`
-- `scripts/runtime/capture-event.mjs`
-- `scripts/runtime/export-candidate.mjs`
-- `packages/eval-harness/src/backend-types.ts`
-- `packages/eval-harness/src/backends/full-ocb.ts`
-
-### Exit gate
-
-- One real OpenClaw profile can enable OCB.
-- A real turn can be improved.
-- A proof event is written.
-- Direct-answer turns stay silent.
-
----
-
-## Phase 4 — Build the CLI shell
-
-### Goal
-
-Create the one user-facing command surface that normal users interact with.
-
-### Why
-
-Without CLI, the product is still a repo, not a tool.
-
-### Build steps
-
-#### 4.1 Create `packages/cli`
-
-Add:
+Config lives only at:
 
 ```text
-packages/cli/
-  package.json
-  src/main.ts
-  src/commands/install.ts
-  src/commands/enable.ts
-  src/commands/disable.ts
-  src/commands/status.ts
-  src/commands/proof.ts
-  src/commands/doctor.ts
-  src/commands/uninstall.ts
-  test/*.test.ts
+plugins.entries.openclawbrain.config
 ```
 
-#### 4.2 Minimum commands
+Required config fields:
 
-```bash
-openclawbrain install
-openclawbrain enable --profile <profile>
-openclawbrain disable --profile <profile>
-openclawbrain status --profile <profile>
-openclawbrain proof --profile <profile>
-openclawbrain doctor
-openclawbrain uninstall --profile <profile>
-```
+- `enabled`: default `false`
+- `mode`: `off | proof-only | conservative | active`, default `conservative`
+- `activationRoot`: default `~/.openclawbrain/activation/${agentId}`
+- `proofEvents`: default `true`
+- `proofRetentionEvents`: default `1000`
+- `maxContextChars`: default `3000`
+- `includeActivationContext`: default `true`
+- `rawTranscriptUpload`: const `false`
+- `scopes.agents`: default `["main"]`; empty array means all agents
 
-#### 4.3 Support `--json`
+### Hook usage
 
-Needed for:
+Use prompt hooks, not the context engine:
 
-- scripting
-- tests
-- future operator tooling
-- easier diagnosis
+- `before_prompt_build` — primary v1 injection seam.
+- `agent_turn_prepare` — use only if current OpenClaw runtime exposes it; otherwise treat as future-compatible.
+- `model_call_started` / `model_call_ended` — sanitized model-call telemetry only.
+- `agent_end` — status/proof-adjacent observation where allowed.
+- `gateway_start` / `gateway_stop` — service lifecycle and health/status surface.
 
-#### 4.4 `doctor` checks
+Do not use `before_tool_call` for “tool-heavy verification” in v1. That hook happens after the model chooses a tool. For v1, inject a bounded verification hint before prompt build.
 
-`doctor` should verify:
+### First-class surface beyond hooks
 
-- Node version compatibility
-- OpenClaw home path
-- target profile exists
-- activation root exists / writable
-- integration files linked/installed
-- proof-store writable
-- adapter service loadable
-- restart required / not required
+Register at least one first-class plugin capability:
 
-#### 4.5 `status` should be backed by real runtime facts
+- `api.registerService(...)` for OpenClawBrain status/health/proof-store service.
+- `api.registerHttpRoute(...)` for local plugin status/proof inspection, e.g. `/plugins/openclawbrain/status`.
 
-Not hand-wavy config only. It should include:
+This avoids being merely hook-only and aligns with OpenClaw plugin expectations.
 
-- enabled state
+## 5. Runtime policy
+
+Keep policy pure and deterministic inside `policy.ts`.
+
+Input:
+
 - mode
-- adapter loaded
-- proof events writing
-- last event timestamp
-- last decision kind
+- redacted prompt
+- prompt hash
+- timestamp
+- profile id / OpenClaw config identity
+- agent id
+- session key hash
+- run id hash
 
-### Code pointers
+Output:
 
-Use these current surfaces as the source of truth for behavior and naming:
+- `stay_silent`
+- `proof_only`
+- `correction_only`
+- `full_context`
 
-- `package.json`
-- `docs/results/COMMANDS.md`
-- `scripts/runtime/capture-event.mjs`
-- `scripts/runtime/export-candidate.mjs`
+Selected product policy:
 
-### Exit gate
+| Turn slice | Decision |
+| --- | --- |
+| direct-answer | stay_silent |
+| unknown / low confidence | stay_silent |
+| correction-follow-up | correction_only |
+| stale-memory-conflict | correction_only |
+| continuation | full_context |
+| retrieval-heavy | full_context |
+| tool-heavy | full_context with verification hint |
 
-- A user can install and inspect the product with one command family.
-- `status` and `proof` are real, not placeholder text.
+Silence is a success state, not a miss.
 
----
+## 6. Context source
 
-## Phase 5 — Build the installer and uninstall path
+Do not duplicate OpenClaw memory.
 
-### Goal
+OpenClawBrain reads only small local activation files under `activationRoot`:
 
-Make install / enable / disable / uninstall a coherent operator story.
+- `context.md`
+- `corrections.md`
+- `tool-guidance.md`
 
-### Why
+Rules:
 
-Install confusion kills trust faster than model quality problems.
+- read only when the policy fires,
+- max file size cap,
+- redact before use,
+- clip to `maxContextChars`,
+- record only redacted memory/file ids in proof,
+- never upload raw transcripts.
 
-### Build steps
+Injection behavior:
 
-#### 5.1 Create `packages/installer`
+- `stay_silent`: return nothing; write proof.
+- `proof_only`: return nothing; write proof.
+- `correction_only`: return bounded `prependContext` with correction-only guidance.
+- `full_context`: return bounded `prependContext` or `appendContext` with selected context summary.
+- prompt injection disabled: return nothing; write fail-closed `stay_silent` proof.
 
-Add:
+## 7. Proof store
+
+Proof is the trust surface.
+
+Store local JSONL under activation root:
 
 ```text
-packages/installer/
-  package.json
-  src/install.ts
-  src/enable-profile.ts
-  src/disable-profile.ts
-  src/uninstall.ts
-  src/restart.ts
-  src/layout.ts
-  test/*.test.ts
+~/.openclawbrain/activation/<agentId>/proof-events.jsonl
+~/.openclawbrain/activation/<agentId>/status.json
 ```
 
-#### 5.2 Canonical install shape
+Proof event minimum:
 
-Use:
+```json
+{
+  "schemaVersion": "ocb.proof.event.v1",
+  "pluginVersion": "0.1.0",
+  "profileId": "...",
+  "agentId": "...",
+  "sessionKeyHash": "...",
+  "runIdHash": "...",
+  "promptHash": "...",
+  "eventId": "...",
+  "timestamp": "...",
+  "slice": "direct-answer | continuation | correction-follow-up | retrieval-heavy | tool-heavy | stale-memory-conflict | unknown",
+  "mode": "conservative",
+  "decisionKind": "stay_silent | proof_only | correction_only | full_context",
+  "reasonCode": "...",
+  "usedMemoryIdsRedacted": [],
+  "rawTranscriptStored": false,
+  "containsRealUserData": false
+}
+```
 
-- one global package install path
-- per-profile activation roots
-- explicit profile enablement
+Retention:
 
-This matches prior install lessons: `memory/2026-03-11.md#L18` and `memory/2026-04-02.md#L27`.
+- keep last `proofRetentionEvents`, default `1000`, bounded `50..50000`.
 
-#### 5.3 Install behavior
+## 8. Status/proof UX
 
-`openclawbrain install` should:
+Primary status should be available through OpenClaw plugin inspection/status route.
 
-- validate environment
-- create base directories
-- install/link extension/runtime components
-- set up any required local model dependency checks
-- print exact next step: `openclawbrain enable --profile main`
-
-#### 5.4 Enable behavior
-
-`openclawbrain enable --profile main` should:
-
-- create profile activation root
-- patch profile config safely
-- register runtime adapter/service
-- set default mode to conservative
-- print whether restart is required
-
-#### 5.5 Disable behavior
-
-Should:
-
-- turn off the profile cleanly
-- preserve proof unless user explicitly purges
-- avoid breaking unrelated profiles
-
-#### 5.6 Uninstall behavior
-
-Should:
-
-- remove integration
-- optionally remove proof / activation data only with explicit confirmation flag
-- avoid destructive global cleanup by default
-
-### Exit gate
-
-- Fresh install works.
-- Disable is reversible.
-- Uninstall is safe.
-
----
-
-## Phase 6 — Make publishing real
-
-### Goal
-
-Turn the repo into one real public package.
-
-### Why
-
-Today `package.json` still says `private: true`; that blocks the actual product.
-
-### Build steps
-
-#### 6.1 Pick one public identity
-
-Choose exactly one:
-
-- `openclawbrain`
-- or `@openclaw/openclawbrain`
-
-Do **not** expose multiple competing public package identities.
-
-#### 6.2 Convert the root package into a publishable release story
-
-Root decisions needed:
-
-- public package name
-- `bin` field
-- `files` field
-- semver strategy
-- release script
-- provenance
-
-#### 6.3 Internal package versioning
-
-Workspaces may have separate internal packages, but the user should perceive **one version**. That is a durable product rule from prior work. Source: `memory/2026-04-02.md#L27`.
-
-#### 6.4 Release CI
-
-CI should at minimum run:
+Target operator outputs:
 
 ```bash
+openclaw plugins inspect openclawbrain --json
+```
+
+and local route/service status:
+
+```json
+{
+  "ok": true,
+  "enabled": true,
+  "mode": "conservative",
+  "agentId": "main",
+  "activationRoot": "~/.openclawbrain/activation/main",
+  "proofEvents": "writing",
+  "rawTranscriptUpload": false,
+  "lastDecisionKind": "stay_silent",
+  "lastDecisionAt": "..."
+}
+```
+
+A standalone `openclawbrain` CLI is optional after v1 proves native plugin usage. It should not be required for install/enable/status.
+
+## 9. Implementation phases
+
+### Phase 1 — Replace scaffold with native plugin package
+
+- Convert `packages/openclaw-plugin` to TypeScript.
+- Add `package.json`, `tsconfig.json`, manifest, and `src/*.ts` files.
+- Build to `dist/index.js`.
+- Make package publishable as `openclawbrain`.
+- Remove v1 dependency on `packages/installer`, `packages/cli`, and `packages/openclaw-integration`.
+
+Gate:
+
+```bash
+pnpm --dir packages/openclaw-plugin check
+pnpm --dir packages/openclaw-plugin build
+npm pack --dry-run --workspace packages/openclaw-plugin
+```
+
+### Phase 2 — Policy and redaction
+
+- Implement turn classifier.
+- Implement selected policy mapping.
+- Implement prompt/session/run hashing.
+- Implement redaction for secrets, emails, phones, URLs, and secret-like blobs.
+- Ensure `rawTranscriptUpload=true` fails closed.
+
+Gate:
+
+- unit tests for all turn slices,
+- unit tests for `proof-only`, `off`, `conservative`, and fail-closed raw-upload config.
+
+### Phase 3 — Context files and injection
+
+- Read `context.md`, `corrections.md`, `tool-guidance.md` only from activation root.
+- Enforce file size and context character limits.
+- Redact and clip before injection.
+- Return bounded `prependContext` from `before_prompt_build`.
+- No context-engine slot usage.
+
+Gate:
+
+- direct-answer returns no prompt mutation,
+- correction-only injects only correction guidance,
+- continuation/tool-heavy/retrieval-heavy inject bounded context,
+- injection disabled returns no mutation and writes proof.
+
+### Phase 4 — Proof and status service
+
+- Append proof events locally.
+- Retain last N events.
+- Write `status.json`.
+- Register service/status route.
+- Observe lifecycle/model-call hooks without storing prompt/response content.
+
+Gate:
+
+- status route returns JSON,
+- proof log contains no raw prompt,
+- proof contains `agentId`, `sessionKeyHash`, `promptHash`, and `containsRealUserData=false`.
+
+### Phase 5 — Native OpenClaw dogfood
+
+Use a disposable/local profile first:
+
+```bash
+openclaw plugins install -l ./packages/openclaw-plugin
+openclaw plugins enable openclawbrain
+openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.mode conservative
+openclaw gateway restart
+openclaw plugins inspect openclawbrain --json
+```
+
+Run four real turns:
+
+1. direct answer → no injection, proof says `stay_silent`
+2. correction/stale-memory turn → bounded correction injection
+3. continue → bounded context injection
+4. tool-heavy verification → verification hint/context
+
+Gate:
+
+- all four proof events written,
+- status route healthy,
+- no raw transcript stored,
+- no cross-agent activation-root leakage.
+
+### Phase 6 — Fresh package install
+
+Test from packed artifact, not repo source:
+
+```bash
+cd packages/openclaw-plugin
+npm pack
+openclaw plugins install ./openclawbrain-0.1.0.tgz
+openclaw plugins enable openclawbrain
+openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
+openclaw gateway restart
+openclaw plugins inspect openclawbrain --json
+```
+
+Gate:
+
+- no repo-relative assumptions,
+- manifest discovered,
+- `dist/index.js` loaded,
+- status/proof route works.
+
+### Phase 7 — Evidence regression
+
+Keep existing evidence spine as regression proof, not as the product itself:
+
+```bash
+pnpm ocb:traces:production-status
 pnpm ocb:e2e:smoke
 pnpm ocb:e2e:production
-pnpm ocb:traces:production-status
-pnpm test
 ```
 
-And only publish when release gates pass.
+Gate:
 
-#### 6.5 Publish with provenance
+- `40` admitted real traces,
+- `evidence_e2e_complete=true`,
+- selected policy still scores `40/40` wins and `0/40` harms.
+
+### Phase 8 — Public release readiness
+
+Before publishing:
+
+- package name locked: `openclawbrain`
+- license/repository metadata added
+- README rewritten around OpenClaw plugin lifecycle
+- provenance-ready CI path created
+- fresh machine/install path tested
+- uninstall/disable path verified
+
+Publish only after:
 
 ```bash
-npm publish --provenance --access public
+openclaw plugins install openclawbrain
+openclaw plugins enable openclawbrain
+openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
+openclaw gateway restart
+openclaw plugins inspect openclawbrain --json
+# run real OpenClaw turn
+# inspect status/proof
+openclaw plugins disable openclawbrain
 ```
 
-### Exit gate
+## 10. Non-goals for v1
 
-- `npm install -g <public-package>` works.
-- `openclawbrain --help` works from a clean machine.
+Do not build yet:
 
----
+- separate installer package,
+- separate CLI-first product,
+- remote service,
+- cloud sync,
+- context-engine replacement,
+- broad memory backend,
+- dashboard,
+- marketplace launch,
+- more benchmark polish.
 
-## Phase 7 — Fresh-machine product test
+## 11. Definition of done
 
-### Goal
-
-Prove the tool works without repo knowledge.
-
-### Test flow
-
-```bash
-npm install -g openclawbrain
-openclawbrain install
-openclawbrain enable --profile main
-openclawbrain status --profile main
-# run one real OpenClaw turn
-openclawbrain proof --profile main
-openclawbrain disable --profile main
-```
-
-### Required truths
-
-- install does not require editing repo files manually
-- proof shows a real event
-- direct-answer can still show `stay_silent`
-- no raw transcript upload
-- uninstall / disable are obvious
-
-### Exit gate
-
-A non-author user can do the above from docs only.
-
----
-
-## Phase 8 — Dogfood and demo preparation
-
-### Goal
-
-Produce the first honest demo that ordinary users care about.
-
-### Demo cases
-
-#### 8.1 Correction follow-up
-
-- user corrects a preference
-- later turn gets correction-only help
-- proof explains why
-
-#### 8.2 Continuation
-
-- user says “continue”
-- OCB injects bounded context
-- assistant avoids redundant clarifying question
-
-#### 8.3 Tool-heavy verification
-
-- turn implies tool verification is appropriate
-- OCB contributes bounded tool-context / verification bias
-- proof shows why
-
-#### 8.4 Silence
-
-- user asks a direct-answer question
-- OCB stays silent
-- proof shows `stay_silent`
-
-### Exit gate
-
-You can demo all four without hand-waving or hidden operator patching.
-
----
-
-## 6. Docs to write
-
-These markdown files should exist before public push:
-
-```text
-docs/BUILD_PLAN.md
-docs/INSTALL.md
-docs/CONFIG.md
-docs/PROOF.md
-docs/PRIVACY.md
-docs/TROUBLESHOOTING.md
-docs/UNINSTALL.md
-```
-
-### README rewrite priorities
-
-Current `README.md` is still rebuild-oriented. It should become user-oriented.
-
-Top section should answer:
-
-1. What is it?
-2. Why would I want it?
-3. How do I install it?
-4. How do I enable it for one profile?
-5. How do I inspect proof?
-6. How do I disable or uninstall it?
-
----
-
-## 7. Repo-level implementation order
-
-This is the concrete recommended order in the current repository.
-
-1. Add `packages/runtime-policy`
-2. Add `packages/proof-store`
-3. Add `packages/openclaw-integration`
-4. Add `packages/cli`
-5. Add `packages/installer`
-6. Flip root package from private workspace shell to publishable release shell
-7. Rewrite README and install docs
-8. Run fresh-machine install test
-9. Dogfood on one profile
-10. Expand to many profiles
-
-This order minimizes wasted work because it builds the pure core first, then the trust surface, then the runtime bridge, then the user shell.
-
----
-
-## 8. Explicit non-goals for this cycle
-
-Do **not** spend the next product cycle on:
-
-- adding more eval backends
-- polishing dashboards further
-- benchmarking wars
-- cloud sync
-- remote SaaS control plane
-- broad “memory for everything” claims
-- more evidence abstractions before install works
-
-The scoreboard is done enough. Distribution and trustworthy runtime behavior are the bottleneck.
-
----
-
-## 9. Release definition of done
-
-OpenClawBrain becomes “installable and usable by many people” only when all of the following are true:
-
-1. One public install path exists.
-2. One public version story exists.
-3. A user can enable it for one profile.
-4. It stays silent on direct answers.
-5. It helps on at least correction-follow-up, continuation, and one tool/retrieval-heavy case.
-6. `status` tells the truth from runtime state.
-7. `proof` shows a redacted local explanation.
-8. Raw transcripts are not uploaded.
-9. Disable and uninstall are safe.
-10. Fresh-machine docs are enough for a non-author user.
-
----
-
-## 10. Immediate next task
-
-If I were implementing this now, I would start here:
-
-### Next coding milestone
-
-Build `packages/runtime-policy` and make it the single owner of:
-
-- slice classification
-- selected policy mapping
-- decision object generation
-- proof event generation
-- conservative abstention rules
-
-### Exact code to use as seeds
-
-- `scripts/runtime/decide.mjs`
-- `scripts/runtime/capture-event.mjs`
-- `scripts/runtime/export-candidate.mjs`
-- `packages/eval-harness/src/backend-types.ts`
-- `packages/eval-harness/src/backends/full-ocb.ts`
-- `packages/results-site/src/decision.ts`
-
-That is the cleanest bridge from the evidence-complete repo you have now to the installable product you actually want.
+OpenClawBrain v0.1 is done when a normal OpenClaw user can install the plugin through OpenClaw, enable it for one agent, run real turns, see conservative bounded interventions, and inspect local proof showing exactly what happened without raw transcript storage.
