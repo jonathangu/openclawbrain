@@ -133,3 +133,11 @@ Commands must avoid interactive prompts and record enough metadata to reproduce 
 - config hash
 - cost measurement mode
 - trace provenance/admission metadata
+
+## Real trace admission
+
+- `pnpm ocb:traces:admit -- --candidate <redacted-trace.json>` records a candidate without product-evidence admission.
+- `pnpm ocb:traces:admit -- --candidate <redacted-trace.json> --admit` admits only if the candidate is `provenance_type=real`, `privacy_scrubbed=true`, `contains_real_user_data=false`, deterministic, and slice-valid.
+- `pnpm ocb:traces:admit:test` validates the admission fail-closed behavior.
+
+Admission writes production trace `input.json`/`provenance.json` plus `eval/traces/production.manifest.json`; production validation still fails closed until 40 admitted real privacy-scrubbed traces and slice minimums exist.
