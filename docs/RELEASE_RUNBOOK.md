@@ -1,6 +1,6 @@
 # OpenClawBrain v0.1 ClawHub-first Release Runbook
 
-Status: **release-blocked until the gates below pass**
+Status: **ready for final publish execution; replace the existing ClawHub Skill with this Code Plugin after gates pass**
 Date: 2026-04-30
 
 ## Product rule
@@ -14,7 +14,7 @@ openclaw plugins enable openclawbrain
 
 GitHub is the source and release record. ClawHub is the install/discovery channel. npm is optional later for registry fallback, JS package reuse, or npm provenance workflows.
 
-Do not ship a separate installer, root `openclawbrain` config key, or context-engine replacement.
+Do not ship a separate installer, root `openclawbrain` config key, or context-engine replacement. The existing ClawHub `openclawbrain` Skill is legacy and must be replaced/superseded by this native Code Plugin for the canonical public install path.
 
 ## Release blockers
 
@@ -26,23 +26,24 @@ Do not ship a separate installer, root `openclawbrain` config key, or context-en
        "extensions": ["./src/index.ts"],
        "runtimeExtensions": ["./dist/index.js"],
        "compat": {
-         "pluginApi": ">=2026.3.24-beta.2",
-         "minGatewayVersion": "2026.3.24-beta.2"
+         "pluginApi": ">=2026.4.29",
+         "minGatewayVersion": "2026.4.29"
        },
        "build": {
-         "openclawVersion": "2026.3.24-beta.2",
-         "pluginSdkVersion": "2026.3.24-beta.2"
+         "openclawVersion": "2026.4.29",
+         "pluginSdkVersion": "2026.4.29"
        }
      }
    }
    ```
 
-2. **Resolve the public-name collision.** A public ClawHub `openclawbrain` skill already exists (`jonathangu`, latest observed `12.2.1`). `clawhub:openclawbrain` must resolve to an installable plugin package before public docs claim it.
+2. **Replace the public ClawHub identity.** A public ClawHub `openclawbrain` Skill already exists (`jonathangu`, latest observed `12.2.1`). Jonathan approved replacing it. The final state must make `clawhub:openclawbrain` resolve to this native Code Plugin package, not the legacy Skill.
 
-   Acceptable decisions:
-   - migrate/replace the existing ClawHub identity with the plugin package;
-   - publish as `openclawbrain-plugin` and document `openclaw plugins install clawhub:openclawbrain-plugin`;
-   - keep both, but mark the PyPI/skill story legacy and the plugin package canonical.
+   Replacement rule:
+   - preserve the old listing state in logs/output before mutation;
+   - hide/delete/supersede the legacy Skill as needed;
+   - publish this package as the canonical `openclawbrain` Code Plugin;
+   - verify package inspect/explore and fresh install resolve to Code Plugin `openclawbrain@0.1.0`.
 
 3. **Publish with GitHub-tag provenance.** Prefer publishing from a GitHub tag. If local-folder publish is required, pass explicit source repo/commit/ref overrides and verify ClawHub records them.
 
@@ -68,14 +69,15 @@ test -f packages/openclaw-plugin/openclaw.plugin.json
 
 Required ClawHub capability: the CLI must support plugin package workflows (`clawhub package ...`). The older skill-only CLI is not enough for this release path.
 
-Slug/name collision checks:
+Slug/name collision checks with current ClawHub CLI:
 
 ```bash
-clawhub package info openclawbrain --json
-clawhub search openclawbrain --json
+clawhub -V
+clawhub package inspect openclawbrain
+clawhub package explore openclawbrain
 ```
 
-If the installed CLI does not support those commands, upgrade the ClawHub CLI before release work continues.
+`clawhub package publish --dry-run --json` is the authoritative publish preview. Older runbook variants referenced `package info --json` and `search --json`; those commands are not present in ClawHub `0.12.0`.
 
 ## Phase 1 — Release gates
 
@@ -180,9 +182,24 @@ Dry-run JSON must prove:
 - source commit = expected SHA
 - package files exclude test/cache/local proof data
 
-## Phase 5 — ClawHub publish
+## Phase 5 — Replace legacy Skill and publish Code Plugin
 
-Preferred:
+Archive current listing state first:
+
+```bash
+clawhub package inspect openclawbrain
+clawhub package explore openclawbrain
+```
+
+Then remove the legacy Skill from the canonical slug path if it still resolves there:
+
+```bash
+clawhub hide openclawbrain
+```
+
+Use `clawhub delete openclawbrain` only if hide does not free/supersede the slug for the Code Plugin publish path. Jonathan approved replacing the old Skill with this native plugin.
+
+Preferred publish:
 
 ```bash
 clawhub package publish jonathangu/openclawbrain@openclawbrain-v0.1.0 --json
@@ -233,7 +250,7 @@ openclaw config validate
 openclaw gateway restart
 ```
 
-If the plugin supersedes the old PyPI package or ClawHub skill, explicitly mark those paths legacy.
+This release supersedes the old PyPI/Skill-era OpenClawBrain story. Public docs should call those paths legacy and point normal OpenClaw users to `openclaw plugins install clawhub:openclawbrain`.
 
 ## v0.1 npm decision
 

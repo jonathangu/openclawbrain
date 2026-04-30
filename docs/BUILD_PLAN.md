@@ -86,12 +86,12 @@ Package metadata must declare source entries plus built runtime entries for Claw
     "extensions": ["./src/index.ts"],
     "runtimeExtensions": ["./dist/index.js"],
     "compat": {
-      "pluginApi": ">=2026.3.24-beta.2",
-      "minGatewayVersion": "2026.3.24-beta.2"
+      "pluginApi": ">=2026.4.29",
+      "minGatewayVersion": "2026.4.29"
     },
     "build": {
-      "openclawVersion": "2026.3.24-beta.2",
-      "pluginSdkVersion": "2026.3.24-beta.2"
+      "openclawVersion": "2026.4.29",
+      "pluginSdkVersion": "2026.4.29"
     }
   }
 }

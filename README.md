@@ -95,4 +95,4 @@ pnpm ocb:e2e:smoke
 pnpm ocb:e2e:production
 ```
 
-`v0.1.0` is committed locally in this repository. It has not been published to ClawHub or npm. The release runbook is [`docs/RELEASE_RUNBOOK.md`](./docs/RELEASE_RUNBOOK.md); public release remains blocked until the ClawHub `openclawbrain` slug collision and provenance gates are resolved.
+`v0.1.0` is the native plugin release candidate for ClawHub. The legacy ClawHub `openclawbrain` Skill is being replaced by this Code Plugin so the canonical install path is `openclaw plugins install clawhub:openclawbrain`. npm remains optional and is not part of v0.1.
