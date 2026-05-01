@@ -11,6 +11,8 @@ export { decidePolicy, classifyTurn } from './policy.js';
 export { readActivationContext } from './context-files.js';
 export { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 export { buildStatus } from './status.js';
+export { FakeLlmClient, OpenAICompatibleLlmClient } from './llm-client.js';
+export { JsonParseError, JsonTimeoutError, JsonValidationError, runJsonWithValidation, validateWithGuard, withTimeout } from './llm-json.js';
 
 export const openClawBrainPluginEntry = {
   id: PLUGIN_ID,
