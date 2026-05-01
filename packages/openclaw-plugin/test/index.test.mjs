@@ -23,15 +23,18 @@ async function tempRoot() {
   return root;
 }
 
-test('config defaults off and ignores root openclawbrain config', () => {
+test('config defaults on and ignores root openclawbrain config', () => {
   const config = resolveOpenClawBrainConfig({
-    runtime: { config: { current: () => ({ openclawbrain: { enabled: true }, plugins: { entries: {} } }) } }
+    runtime: { config: { current: () => ({ openclawbrain: { enabled: false }, plugins: { entries: {} } }) } }
   });
-  assert.equal(config.enabled, false);
+  assert.equal(config.enabled, true);
   assert.equal(config.mode, 'balanced');
-  assert.equal(config.llm.baseUrl, '');
+  assert.equal(config.llm.baseUrl, 'http://127.0.0.1:11434/v1');
+  assert.equal(config.llm.routeModel, 'qwen2.5:32b-instruct');
   assert.deepEqual(config.scopes.agents, ['main']);
-  assert.equal(config.hooks.allowPromptContext, false);
+  assert.equal(config.hooks.allowPromptContext, true);
+  assert.equal(config.hooks.allowConversationAccess, true);
+  assert.equal(config.hooks.allowToolObservation, true);
 });
 
 test('rawTranscriptUpload=true fails closed/off', async () => {
@@ -178,7 +181,22 @@ test('proof store retention and status are bounded and precise', async () => {
   }
 });
 
-test('plugin registers native surfaces, primary hook, optional hook safely, and gated agent_end', async () => {
+test('proof store skips malformed JSONL mirror records', async () => {
+  const root = await tempRoot();
+  try {
+    const file = path.join(root, 'proof-events.jsonl');
+    await writeFile(file, `${JSON.stringify({ agentId: 'main', eventId: 'before', decisionKind: 'stay_silent' })}\nue}\n`);
+    await appendProofEvent({ agentId: 'main', eventId: 'after', decisionKind: 'stay_silent' }, { activationRoot: root, agentId: 'main', proofRetentionEvents: 50 });
+    const proof = await readFile(file, 'utf8');
+    assert.doesNotMatch(proof, /^ue}$/m);
+    assert.match(proof, /"eventId":"before"/);
+    assert.match(proof, /"eventId":"after"/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('plugin registers native surfaces, primary hook, optional hook safely, and default agent_end', async () => {
   const calls = [];
   const routes = [];
   const services = [];
@@ -192,7 +210,7 @@ test('plugin registers native surfaces, primary hook, optional hook safely, and 
   });
   assert.ok(calls.map(([name]) => name).includes('before_prompt_build'));
   assert.ok(!calls.map(([name]) => name).includes('agent_turn_prepare'));
-  assert.ok(!calls.map(([name]) => name).includes('agent_end'));
+  assert.ok(calls.map(([name]) => name).includes('agent_end'));
   assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/status'));
   assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/proof'));
   assert.equal(services[0].id, 'openclawbrain');
@@ -203,9 +221,9 @@ test('plugin registers native surfaces, primary hook, optional hook safely, and 
   plugin.register({ pluginConfig: { enabled: true }, on: (name, fn) => withoutHookDiscovery.push([name, fn]) });
   assert.ok(!withoutHookDiscovery.map(([name]) => name).includes('agent_turn_prepare'));
 
-  const withConversation = [];
-  plugin.register({ pluginConfig: { enabled: true, hooks: { allowConversationAccess: true } }, supportsHook: (name) => name === 'agent_end', on: (name, fn) => withConversation.push([name, fn]) });
-  assert.ok(withConversation.map(([name]) => name).includes('agent_end'));
+  const withoutConversation = [];
+  plugin.register({ pluginConfig: { enabled: true, hooks: { allowConversationAccess: false } }, supportsHook: (name) => name === 'agent_end', on: (name, fn) => withoutConversation.push([name, fn]) });
+  assert.ok(!withoutConversation.map(([name]) => name).includes('agent_end'));
 });
 
 test('redacted turn hashes raw user text without storing it', () => {

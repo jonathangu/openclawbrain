@@ -12,7 +12,7 @@ In plain English: if you already taught your agent "use pnpm here," "run the tes
 - **Keeps prompts small.** It does not dump your whole history into every turn. It retrieves a few likely memories and injects only a bounded slice.
 - **Stays local-first.** Memory is stored in local SQLite, with redaction and proof surfaces built in.
 - **Lets you inspect it.** You can check status, run health checks, inspect proof events, search memory, and view the graph.
-- **Learns when you want it to.** If you enable the LLM path, OpenClawBrain can turn corrections into structured memory automatically. If you leave that path off, the plugin is still live and inspectable, but automatic learning is not active.
+- **Learns on the standard local path.** OpenClawBrain points at local Ollama by default, so corrections can turn into structured memory automatically. If you deliberately turn that path off, the plugin is still live and inspectable, but automatic learning is not active.
 
 ## Why it exists
 
@@ -40,20 +40,20 @@ openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
 ```
 
-## Turn it on
+## Default local setup
+
+The default OpenClawBrain setup is already aimed at the full local path: balanced mode, conversation/tool hooks on, and local Ollama on `127.0.0.1`.
 
 ```bash
-openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
-openclaw config set plugins.entries.openclawbrain.config.mode '"balanced"' --strict-json
-openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
-openclaw config set plugins.entries.openclawbrain.config.hooks.allowConversationAccess true --strict-json
+openclaw plugins install clawhub:openclawbrain
+openclaw plugins enable openclawbrain
 openclaw config validate
 openclaw gateway restart
 ```
 
-## Optional: turn on automatic learning
+## Default local learning models
 
-The standard learning path is a local OpenAI-compatible endpoint such as local Ollama.
+The default local learning path uses a local OpenAI-compatible endpoint such as local Ollama.
 
 ```bash
 ollama list
@@ -61,16 +61,16 @@ ollama list
 openclaw config set plugins.entries.openclawbrain.config.llm '{
   "enabled": true,
   "baseUrl": "http://127.0.0.1:11434/v1",
-  "routeModel": "qwen3.5:9b",
-  "plannerModel": "qwen3.5:9b",
-  "feedbackModel": "qwen3.5:9b",
-  "learningModel": "qwen3.5:9b"
+  "routeModel": "qwen2.5:32b-instruct",
+  "plannerModel": "qwen2.5:32b-instruct",
+  "feedbackModel": "qwen2.5:32b-instruct",
+  "learningModel": "qwen2.5:32b-instruct"
 }' --strict-json
 openclaw config validate
 openclaw gateway restart
 ```
 
-If you skip this step, OpenClawBrain still runs its local memory, search, proof, and health surfaces. It just will not auto-distill fresh corrections.
+If you deliberately disable this path, OpenClawBrain still runs its local memory, search, proof, and health surfaces. It just will not auto-distill fresh corrections.
 
 ## Check that it is live
 
@@ -95,7 +95,7 @@ curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
 
 ## Privacy and safety
 
-- Off by default
+- Local learning defaults to on when local Ollama is available
 - Raw transcript upload is hard-disabled
 - Redaction happens before storage and before model use
 - Plugin failure does not block the main agent

@@ -21,11 +21,11 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
     };
     llm: {
         enabled: boolean;
-        routeModel: string;
-        plannerModel: string;
-        feedbackModel: string;
-        learningModel: string;
-        baseUrl: string;
+        routeModel: any;
+        plannerModel: any;
+        feedbackModel: any;
+        learningModel: any;
+        baseUrl: any;
         allowedModels: any;
         temperature: number;
         maxTokens: number;
@@ -95,11 +95,11 @@ export declare function normalizePluginConfig(input?: any): {
     };
     llm: {
         enabled: boolean;
-        routeModel: string;
-        plannerModel: string;
-        feedbackModel: string;
-        learningModel: string;
-        baseUrl: string;
+        routeModel: any;
+        plannerModel: any;
+        feedbackModel: any;
+        learningModel: any;
+        baseUrl: any;
         allowedModels: any;
         temperature: number;
         maxTokens: number;

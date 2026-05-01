@@ -5,7 +5,7 @@ import { safeString } from './redact.js';
 export const PLUGIN_ID = 'openclawbrain';
 export const PLUGIN_VERSION = '0.2.9';
 export const DEFAULT_CONFIG: any = Object.freeze({
-  enabled: false,
+  enabled: true,
   mode: 'balanced',
   activationRoot: '~/.openclawbrain/activation/${agentId}',
   proofEvents: true,
@@ -14,10 +14,15 @@ export const DEFAULT_CONFIG: any = Object.freeze({
   includeActivationContext: true,
   rawTranscriptUpload: false,
   scopes: Object.freeze({ agents: Object.freeze(['main']) }),
-  hooks: Object.freeze({ allowPromptContext: false, allowConversationAccess: false, allowToolObservation: false }),
+  hooks: Object.freeze({ allowPromptContext: true, allowConversationAccess: true, allowToolObservation: true }),
   llm: Object.freeze({
-    enabled: false,
-    allowedModels: Object.freeze([]),
+    enabled: true,
+    routeModel: 'qwen2.5:32b-instruct',
+    plannerModel: 'qwen2.5:32b-instruct',
+    feedbackModel: 'qwen2.5:32b-instruct',
+    learningModel: 'qwen2.5:32b-instruct',
+    baseUrl: 'http://127.0.0.1:11434/v1',
+    allowedModels: Object.freeze(['qwen2.5:32b-instruct', 'qwen3.5:9b', 'qwen3.5:35b-a3b', 'gemma4:31b']),
     temperature: 0,
     maxTokens: 1200,
   }),
@@ -101,7 +106,7 @@ export function normalizePluginConfig(input: any = {}) {
   const maxContextChars = clampInteger(source.maxContextChars, 3000, 500, 20000);
   const activationRoot = nonEmptyString(source.activationRoot) || DEFAULT_CONFIG.activationRoot;
   return {
-    enabled: source.enabled === true && !rawTranscriptUpload && mode !== 'off',
+    enabled: source.enabled !== false && !rawTranscriptUpload && mode !== 'off',
     mode,
     activationRoot,
     proofEvents: source.proofEvents !== false,
@@ -112,18 +117,18 @@ export function normalizePluginConfig(input: any = {}) {
     failClosedReason: rawTranscriptUpload ? 'raw_transcript_upload_requested' : '',
     scopes: normalizeScopes(source.scopes),
     hooks: {
-      allowPromptContext: source.hooks?.allowPromptContext === true,
-      allowConversationAccess: source.hooks?.allowConversationAccess === true,
-      allowToolObservation: source.hooks?.allowToolObservation === true,
+      allowPromptContext: source.hooks?.allowPromptContext !== false,
+      allowConversationAccess: source.hooks?.allowConversationAccess !== false,
+      allowToolObservation: source.hooks?.allowToolObservation !== false,
     },
     llm: {
-      enabled: source.llm?.enabled === true,
-      routeModel: nonEmptyString(source.llm?.routeModel) || '',
-      plannerModel: nonEmptyString(source.llm?.plannerModel) || '',
-      feedbackModel: nonEmptyString(source.llm?.feedbackModel) || '',
-      learningModel: nonEmptyString(source.llm?.learningModel) || '',
-      baseUrl: nonEmptyString(source.llm?.baseUrl) || '',
-      allowedModels: Array.isArray(source.llm?.allowedModels) ? source.llm.allowedModels.map((v: any) => safeString(v)).filter(Boolean) : [],
+      enabled: source.llm?.enabled !== false,
+      routeModel: nonEmptyString(source.llm?.routeModel) || DEFAULT_CONFIG.llm.routeModel,
+      plannerModel: nonEmptyString(source.llm?.plannerModel) || DEFAULT_CONFIG.llm.plannerModel,
+      feedbackModel: nonEmptyString(source.llm?.feedbackModel) || DEFAULT_CONFIG.llm.feedbackModel,
+      learningModel: nonEmptyString(source.llm?.learningModel) || DEFAULT_CONFIG.llm.learningModel,
+      baseUrl: nonEmptyString(source.llm?.baseUrl) || DEFAULT_CONFIG.llm.baseUrl,
+      allowedModels: Array.isArray(source.llm?.allowedModels) ? source.llm.allowedModels.map((v: any) => safeString(v)).filter(Boolean) : [...DEFAULT_CONFIG.llm.allowedModels],
       temperature: clampNumber(source.llm?.temperature, DEFAULT_CONFIG.llm.temperature, 0, 2),
       maxTokens: clampInteger(source.llm?.maxTokens, DEFAULT_CONFIG.llm.maxTokens, 1, 100000),
     },

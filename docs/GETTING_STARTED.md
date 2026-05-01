@@ -12,7 +12,7 @@ You need:
 
 - OpenClaw `2026.4.29` or later
 - a running OpenClaw gateway
-- local Ollama or another local OpenAI-compatible endpoint **only if** you want automatic learning
+- local Ollama or another local OpenAI-compatible endpoint for the full default learning path
 
 ## 1) Install the plugin
 
@@ -21,22 +21,20 @@ openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
 ```
 
-## 2) Turn on the main runtime path
+## 2) Use the default runtime path
+
+The default runtime path is already the full local setup: balanced mode, prompt/conversation/tool hooks on, and local Ollama at `127.0.0.1:11434/v1`.
 
 ```bash
-openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
-openclaw config set plugins.entries.openclawbrain.config.mode '"balanced"' --strict-json
-openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
-openclaw config set plugins.entries.openclawbrain.config.hooks.allowConversationAccess true --strict-json
 openclaw config validate
 openclaw gateway restart
 ```
 
 `balanced` is the recommended default. It keeps the common path cheap and only does extra work when the turn looks like it needs help.
 
-## 3) Optional: turn on automatic learning
+## 3) Default automatic learning models
 
-If you want OpenClawBrain to turn corrections into memory automatically, point it at a local OpenAI-compatible endpoint. Local Ollama is the standard path.
+If you want to set the local model block explicitly, use a local OpenAI-compatible endpoint. Local Ollama is the standard path.
 
 ```bash
 ollama list
@@ -44,16 +42,16 @@ ollama list
 openclaw config set plugins.entries.openclawbrain.config.llm '{
   "enabled": true,
   "baseUrl": "http://127.0.0.1:11434/v1",
-  "routeModel": "qwen3.5:9b",
-  "plannerModel": "qwen3.5:9b",
-  "feedbackModel": "qwen3.5:9b",
-  "learningModel": "qwen3.5:9b"
+  "routeModel": "qwen2.5:32b-instruct",
+  "plannerModel": "qwen2.5:32b-instruct",
+  "feedbackModel": "qwen2.5:32b-instruct",
+  "learningModel": "qwen2.5:32b-instruct"
 }' --strict-json
 openclaw config validate
 openclaw gateway restart
 ```
 
-If you skip this step, the plugin still loads and exposes its local proof, graph, health, and search surfaces. It just will not auto-distill fresh corrections.
+If you deliberately disable this step, the plugin still loads and exposes its local proof, graph, health, and search surfaces. It just will not auto-distill fresh corrections.
 
 ## 4) Check that it is live
 

@@ -57,21 +57,21 @@ openclaw gateway restart</code></pre>
     </section>
 
     <section class="panel">
-      <h2>3) Optional: turn on automatic learning</h2>
-      <p>If you want OpenClawBrain to turn corrections into memory automatically, point it at a local OpenAI-compatible endpoint. Local Ollama is the standard path.</p>
+      <h2>3) Default automatic learning path</h2>
+      <p>OpenClawBrain now aims at the local Ollama path by default. If you want to set it explicitly, point it at a local OpenAI-compatible endpoint.</p>
       <pre><code>ollama list
 
 openclaw config set plugins.entries.openclawbrain.config.llm '{
   "enabled": true,
   "baseUrl": "http://127.0.0.1:11434/v1",
-  "routeModel": "qwen3.5:9b",
-  "plannerModel": "qwen3.5:9b",
-  "feedbackModel": "qwen3.5:9b",
-  "learningModel": "qwen3.5:9b"
+  "routeModel": "qwen2.5:32b-instruct",
+  "plannerModel": "qwen2.5:32b-instruct",
+  "feedbackModel": "qwen2.5:32b-instruct",
+  "learningModel": "qwen2.5:32b-instruct"
 }' --strict-json
 openclaw config validate
 openclaw gateway restart</code></pre>
-      <p class="muted">If you skip this step, the plugin still loads and exposes local proof, graph, health, and search surfaces. Automatic learning just stays off.</p>
+      <p class="muted">If you deliberately disable this step, the plugin still loads and exposes local proof, graph, health, and search surfaces. Automatic learning just stays off.</p>
     </section>
 
     <section class="panel">

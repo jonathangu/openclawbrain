@@ -8,7 +8,7 @@
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "enabled": { "type": "boolean", "default": false },
+      "enabled": { "type": "boolean", "default": true },
       "mode": {
         "type": "string",
         "enum": ["off", "proof-only", "conservative", "active", "balanced", "aggressive"],
@@ -24,14 +24,14 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "allowPromptContext": { "type": "boolean", "default": false },
-          "allowConversationAccess": { "type": "boolean", "default": false },
-          "allowToolObservation": { "type": "boolean", "default": false }
+          "allowPromptContext": { "type": "boolean", "default": true },
+          "allowConversationAccess": { "type": "boolean", "default": true },
+          "allowToolObservation": { "type": "boolean", "default": true }
         },
         "default": {
-          "allowPromptContext": false,
-          "allowConversationAccess": false,
-          "allowToolObservation": false
+          "allowPromptContext": true,
+          "allowConversationAccess": true,
+          "allowToolObservation": true
         }
       },
       "scopes": {
@@ -50,23 +50,28 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "enabled": { "type": "boolean", "default": false },
-          "routeModel": { "type": "string", "default": "" },
-          "plannerModel": { "type": "string", "default": "" },
-          "feedbackModel": { "type": "string", "default": "" },
-          "learningModel": { "type": "string", "default": "" },
-          "baseUrl": { "type": "string", "default": "" },
+          "enabled": { "type": "boolean", "default": true },
+          "routeModel": { "type": "string", "default": "qwen2.5:32b-instruct" },
+          "plannerModel": { "type": "string", "default": "qwen2.5:32b-instruct" },
+          "feedbackModel": { "type": "string", "default": "qwen2.5:32b-instruct" },
+          "learningModel": { "type": "string", "default": "qwen2.5:32b-instruct" },
+          "baseUrl": { "type": "string", "default": "http://127.0.0.1:11434/v1" },
           "allowedModels": {
             "type": "array",
             "items": { "type": "string" },
-            "default": []
+            "default": ["qwen2.5:32b-instruct", "qwen3.5:9b", "qwen3.5:35b-a3b", "gemma4:31b"]
           },
           "temperature": { "type": "number", "minimum": 0, "maximum": 2, "default": 0 },
           "maxTokens": { "type": "integer", "minimum": 1, "maximum": 100000, "default": 1200 }
         },
         "default": {
-          "enabled": false,
-          "allowedModels": [],
+          "enabled": true,
+          "routeModel": "qwen2.5:32b-instruct",
+          "plannerModel": "qwen2.5:32b-instruct",
+          "feedbackModel": "qwen2.5:32b-instruct",
+          "learningModel": "qwen2.5:32b-instruct",
+          "baseUrl": "http://127.0.0.1:11434/v1",
+          "allowedModels": ["qwen2.5:32b-instruct", "qwen3.5:9b", "qwen3.5:35b-a3b", "gemma4:31b"],
           "temperature": 0,
           "maxTokens": 1200
         }
@@ -162,11 +167,11 @@
     "gateway_stop": {}
   },
   "configUiHints": {
-    "enabled": { "label": "Enabled", "help": "Defaults off. Enable per plugin entry config." },
+    "enabled": { "label": "Enabled", "help": "Defaults on for the standard local OpenClawBrain path." },
     "mode": { "label": "Runtime Mode", "help": "balanced enables the v0.2 latency-safe memory graph path; conservative/active retain legacy file-backed compatibility modes." },
     "activationRoot": { "label": "Activation Root", "help": "Local agent-scoped root for SQLite state, proof mirrors, and optional compatibility files." },
-    "llm": { "label": "Local LLM Distillation", "help": "Standard practice is a user-configured local Ollama or other loopback OpenAI-compatible JSON endpoint. Queued packets and planner inputs use redacted user-message summaries only." },
-    "llm.baseUrl": { "label": "Local LLM Base URL", "help": "Optional loopback OpenAI-compatible endpoint for local semantic distillation. Leave blank to keep LLM distillation disabled." },
+    "llm": { "label": "Local LLM Distillation", "help": "Defaults to a local Ollama-style OpenAI-compatible JSON endpoint on loopback so the full local brain works out of the box when Ollama is available. Queued packets and planner inputs use redacted user-message summaries only." },
+    "llm.baseUrl": { "label": "Local LLM Base URL", "help": "Default loopback OpenAI-compatible endpoint for local semantic distillation. Set a different local endpoint only if you want to override Ollama." },
     "privacy": { "label": "Privacy Defaults", "help": "Raw transcript storage stays hard-disabled. Background packets store redacted summaries and hashes, not raw user-message text." },
     "rawTranscriptUpload": { "label": "Raw Transcript Upload", "help": "Must remain false; true fails closed." }
   }
