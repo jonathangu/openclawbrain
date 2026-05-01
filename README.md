@@ -29,7 +29,7 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.9`
+- **Current package release:** `0.2.10`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.4.29` or later
 
