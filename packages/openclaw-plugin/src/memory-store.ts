@@ -1,0 +1,788 @@
+// OpenClawBrain v0.2 — SQLite memory store
+// Schema, migrations, CRUD, FTS5 search, graph edges, injections,
+// route decisions, proof events, job queue, audit rows.
+
+import path from 'node:path';
+import os from 'node:os';
+import { mkdirSync } from 'node:fs';
+import BetterSqlite3 from 'better-sqlite3';
+import type {
+  MemoryNode, MemoryType, MemoryEdge, EdgeRelation,
+  RouteDecision, RouteKind, TurnFrame, RetrievalPlan, InjectionPlan,
+  InjectionEvent, InjectionOutcome,
+  BackgroundJob, JobKind, JobStatus,
+  ProofEvent,
+  DistillationRun, DistillationPhase,
+  RouteExample, RoutePolicySnapshot,
+  MemoryCandidate,
+} from './memory-types.js';
+
+// ── Schema version ────────────────────────────────────────────────────────────
+
+const SCHEMA_VERSION = 1;
+
+// ── Schema SQL ────────────────────────────────────────────────────────────────
+
+const MIGRATIONS: Record<number, string> = {
+  1: `
+    CREATE TABLE IF NOT EXISTS schema_meta (
+      version INTEGER PRIMARY KEY,
+      applied_at TEXT NOT NULL
+    );
+
+    -- Memory graph
+    CREATE TABLE IF NOT EXISTS memory_nodes (
+      rowid INTEGER PRIMARY KEY,
+      id TEXT NOT NULL UNIQUE,
+      agent_id TEXT NOT NULL,
+      type TEXT NOT NULL CHECK (type IN ('correction', 'preference', 'workflow', 'context')),
+      content TEXT NOT NULL,
+      positive TEXT,
+      negative TEXT,
+      scope_kind TEXT NOT NULL DEFAULT 'agent',
+      scope_key TEXT,
+      normalized_key TEXT,
+      tags_json TEXT NOT NULL DEFAULT '[]',
+      importance REAL NOT NULL DEFAULT 0.25,
+      freshness REAL NOT NULL DEFAULT 1.0,
+      confidence REAL NOT NULL DEFAULT 0.5,
+      use_count INTEGER NOT NULL DEFAULT 0,
+      useful_count INTEGER NOT NULL DEFAULT 0,
+      capture_count INTEGER NOT NULL DEFAULT 1,
+      distilled_by_model TEXT,
+      distiller_prompt_version TEXT,
+      distillation_confidence REAL,
+      evidence_kind TEXT,
+      evidence_hash TEXT,
+      source_hook TEXT,
+      source_turn_id TEXT,
+      source_session_id TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      last_seen_at TEXT NOT NULL,
+      last_used_at TEXT,
+      superseded_by TEXT,
+      deleted_at TEXT,
+      UNIQUE(agent_id, type, normalized_key, scope_kind, scope_key)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_memory_nodes_agent ON memory_nodes(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_memory_nodes_type ON memory_nodes(type);
+    CREATE INDEX IF NOT EXISTS idx_memory_nodes_key ON memory_nodes(normalized_key);
+    CREATE INDEX IF NOT EXISTS idx_memory_nodes_active ON memory_nodes(agent_id, deleted_at);
+
+    -- Memory edges
+    CREATE TABLE IF NOT EXISTS memory_edges (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      from_id TEXT NOT NULL,
+      to_id TEXT NOT NULL,
+      relation TEXT NOT NULL CHECK (
+        relation IN ('related', 'contradicts', 'supersedes', 'extends', 'used_with', 'supports_workflow')
+      ),
+      weight REAL NOT NULL DEFAULT 0.5,
+      evidence_count INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(agent_id, from_id, to_id, relation)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_edges_from ON memory_edges(from_id);
+    CREATE INDEX IF NOT EXISTS idx_edges_to ON memory_edges(to_id);
+
+    -- FTS5 virtual table
+    CREATE VIRTUAL TABLE IF NOT EXISTS memory_search USING fts5(
+      content, tags, normalized_key,
+      content='memory_nodes',
+      content_rowid='rowid',
+      tokenize='porter unicode61'
+    );
+
+    -- FTS5 triggers
+    CREATE TRIGGER IF NOT EXISTS memory_nodes_ai AFTER INSERT ON memory_nodes
+    WHEN new.deleted_at IS NULL
+    BEGIN
+      INSERT INTO memory_search(rowid, content, tags, normalized_key)
+      VALUES (new.rowid, new.content, new.tags_json, COALESCE(new.normalized_key, ''));
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS memory_nodes_ad AFTER DELETE ON memory_nodes
+    BEGIN
+      INSERT INTO memory_search(memory_search, rowid, content, tags, normalized_key)
+      VALUES ('delete', old.rowid, old.content, old.tags_json, COALESCE(old.normalized_key, ''));
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS memory_nodes_au AFTER UPDATE ON memory_nodes
+    BEGIN
+      INSERT INTO memory_search(memory_search, rowid, content, tags, normalized_key)
+      VALUES ('delete', old.rowid, old.content, old.tags_json, COALESCE(old.normalized_key, ''));
+      INSERT INTO memory_search(rowid, content, tags, normalized_key)
+      SELECT new.rowid, new.content, new.tags_json, COALESCE(new.normalized_key, '')
+      WHERE new.deleted_at IS NULL;
+    END;
+
+    -- Injection events
+    CREATE TABLE IF NOT EXISTS memory_injections (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      memory_id TEXT NOT NULL,
+      route_decision_id TEXT,
+      run_id TEXT,
+      turn_id TEXT,
+      session_id TEXT,
+      query TEXT NOT NULL,
+      rank INTEGER NOT NULL,
+      score REAL NOT NULL,
+      injected_at TEXT NOT NULL,
+      resolved_at TEXT,
+      outcome TEXT CHECK (
+        outcome IN ('pending', 'helped', 'accepted', 'ignored', 'assistant_failed_to_use',
+                     'user_corrected', 'harmful', 'tool_success', 'tool_failure', 'unknown')
+      ) DEFAULT 'pending',
+      correction_signal TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_injections_agent ON memory_injections(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_injections_outcome ON memory_injections(outcome);
+
+    -- Route decisions
+    CREATE TABLE IF NOT EXISTS route_decisions (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      session_id TEXT,
+      turn_id TEXT,
+      run_id TEXT,
+      route TEXT NOT NULL,
+      confidence REAL NOT NULL,
+      latency_tier TEXT NOT NULL,
+      sync_llm_used INTEGER NOT NULL DEFAULT 0,
+      sync_latency_ms INTEGER,
+      fallback_used INTEGER NOT NULL DEFAULT 0,
+      turn_frame_json TEXT NOT NULL,
+      retrieval_plan_json TEXT NOT NULL,
+      injection_plan_json TEXT NOT NULL,
+      selected_memory_ids_json TEXT NOT NULL DEFAULT '[]',
+      omitted_memory_ids_json TEXT NOT NULL DEFAULT '[]',
+      model TEXT,
+      prompt_version TEXT,
+      policy_snapshot_id TEXT,
+      outcome TEXT DEFAULT 'pending',
+      reward REAL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      resolved_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_route_agent ON route_decisions(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_route_outcome ON route_decisions(outcome);
+
+    -- Route examples
+    CREATE TABLE IF NOT EXISTS route_examples (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      turn_frame_json TEXT NOT NULL,
+      route_decision_json TEXT NOT NULL,
+      outcome TEXT NOT NULL,
+      reward REAL NOT NULL,
+      lesson TEXT NOT NULL,
+      tags_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL
+    );
+
+    -- Route policy snapshots
+    CREATE TABLE IF NOT EXISTS route_policy_snapshots (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      policy_text TEXT NOT NULL,
+      examples_json TEXT NOT NULL DEFAULT '[]',
+      model TEXT,
+      prompt_version TEXT,
+      created_at TEXT NOT NULL,
+      active INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_policy_active ON route_policy_snapshots(agent_id, active);
+
+    -- Distillation runs (LLM audit)
+    CREATE TABLE IF NOT EXISTS distillation_runs (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      session_id TEXT,
+      turn_id TEXT,
+      run_id TEXT,
+      phase TEXT NOT NULL,
+      model TEXT NOT NULL,
+      prompt_version TEXT NOT NULL,
+      input_hash TEXT NOT NULL,
+      redacted_input_summary TEXT,
+      output_json TEXT NOT NULL,
+      validation_status TEXT NOT NULL,
+      validation_error TEXT,
+      latency_ms INTEGER,
+      created_at TEXT NOT NULL
+    );
+
+    -- Job queue
+    CREATE TABLE IF NOT EXISTS background_jobs (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      priority INTEGER NOT NULL DEFAULT 0,
+      payload_json TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      max_attempts INTEGER NOT NULL DEFAULT 3,
+      available_at TEXT NOT NULL,
+      started_at TEXT,
+      finished_at TEXT,
+      error TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_jobs_status ON background_jobs(status, available_at);
+    CREATE INDEX IF NOT EXISTS idx_jobs_agent ON background_jobs(agent_id);
+
+    -- Proof events (v0.2 SQLite-backed)
+    CREATE TABLE IF NOT EXISTS proof_events (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      source_hook TEXT,
+      turn_id TEXT,
+      session_id TEXT,
+      run_id TEXT,
+      memory_id TEXT,
+      injection_id TEXT,
+      route_decision_id TEXT,
+      distillation_run_id TEXT,
+      raw_transcript_stored INTEGER NOT NULL DEFAULT 0,
+      payload_json TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_proof_agent ON proof_events(agent_id);
+  `,
+};
+
+// ── UUID helper ───────────────────────────────────────────────────────────────
+
+import { randomUUID } from 'node:crypto';
+export const uuid = () => randomUUID();
+export const now = () => new Date().toISOString();
+
+// ── Store class ───────────────────────────────────────────────────────────────
+
+export interface MemoryStoreOptions {
+  activationRoot: string;
+  agentId: string;
+}
+
+export class MemoryStore {
+  private db: BetterSqlite3.Database;
+  private dbPath: string;
+
+  constructor(options: MemoryStoreOptions) {
+    this.dbPath = dbPathForAgent(options.activationRoot, options.agentId);
+    this.db = openDb(this.dbPath);
+    this.migrate();
+  }
+
+  // ── Migration ───────────────────────────────────────────────────────────────
+
+  private migrate() {
+    const current = this.db.pragma('user_version', { simple: true }) as number;
+    for (let v = current + 1; v <= SCHEMA_VERSION; v++) {
+      const sql = MIGRATIONS[v];
+      if (!sql) continue;
+      this.db.exec(sql);
+      this.db.pragma(`user_version = ${v}`);
+      this.db.prepare('INSERT OR REPLACE INTO schema_meta (version, applied_at) VALUES (?, ?)').run(v, now());
+    }
+  }
+
+  close() {
+    this.db.close();
+  }
+
+  // ── Memory nodes ────────────────────────────────────────────────────────────
+
+  insertMemory(node: Omit<MemoryNode, 'id' | 'createdAt' | 'updatedAt' | 'lastSeenAt'> & { id?: string }): MemoryNode {
+    const id = node.id || uuid();
+    const ts = now();
+    this.db.prepare(`
+      INSERT INTO memory_nodes (
+        id, agent_id, type, content, positive, negative,
+        scope_kind, scope_key, normalized_key, tags_json,
+        importance, freshness, confidence, use_count, useful_count, capture_count,
+        distilled_by_model, distiller_prompt_version, distillation_confidence,
+        evidence_kind, evidence_hash, source_hook, source_turn_id, source_session_id,
+        created_at, updated_at, last_seen_at, last_used_at, superseded_by, deleted_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id, node.agentId, node.type, node.content,
+      node.positive ?? null, node.negative ?? null,
+      node.scopeKind, node.scopeKey ?? null, node.normalizedKey, JSON.stringify(node.tags),
+      node.importance, node.freshness, node.confidence,
+      node.useCount, node.usefulCount, node.captureCount,
+      node.distilledByModel ?? null, node.distillerPromptVersion ?? null, node.distillationConfidence ?? null,
+      node.evidenceKind ?? null, node.evidenceHash ?? null,
+      node.sourceHook ?? null, node.sourceTurnId ?? null, node.sourceSessionId ?? null,
+      ts, ts, ts, null, null, null,
+    );
+    return this.getMemory(id)!;
+  }
+
+  getMemory(id: string): MemoryNode | null {
+    const row = this.db.prepare('SELECT * FROM memory_nodes WHERE id = ?').get(id) as any;
+    return row ? rowToMemory(row) : null;
+  }
+
+  findMemoryByNormalizedKey(agentId: string, normalizedKey: string, scopeKind: string, scopeKey?: string): MemoryNode | null {
+    const row = this.db.prepare(`
+      SELECT * FROM memory_nodes
+      WHERE agent_id = ? AND normalized_key = ? AND scope_kind = ? AND scope_key IS ? AND deleted_at IS NULL
+      LIMIT 1
+    `).get(agentId, normalizedKey, scopeKind, scopeKey ?? null) as any;
+    return row ? rowToMemory(row) : null;
+  }
+
+  updateMemory(id: string, updates: Partial<MemoryNode>): MemoryNode | null {
+    const existing = this.getMemory(id);
+    if (!existing) return null;
+    const merged = { ...existing, ...updates, updatedAt: now() };
+    this.db.prepare(`
+      UPDATE memory_nodes SET
+        content = ?, positive = ?, negative = ?,
+        tags_json = ?, importance = ?, freshness = ?, confidence = ?,
+        use_count = ?, useful_count = ?, capture_count = ?,
+        distilled_by_model = ?, distiller_prompt_version = ?, distillation_confidence = ?,
+        updated_at = ?, last_seen_at = ?, last_used_at = ?,
+        superseded_by = ?, deleted_at = ?
+      WHERE id = ?
+    `).run(
+      merged.content, merged.positive ?? null, merged.negative ?? null,
+      JSON.stringify(merged.tags), merged.importance, merged.freshness, merged.confidence,
+      merged.useCount, merged.usefulCount, merged.captureCount,
+      merged.distilledByModel ?? null, merged.distillerPromptVersion ?? null, merged.distillationConfidence ?? null,
+      merged.updatedAt, merged.lastSeenAt, merged.lastUsedAt ?? null,
+      merged.supersededBy ?? null, merged.deletedAt ?? null,
+      id,
+    );
+    return this.getMemory(id);
+  }
+
+  supersedeMemory(existingId: string, supersededById: string): void {
+    this.db.prepare('UPDATE memory_nodes SET superseded_by = ?, updated_at = ? WHERE id = ?').run(supersededById, now(), existingId);
+  }
+
+  softDeleteMemory(id: string): void {
+    this.db.prepare('UPDATE memory_nodes SET deleted_at = ?, updated_at = ? WHERE id = ?').run(now(), now(), id);
+  }
+
+  searchMemories(query: string, agentId: string, opts: { limit?: number; offset?: number } = {}): MemoryNode[] {
+    const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
+    const offset = opts.offset ?? 0;
+    const trimmed = query.trim();
+    const rows = trimmed
+      ? this.db.prepare(`
+          SELECT mn.* FROM memory_search ms
+          JOIN memory_nodes mn ON mn.rowid = ms.rowid
+          WHERE ms MATCH ? AND mn.agent_id = ? AND mn.deleted_at IS NULL AND mn.superseded_by IS NULL
+          ORDER BY rank
+          LIMIT ? OFFSET ?
+        `).all(trimmed, agentId, limit, offset) as any[]
+      : this.db.prepare(`
+          SELECT * FROM memory_nodes
+          WHERE agent_id = ? AND deleted_at IS NULL AND superseded_by IS NULL
+          ORDER BY importance DESC, updated_at DESC
+          LIMIT ? OFFSET ?
+        `).all(agentId, limit, offset) as any[];
+    return rows.map(rowToMemory);
+  }
+
+  listMemories(agentId: string, opts: { type?: MemoryType; limit?: number } = {}): MemoryNode[] {
+    const limit = Math.min(200, Math.max(1, opts.limit ?? 50));
+    if (opts.type) {
+      return (this.db.prepare(
+        'SELECT * FROM memory_nodes WHERE agent_id = ? AND type = ? AND deleted_at IS NULL ORDER BY importance DESC LIMIT ?'
+      ).all(agentId, opts.type, limit) as any[]).map(rowToMemory);
+    }
+    return (this.db.prepare(
+      'SELECT * FROM memory_nodes WHERE agent_id = ? AND deleted_at IS NULL ORDER BY importance DESC LIMIT ?'
+    ).all(agentId, limit) as any[]).map(rowToMemory);
+  }
+
+  countMemories(agentId: string, type?: MemoryType): number {
+    if (type) {
+      const row = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM memory_nodes WHERE agent_id = ? AND type = ? AND deleted_at IS NULL'
+      ).get(agentId, type) as any;
+      return row?.cnt ?? 0;
+    }
+    const row = this.db.prepare(
+      'SELECT COUNT(*) as cnt FROM memory_nodes WHERE agent_id = ? AND deleted_at IS NULL'
+    ).get(agentId) as any;
+    return row?.cnt ?? 0;
+  }
+
+  // ── Memory edges ────────────────────────────────────────────────────────────
+
+  insertEdge(edge: Omit<MemoryEdge, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): MemoryEdge {
+    const id = edge.id || uuid();
+    const ts = now();
+    this.db.prepare(`
+      INSERT INTO memory_edges (id, agent_id, from_id, to_id, relation, weight, evidence_count, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, edge.agentId, edge.fromId, edge.toId, edge.relation, edge.weight, edge.evidenceCount, ts, ts);
+    return { ...edge, id, createdAt: ts, updatedAt: ts };
+  }
+
+  upsertEdge(agentId: string, fromId: string, toId: string, relation: EdgeRelation): MemoryEdge {
+    const existing = this.db.prepare(
+      'SELECT * FROM memory_edges WHERE agent_id = ? AND from_id = ? AND to_id = ? AND relation = ?'
+    ).get(agentId, fromId, toId, relation) as any;
+    if (existing) {
+      const ts = now();
+      this.db.prepare('UPDATE memory_edges SET evidence_count = evidence_count + 1, weight = ?, updated_at = ? WHERE id = ?')
+        .run(Math.min(1.0, existing.weight + 0.1), ts, existing.id);
+      return rowToEdge(this.db.prepare('SELECT * FROM memory_edges WHERE id = ?').get(existing.id) as any);
+    }
+    return this.insertEdge({ agentId, fromId, toId, relation, weight: 0.5, evidenceCount: 1 });
+  }
+
+  getEdges(memoryId: string, relation?: EdgeRelation): MemoryEdge[] {
+    if (relation) {
+      return this.db.prepare(
+        'SELECT * FROM memory_edges WHERE (from_id = ? OR to_id = ?) AND relation = ?'
+      ).all(memoryId, memoryId, relation).map(rowToEdge) as MemoryEdge[];
+    }
+    return this.db.prepare(
+      'SELECT * FROM memory_edges WHERE from_id = ? OR to_id = ?'
+    ).all(memoryId, memoryId).map(rowToEdge) as MemoryEdge[];
+  }
+
+  // ── Injection events ────────────────────────────────────────────────────────
+
+  insertInjection(inj: Omit<InjectionEvent, 'id' | 'injectedAt' | 'outcome'> & { id?: string; injectedAt?: string; outcome?: InjectionOutcome }): InjectionEvent {
+    const id = inj.id || uuid();
+    const ts = inj.injectedAt || now();
+    const outcome: InjectionOutcome = inj.outcome ?? 'pending';
+    this.db.prepare(`
+      INSERT INTO memory_injections (id, agent_id, memory_id, route_decision_id, run_id, turn_id, session_id, query, rank, score, injected_at, resolved_at, outcome, correction_signal)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, inj.agentId, inj.memoryId, inj.routeDecisionId ?? null, inj.runId ?? null,
+      inj.turnId ?? null, inj.sessionId ?? null, inj.query, inj.rank, inj.score,
+      ts, null, outcome, inj.correctionSignal ?? null);
+    return { ...inj, id, injectedAt: ts, outcome };
+  }
+
+  resolveInjectionOutcome(injectionId: string, outcome: InjectionOutcome, correctionSignal?: string): void {
+    this.db.prepare('UPDATE memory_injections SET outcome = ?, correction_signal = ?, resolved_at = ? WHERE id = ?')
+      .run(outcome, correctionSignal ?? null, now(), injectionId);
+  }
+
+  getPendingInjections(agentId: string): InjectionEvent[] {
+    return (this.db.prepare(
+      'SELECT * FROM memory_injections WHERE agent_id = ? AND outcome = ? ORDER BY injected_at DESC LIMIT 100'
+    ).all(agentId, 'pending') as any[]).map(rowToInjection);
+  }
+
+  // ── Route decisions ─────────────────────────────────────────────────────────
+
+  insertRouteDecision(decision: Omit<RouteDecision, 'id' | 'createdAt'> & { id?: string }): RouteDecision {
+    const id = decision.id || uuid();
+    const ts = now();
+    const outcome = decision.outcome ?? 'pending';
+    const reward = decision.reward ?? 0;
+    this.db.prepare(`
+      INSERT INTO route_decisions (
+        id, agent_id, session_id, turn_id, run_id, route, confidence, latency_tier,
+        sync_llm_used, sync_latency_ms, fallback_used,
+        turn_frame_json, retrieval_plan_json, injection_plan_json,
+        selected_memory_ids_json, omitted_memory_ids_json,
+        model, prompt_version, policy_snapshot_id, outcome, reward, created_at, resolved_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id, decision.agentId, decision.sessionId ?? null, decision.turnId ?? null, decision.runId ?? null,
+      decision.route, decision.confidence, decision.latencyTier,
+      decision.syncLlmUsed ? 1 : 0, decision.syncLatencyMs ?? null, decision.fallbackUsed ? 1 : 0,
+      JSON.stringify(decision.turnFrame), JSON.stringify(decision.retrievalPlan), JSON.stringify(decision.injectionPlan),
+      JSON.stringify(decision.selectedMemoryIds), JSON.stringify(decision.omittedMemoryIds),
+      decision.model ?? null, decision.promptVersion ?? null, decision.policySnapshotId ?? null,
+      outcome, reward, ts, null,
+    );
+    return { ...decision, id, outcome, reward, createdAt: ts };
+  }
+
+  getRouteDecision(id: string): RouteDecision | null {
+    const row = this.db.prepare('SELECT * FROM route_decisions WHERE id = ?').get(id) as any;
+    return row ? rowToRouteDecision(row) : null;
+  }
+
+  resolveRouteDecision(id: string, outcome: string, reward: number): void {
+    this.db.prepare('UPDATE route_decisions SET outcome = ?, reward = ?, resolved_at = ? WHERE id = ?')
+      .run(outcome, reward, now(), id);
+  }
+
+  getRecentRouteDecisions(agentId: string, limit = 20): RouteDecision[] {
+    return (this.db.prepare(
+      'SELECT * FROM route_decisions WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?'
+    ).all(agentId, limit) as any[]).map(rowToRouteDecision);
+  }
+
+  getUnresolvedRouteDecisions(agentId: string): RouteDecision[] {
+    return (this.db.prepare(
+      "SELECT * FROM route_decisions WHERE agent_id = ? AND outcome = 'pending' ORDER BY created_at DESC LIMIT 50"
+    ).all(agentId) as any[]).map(rowToRouteDecision);
+  }
+
+  // ── Route examples and policy snapshots ──────────────────────────────────────
+
+  insertRouteExample(example: Omit<RouteExample, 'id' | 'createdAt'> & { id?: string }): RouteExample {
+    const id = example.id || uuid();
+    const ts = now();
+    this.db.prepare(`
+      INSERT INTO route_examples (id, agent_id, turn_frame_json, route_decision_json, outcome, reward, lesson, tags_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, example.agentId, JSON.stringify(example.turnFrame), JSON.stringify(example.routeDecision),
+      example.outcome, example.reward, example.lesson, JSON.stringify(example.tags), ts);
+    return { ...example, id, createdAt: ts };
+  }
+
+  getRouteExamples(agentId: string, limit = 50): RouteExample[] {
+    return (this.db.prepare(
+      'SELECT * FROM route_examples WHERE agent_id = ? ORDER BY reward DESC LIMIT ?'
+    ).all(agentId, limit) as any[]).map((r: any) => ({
+      ...r,
+      turnFrame: JSON.parse(r.turn_frame_json),
+      routeDecision: JSON.parse(r.route_decision_json),
+      tags: JSON.parse(r.tags_json),
+    } as RouteExample));
+  }
+
+  getActivePolicySnapshot(agentId: string): RoutePolicySnapshot | null {
+    const row = this.db.prepare(
+      'SELECT * FROM route_policy_snapshots WHERE agent_id = ? AND active = 1 ORDER BY created_at DESC LIMIT 1'
+    ).get(agentId) as any;
+    return row ? { ...row, examples: JSON.parse(row.examples_json) } as RoutePolicySnapshot : null;
+  }
+
+  insertPolicySnapshot(snapshot: Omit<RoutePolicySnapshot, 'id' | 'createdAt'> & { id?: string }): RoutePolicySnapshot {
+    const id = snapshot.id || uuid();
+    const ts = now();
+    if (snapshot.active) {
+      this.db.prepare('UPDATE route_policy_snapshots SET active = 0 WHERE agent_id = ?').run(snapshot.agentId);
+    }
+    this.db.prepare(`
+      INSERT INTO route_policy_snapshots (id, agent_id, policy_text, examples_json, model, prompt_version, created_at, active)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, snapshot.agentId, snapshot.policyText, JSON.stringify(snapshot.examples),
+      snapshot.model ?? null, snapshot.promptVersion ?? null, ts, snapshot.active ? 1 : 0);
+    return { ...snapshot, id, createdAt: ts };
+  }
+
+  // ── Distillation run audit ──────────────────────────────────────────────────
+
+  insertDistillationRun(run: Omit<DistillationRun, 'id' | 'createdAt'> & { id?: string }): DistillationRun {
+    const id = run.id || uuid();
+    const ts = now();
+    this.db.prepare(`
+      INSERT INTO distillation_runs (
+        id, agent_id, session_id, turn_id, run_id, phase, model, prompt_version,
+        input_hash, redacted_input_summary, output_json, validation_status,
+        validation_error, latency_ms, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, run.agentId, run.sessionId ?? null, run.turnId ?? null, run.runId ?? null,
+      run.phase, run.model, run.promptVersion, run.inputHash,
+      run.redactedInputSummary ?? null, run.outputJson, run.validationStatus,
+      run.validationError ?? null, run.latencyMs ?? null, ts);
+    return { ...run, id, createdAt: ts };
+  }
+
+  // ── Job queue ───────────────────────────────────────────────────────────────
+
+  enqueueJob(job: Omit<BackgroundJob, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'attempts' | 'startedAt' | 'finishedAt' | 'error'> & { id?: string }): BackgroundJob {
+    const id = job.id || uuid();
+    const ts = now();
+    this.db.prepare(`
+      INSERT INTO background_jobs (id, agent_id, kind, status, priority, payload_json, attempts, max_attempts, available_at, started_at, finished_at, error, created_at, updated_at)
+      VALUES (?, ?, ?, 'pending', ?, ?, 0, ?, ?, NULL, NULL, NULL, ?, ?)
+    `).run(id, job.agentId, job.kind, job.priority, JSON.stringify(job.payload), job.maxAttempts, job.availableAt, ts, ts);
+    return { ...job, id, status: 'pending', attempts: 0, createdAt: ts, updatedAt: ts };
+  }
+
+  claimNextJob(kind?: JobKind): BackgroundJob | null {
+    const ts = now();
+    const job = kind
+      ? this.db.prepare("SELECT * FROM background_jobs WHERE kind = ? AND status = 'pending' AND available_at <= ? ORDER BY priority DESC, created_at ASC LIMIT 1").get(kind, ts) as any
+      : this.db.prepare("SELECT * FROM background_jobs WHERE status = 'pending' AND available_at <= ? ORDER BY priority DESC, created_at ASC LIMIT 1").get(ts) as any;
+    if (!job) return null;
+    this.db.prepare("UPDATE background_jobs SET status = 'running', started_at = ?, attempts = attempts + 1, updated_at = ? WHERE id = ?")
+      .run(ts, ts, job.id);
+    return rowToJob(this.db.prepare('SELECT * FROM background_jobs WHERE id = ?').get(job.id) as any);
+  }
+
+  completeJob(id: string): void {
+    const ts = now();
+    this.db.prepare("UPDATE background_jobs SET status = 'completed', finished_at = ?, updated_at = ? WHERE id = ?")
+      .run(ts, ts, id);
+  }
+
+  failJob(id: string, error: string, retryAfterMs?: number): void {
+    const job = this.db.prepare('SELECT * FROM background_jobs WHERE id = ?').get(id) as any;
+    if (!job) return;
+    const ts = now();
+    const attempts = (job.attempts ?? 0);
+    const maxAttempts = (job.max_attempts ?? 3);
+    if (attempts >= maxAttempts) {
+      this.db.prepare("UPDATE background_jobs SET status = 'dead', error = ?, finished_at = ?, updated_at = ? WHERE id = ?")
+        .run(error, ts, ts, id);
+    } else {
+      const availableAt = retryAfterMs ? new Date(Date.now() + retryAfterMs).toISOString() : ts;
+      this.db.prepare("UPDATE background_jobs SET status = 'pending', error = ?, available_at = ?, updated_at = ? WHERE id = ?")
+        .run(error, availableAt, ts, id);
+    }
+  }
+
+  getJobQueueDepth(agentId?: string): number {
+    if (agentId) {
+      const row = this.db.prepare("SELECT COUNT(*) as cnt FROM background_jobs WHERE agent_id = ? AND status = 'pending'").get(agentId) as any;
+      return row?.cnt ?? 0;
+    }
+    const row = this.db.prepare("SELECT COUNT(*) as cnt FROM background_jobs WHERE status = 'pending'").get() as any;
+    return row?.cnt ?? 0;
+  }
+
+  // ── Proof events ────────────────────────────────────────────────────────────
+
+  insertProofEvent(event: Omit<ProofEvent, 'id' | 'createdAt'> & { id?: string }): ProofEvent {
+    const id = event.id || uuid();
+    const ts = now();
+    this.db.prepare(`
+      INSERT INTO proof_events (
+        id, agent_id, kind, created_at, source_hook, turn_id, session_id, run_id,
+        memory_id, injection_id, route_decision_id, distillation_run_id,
+        raw_transcript_stored, payload_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id, event.agentId, event.kind, ts,
+      event.sourceHook ?? null, event.turnId ?? null, event.sessionId ?? null, event.runId ?? null,
+      event.memoryId ?? null, event.injectionId ?? null, event.routeDecisionId ?? null,
+      event.distillationRunId ?? null,
+      event.rawTranscriptStored ? 1 : 0, JSON.stringify(event.payload),
+    );
+    return { ...event, id, createdAt: ts };
+  }
+
+  getProofEvents(agentId: string, limit = 20): ProofEvent[] {
+    return (this.db.prepare(
+      'SELECT * FROM proof_events WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?'
+    ).all(agentId, limit) as any[]).map((r: any) => ({
+      ...r,
+      rawTranscriptStored: r.raw_transcript_stored === 1,
+      payload: JSON.parse(r.payload_json),
+    } as ProofEvent));
+  }
+
+  // ── Transactions ────────────────────────────────────────────────────────────
+
+  transaction<T>(fn: () => T): T {
+    return this.db.transaction(fn)();
+  }
+}
+
+// ── Row mappers ───────────────────────────────────────────────────────────────
+
+function rowToMemory(r: any): MemoryNode {
+  return {
+    id: r.id, agentId: r.agent_id, type: r.type, content: r.content,
+    positive: r.positive, negative: r.negative,
+    scopeKind: r.scope_kind, scopeKey: r.scope_key,
+    normalizedKey: r.normalized_key, tags: JSON.parse(r.tags_json ?? '[]'),
+    importance: r.importance, freshness: r.freshness, confidence: r.confidence,
+    useCount: r.use_count, usefulCount: r.useful_count, captureCount: r.capture_count,
+    distilledByModel: r.distilled_by_model, distillerPromptVersion: r.distiller_prompt_version,
+    distillationConfidence: r.distillation_confidence,
+    evidenceKind: r.evidence_kind, evidenceHash: r.evidence_hash,
+    sourceHook: r.source_hook, sourceTurnId: r.source_turn_id, sourceSessionId: r.source_session_id,
+    createdAt: r.created_at, updatedAt: r.updated_at, lastSeenAt: r.last_seen_at,
+    lastUsedAt: r.last_used_at, supersededBy: r.superseded_by, deletedAt: r.deleted_at,
+  };
+}
+
+function rowToInjection(r: any): InjectionEvent {
+  return {
+    id: r.id, agentId: r.agent_id, memoryId: r.memory_id,
+    routeDecisionId: r.route_decision_id, runId: r.run_id,
+    turnId: r.turn_id, sessionId: r.session_id,
+    query: r.query, rank: r.rank, score: r.score,
+    injectedAt: r.injected_at, resolvedAt: r.resolved_at,
+    outcome: r.outcome, correctionSignal: r.correction_signal,
+  };
+}
+
+function rowToEdge(r: any): MemoryEdge {
+  return {
+    id: r.id,
+    agentId: r.agent_id,
+    fromId: r.from_id,
+    toId: r.to_id,
+    relation: r.relation,
+    weight: r.weight,
+    evidenceCount: r.evidence_count,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function rowToRouteDecision(r: any): RouteDecision {
+  return {
+    id: r.id, agentId: r.agent_id, sessionId: r.session_id,
+    turnId: r.turn_id, runId: r.run_id,
+    route: r.route, confidence: r.confidence, latencyTier: r.latency_tier,
+    syncLlmUsed: r.sync_llm_used === 1, syncLatencyMs: r.sync_latency_ms,
+    fallbackUsed: r.fallback_used === 1,
+    turnFrame: JSON.parse(r.turn_frame_json),
+    retrievalPlan: JSON.parse(r.retrieval_plan_json),
+    injectionPlan: JSON.parse(r.injection_plan_json),
+    selectedMemoryIds: JSON.parse(r.selected_memory_ids_json ?? '[]'),
+    omittedMemoryIds: JSON.parse(r.omitted_memory_ids_json ?? '[]'),
+    model: r.model, promptVersion: r.prompt_version,
+    policySnapshotId: r.policy_snapshot_id,
+    outcome: r.outcome, reward: r.reward,
+    createdAt: r.created_at, resolvedAt: r.resolved_at,
+  };
+}
+
+function rowToJob(r: any): BackgroundJob {
+  return {
+    id: r.id, agentId: r.agent_id, kind: r.kind, status: r.status,
+    priority: r.priority, payload: JSON.parse(r.payload_json ?? '{}'),
+    attempts: r.attempts, maxAttempts: r.max_attempts,
+    availableAt: r.available_at, startedAt: r.started_at,
+    finishedAt: r.finished_at, error: r.error,
+    createdAt: r.created_at, updatedAt: r.updated_at,
+  };
+}
+
+// ── DB helpers ────────────────────────────────────────────────────────────────
+
+export function dbPathForAgent(activationRoot: string, agentId: string): string {
+  const substituted = activationRoot.replace('${agentId}', agentId);
+  const dir = substituted === '~'
+    ? os.homedir()
+    : substituted.startsWith('~/')
+      ? path.join(os.homedir(), substituted.slice(2))
+      : path.resolve(substituted);
+  return path.join(dir, 'openclawbrain.db');
+}
+
+export function openDb(dbPath: string): BetterSqlite3.Database {
+  const dir = path.dirname(dbPath);
+  mkdirSync(dir, { recursive: true });
+  const db = new BetterSqlite3(dbPath, { readonly: false });
+  db.pragma('journal_mode = WAL');
+  db.pragma('synchronous = NORMAL');
+  db.pragma('foreign_keys = ON');
+  return db;
+}
