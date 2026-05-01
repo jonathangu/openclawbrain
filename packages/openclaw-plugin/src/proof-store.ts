@@ -140,7 +140,17 @@ async function proofRoot(options: any = {}, agentId = 'main') {
 async function readJsonl(file: string) {
   try {
     const text = await readFile(file, 'utf8');
-    return text.split('\n').filter(Boolean).map((line) => JSON.parse(line)).map(sanitizeProofEvent);
+    const events = [];
+    for (const line of text.split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        events.push(sanitizeProofEvent(JSON.parse(line)));
+      } catch {
+        // The JSONL mirror is compatibility-only; skip torn legacy lines so
+        // proof writes keep working from the SQLite source of truth.
+      }
+    }
+    return events;
   } catch (error: any) {
     if (error?.code === 'ENOENT') return [];
     throw error;
