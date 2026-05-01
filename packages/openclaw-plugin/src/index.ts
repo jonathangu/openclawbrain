@@ -101,8 +101,8 @@ export async function handleTurnHook(event: any = {}, config: any = normalizePlu
     return {};
   }
 
-  if (config.hooks.allowPromptInjection !== true) {
-    const failClosed = { kind: 'stay_silent', slice: decision.slice, reasonCode: 'prompt_injection_disabled' };
+  if (config.hooks.allowPromptContext !== true) {
+    const failClosed = { kind: 'stay_silent', slice: decision.slice, reasonCode: 'prompt_context_disabled' };
     await writeProofForDecision(event, config, api, failClosed, phase, [], []);
     await writeDecisionStatus(config, redactedTurn, failClosed);
     return {};
@@ -369,7 +369,7 @@ function doctorPayload(config: any) {
     checks: {
       nativeSqlite,
       rawTranscriptUploadDisabled: config.rawTranscriptUpload !== true,
-      promptInjectionExplicitlyAllowed: config.hooks?.allowPromptInjection === true,
+      promptContextExplicitlyAllowed: config.hooks?.allowPromptContext === true,
     },
   };
 }

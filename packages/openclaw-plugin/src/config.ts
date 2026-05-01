@@ -3,7 +3,7 @@ import path from 'node:path';
 import { safeString } from './redact.js';
 
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.7';
+export const PLUGIN_VERSION = '0.2.8';
 export const DEFAULT_CONFIG: any = Object.freeze({
   enabled: false,
   mode: 'balanced',
@@ -14,7 +14,7 @@ export const DEFAULT_CONFIG: any = Object.freeze({
   includeActivationContext: true,
   rawTranscriptUpload: false,
   scopes: Object.freeze({ agents: Object.freeze(['main']) }),
-  hooks: Object.freeze({ allowPromptInjection: false, allowConversationAccess: false, allowToolObservation: false }),
+  hooks: Object.freeze({ allowPromptContext: false, allowConversationAccess: false, allowToolObservation: false }),
   llm: Object.freeze({
     enabled: false,
     allowedModels: Object.freeze([]),
@@ -112,7 +112,7 @@ export function normalizePluginConfig(input: any = {}) {
     failClosedReason: rawTranscriptUpload ? 'raw_transcript_upload_requested' : '',
     scopes: normalizeScopes(source.scopes),
     hooks: {
-      allowPromptInjection: source.hooks?.allowPromptInjection === true,
+      allowPromptContext: source.hooks?.allowPromptContext === true,
       allowConversationAccess: source.hooks?.allowConversationAccess === true,
       allowToolObservation: source.hooks?.allowToolObservation === true,
     },

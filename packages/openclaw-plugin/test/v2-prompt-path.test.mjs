@@ -38,7 +38,7 @@ test('balanced mode before_prompt_build injects retrieved memory and records rou
       enabled: true,
       mode: 'balanced',
       activationRoot: root,
-      hooks: { allowPromptInjection: true },
+      hooks: { allowPromptContext: true },
       routing: { enabled: true, maxCandidateMemories: 20, maxInjectedMemories: 3, maxInjectedChars: 500 },
     });
 

@@ -30,7 +30,7 @@ That runtime should have three separate planes:
 
 3. **Recall plane** — what the model sees or can search.
    - Ranked retrieval.
-   - Bounded prompt-context augmentation.
+   - Bounded prompt context augmentation.
    - Native memory corpus supplement.
    - Search route.
 
@@ -1325,7 +1325,7 @@ This is essential for learning.
 
 ### 11.1 Search seeds first, graph second
 
-Do not let graph traversal drive prompt-context augmentation directly.
+Do not let graph traversal drive prompt context augmentation directly.
 
 Recommended rule:
 
@@ -1693,7 +1693,7 @@ export interface OpenClawBrainConfig {
   };
 
   hooks: {
-    allowPromptInjection: boolean;
+    allowPromptContext: boolean;
     allowConversationAccess: boolean;
     allowToolObservation: boolean;
   };

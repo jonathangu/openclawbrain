@@ -19,7 +19,7 @@ openclaw plugins enable openclawbrain
 ```bash
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
 openclaw config set plugins.entries.openclawbrain.config.mode '"balanced"' --strict-json
-openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
 openclaw config set plugins.entries.openclawbrain.hooks.allowConversationAccess true --strict-json
 ```
 
@@ -56,7 +56,7 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/doctor
 
 You should see:
 
-- `pluginVersion: "0.2.7"`
+- `pluginVersion: "0.2.8"`
 
 Privacy note: OpenClawBrain's queued capture/planning packets keep redacted summaries and hashes only; raw user-message text is not stored in those background payloads.
 - `mode: "balanced"`

@@ -12,7 +12,7 @@
 
 ## Current truth
 
-OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with SQLite self-checks and fallback and 54 passing plugin tests. Current package release: **v0.2.7**.
+OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with SQLite self-checks and fallback and 54 passing plugin tests. Current package release: **v0.2.8**.
 
 The package still keeps **legacy file-backed compatibility modes** (`proof-only`, `conservative`, `active`) for users who want the older activation-file path. The **v0.2 path** is `mode: "balanced"` or `"aggressive"`.
 
@@ -32,7 +32,7 @@ Minimum runtime config:
 ```bash
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
 openclaw config set plugins.entries.openclawbrain.config.mode '"balanced"' --strict-json
-openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
 openclaw config set plugins.entries.openclawbrain.hooks.allowConversationAccess true --strict-json
 openclaw config validate
 openclaw gateway restart
@@ -125,7 +125,7 @@ Current gate: `pnpm --dir packages/openclaw-plugin test` → **54/54 pass**.
 clawhub publish packages/openclaw-plugin \
   --slug openclawbrain \
   --name "OpenClawBrain" \
-  --version 0.2.7 \
+  --version 0.2.8 \
   --changelog "Add SQLite self-checks and fallback and scanner-safe reliability metadata."
 ```
 

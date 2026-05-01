@@ -1,7 +1,7 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Reliability-hardened local memory graph for OpenClaw with local auditability, bounded memory augmentation, and SQLite self-checks/fallback.",
   "activation": { "onStartup": true },
   "configSchema": {
@@ -20,6 +20,20 @@
       "maxContextChars": { "type": "integer", "minimum": 500, "maximum": 20000, "default": 3000 },
       "includeActivationContext": { "type": "boolean", "default": true },
       "rawTranscriptUpload": { "type": "boolean", "const": false, "default": false },
+      "hooks": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "allowPromptContext": { "type": "boolean", "default": false },
+          "allowConversationAccess": { "type": "boolean", "default": false },
+          "allowToolObservation": { "type": "boolean", "default": false }
+        },
+        "default": {
+          "allowPromptContext": false,
+          "allowConversationAccess": false,
+          "allowToolObservation": false
+        }
+      },
       "scopes": {
         "type": "object",
         "additionalProperties": false,
@@ -139,7 +153,7 @@
     }
   },
   "hooks": {
-    "before_prompt_build": { "allowPromptInjection": false },
+    "before_prompt_build": { "allowPromptContext": false },
     "agent_end": {},
     "after_tool_call": {},
     "model_call_started": {},

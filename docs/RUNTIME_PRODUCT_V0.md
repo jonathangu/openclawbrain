@@ -37,13 +37,13 @@ Registered hooks:
 
 `agent_turn_prepare` is only registered when the runtime explicitly advertises support. `agent_end` is optional and gated behind `plugins.entries.openclawbrain.hooks.allowConversationAccess=true`.
 
-Prompt mutation requires:
+Prompt context updates requires:
 
 ```bash
-openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
 ```
 
-If prompt-context augmentation is disabled, OpenClawBrain fails closed and writes `stay_silent` proof.
+If prompt context augmentation is disabled, OpenClawBrain fails closed and writes `stay_silent` proof.
 
 ## First-class plugin surfaces
 
@@ -66,7 +66,7 @@ OpenClawBrain config lives under the plugin entry, never as an unknown root key:
       openclawbrain: {
         enabled: true,
         hooks: {
-          allowPromptInjection: true,
+          allowPromptContext: true,
           allowConversationAccess: false,
         },
         config: {
@@ -105,7 +105,7 @@ openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
 openclaw config set plugins.entries.openclawbrain.config.mode '"conservative"' --strict-json
-openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
 openclaw config validate
 openclaw gateway restart
 openclaw plugins inspect openclawbrain --json

@@ -60,9 +60,9 @@ export function buildInjectionText(decision: any, activationContext: any, config
   if (decision.kind !== 'correction_only' && decision.kind !== 'full_context') return '';
   const parts = [];
   if (decision.kind === 'correction_only') {
-    parts.push('OpenClawBrain correction guidance: apply only the relevant correction. Do not add unrelated memory.');
+    parts.push('OpenClawBrain correction context: relevance-filtered correction memory. Unrelated memory is omitted.');
   } else {
-    parts.push('OpenClawBrain bounded local activation context: use only when relevant and do not overrule newer user instructions.');
+    parts.push('OpenClawBrain bounded local activation context: relevance-filtered memory; newer user instructions take precedence.');
   }
   if (decision.verificationHint) {
     parts.push('Verification hint: this turn appears tool-heavy; verify tool results before making factual claims.');
