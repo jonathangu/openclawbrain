@@ -25,6 +25,7 @@ export interface RoutePlan {
     shouldRetrieve: boolean;
     enqueueCapture: boolean;
     latencyReason: string;
+    policySnapshotId?: string;
 }
 export declare class RouteCache {
     private cache;
@@ -35,10 +36,13 @@ export declare class RouteCache {
 export declare class RouteFn {
     private config;
     private cache;
+    private store?;
     constructor(options: {
         config: any;
         cache?: RouteCache;
+        store?: any;
     });
     fingerprint(packet: TurnEventPacket): RouteFingerprint;
     plan(packet: TurnEventPacket): RoutePlan;
+    private loadPolicySnapshot;
 }

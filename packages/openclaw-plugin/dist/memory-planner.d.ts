@@ -9,17 +9,25 @@ export interface MemoryPlannerResult {
     feedbackDistillation?: FeedbackDistillation;
     contextSelection?: ContextSelection;
 }
+export interface MemoryPlannerRunOptions {
+    timeoutMs?: number;
+    fallback?: () => RoutePlan;
+}
 export declare class MemoryPlanner {
     private config;
     private routeFn;
     private contextSelector;
     private distiller?;
     private store;
+    private client?;
     constructor(options: {
         config: any;
         routeFn: RouteFn;
         store: MemoryStore;
         client?: LlmClient;
     });
-    run(packet: TurnEventPacket): Promise<MemoryPlannerResult>;
+    run(packet: TurnEventPacket, options?: MemoryPlannerRunOptions): Promise<MemoryPlannerResult>;
+    private runInner;
+    private runWithFallback;
+    private planWithLlm;
 }

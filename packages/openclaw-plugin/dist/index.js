@@ -111,7 +111,7 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     const queue = new JobQueue({ store });
     const packet = new CaptureOrchestrator().fromBeforePromptBuild(event, config);
-    const routeFn = new RouteFn({ config });
+    const routeFn = new RouteFn({ config, store });
     const contextSelector = new ContextSelector(config);
     const initialPlan = routeFn.plan(packet);
     const initialCandidates = initialPlan.shouldRetrieve
@@ -132,7 +132,7 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
     });
     const client = llmClientFromConfig(config);
     let plan = initialPlan;
-    let selection = initialPlan.shouldRetrieve ? contextSelector.select({ packet, plan, candidates: initialCandidates }) : emptySelection();
+    let selection = initialPlan.shouldRetrieve ? contextSelector.select({ packet, plan, candidates: initialCandidates, store }) : emptySelection();
     if (latency.kind === 'sync_memory_planner' && client) {
         const planner = new MemoryPlanner({ config, routeFn, store, client });
         const planned = await planner.run(packet);
@@ -160,6 +160,7 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
         omittedMemoryIds: selection.omitted.map((it) => it.memoryId),
         model: client ? (config.llm.plannerModel || config.llm.routeModel || config.llm.feedbackModel || '') : undefined,
         promptVersion: latency.kind === 'sync_memory_planner' ? 'memory-planner-v1' : 'route-fn-v1',
+        policySnapshotId: plan.policySnapshotId,
         reward: 0,
     });
     await appendProofEvent({
@@ -298,6 +299,7 @@ async function statusPayload(config, req = {}) {
         details = {
             memory: {
                 nodes: store.countMemories(agentId),
+                edges: store.countEdgesForAgent(agentId),
                 corrections: store.countMemories(agentId, 'correction'),
                 preferences: store.countMemories(agentId, 'preference'),
                 workflows: store.countMemories(agentId, 'workflow'),
@@ -316,6 +318,12 @@ async function statusPayload(config, req = {}) {
             },
             latency: {
                 syncPlannerEnabled: config.latency.syncPlannerEnabled === true,
+                syncPlannerCalls: store.countSyncPlannerCalls(agentId),
+                syncPlannerFallbacks: store.countSyncPlannerFallbacks(agentId),
+                avgSyncPlannerMs: store.averageSyncPlannerLatency(agentId),
+                tier0Turns: store.countRouteDecisionsByLatencyTier(agentId, 'no_extra_llm'),
+                tier1Turns: store.countRouteDecisionsByLatencyTier(agentId, 'cached_route'),
+                tier2Turns: store.countRouteDecisionsByLatencyTier(agentId, 'sync_memory_planner'),
             },
         };
         store.close();
@@ -420,6 +428,13 @@ async function handleAgentEnd(event = {}, config = {}, api = {}) {
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     const queue = new JobQueue({ store });
     const packet = new CaptureOrchestrator().fromAgentEnd(event, config);
+    const learner = new BackgroundLearner({ store, config });
+    try {
+        learner.processAgentEnd(agentId, packet);
+    }
+    catch (error) {
+        api.logger?.warn?.({ error }, 'OpenClawBrain agent_end outcome learning failed');
+    }
     if (config.capture.agentEndMode === 'best_effort_async' && config.llm.enabled === true) {
         try {
             await runFeedbackDistillation(packet, config, store);

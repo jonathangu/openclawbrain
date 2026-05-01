@@ -50,8 +50,43 @@ export class BackgroundLearner {
     };
   }
 
+  processAgentEnd(agentId: string, packet: TurnEventPacket): BackgroundLearningReport {
+    let outcomeResolutions = 0;
+    const pending = this.store.getPendingInjections(agentId)
+      .filter((injection) => (packet.runId ? injection.runId === packet.runId : true))
+      .filter((injection) => (packet.turnId ? injection.turnId === packet.turnId : true))
+      .slice(0, 10);
+
+    const correctionSignal = isCorrectionAfterInjection(packet.latestUserMessage);
+    if (correctionSignal) {
+      for (const injection of pending) {
+        this.store.resolveInjectionOutcome(injection.id, 'user_corrected', correctionSignal);
+        outcomeResolutions += 1;
+      }
+    } else if (pending.length > 0) {
+      for (const injection of pending) {
+        this.store.resolveInjectionOutcome(injection.id, 'accepted');
+        outcomeResolutions += 1;
+      }
+    }
+
+    const routeLearning = new RouteLearning({ store: this.store, config: this.config });
+    const learned = routeLearning.run(agentId);
+
+    return {
+      outcomeResolutions,
+      routeDecisionsResolved: learned.resolvedDecisions,
+      routeExamplesCreated: learned.examplesCreated,
+      memoryUpdates: learned.memoryUpdates,
+      snapshotId: learned.snapshotId,
+      prunedMemories: 0,
+      lastRunAt: new Date().toISOString(),
+    };
+  }
+
   runMaintenance(agentId: string): BackgroundLearningReport {
     const learned = new RouteLearning({ store: this.store, config: this.config }).run(agentId);
+    this.store.decayFreshness(agentId);
     const prunedMemories = this.store.pruneMemories(agentId, this.config.learning.maxMemoryNodesPerAgent);
     return {
       outcomeResolutions: 0,
@@ -63,4 +98,18 @@ export class BackgroundLearner {
       lastRunAt: new Date().toISOString(),
     };
   }
+}
+
+function isCorrectionAfterInjection(message: string): string | null {
+  const lower = message.toLowerCase();
+  const correctionPatterns = [
+    { pattern: /\b(actually|no[,\s]|not like that|wrong|incorrect|fix this|that's wrong)\b/, signal: 'explicit_correction' },
+    { pattern: /\b(use |switch to|should be|should have been)\b.*\binstead\b/, signal: 'correction_with_replacement' },
+    { pattern: /\b(i said|like i told|don't use|don't do|stop using)\b/, signal: 'repeated_correction' },
+    { pattern: /\b(no[,\s].*should|but.*not|wrong.*should)\b/, signal: 'implicit_correction' },
+  ];
+  for (const { pattern, signal } of correctionPatterns) {
+    if (pattern.test(lower)) return signal;
+  }
+  return null;
 }

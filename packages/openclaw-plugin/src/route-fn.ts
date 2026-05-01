@@ -29,6 +29,7 @@ export interface RoutePlan {
   shouldRetrieve: boolean;
   enqueueCapture: boolean;
   latencyReason: string;
+  policySnapshotId?: string;
 }
 
 export class RouteCache {
@@ -63,10 +64,12 @@ export class RouteCache {
 export class RouteFn {
   private config: any;
   private cache: RouteCache;
+  private store?: any;
 
-  constructor(options: { config: any; cache?: RouteCache }) {
+  constructor(options: { config: any; cache?: RouteCache; store?: any }) {
     this.config = options.config;
     this.cache = options.cache ?? new RouteCache();
+    this.store = options.store;
   }
 
   fingerprint(packet: TurnEventPacket): RouteFingerprint {
@@ -95,10 +98,12 @@ export class RouteFn {
         shouldRetrieve: cached.route === 'retrieve_memory' || cached.route === 'retrieve_and_distill' || cached.route === 'high_confidence_correction_only',
         enqueueCapture: fingerprint.explicitCorrectionCue,
         latencyReason: 'cached route plan',
+        policySnapshotId: this.store?.getActivePolicySnapshot?.(packet.agentId)?.id,
       };
     }
 
-    const plan = heuristicRoutePlan(packet, turnFrame, this.config);
+    const policySnapshot = this.loadPolicySnapshot(packet);
+    const plan = heuristicRoutePlan(packet, turnFrame, this.config, policySnapshot);
     this.cache.set(fingerprint, {
       route: plan.route,
       retrievalPlan: plan.retrievalPlan,
@@ -108,9 +113,18 @@ export class RouteFn {
     });
     return plan;
   }
+
+  private loadPolicySnapshot(packet: TurnEventPacket) {
+    if (!this.store) return null;
+    try {
+      return this.store.getActivePolicySnapshot(packet.agentId);
+    } catch {
+      return null;
+    }
+  }
 }
 
-function heuristicRoutePlan(packet: TurnEventPacket, turnFrame: TurnFrame, config: any): RoutePlan {
+function heuristicRoutePlan(packet: TurnEventPacket, turnFrame: TurnFrame, config: any, policySnapshot?: any): RoutePlan {
   const message = packet.latestUserMessage.toLowerCase();
   const explicitCorrectionCue = /\b(actually|instead|wrong|no,)\b/i.test(packet.latestUserMessage);
   const explicitMemoryReference = /\b(as before|same as last time|remember|we discussed before)\b/i.test(packet.latestUserMessage);
@@ -127,18 +141,32 @@ function heuristicRoutePlan(packet: TurnEventPacket, turnFrame: TurnFrame, confi
     confidence = planningLike ? 0.82 : 0.72;
   }
 
+  const policyBoost = policySnapshot ? applyPolicySnapshot(packet, turnFrame, policySnapshot) : null;
+  if (policyBoost && policyBoost.route && !explicitCorrectionCue) {
+    route = policyBoost.route;
+    confidence = Math.max(confidence, policyBoost.confidence);
+  }
+
+  const heuristicQueries = buildQueries(packet);
+  const policyQueries = policyBoost?.queries ?? [];
+  const allQueries = [...new Set([...heuristicQueries, ...policyQueries])];
+
+  const heuristicMemoryTypes = route === 'high_confidence_correction_only'
+    ? ['correction']
+    : planningLike
+      ? ['correction', 'preference', 'workflow', 'context']
+      : installLike
+        ? ['correction', 'workflow']
+        : ['preference', 'context'];
+  const policyMemoryTypes = policyBoost?.memoryTypes ?? [];
+  const allMemoryTypes = [...new Set([...heuristicMemoryTypes, ...policyMemoryTypes])] as any;
+
   const retrievalPlan: RetrievalPlan = {
-    queries: buildQueries(packet),
-    memoryTypes: route === 'high_confidence_correction_only'
-      ? ['correction']
-      : planningLike
-        ? ['correction', 'preference', 'workflow', 'context']
-        : installLike
-          ? ['correction', 'workflow']
-          : ['preference', 'context'],
+    queries: allQueries,
+    memoryTypes: allMemoryTypes,
     requiredTags: [],
     excludedTags: [],
-    graphDepth: planningLike ? 1 : 0,
+    graphDepth: planningLike || policyBoost ? 1 : 0,
     maxCandidates: config.routing.maxCandidateMemories,
   };
 
@@ -156,7 +184,57 @@ function heuristicRoutePlan(packet: TurnEventPacket, turnFrame: TurnFrame, confi
     injectionPlan,
     shouldRetrieve: route !== 'no_memory',
     enqueueCapture: explicitCorrectionCue,
-    latencyReason: 'heuristic uncached route',
+    latencyReason: policySnapshot ? 'heuristic with policy snapshot' : 'heuristic uncached route',
+    policySnapshotId: policySnapshot?.id,
+  };
+}
+
+function applyPolicySnapshot(packet: TurnEventPacket, turnFrame: TurnFrame, policySnapshot: any) {
+  const boost = { route: null as RouteKind | null, confidence: 0, memoryTypes: [] as string[], queries: [] as string[] };
+  if (!policySnapshot?.policyText) return boost;
+  const policy = String(policySnapshot.policyText).toLowerCase();
+  const taskType = turnFrame.taskType;
+  const taskTypeLine = policy.split('\n').find(line => line.includes(taskType));
+  if (!taskTypeLine) return boost;
+  if (/retrieve|memory|pull/.test(taskTypeLine) && taskTypeLine.includes(taskType)) {
+    boost.route = 'retrieve_memory';
+    boost.confidence = 0.78;
+  }
+  if (/no memory|prefer no|skip memory/.test(taskTypeLine)) {
+    boost.route = 'no_memory';
+    boost.confidence = 0.7;
+  }
+  const typeMatches = taskTypeLine.match(/\b(correction|preference|workflow|context)\b/gi);
+  if (typeMatches) boost.memoryTypes = [...new Set(typeMatches.map(t => t.toLowerCase()))];
+  if (/planning/.test(taskType)) boost.queries.push('implementation planning architecture preferences workflow');
+  if (/coding/.test(taskType) && /install|dependency|package/.test(policy)) boost.queries.push('package manager correction workflow repo setup');
+  return boost;
+}
+
+function buildPolicyEnrichedRoute(packet: TurnEventPacket, turnFrame: TurnFrame, config: any, route: RouteKind, confidence: number, policyBoost: any): RoutePlan {
+  const explicitCorrectionCue = /\b(actually|instead|wrong|no,)\b/i.test(packet.latestUserMessage);
+  const heuristicQueries = buildQueries(packet);
+  const allQueries = [...new Set([...heuristicQueries, ...policyBoost.queries])];
+  return {
+    route,
+    confidence,
+    turnFrame,
+    retrievalPlan: {
+      queries: allQueries,
+      memoryTypes: policyBoost.memoryTypes as any,
+      requiredTags: [],
+      excludedTags: [],
+      graphDepth: 1,
+      maxCandidates: config.routing.maxCandidateMemories,
+    },
+    injectionPlan: {
+      maxItems: config.routing.maxInjectedMemories,
+      maxChars: config.routing.maxInjectedChars,
+      preferredFormat: explicitCorrectionCue ? 'rules' : 'bullets',
+    },
+    shouldRetrieve: route !== 'no_memory',
+    enqueueCapture: explicitCorrectionCue,
+    latencyReason: 'heuristic with policy snapshot',
   };
 }
 

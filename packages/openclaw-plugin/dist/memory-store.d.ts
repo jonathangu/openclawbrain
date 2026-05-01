@@ -51,6 +51,10 @@ export declare class MemoryStore {
     getUnresolvedRouteDecisions(agentId: string): RouteDecision[];
     getResolvedRouteDecisions(agentId: string, limit?: number): RouteDecision[];
     countRouteDecisions(agentId: string): number;
+    countRouteDecisionsByLatencyTier(agentId: string, latencyTier: string): number;
+    countSyncPlannerCalls(agentId: string): number;
+    averageSyncPlannerLatency(agentId: string): number;
+    countSyncPlannerFallbacks(agentId: string): number;
     countRouteExamples(agentId: string, polarity?: 'all' | 'positive' | 'negative'): number;
     insertRouteExample(example: Omit<RouteExample, 'id' | 'createdAt'> & {
         id?: string;
@@ -81,6 +85,10 @@ export declare class MemoryStore {
         captureCountDelta?: number;
     }): MemoryNode | null;
     pruneMemories(agentId: string, maxNodes: number): number;
+    decayFreshness(agentId: string, decayPerDay?: number): number;
+    getRouteExamplesByPolarity(agentId: string, polarity: 'positive' | 'negative', limit?: number): any[];
+    getConnectedMemories(memoryId: string, maxDepth?: number): MemoryNode[];
+    countEdgesForAgent(agentId: string): number;
     insertProofEvent(event: Omit<ProofEvent, 'id' | 'createdAt'> & {
         id?: string;
     }): ProofEvent;

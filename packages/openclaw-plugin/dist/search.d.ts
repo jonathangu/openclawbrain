@@ -55,6 +55,10 @@ export declare function searchPayload(config: any, agentId: string, query: strin
 export declare function graphPayload(config: any, agentId: string, limit?: number): {
     ok: boolean;
     agentId: string;
+    counts: {
+        nodes: number;
+        edges: number;
+    };
     nodes: {
         id: string;
         type: import("./memory-types.js").MemoryType;

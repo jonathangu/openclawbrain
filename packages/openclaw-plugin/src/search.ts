@@ -78,6 +78,10 @@ export function graphPayload(config: any, agentId: string, limit = 20) {
     return {
       ok: true,
       agentId,
+      counts: {
+        nodes: store.countMemories(agentId),
+        edges: store.countEdgesForAgent(agentId),
+      },
       nodes: nodes.map((node) => ({
         id: node.id,
         type: node.type,

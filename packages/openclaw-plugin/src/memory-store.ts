@@ -575,6 +575,34 @@ export class MemoryStore {
     return row?.cnt ?? 0;
   }
 
+  countRouteDecisionsByLatencyTier(agentId: string, latencyTier: string): number {
+    const row = this.db.prepare(
+      'SELECT COUNT(*) as cnt FROM route_decisions WHERE agent_id = ? AND latency_tier = ?'
+    ).get(agentId, latencyTier) as any;
+    return row?.cnt ?? 0;
+  }
+
+  countSyncPlannerCalls(agentId: string): number {
+    const row = this.db.prepare(
+      'SELECT COUNT(*) as cnt FROM route_decisions WHERE agent_id = ? AND sync_llm_used = 1'
+    ).get(agentId) as any;
+    return row?.cnt ?? 0;
+  }
+
+  averageSyncPlannerLatency(agentId: string): number {
+    const row = this.db.prepare(
+      'SELECT AVG(sync_latency_ms) as avg_ms FROM route_decisions WHERE agent_id = ? AND sync_llm_used = 1 AND sync_latency_ms IS NOT NULL'
+    ).get(agentId) as any;
+    return row?.avg_ms ? Number(row.avg_ms) : 0;
+  }
+
+  countSyncPlannerFallbacks(agentId: string): number {
+    const row = this.db.prepare(
+      'SELECT COUNT(*) as cnt FROM route_decisions WHERE agent_id = ? AND sync_llm_used = 1 AND fallback_used = 1'
+    ).get(agentId) as any;
+    return row?.cnt ?? 0;
+  }
+
   countRouteExamples(agentId: string, polarity: 'all' | 'positive' | 'negative' = 'all'): number {
     const row = polarity === 'positive'
       ? this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ? AND reward > 0').get(agentId) as any
@@ -757,6 +785,60 @@ export class MemoryStore {
     `).all(agentId, overflow) as Array<{ id: string }>;
     for (const victim of victims) this.softDeleteMemory(victim.id);
     return victims.length;
+  }
+
+  decayFreshness(agentId: string, decayPerDay = 0.01): number {
+    const cutoff = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+    this.db.prepare(
+      'UPDATE memory_nodes SET freshness = MAX(0, freshness - ?), updated_at = ? WHERE agent_id = ? AND deleted_at IS NULL AND last_seen_at < ?'
+    ).run(decayPerDay * 7, now(), agentId, cutoff);
+    const row = this.db.prepare(
+      'SELECT COUNT(*) as cnt FROM memory_nodes WHERE agent_id = ? AND deleted_at IS NULL AND freshness < 0.1'
+    ).get(agentId) as any;
+    return row?.cnt ?? 0;
+  }
+
+  getRouteExamplesByPolarity(agentId: string, polarity: 'positive' | 'negative', limit = 50): any[] {
+    if (polarity === 'positive') {
+      return this.db.prepare(
+        'SELECT * FROM route_examples WHERE agent_id = ? AND reward > 0 ORDER BY reward DESC, created_at DESC LIMIT ?'
+      ).all(agentId, limit) as any[];
+    }
+    return this.db.prepare(
+      'SELECT * FROM route_examples WHERE agent_id = ? AND reward < 0 ORDER BY reward ASC, created_at DESC LIMIT ?'
+    ).all(agentId, limit) as any[];
+  }
+
+  getConnectedMemories(memoryId: string, maxDepth = 1): MemoryNode[] {
+    const seen = new Set<string>([memoryId]);
+    let frontier = [memoryId];
+    for (let depth = 0; depth < Math.max(1, maxDepth); depth += 1) {
+      const next = new Set<string>();
+      for (const current of frontier) {
+        const edges = this.db.prepare(
+          'SELECT from_id, to_id FROM memory_edges WHERE from_id = ? OR to_id = ?'
+        ).all(current, current) as Array<{ from_id: string; to_id: string }>;
+        for (const edge of edges) {
+          const neighbor = edge.from_id === current ? edge.to_id : edge.from_id;
+          if (!neighbor || seen.has(neighbor)) continue;
+          seen.add(neighbor);
+          next.add(neighbor);
+        }
+      }
+      if (next.size === 0) break;
+      frontier = [...next];
+    }
+    const nodeIds = [...seen].filter((id) => id !== memoryId);
+    if (nodeIds.length === 0) return [];
+    const placeholders = nodeIds.map(() => '?').join(',');
+    return (this.db.prepare(
+      `SELECT * FROM memory_nodes WHERE id IN (${placeholders}) AND deleted_at IS NULL AND superseded_by IS NULL ORDER BY importance DESC`
+    ).all(...nodeIds) as any[]).map(rowToMemory);
+  }
+
+  countEdgesForAgent(agentId: string): number {
+    const row = this.db.prepare('SELECT COUNT(*) as cnt FROM memory_edges WHERE agent_id = ?').get(agentId) as any;
+    return row?.cnt ?? 0;
   }
 
   // ── Proof events ────────────────────────────────────────────────────────────

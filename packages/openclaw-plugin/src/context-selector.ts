@@ -2,6 +2,7 @@ import type { ContextSelection, MemoryNode } from './memory-types.js';
 import type { TurnEventPacket } from './capture.js';
 import type { RoutePlan } from './route-fn.js';
 import { clipText } from './redact.js';
+import type { MemoryStore } from './memory-store.js';
 
 export class ContextSelector {
   private config: any;
@@ -10,8 +11,20 @@ export class ContextSelector {
     this.config = config;
   }
 
-  select(input: { packet: TurnEventPacket; plan: RoutePlan; candidates: MemoryNode[] }): ContextSelection {
-    const { packet, plan, candidates } = input;
+  select(input: { packet: TurnEventPacket; plan: RoutePlan; candidates: MemoryNode[]; store?: MemoryStore }): ContextSelection {
+    const { packet, plan, store } = input;
+    let candidates = [...input.candidates];
+    if (plan.retrievalPlan.graphDepth > 0 && store) {
+      const expanded = new Set(candidates.map(c => c.id));
+      for (const candidate of candidates.slice(0, 5)) {
+        for (const connected of store.getConnectedMemories(candidate.id)) {
+          if (!expanded.has(connected.id)) {
+            expanded.add(connected.id);
+            candidates.push(connected);
+          }
+        }
+      }
+    }
     const ranked = rankCandidates(packet, plan, candidates);
     const selected: ContextSelection['selected'] = [];
     const omitted: ContextSelection['omitted'] = [];

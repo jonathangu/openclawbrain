@@ -17,5 +17,6 @@ export declare class BackgroundLearner {
         config: any;
     });
     processOutcomeClassification(agentId: string, packet: TurnEventPacket): BackgroundLearningReport;
+    processAgentEnd(agentId: string, packet: TurnEventPacket): BackgroundLearningReport;
     runMaintenance(agentId: string): BackgroundLearningReport;
 }

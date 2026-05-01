@@ -5,7 +5,19 @@ export class ContextSelector {
         this.config = config;
     }
     select(input) {
-        const { packet, plan, candidates } = input;
+        const { packet, plan, store } = input;
+        let candidates = [...input.candidates];
+        if (plan.retrievalPlan.graphDepth > 0 && store) {
+            const expanded = new Set(candidates.map(c => c.id));
+            for (const candidate of candidates.slice(0, 5)) {
+                for (const connected of store.getConnectedMemories(candidate.id)) {
+                    if (!expanded.has(connected.id)) {
+                        expanded.add(connected.id);
+                        candidates.push(connected);
+                    }
+                }
+            }
+        }
         const ranked = rankCandidates(packet, plan, candidates);
         const selected = [];
         const omitted = [];

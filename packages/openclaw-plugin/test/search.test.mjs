@@ -71,6 +71,7 @@ test('search, graph, learn payloads and corpus supplement expose stored memories
     const graph = graphPayload(config, 'main', 10);
     assert.equal(graph.nodes.length, 1);
     assert.equal(graph.nodes[0].id, memory.id);
+    assert.equal(graph.counts.nodes, 1);
 
     const learn = learnPayload(config, 'main', 10);
     assert.ok(learn.activePolicySnapshot);

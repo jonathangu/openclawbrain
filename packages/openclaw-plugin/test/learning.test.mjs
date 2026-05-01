@@ -120,3 +120,104 @@ test('background learner resolves tool outcomes into route examples and policy s
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('background learner marks injected memories corrected at agent_end', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      learning: { enabled: true, minExamplesForPolicyUpdate: 1, maxPositiveExamples: 5, maxNegativeExamples: 5 },
+    });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const memory = store.insertMemory({
+      agentId: 'main',
+      type: 'correction',
+      content: 'Use pnpm instead of npm for this repo.',
+      scopeKind: 'repo',
+      scopeKey: 'openclawbrain',
+      normalizedKey: 'repo:openclawbrain:package-manager',
+      tags: ['correction', 'package-manager'],
+      importance: 0.8,
+      freshness: 1,
+      confidence: 0.9,
+      useCount: 0,
+      usefulCount: 0,
+      captureCount: 1,
+    });
+    const route = store.insertRouteDecision({
+      agentId: 'main',
+      sessionId: 's2',
+      turnId: 't2',
+      runId: 'r2',
+      route: 'high_confidence_correction_only',
+      confidence: 0.91,
+      latencyTier: 'sync_memory_planner',
+      syncLlmUsed: true,
+      fallbackUsed: false,
+      turnFrame: {
+        summary: 'Update install docs',
+        userGoal: 'Update install docs',
+        taskType: 'coding',
+        activeObjects: [{ kind: 'repo', value: 'openclawbrain' }],
+        impliedNeeds: ['Need package-manager corrections'],
+        memoryQuestions: [],
+        constraints: [],
+        routeHints: {
+          likelyNeedsCorrections: true,
+          likelyNeedsPreferences: false,
+          likelyNeedsWorkflow: false,
+          likelyNeedsProjectContext: true,
+        },
+      },
+      retrievalPlan: {
+        queries: ['update install docs'],
+        memoryTypes: ['correction'],
+        requiredTags: [],
+        excludedTags: [],
+        graphDepth: 0,
+        maxCandidates: 10,
+      },
+      injectionPlan: { maxItems: 2, maxChars: 200, preferredFormat: 'rules' },
+      selectedMemoryIds: [memory.id],
+      omittedMemoryIds: [],
+      reward: 0,
+    });
+    store.insertInjection({
+      agentId: 'main',
+      memoryId: memory.id,
+      routeDecisionId: route.id,
+      runId: 'r2',
+      turnId: 't2',
+      sessionId: 's2',
+      query: 'update install docs',
+      rank: 1,
+      score: 0.95,
+    });
+
+    const learner = new BackgroundLearner({ store, config });
+    const report = learner.processAgentEnd('main', {
+      agentId: 'main',
+      sessionId: 's2',
+      turnId: 't2',
+      runId: 'r2',
+      sourceHook: 'agent_end',
+      latestUserMessage: 'No, use pnpm instead of npm here.',
+      redactedLatestUserMessage: 'No, use pnpm instead of npm here.',
+      recentAssistantMessage: '',
+      toolObservations: [],
+      recentInjections: [],
+      metadata: {},
+    });
+
+    assert.equal(report.outcomeResolutions, 1);
+    const resolvedRoute = store.getRouteDecision(route.id);
+    assert.equal(resolvedRoute.outcome, 'corrected_after_injection');
+    const updatedMemory = store.getMemory(memory.id);
+    assert.ok(updatedMemory.importance < 0.8);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
