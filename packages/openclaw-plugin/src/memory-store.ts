@@ -19,7 +19,7 @@ import type {
 
 // ── Schema version ────────────────────────────────────────────────────────────
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 
@@ -261,6 +261,13 @@ const MIGRATIONS: Record<number, string> = {
     );
 
     CREATE INDEX IF NOT EXISTS idx_proof_agent ON proof_events(agent_id);
+  `,
+  2: `
+    CREATE TABLE IF NOT EXISTS status_snapshots (
+      agent_id TEXT PRIMARY KEY,
+      status_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
   `,
 };
 
@@ -536,6 +543,16 @@ export class MemoryStore {
     ).all(agentId) as any[]).map(rowToRouteDecision);
   }
 
+  countRouteDecisions(agentId: string): number {
+    const row = this.db.prepare('SELECT COUNT(*) as cnt FROM route_decisions WHERE agent_id = ?').get(agentId) as any;
+    return row?.cnt ?? 0;
+  }
+
+  countRouteExamples(agentId: string): number {
+    const row = this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ?').get(agentId) as any;
+    return row?.cnt ?? 0;
+  }
+
   // ── Route examples and policy snapshots ──────────────────────────────────────
 
   insertRouteExample(example: Omit<RouteExample, 'id' | 'createdAt'> & { id?: string }): RouteExample {
@@ -682,6 +699,35 @@ export class MemoryStore {
       rawTranscriptStored: r.raw_transcript_stored === 1,
       payload: JSON.parse(r.payload_json),
     } as ProofEvent));
+  }
+
+  pruneProofEvents(agentId: string, retain: number) {
+    this.db.prepare(`
+      DELETE FROM proof_events
+      WHERE agent_id = ?
+        AND id NOT IN (
+          SELECT id FROM proof_events
+          WHERE agent_id = ?
+          ORDER BY created_at DESC
+          LIMIT ?
+        )
+    `).run(agentId, agentId, retain);
+  }
+
+  writeStatusSnapshot(agentId: string, status: Record<string, unknown>) {
+    this.db.prepare(`
+      INSERT INTO status_snapshots (agent_id, status_json, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(agent_id) DO UPDATE SET
+        status_json = excluded.status_json,
+        updated_at = excluded.updated_at
+    `).run(agentId, JSON.stringify(status), now());
+    return status;
+  }
+
+  readStatusSnapshot(agentId: string): Record<string, unknown> | null {
+    const row = this.db.prepare('SELECT status_json FROM status_snapshots WHERE agent_id = ?').get(agentId) as any;
+    return row ? JSON.parse(row.status_json) : null;
   }
 
   // ── Transactions ────────────────────────────────────────────────────────────

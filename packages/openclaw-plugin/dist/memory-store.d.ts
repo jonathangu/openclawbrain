@@ -48,6 +48,8 @@ export declare class MemoryStore {
     resolveRouteDecision(id: string, outcome: string, reward: number): void;
     getRecentRouteDecisions(agentId: string, limit?: number): RouteDecision[];
     getUnresolvedRouteDecisions(agentId: string): RouteDecision[];
+    countRouteDecisions(agentId: string): number;
+    countRouteExamples(agentId: string): number;
     insertRouteExample(example: Omit<RouteExample, 'id' | 'createdAt'> & {
         id?: string;
     }): RouteExample;
@@ -70,6 +72,9 @@ export declare class MemoryStore {
         id?: string;
     }): ProofEvent;
     getProofEvents(agentId: string, limit?: number): ProofEvent[];
+    pruneProofEvents(agentId: string, retain: number): void;
+    writeStatusSnapshot(agentId: string, status: Record<string, unknown>): Record<string, unknown>;
+    readStatusSnapshot(agentId: string): Record<string, unknown> | null;
     transaction<T>(fn: () => T): T;
 }
 export declare function dbPathForAgent(activationRoot: string, agentId: string): string;

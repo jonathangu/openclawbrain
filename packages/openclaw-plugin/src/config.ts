@@ -14,10 +14,61 @@ export const DEFAULT_CONFIG: any = Object.freeze({
   includeActivationContext: true,
   rawTranscriptUpload: false,
   scopes: Object.freeze({ agents: Object.freeze(['main']) }),
-  hooks: Object.freeze({ allowPromptInjection: false, allowConversationAccess: false })
+  hooks: Object.freeze({ allowPromptInjection: false, allowConversationAccess: false, allowToolObservation: false }),
+  llm: Object.freeze({
+    enabled: false,
+    provider: 'openclaw',
+    allowRemoteModels: false,
+    allowedModels: Object.freeze([]),
+    temperature: 0,
+    maxTokens: 1200,
+  }),
+  latency: Object.freeze({
+    noSynchronousLlmByDefault: true,
+    syncPlannerEnabled: true,
+    syncPlannerSoftTimeoutMs: 900,
+    syncPlannerHardTimeoutMs: 1800,
+    maxSyncPlannerCallsPerSession: 5,
+    maxSyncPlannerCallsPerHour: 30,
+    fallbackOnTimeout: 'cached_route',
+  }),
+  capture: Object.freeze({
+    enabled: true,
+    mode: 'hybrid',
+    minConfidence: 0.7,
+    immediateCorrectionCapture: true,
+    postRunWorkflowCapture: true,
+    storeCandidates: true,
+    agentEndMode: 'enqueue',
+  }),
+  routing: Object.freeze({
+    enabled: true,
+    mode: 'hybrid_llm_on_cache_miss',
+    minRouteConfidence: 0.7,
+    maxCandidateMemories: 40,
+    maxInjectedMemories: 5,
+    maxInjectedChars: 1200,
+    learnFromOutcomes: true,
+  }),
+  learning: Object.freeze({
+    enabled: true,
+    intervalMs: 60000,
+    minExamplesForPolicyUpdate: 5,
+    maxPositiveExamples: 25,
+    maxNegativeExamples: 25,
+    pruneIntervalMs: 3600000,
+    maxMemoryNodesPerAgent: 5000,
+  }),
+  privacy: Object.freeze({
+    storeRawTranscript: false,
+    redactBeforeStore: true,
+    redactBeforeLlm: true,
+    storeDistillationInputs: false,
+    storeDistillationOutputs: true,
+  }),
 });
 
-const MODES = new Set(['off', 'proof-only', 'conservative', 'active']);
+const MODES = new Set(['off', 'proof-only', 'conservative', 'active', 'balanced', 'aggressive']);
 
 export function resolveOpenClawBrainConfig(api: any = {}) {
   const entry = livePluginEntry(api);
@@ -64,8 +115,66 @@ export function normalizePluginConfig(input: any = {}) {
     scopes: normalizeScopes(source.scopes),
     hooks: {
       allowPromptInjection: source.hooks?.allowPromptInjection === true,
-      allowConversationAccess: source.hooks?.allowConversationAccess === true
-    }
+      allowConversationAccess: source.hooks?.allowConversationAccess === true,
+      allowToolObservation: source.hooks?.allowToolObservation === true,
+    },
+    llm: {
+      enabled: source.llm?.enabled === true,
+      provider: safeString(source.llm?.provider) || DEFAULT_CONFIG.llm.provider,
+      routeModel: nonEmptyString(source.llm?.routeModel) || '',
+      plannerModel: nonEmptyString(source.llm?.plannerModel) || '',
+      feedbackModel: nonEmptyString(source.llm?.feedbackModel) || '',
+      learningModel: nonEmptyString(source.llm?.learningModel) || '',
+      baseUrl: nonEmptyString(source.llm?.baseUrl) || '',
+      apiKeyEnv: nonEmptyString(source.llm?.apiKeyEnv) || '',
+      allowRemoteModels: source.llm?.allowRemoteModels === true,
+      allowedModels: Array.isArray(source.llm?.allowedModels) ? source.llm.allowedModels.map((v: any) => safeString(v)).filter(Boolean) : [],
+      temperature: clampNumber(source.llm?.temperature, DEFAULT_CONFIG.llm.temperature, 0, 2),
+      maxTokens: clampInteger(source.llm?.maxTokens, DEFAULT_CONFIG.llm.maxTokens, 1, 100000),
+    },
+    latency: {
+      noSynchronousLlmByDefault: source.latency?.noSynchronousLlmByDefault !== false,
+      syncPlannerEnabled: source.latency?.syncPlannerEnabled !== false,
+      syncPlannerSoftTimeoutMs: clampInteger(source.latency?.syncPlannerSoftTimeoutMs, DEFAULT_CONFIG.latency.syncPlannerSoftTimeoutMs, 100, 10000),
+      syncPlannerHardTimeoutMs: clampInteger(source.latency?.syncPlannerHardTimeoutMs, DEFAULT_CONFIG.latency.syncPlannerHardTimeoutMs, 100, 30000),
+      maxSyncPlannerCallsPerSession: clampInteger(source.latency?.maxSyncPlannerCallsPerSession, DEFAULT_CONFIG.latency.maxSyncPlannerCallsPerSession, 0, 1000),
+      maxSyncPlannerCallsPerHour: clampInteger(source.latency?.maxSyncPlannerCallsPerHour, DEFAULT_CONFIG.latency.maxSyncPlannerCallsPerHour, 0, 10000),
+      fallbackOnTimeout: nonEmptyString(source.latency?.fallbackOnTimeout) || DEFAULT_CONFIG.latency.fallbackOnTimeout,
+    },
+    capture: {
+      enabled: source.capture?.enabled !== false,
+      mode: nonEmptyString(source.capture?.mode) || DEFAULT_CONFIG.capture.mode,
+      minConfidence: clampNumber(source.capture?.minConfidence, DEFAULT_CONFIG.capture.minConfidence, 0, 1),
+      immediateCorrectionCapture: source.capture?.immediateCorrectionCapture !== false,
+      postRunWorkflowCapture: source.capture?.postRunWorkflowCapture !== false,
+      storeCandidates: source.capture?.storeCandidates !== false,
+      agentEndMode: nonEmptyString(source.capture?.agentEndMode) || DEFAULT_CONFIG.capture.agentEndMode,
+    },
+    routing: {
+      enabled: source.routing?.enabled !== false,
+      mode: nonEmptyString(source.routing?.mode) || DEFAULT_CONFIG.routing.mode,
+      minRouteConfidence: clampNumber(source.routing?.minRouteConfidence, DEFAULT_CONFIG.routing.minRouteConfidence, 0, 1),
+      maxCandidateMemories: clampInteger(source.routing?.maxCandidateMemories, DEFAULT_CONFIG.routing.maxCandidateMemories, 1, 1000),
+      maxInjectedMemories: clampInteger(source.routing?.maxInjectedMemories, DEFAULT_CONFIG.routing.maxInjectedMemories, 0, 100),
+      maxInjectedChars: clampInteger(source.routing?.maxInjectedChars, DEFAULT_CONFIG.routing.maxInjectedChars, 0, 20000),
+      learnFromOutcomes: source.routing?.learnFromOutcomes !== false,
+    },
+    learning: {
+      enabled: source.learning?.enabled !== false,
+      intervalMs: clampInteger(source.learning?.intervalMs, DEFAULT_CONFIG.learning.intervalMs, 1000, 86400000),
+      minExamplesForPolicyUpdate: clampInteger(source.learning?.minExamplesForPolicyUpdate, DEFAULT_CONFIG.learning.minExamplesForPolicyUpdate, 1, 1000),
+      maxPositiveExamples: clampInteger(source.learning?.maxPositiveExamples, DEFAULT_CONFIG.learning.maxPositiveExamples, 1, 1000),
+      maxNegativeExamples: clampInteger(source.learning?.maxNegativeExamples, DEFAULT_CONFIG.learning.maxNegativeExamples, 1, 1000),
+      pruneIntervalMs: clampInteger(source.learning?.pruneIntervalMs, DEFAULT_CONFIG.learning.pruneIntervalMs, 1000, 86400000),
+      maxMemoryNodesPerAgent: clampInteger(source.learning?.maxMemoryNodesPerAgent, DEFAULT_CONFIG.learning.maxMemoryNodesPerAgent, 1, 1000000),
+    },
+    privacy: {
+      storeRawTranscript: false,
+      redactBeforeStore: source.privacy?.redactBeforeStore !== false,
+      redactBeforeLlm: source.privacy?.redactBeforeLlm !== false,
+      storeDistillationInputs: source.privacy?.storeDistillationInputs === true,
+      storeDistillationOutputs: source.privacy?.storeDistillationOutputs !== false,
+    },
   };
 }
 
@@ -103,4 +212,10 @@ function clampInteger(value: any, fallback: number, min: number, max: number) {
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return Math.min(max, Math.max(min, Math.trunc(number)));
+}
+
+function clampNumber(value: any, fallback: number, min: number, max: number) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
 }

@@ -6,7 +6,7 @@ import os from 'node:os';
 import { mkdirSync } from 'node:fs';
 import BetterSqlite3 from 'better-sqlite3';
 // ── Schema version ────────────────────────────────────────────────────────────
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 const MIGRATIONS = {
     1: `
@@ -247,6 +247,13 @@ const MIGRATIONS = {
 
     CREATE INDEX IF NOT EXISTS idx_proof_agent ON proof_events(agent_id);
   `,
+    2: `
+    CREATE TABLE IF NOT EXISTS status_snapshots (
+      agent_id TEXT PRIMARY KEY,
+      status_json TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `,
 };
 // ── UUID helper ───────────────────────────────────────────────────────────────
 import { randomUUID } from 'node:crypto';
@@ -436,6 +443,14 @@ export class MemoryStore {
     getUnresolvedRouteDecisions(agentId) {
         return this.db.prepare("SELECT * FROM route_decisions WHERE agent_id = ? AND outcome = 'pending' ORDER BY created_at DESC LIMIT 50").all(agentId).map(rowToRouteDecision);
     }
+    countRouteDecisions(agentId) {
+        const row = this.db.prepare('SELECT COUNT(*) as cnt FROM route_decisions WHERE agent_id = ?').get(agentId);
+        return row?.cnt ?? 0;
+    }
+    countRouteExamples(agentId) {
+        const row = this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ?').get(agentId);
+        return row?.cnt ?? 0;
+    }
     // ── Route examples and policy snapshots ──────────────────────────────────────
     insertRouteExample(example) {
         const id = example.id || uuid();
@@ -553,6 +568,32 @@ export class MemoryStore {
             rawTranscriptStored: r.raw_transcript_stored === 1,
             payload: JSON.parse(r.payload_json),
         }));
+    }
+    pruneProofEvents(agentId, retain) {
+        this.db.prepare(`
+      DELETE FROM proof_events
+      WHERE agent_id = ?
+        AND id NOT IN (
+          SELECT id FROM proof_events
+          WHERE agent_id = ?
+          ORDER BY created_at DESC
+          LIMIT ?
+        )
+    `).run(agentId, agentId, retain);
+    }
+    writeStatusSnapshot(agentId, status) {
+        this.db.prepare(`
+      INSERT INTO status_snapshots (agent_id, status_json, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(agent_id) DO UPDATE SET
+        status_json = excluded.status_json,
+        updated_at = excluded.updated_at
+    `).run(agentId, JSON.stringify(status), now());
+        return status;
+    }
+    readStatusSnapshot(agentId) {
+        const row = this.db.prepare('SELECT status_json FROM status_snapshots WHERE agent_id = ?').get(agentId);
+        return row ? JSON.parse(row.status_json) : null;
     }
     // ── Transactions ────────────────────────────────────────────────────────────
     transaction(fn) {

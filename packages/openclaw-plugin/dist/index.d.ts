@@ -6,6 +6,12 @@ export { appendProofEvent, readProofEvents, readStatus, writeStatus } from './pr
 export { buildStatus } from './status.js';
 export { FakeLlmClient, OpenAICompatibleLlmClient } from './llm-client.js';
 export { JsonParseError, JsonTimeoutError, JsonValidationError, runJsonWithValidation, validateWithGuard, withTimeout } from './llm-json.js';
+export { CaptureOrchestrator, sanitizeToolEvent } from './capture.js';
+export { FeedbackDistiller, validateFeedbackDistillation } from './feedback-distiller.js';
+export { MemoryOperationApplier } from './memory-operations.js';
+export { JobQueue } from './job-queue.js';
+export { LatencyController } from './latency-controller.js';
+export { RouteCache, RouteFn } from './route-fn.js';
 export declare const openClawBrainPluginEntry: {
     id: string;
     name: string;

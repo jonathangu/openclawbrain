@@ -17,6 +17,64 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
     hooks: {
         allowPromptInjection: boolean;
         allowConversationAccess: boolean;
+        allowToolObservation: boolean;
+    };
+    llm: {
+        enabled: boolean;
+        provider: any;
+        routeModel: string;
+        plannerModel: string;
+        feedbackModel: string;
+        learningModel: string;
+        baseUrl: string;
+        apiKeyEnv: string;
+        allowRemoteModels: boolean;
+        allowedModels: any;
+        temperature: number;
+        maxTokens: number;
+    };
+    latency: {
+        noSynchronousLlmByDefault: boolean;
+        syncPlannerEnabled: boolean;
+        syncPlannerSoftTimeoutMs: number;
+        syncPlannerHardTimeoutMs: number;
+        maxSyncPlannerCallsPerSession: number;
+        maxSyncPlannerCallsPerHour: number;
+        fallbackOnTimeout: any;
+    };
+    capture: {
+        enabled: boolean;
+        mode: any;
+        minConfidence: number;
+        immediateCorrectionCapture: boolean;
+        postRunWorkflowCapture: boolean;
+        storeCandidates: boolean;
+        agentEndMode: any;
+    };
+    routing: {
+        enabled: boolean;
+        mode: any;
+        minRouteConfidence: number;
+        maxCandidateMemories: number;
+        maxInjectedMemories: number;
+        maxInjectedChars: number;
+        learnFromOutcomes: boolean;
+    };
+    learning: {
+        enabled: boolean;
+        intervalMs: number;
+        minExamplesForPolicyUpdate: number;
+        maxPositiveExamples: number;
+        maxNegativeExamples: number;
+        pruneIntervalMs: number;
+        maxMemoryNodesPerAgent: number;
+    };
+    privacy: {
+        storeRawTranscript: boolean;
+        redactBeforeStore: boolean;
+        redactBeforeLlm: boolean;
+        storeDistillationInputs: boolean;
+        storeDistillationOutputs: boolean;
     };
 };
 export declare function livePluginEntry(api?: any): any;
@@ -36,6 +94,64 @@ export declare function normalizePluginConfig(input?: any): {
     hooks: {
         allowPromptInjection: boolean;
         allowConversationAccess: boolean;
+        allowToolObservation: boolean;
+    };
+    llm: {
+        enabled: boolean;
+        provider: any;
+        routeModel: string;
+        plannerModel: string;
+        feedbackModel: string;
+        learningModel: string;
+        baseUrl: string;
+        apiKeyEnv: string;
+        allowRemoteModels: boolean;
+        allowedModels: any;
+        temperature: number;
+        maxTokens: number;
+    };
+    latency: {
+        noSynchronousLlmByDefault: boolean;
+        syncPlannerEnabled: boolean;
+        syncPlannerSoftTimeoutMs: number;
+        syncPlannerHardTimeoutMs: number;
+        maxSyncPlannerCallsPerSession: number;
+        maxSyncPlannerCallsPerHour: number;
+        fallbackOnTimeout: any;
+    };
+    capture: {
+        enabled: boolean;
+        mode: any;
+        minConfidence: number;
+        immediateCorrectionCapture: boolean;
+        postRunWorkflowCapture: boolean;
+        storeCandidates: boolean;
+        agentEndMode: any;
+    };
+    routing: {
+        enabled: boolean;
+        mode: any;
+        minRouteConfidence: number;
+        maxCandidateMemories: number;
+        maxInjectedMemories: number;
+        maxInjectedChars: number;
+        learnFromOutcomes: boolean;
+    };
+    learning: {
+        enabled: boolean;
+        intervalMs: number;
+        minExamplesForPolicyUpdate: number;
+        maxPositiveExamples: number;
+        maxNegativeExamples: number;
+        pruneIntervalMs: number;
+        maxMemoryNodesPerAgent: number;
+    };
+    privacy: {
+        storeRawTranscript: boolean;
+        redactBeforeStore: boolean;
+        redactBeforeLlm: boolean;
+        storeDistillationInputs: boolean;
+        storeDistillationOutputs: boolean;
     };
 };
 export declare function normalizeScopes(scopes?: any): {

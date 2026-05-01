@@ -1,4 +1,18 @@
-declare const process: { pid: number; platform: string; execPath: string; argv: string[]; stderr: { write(value: string): void }; stdout: { write(value: string): void }; exit(code?: number): never };
+declare const process: { pid: number; platform: string; execPath: string; argv: string[]; env: Record<string, string | undefined>; stderr: { write(value: string): void }; stdout: { write(value: string): void }; exit(code?: number): never };
+
+declare namespace NodeJS {
+  interface Timeout {}
+}
+
+declare function setInterval(handler: (...args: any[]) => void, timeout?: number, ...args: any[]): NodeJS.Timeout;
+declare function clearInterval(timeoutId: NodeJS.Timeout): void;
+
+declare class URL {
+  constructor(input: string, base?: string);
+  searchParams: { get(name: string): string | null };
+}
+
+declare function fetch(input: string, init?: any): Promise<{ ok: boolean; status: number; statusText: string; text(): Promise<string>; json(): Promise<any> }>;
 
 declare module 'node:os' {
   export function homedir(): string;
@@ -23,6 +37,10 @@ declare module 'node:fs/promises' {
   export function rm(path: string, options?: any): Promise<void>;
   export function symlink(target: string, path: string): Promise<void>;
   export function writeFile(path: string, data: string, options?: any): Promise<void>;
+}
+
+declare module 'node:fs' {
+  export function mkdirSync(path: string, options?: any): void;
 }
 
 declare module 'node:crypto' {

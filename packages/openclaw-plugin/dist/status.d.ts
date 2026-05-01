@@ -10,4 +10,8 @@ export declare function buildStatus(config: any, details?: any): {
     rawTranscriptUpload: boolean;
     lastDecisionKind: any;
     lastDecisionAt: any;
+    memory: any;
+    routing: any;
+    learning: any;
+    latency: any;
 };

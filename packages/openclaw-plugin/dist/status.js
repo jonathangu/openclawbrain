@@ -11,6 +11,10 @@ export function buildStatus(config, details = {}) {
         proofEvents: config.proofEvents ? 'writing' : 'disabled',
         rawTranscriptUpload: false,
         lastDecisionKind: details.lastDecisionKind || details.lastDecision || 'none',
-        lastDecisionAt: details.lastDecisionAt || new Date().toISOString()
+        lastDecisionAt: details.lastDecisionAt || new Date().toISOString(),
+        memory: details.memory || undefined,
+        routing: details.routing || undefined,
+        learning: details.learning || undefined,
+        latency: details.latency || undefined,
     };
 }

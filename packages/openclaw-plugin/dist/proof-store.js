@@ -1,11 +1,39 @@
 import { chmod, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { activationRootForAgent } from './config.js';
+import { MemoryStore } from './memory-store.js';
 import { sanitizeForProof } from './redact.js';
 export async function appendProofEvent(event, options) {
     const root = await proofRoot(options, event.agentId || options.agentId || 'main');
-    const file = path.join(root, 'proof-events.jsonl');
     const sanitized = sanitizeProofEvent(event);
+    // Canonical v0.2 path: SQLite
+    try {
+        const store = new MemoryStore({ activationRoot: root, agentId: event.agentId || options.agentId || 'main' });
+        const retention = Number.isFinite(Number(options.proofRetentionEvents))
+            ? Math.min(50000, Math.max(50, Math.trunc(Number(options.proofRetentionEvents))))
+            : 1000;
+        store.insertProofEvent({
+            agentId: sanitized.agentId || event.agentId || options.agentId || 'main',
+            kind: sanitized.kind || sanitized.decisionKind || 'proof_event',
+            sourceHook: sanitized.hookPhase,
+            turnId: sanitized.turnId,
+            sessionId: sanitized.sessionId,
+            runId: sanitized.runId,
+            memoryId: sanitized.memoryId,
+            injectionId: sanitized.injectionId,
+            routeDecisionId: sanitized.routeDecisionId,
+            distillationRunId: sanitized.distillationRunId,
+            rawTranscriptStored: false,
+            payload: sanitized,
+        });
+        store.pruneProofEvents(sanitized.agentId || event.agentId || options.agentId || 'main', retention);
+        store.close();
+    }
+    catch {
+        // keep legacy path as compatibility fallback
+    }
+    // Legacy v0.1 compatibility mirror: JSONL file
+    const file = path.join(root, 'proof-events.jsonl');
     const previous = await readJsonl(file);
     previous.push(sanitized);
     const configuredRetention = Number(options.proofRetentionEvents);
@@ -15,20 +43,49 @@ export async function appendProofEvent(event, options) {
     return sanitized;
 }
 export async function readProofEvents(options = {}) {
-    const root = await proofRoot(options, options.agentId || 'main');
+    const agentId = options.agentId || 'main';
+    const root = await proofRoot(options, agentId);
+    const limit = Math.min(100, Math.max(1, Number(options.limit || 20)));
+    try {
+        const store = new MemoryStore({ activationRoot: root, agentId });
+        const events = store.getProofEvents(agentId, limit).map((event) => sanitizeProofEvent(event.payload ?? event)).reverse();
+        store.close();
+        if (events.length > 0)
+            return events;
+    }
+    catch {
+    }
     const file = path.join(root, 'proof-events.jsonl');
     const events = await readJsonl(file);
-    const limit = Math.min(100, Math.max(1, Number(options.limit || 20)));
     return events.slice(-limit).map(sanitizeProofEvent);
 }
 export async function writeStatus(status, options) {
-    const root = await proofRoot(options, status.agentId || options.agentId || 'main');
+    const agentId = status.agentId || options.agentId || 'main';
+    const root = await proofRoot(options, agentId);
+    const sanitized = sanitizeForProof(status);
+    try {
+        const store = new MemoryStore({ activationRoot: root, agentId });
+        store.writeStatusSnapshot(agentId, sanitized);
+        store.close();
+    }
+    catch {
+    }
     const file = path.join(root, 'status.json');
-    await atomicWrite(file, `${JSON.stringify(sanitizeForProof(status), null, 2)}\n`);
+    await atomicWrite(file, `${JSON.stringify(sanitized, null, 2)}\n`);
     return status;
 }
 export async function readStatus(options = {}) {
-    const root = await proofRoot(options, options.agentId || 'main');
+    const agentId = options.agentId || 'main';
+    const root = await proofRoot(options, agentId);
+    try {
+        const store = new MemoryStore({ activationRoot: root, agentId });
+        const status = store.readStatusSnapshot(agentId);
+        store.close();
+        if (status)
+            return status;
+    }
+    catch {
+    }
     const file = path.join(root, 'status.json');
     try {
         return JSON.parse(await readFile(file, 'utf8'));
@@ -45,7 +102,7 @@ export function sanitizeProofEvent(event = {}) {
         rawTranscriptStored: false,
         rawUserTextStored: false,
         redactionApplied: true,
-        hashesOnlyForUserText: true
+        hashesOnlyForUserText: true,
     });
 }
 async function proofRoot(options = {}, agentId = 'main') {

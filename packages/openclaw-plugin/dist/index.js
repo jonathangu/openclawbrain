@@ -1,5 +1,11 @@
 import { DEFAULT_CONFIG, PLUGIN_ID, PLUGIN_VERSION, isAgentAllowed, normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 import { buildInjectionText, ensureActivationRoot, readActivationContext } from './context-files.js';
+import { CaptureOrchestrator } from './capture.js';
+import { FeedbackDistiller } from './feedback-distiller.js';
+import { JobQueue } from './job-queue.js';
+import { OpenAICompatibleLlmClient } from './llm-client.js';
+import { MemoryOperationApplier } from './memory-operations.js';
+import { MemoryStore } from './memory-store.js';
 import { decidePolicy } from './policy.js';
 import { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 import { buildStatus } from './status.js';
@@ -12,6 +18,12 @@ export { appendProofEvent, readProofEvents, readStatus, writeStatus } from './pr
 export { buildStatus } from './status.js';
 export { FakeLlmClient, OpenAICompatibleLlmClient } from './llm-client.js';
 export { JsonParseError, JsonTimeoutError, JsonValidationError, runJsonWithValidation, validateWithGuard, withTimeout } from './llm-json.js';
+export { CaptureOrchestrator, sanitizeToolEvent } from './capture.js';
+export { FeedbackDistiller, validateFeedbackDistillation } from './feedback-distiller.js';
+export { MemoryOperationApplier } from './memory-operations.js';
+export { JobQueue } from './job-queue.js';
+export { LatencyController } from './latency-controller.js';
+export { RouteCache, RouteFn } from './route-fn.js';
 export const openClawBrainPluginEntry = {
     id: PLUGIN_ID,
     name: 'OpenClawBrain',
@@ -89,16 +101,30 @@ function registerLifecycleHooks(api, resolve) {
     safeRegisterHook(api, 'gateway_start', async (event = {}) => writeGatewayStatus('gateway_start', event, resolve(), api));
     safeRegisterHook(api, 'gateway_stop', async (event = {}) => writeGatewayStatus('gateway_stop', event, resolve(), api));
     if (resolve().hooks.allowConversationAccess === true) {
-        safeRegisterOptionalHook(api, 'agent_end', async (event = {}) => writeTelemetryEvent('agent_end', event, resolve(), api));
+        safeRegisterOptionalHook(api, 'agent_end', async (event = {}) => handleAgentEnd(event, resolve(), api));
+    }
+    if (resolve().hooks.allowToolObservation === true) {
+        safeRegisterOptionalHook(api, 'after_tool_call', async (event = {}) => handleAfterToolCall(event, resolve(), api));
     }
 }
 function registerFirstClassSurfaces(api, resolve) {
+    const serviceState = {};
     api.registerService?.({
         id: PLUGIN_ID,
         start: async () => {
             await writeGatewayStatus('service_start', {}, resolve(), api);
+            const config = resolve();
+            if (config.learning.enabled === true) {
+                serviceState.timer = setInterval(() => {
+                    void processBackgroundJobs(config, api).catch((error) => {
+                        api.logger?.warn?.({ error }, 'OpenClawBrain background job processing failed');
+                    });
+                }, config.learning.intervalMs);
+            }
         },
         stop: async () => {
+            if (serviceState.timer)
+                clearInterval(serviceState.timer);
             await writeGatewayStatus('service_stop', {}, resolve(), api);
         }
     });
@@ -120,13 +146,43 @@ function registerFirstClassSurfaces(api, resolve) {
 async function statusPayload(config, req = {}) {
     const agentId = safeString(req.query?.agentId ?? req.query?.agent ?? config.scopes.agents[0] ?? 'main') || 'main';
     let persisted = null;
+    let details = {};
     try {
         persisted = await readStatus({ activationRoot: config.activationRoot, agentId });
     }
     catch {
         persisted = null;
     }
-    return { ...buildStatus(config, { agentId }), persisted };
+    try {
+        const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+        details = {
+            memory: {
+                nodes: store.countMemories(agentId),
+                corrections: store.countMemories(agentId, 'correction'),
+                preferences: store.countMemories(agentId, 'preference'),
+                workflows: store.countMemories(agentId, 'workflow'),
+                context: store.countMemories(agentId, 'context'),
+            },
+            routing: {
+                activePolicySnapshotId: store.getActivePolicySnapshot(agentId)?.id || null,
+                routeDecisions: store.countRouteDecisions(agentId),
+                pendingOutcomes: store.getUnresolvedRouteDecisions(agentId).length,
+                positiveExamples: store.countRouteExamples(agentId),
+            },
+            learning: {
+                enabled: config.learning.enabled === true,
+                queueDepth: store.getJobQueueDepth(agentId),
+            },
+            latency: {
+                syncPlannerEnabled: config.latency.syncPlannerEnabled === true,
+            },
+        };
+        store.close();
+    }
+    catch {
+        details = {};
+    }
+    return { ...buildStatus(config, { agentId, ...details }), persisted };
 }
 async function proofPayload(config, limit = 20) {
     const agentId = config.scopes.agents[0] || 'main';
@@ -214,6 +270,97 @@ async function writeGatewayStatus(marker, event, config, api) {
 }
 async function writeDecisionStatus(config, redactedTurn, decision) {
     await writeStatus(buildStatus(config, { agentId: redactedTurn.agentId, lastDecisionKind: decision.kind }), { activationRoot: config.activationRoot, agentId: redactedTurn.agentId });
+}
+async function handleAgentEnd(event = {}, config = {}, api = {}) {
+    await writeTelemetryEvent('agent_end', event, config, api);
+    if (!config.capture?.enabled || config.hooks.allowConversationAccess !== true)
+        return {};
+    const agentId = agentIdFromEvent(event);
+    const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+    const queue = new JobQueue({ store });
+    const packet = new CaptureOrchestrator().fromAgentEnd(event, config);
+    if (config.capture.agentEndMode === 'best_effort_async' && config.llm.enabled === true) {
+        try {
+            await runFeedbackDistillation(packet, config, store);
+        }
+        catch (error) {
+            api.logger?.warn?.({ error }, 'OpenClawBrain best-effort agent_end distillation failed');
+        }
+        finally {
+            store.close();
+        }
+        return {};
+    }
+    queue.enqueueFeedbackDistillation(agentId, { packet }, { priority: 10 });
+    store.close();
+    return {};
+}
+async function handleAfterToolCall(event = {}, config = {}, api = {}) {
+    const agentId = agentIdFromEvent(event);
+    const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+    const queue = new JobQueue({ store });
+    const packet = new CaptureOrchestrator().fromAfterToolCall(event, config);
+    queue.enqueueOutcomeClassification(agentId, { packet }, { priority: 5 });
+    store.close();
+    return {};
+}
+async function processBackgroundJobs(config = {}, api = {}) {
+    if (config.capture?.enabled !== true)
+        return;
+    const agentId = config.scopes.agents[0] || 'main';
+    const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+    const queue = new JobQueue({ store });
+    const job = queue.claimNext();
+    if (!job) {
+        store.close();
+        return;
+    }
+    try {
+        if (job.kind === 'feedback_distillation') {
+            await runFeedbackDistillation(job.payload?.packet, config, store);
+        }
+        queue.complete(job.id);
+    }
+    catch (error) {
+        queue.fail(job.id, error?.message || String(error), 5000);
+        api.logger?.warn?.({ error, jobId: job.id, kind: job.kind }, 'OpenClawBrain background job failed');
+    }
+    finally {
+        store.close();
+    }
+}
+async function runFeedbackDistillation(packet, config, store) {
+    const client = llmClientFromConfig(config);
+    if (!client)
+        return null;
+    const distiller = new FeedbackDistiller({ client, config });
+    const result = await distiller.distill(packet);
+    const applied = new MemoryOperationApplier({ store, config }).applyDistillation(result.output, packet);
+    store.insertDistillationRun({
+        agentId: packet.agentId,
+        sessionId: packet.sessionId,
+        turnId: packet.turnId,
+        runId: packet.runId,
+        phase: packet.sourceHook === 'agent_end' ? 'agent_end_feedback' : 'immediate_feedback',
+        model: result.audit.model,
+        promptVersion: 'feedback-distiller-v1',
+        inputHash: result.audit.inputHash,
+        redactedInputSummary: result.audit.redactedInputSummary,
+        outputJson: JSON.stringify(result.output),
+        validationStatus: result.audit.validationStatus,
+        validationError: result.audit.validationError || result.audit.parseError,
+        latencyMs: result.audit.latencyMs,
+    });
+    return applied;
+}
+function llmClientFromConfig(config) {
+    if (config.llm?.enabled !== true)
+        return null;
+    if (config.llm.provider === 'openai-compatible' && config.llm.baseUrl) {
+        const apiKey = config.llm.apiKeyEnv ? process.env[config.llm.apiKeyEnv] : undefined;
+        return new OpenAICompatibleLlmClient({ baseUrl: config.llm.baseUrl, apiKey });
+    }
+    return null;
 }
 function safeRegisterHook(api, name, handler) {
     try {
