@@ -38,8 +38,7 @@ test('route fn plans correction retrieval for explicit correction', () => {
   const plan = routeFn.plan({
     agentId: 'main',
     sourceHook: 'before_prompt_build',
-    latestUserMessage: 'Actually, use pnpm instead of npm for this repo',
-    redactedLatestUserMessage: 'Actually, use pnpm instead of npm for this repo',
+    latestUserMessageRedacted: 'Actually, use pnpm instead of npm for this repo',
     toolObservations: [],
     recentInjections: [],
     metadata: { turnType: 'correction' },
@@ -55,8 +54,7 @@ test('route fn plans broader retrieval for implementation planning', () => {
   const plan = routeFn.plan({
     agentId: 'main',
     sourceHook: 'before_prompt_build',
-    latestUserMessage: 'Build the implementation plan file-by-file for OpenClawBrain v0.2',
-    redactedLatestUserMessage: 'Build the implementation plan file-by-file for OpenClawBrain v0.2',
+    latestUserMessageRedacted: 'Build the implementation plan file-by-file for OpenClawBrain v0.2',
     toolObservations: [],
     recentInjections: [],
     metadata: { turnType: 'planning' },
@@ -73,8 +71,7 @@ test('route cache reuses the prior plan for the same fingerprint', () => {
   const packet = {
     agentId: 'main',
     sourceHook: 'before_prompt_build',
-    latestUserMessage: 'Install dependencies',
-    redactedLatestUserMessage: 'Install dependencies',
+    latestUserMessageRedacted: 'Install dependencies',
     toolObservations: [],
     recentInjections: [],
     metadata: { turnType: 'coding' },

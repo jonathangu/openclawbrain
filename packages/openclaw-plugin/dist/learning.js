@@ -37,7 +37,7 @@ export class BackgroundLearner {
             .filter((injection) => (packet.runId ? injection.runId === packet.runId : true))
             .filter((injection) => (packet.turnId ? injection.turnId === packet.turnId : true))
             .slice(0, 10);
-        const correctionSignal = isCorrectionAfterInjection(packet.latestUserMessage);
+        const correctionSignal = isCorrectionAfterInjection(packet.latestUserMessageRedacted);
         if (correctionSignal) {
             for (const injection of pending) {
                 this.store.resolveInjectionOutcome(injection.id, 'user_corrected', correctionSignal);

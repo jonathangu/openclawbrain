@@ -12,7 +12,7 @@
 
 ## Current truth
 
-OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with 53 passing plugin tests. Current package release: **v0.2.2**.
+OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with 53 passing plugin tests. Current package release: **v0.2.3**.
 
 The package still keeps **legacy file-backed compatibility modes** (`proof-only`, `conservative`, `active`) for users who want the older activation-file path. The **v0.2 path** is `mode: "balanced"` or `"aggressive"`.
 
@@ -62,6 +62,8 @@ export OPENCLAWBRAIN_LLM_API_KEY=your_api_key_here
 ```
 
 OpenClawBrain no longer reads an arbitrary environment-variable name from config; remote credentials must come from `OPENCLAWBRAIN_LLM_API_KEY` so the ClawHub package metadata stays explicit.
+
+Privacy note: background packets, route planning inputs, and queued distillation jobs keep only **redacted user-message summaries plus hashes**, not raw user-message text.
 
 ## Verify
 
@@ -127,8 +129,8 @@ Current gate: `pnpm --dir packages/openclaw-plugin test` → **53/53 pass**.
 clawhub publish packages/openclaw-plugin \
   --slug openclawbrain \
   --name "OpenClawBrain" \
-  --version 0.2.2 \
-  --changelog "Declare the remote LLM credential path explicitly and tighten the ClawHub artifact surface."
+  --version 0.2.3 \
+  --changelog "Declare remote auth explicitly and keep queued planner/distillation packets redacted-only."
 ```
 
 ## License

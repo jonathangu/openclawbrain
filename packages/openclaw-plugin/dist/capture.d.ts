@@ -5,8 +5,7 @@ export interface TurnEventPacket {
     turnId?: string;
     runId?: string;
     sourceHook: string;
-    latestUserMessage: string;
-    redactedLatestUserMessage: string;
+    latestUserMessageRedacted: string;
     recentAssistantMessage?: string;
     toolObservations: Array<{
         toolName: string;

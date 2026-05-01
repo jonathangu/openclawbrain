@@ -24,6 +24,7 @@ export function sanitizeToolEvent(event = {}, config = {}) {
 }
 function basePacket(event = {}, config = {}, sourceHook) {
     const latestUserMessage = latestUserTextFromEvent(event);
+    const latestUserMessageRedacted = redactText(latestUserMessage, config.maxContextChars || 3000);
     const ctx = event.ctx || {};
     return {
         agentId: safeString(ctx.agentId ?? event.agentId ?? event.agent_id ?? 'main') || 'main',
@@ -32,8 +33,7 @@ function basePacket(event = {}, config = {}, sourceHook) {
         turnId: safeString(event.turnId ?? event.turn_id ?? ctx.turnId ?? ''),
         runId: safeString(ctx.runId ?? event.runId ?? event.run_id ?? ''),
         sourceHook,
-        latestUserMessage,
-        redactedLatestUserMessage: redactText(latestUserMessage, config.maxContextChars || 3000),
+        latestUserMessageRedacted,
         recentAssistantMessage: redactText(safeString(event.assistantMessage ?? event.assistant_message ?? ''), config.maxContextChars || 3000),
         toolObservations: [],
         recentInjections: Array.isArray(event.recentInjections)
@@ -45,6 +45,7 @@ function basePacket(event = {}, config = {}, sourceHook) {
             : [],
         metadata: {
             promptHash: hashText(latestUserMessage),
+            redactedPacket: true,
             turnType: safeString(event.turnType ?? event.turn_type ?? ''),
             profileId: safeString(ctx.profile ?? event.profile ?? ''),
         },

@@ -9,8 +9,7 @@ const config = normalizePluginConfig({ enabled: true, mode: 'balanced', routing:
 const packet = {
   agentId: 'main',
   sourceHook: 'before_prompt_build',
-  latestUserMessage: 'Install dependencies for OpenClawBrain and use the right package manager',
-  redactedLatestUserMessage: 'Install dependencies for OpenClawBrain and use the right package manager',
+  latestUserMessageRedacted: 'Install dependencies for OpenClawBrain and use the right package manager',
   toolObservations: [],
   recentInjections: [],
   metadata: {},

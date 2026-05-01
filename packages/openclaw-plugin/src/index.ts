@@ -128,14 +128,14 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
   const latency = new LatencyController(config).chooseTier({
     agentId: packet.agentId,
     sessionId: packet.sessionId,
-    latestUserMessage: packet.latestUserMessage,
+    latestUserMessage: packet.latestUserMessageRedacted,
     recentRouteCacheHit: initialPlan.latencyReason === 'cached route plan',
     recentPolicyMatch: false,
     candidateCount: initialCandidates.length,
     candidateAmbiguity: initialCandidates.length > 0 ? Math.min(1, initialCandidates.length / Math.max(1, initialPlan.retrievalPlan.maxCandidates)) : 0,
     hasHighConfidenceCorrectionCandidate: initialPlan.route === 'high_confidence_correction_only',
-    userExplicitlyReferencesMemory: /\b(as before|same as last time|remember|we discussed before)\b/i.test(packet.latestUserMessage),
-    taskValueEstimate: estimateTaskValue(packet.latestUserMessage),
+    userExplicitlyReferencesMemory: /\b(as before|same as last time|remember|we discussed before)\b/i.test(packet.latestUserMessageRedacted),
+    taskValueEstimate: estimateTaskValue(packet.latestUserMessageRedacted),
     configMode: config.mode,
   });
 
@@ -203,7 +203,7 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
       runId: packet.runId,
       turnId: packet.turnId,
       sessionId: packet.sessionId,
-      query: plan.retrievalPlan.queries[0] || packet.latestUserMessage,
+      query: plan.retrievalPlan.queries[0] || packet.latestUserMessageRedacted,
       rank: index + 1,
       score: selection.selected[index]?.confidence || 0,
     });

@@ -93,7 +93,7 @@ export class MemoryPlanner {
             model: this.config.llm.plannerModel || this.config.llm.routeModel || this.config.llm.feedbackModel || 'unset-model',
             systemPrompt: MEMORY_PLANNER_PROMPT,
             input: {
-                latestUserMessage: packet.latestUserMessage,
+                latestUserMessageRedacted: packet.latestUserMessageRedacted,
                 turnFrame: routePlan.turnFrame,
                 routePlan: {
                     route: routePlan.route,

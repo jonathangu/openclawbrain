@@ -3,7 +3,7 @@ import path from 'node:path';
 import { safeString } from './redact.js';
 
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.2';
+export const PLUGIN_VERSION = '0.2.3';
 export const REMOTE_LLM_API_KEY_ENV = 'OPENCLAWBRAIN_LLM_API_KEY';
 export const DEFAULT_CONFIG: any = Object.freeze({
   enabled: false,

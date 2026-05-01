@@ -79,7 +79,7 @@ export class ContextSelector {
 }
 
 function rankCandidates(packet: TurnEventPacket, plan: RoutePlan, candidates: MemoryNode[]) {
-  const lower = packet.latestUserMessage.toLowerCase();
+  const lower = packet.latestUserMessageRedacted.toLowerCase();
   return candidates.map((memory) => {
     let score = memory.importance * 0.4 + memory.confidence * 0.4 + memory.freshness * 0.2;
     let reason: ContextSelection['selected'][number]['reason'] = 'supporting_context';

@@ -29,8 +29,8 @@ test('capture orchestrator builds redacted packets', () => {
 
   assert.equal(packet.agentId, 'main');
   assert.equal(packet.sourceHook, 'agent_end');
-  assert.match(packet.redactedLatestUserMessage, /\[redacted-email\]/);
-  assert.doesNotMatch(packet.redactedLatestUserMessage, /private@example.com/);
+  assert.match(packet.latestUserMessageRedacted, /\[redacted-email\]/);
+  assert.doesNotMatch(packet.latestUserMessageRedacted, /private@example.com/);
 });
 
 test('sanitizeToolEvent redacts args and results', () => {
@@ -56,8 +56,7 @@ test('feedback distiller fallback returns no-op distillation', async () => {
   const result = await distiller.distill({
     agentId: 'main',
     sourceHook: 'agent_end',
-    latestUserMessage: 'use pnpm',
-    redactedLatestUserMessage: 'use pnpm',
+    latestUserMessageRedacted: 'use pnpm',
     toolObservations: [],
     recentInjections: [],
     metadata: {},
@@ -126,8 +125,7 @@ test('memory operation applier creates and updates memories and resolves injecti
       turnId: 't1',
       runId: 'r1',
       sourceHook: 'agent_end',
-      latestUserMessage: 'use pnpm',
-      redactedLatestUserMessage: 'use pnpm',
+      latestUserMessageRedacted: 'use pnpm',
       toolObservations: [],
       recentInjections: [],
       metadata: { promptHash: 'h1' },

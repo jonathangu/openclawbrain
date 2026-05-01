@@ -7,8 +7,7 @@ export interface TurnEventPacket {
   turnId?: string;
   runId?: string;
   sourceHook: string;
-  latestUserMessage: string;
-  redactedLatestUserMessage: string;
+  latestUserMessageRedacted: string;
   recentAssistantMessage?: string;
   toolObservations: Array<{
     toolName: string;
@@ -51,6 +50,7 @@ export function sanitizeToolEvent(event: any = {}, config: any = {}) {
 
 function basePacket(event: any = {}, config: any = {}, sourceHook: string): TurnEventPacket {
   const latestUserMessage = latestUserTextFromEvent(event);
+  const latestUserMessageRedacted = redactText(latestUserMessage, config.maxContextChars || 3000);
   const ctx = event.ctx || {};
   return {
     agentId: safeString(ctx.agentId ?? event.agentId ?? event.agent_id ?? 'main') || 'main',
@@ -59,8 +59,7 @@ function basePacket(event: any = {}, config: any = {}, sourceHook: string): Turn
     turnId: safeString(event.turnId ?? event.turn_id ?? ctx.turnId ?? ''),
     runId: safeString(ctx.runId ?? event.runId ?? event.run_id ?? ''),
     sourceHook,
-    latestUserMessage,
-    redactedLatestUserMessage: redactText(latestUserMessage, config.maxContextChars || 3000),
+    latestUserMessageRedacted,
     recentAssistantMessage: redactText(safeString(event.assistantMessage ?? event.assistant_message ?? ''), config.maxContextChars || 3000),
     toolObservations: [],
     recentInjections: Array.isArray(event.recentInjections)
@@ -72,6 +71,7 @@ function basePacket(event: any = {}, config: any = {}, sourceHook: string): Turn
       : [],
     metadata: {
       promptHash: hashText(latestUserMessage),
+      redactedPacket: true,
       turnType: safeString(event.turnType ?? event.turn_type ?? ''),
       profileId: safeString(ctx.profile ?? event.profile ?? ''),
     },

@@ -36,14 +36,14 @@ export class RouteFn {
         this.store = options.store;
     }
     fingerprint(packet) {
-        const message = packet.latestUserMessage.toLowerCase();
+        const message = packet.latestUserMessageRedacted.toLowerCase();
         return {
             agentId: packet.agentId,
             scopeKey: packet.sessionId || packet.sessionKey || undefined,
             taskTypeHint: String(packet.metadata.turnType || ''),
             topicKeys: extractTopicKeys(message),
-            explicitMemoryReference: /\b(as before|like i said|same as last time|we discussed before|remember)\b/i.test(packet.latestUserMessage),
-            explicitCorrectionCue: /\b(actually|instead|no,|don't|do not|wrong|use .* instead)\b/i.test(packet.latestUserMessage),
+            explicitMemoryReference: /\b(as before|like i said|same as last time|we discussed before|remember)\b/i.test(packet.latestUserMessageRedacted),
+            explicitCorrectionCue: /\b(actually|instead|no,|don't|do not|wrong|use .* instead)\b/i.test(packet.latestUserMessageRedacted),
         };
     }
     plan(packet) {
@@ -86,9 +86,9 @@ export class RouteFn {
     }
 }
 function heuristicRoutePlan(packet, turnFrame, config, policySnapshot) {
-    const message = packet.latestUserMessage.toLowerCase();
-    const explicitCorrectionCue = /\b(actually|instead|wrong|no,)\b/i.test(packet.latestUserMessage);
-    const explicitMemoryReference = /\b(as before|same as last time|remember|we discussed before)\b/i.test(packet.latestUserMessage);
+    const message = packet.latestUserMessageRedacted.toLowerCase();
+    const explicitCorrectionCue = /\b(actually|instead|wrong|no,)\b/i.test(packet.latestUserMessageRedacted);
+    const explicitMemoryReference = /\b(as before|same as last time|remember|we discussed before)\b/i.test(packet.latestUserMessageRedacted);
     const installLike = /\b(install|dependency|dependencies|pnpm|npm|yarn|build|test|setup)\b/.test(message);
     const planningLike = /\b(plan|design|architecture|file-by-file|implementation)\b/.test(message);
     let route = 'no_memory';
@@ -170,7 +170,7 @@ function applyPolicySnapshot(packet, turnFrame, policySnapshot) {
     return boost;
 }
 function buildPolicyEnrichedRoute(packet, turnFrame, config, route, confidence, policyBoost) {
-    const explicitCorrectionCue = /\b(actually|instead|wrong|no,)\b/i.test(packet.latestUserMessage);
+    const explicitCorrectionCue = /\b(actually|instead|wrong|no,)\b/i.test(packet.latestUserMessageRedacted);
     const heuristicQueries = buildQueries(packet);
     const allQueries = [...new Set([...heuristicQueries, ...policyBoost.queries])];
     return {
@@ -196,7 +196,7 @@ function buildPolicyEnrichedRoute(packet, turnFrame, config, route, confidence, 
     };
 }
 function buildQueries(packet) {
-    const text = packet.latestUserMessage.trim();
+    const text = packet.latestUserMessageRedacted.trim();
     const lower = text.toLowerCase();
     const queries = [text];
     if (/\b(plan|architecture|implementation|file-by-file)\b/.test(lower))
@@ -208,7 +208,7 @@ function buildQueries(packet) {
     return [...new Set(queries.map((q) => q.trim()).filter(Boolean))];
 }
 function turnFrameFromPacket(packet) {
-    const message = packet.latestUserMessage;
+    const message = packet.latestUserMessageRedacted;
     const lower = message.toLowerCase();
     const taskType = /\b(debug|error|failing|broken)\b/.test(lower)
         ? 'debugging'
