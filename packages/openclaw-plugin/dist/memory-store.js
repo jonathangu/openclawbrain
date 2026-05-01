@@ -337,20 +337,37 @@ export class MemoryStore {
         const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
         const offset = opts.offset ?? 0;
         const trimmed = query.trim();
-        const rows = trimmed
-            ? this.db.prepare(`
+        let rows;
+        if (!trimmed) {
+            rows = this.db.prepare(`
+        SELECT * FROM memory_nodes
+        WHERE agent_id = ? AND deleted_at IS NULL AND superseded_by IS NULL
+        ORDER BY importance DESC, updated_at DESC
+        LIMIT ? OFFSET ?
+      `).all(agentId, limit, offset);
+        }
+        else {
+            try {
+                rows = this.db.prepare(`
           SELECT mn.* FROM memory_search
           JOIN memory_nodes mn ON mn.rowid = memory_search.rowid
           WHERE memory_search MATCH ? AND mn.agent_id = ? AND mn.deleted_at IS NULL AND mn.superseded_by IS NULL
           ORDER BY rank
           LIMIT ? OFFSET ?
-        `).all(trimmed, agentId, limit, offset)
-            : this.db.prepare(`
+        `).all(trimmed, agentId, limit, offset);
+            }
+            catch {
+                const lowerTokens = trimmed.toLowerCase().split(/[^a-z0-9_]+/i).filter(Boolean);
+                rows = this.db.prepare(`
           SELECT * FROM memory_nodes
           WHERE agent_id = ? AND deleted_at IS NULL AND superseded_by IS NULL
           ORDER BY importance DESC, updated_at DESC
-          LIMIT ? OFFSET ?
-        `).all(agentId, limit, offset);
+        `).all(agentId).filter((row) => {
+                    const haystack = `${row.content} ${row.normalized_key ?? ''} ${row.tags_json ?? ''}`.toLowerCase();
+                    return lowerTokens.every((token) => haystack.includes(token));
+                }).slice(offset, offset + limit);
+            }
+        }
         return rows.map(rowToMemory);
     }
     listMemories(agentId, opts = {}) {
@@ -412,6 +429,9 @@ export class MemoryStore {
     getPendingInjections(agentId) {
         return this.db.prepare('SELECT * FROM memory_injections WHERE agent_id = ? AND outcome = ? ORDER BY injected_at DESC LIMIT 100').all(agentId, 'pending').map(rowToInjection);
     }
+    getInjectionsForRouteDecision(routeDecisionId) {
+        return this.db.prepare('SELECT * FROM memory_injections WHERE route_decision_id = ? ORDER BY rank ASC, injected_at ASC').all(routeDecisionId).map(rowToInjection);
+    }
     // ── Route decisions ─────────────────────────────────────────────────────────
     insertRouteDecision(decision) {
         const id = decision.id || uuid();
@@ -443,12 +463,19 @@ export class MemoryStore {
     getUnresolvedRouteDecisions(agentId) {
         return this.db.prepare("SELECT * FROM route_decisions WHERE agent_id = ? AND outcome = 'pending' ORDER BY created_at DESC LIMIT 50").all(agentId).map(rowToRouteDecision);
     }
+    getResolvedRouteDecisions(agentId, limit = 100) {
+        return this.db.prepare("SELECT * FROM route_decisions WHERE agent_id = ? AND outcome != 'pending' ORDER BY resolved_at DESC, created_at DESC LIMIT ?").all(agentId, limit).map(rowToRouteDecision);
+    }
     countRouteDecisions(agentId) {
         const row = this.db.prepare('SELECT COUNT(*) as cnt FROM route_decisions WHERE agent_id = ?').get(agentId);
         return row?.cnt ?? 0;
     }
-    countRouteExamples(agentId) {
-        const row = this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ?').get(agentId);
+    countRouteExamples(agentId, polarity = 'all') {
+        const row = polarity === 'positive'
+            ? this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ? AND reward > 0').get(agentId)
+            : polarity === 'negative'
+                ? this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ? AND reward < 0').get(agentId)
+                : this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ?').get(agentId);
         return row?.cnt ?? 0;
     }
     // ── Route examples and policy snapshots ──────────────────────────────────────
@@ -462,12 +489,16 @@ export class MemoryStore {
         return { ...example, id, createdAt: ts };
     }
     getRouteExamples(agentId, limit = 50) {
-        return this.db.prepare('SELECT * FROM route_examples WHERE agent_id = ? ORDER BY reward DESC LIMIT ?').all(agentId, limit).map((r) => ({
+        return this.db.prepare('SELECT * FROM route_examples WHERE agent_id = ? ORDER BY created_at DESC, reward DESC LIMIT ?').all(agentId, limit).map((r) => ({
             ...r,
             turnFrame: JSON.parse(r.turn_frame_json),
             routeDecision: JSON.parse(r.route_decision_json),
             tags: JSON.parse(r.tags_json),
         }));
+    }
+    hasRouteExampleForDecision(agentId, routeDecisionId) {
+        const row = this.db.prepare('SELECT id FROM route_examples WHERE agent_id = ? AND tags_json LIKE ? LIMIT 1').get(agentId, `%route_decision:${routeDecisionId}%`);
+        return Boolean(row?.id);
     }
     getActivePolicySnapshot(agentId) {
         const row = this.db.prepare('SELECT * FROM route_policy_snapshots WHERE agent_id = ? AND active = 1 ORDER BY created_at DESC LIMIT 1').get(agentId);
@@ -484,6 +515,18 @@ export class MemoryStore {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(id, snapshot.agentId, snapshot.policyText, JSON.stringify(snapshot.examples), snapshot.model ?? null, snapshot.promptVersion ?? null, ts, snapshot.active ? 1 : 0);
         return { ...snapshot, id, createdAt: ts };
+    }
+    listPolicySnapshots(agentId, limit = 20) {
+        return this.db.prepare('SELECT * FROM route_policy_snapshots WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, limit).map((row) => ({
+            id: row.id,
+            agentId: row.agent_id,
+            policyText: row.policy_text,
+            examples: JSON.parse(row.examples_json ?? '[]'),
+            model: row.model,
+            promptVersion: row.prompt_version,
+            createdAt: row.created_at,
+            active: row.active === 1,
+        }));
     }
     // ── Distillation run audit ──────────────────────────────────────────────────
     insertDistillationRun(run) {
@@ -548,6 +591,36 @@ export class MemoryStore {
         }
         const row = this.db.prepare("SELECT COUNT(*) as cnt FROM background_jobs WHERE status = 'pending'").get();
         return row?.cnt ?? 0;
+    }
+    adjustMemoryScore(memoryId, patch) {
+        const existing = this.getMemory(memoryId);
+        if (!existing)
+            return null;
+        const updated = this.updateMemory(memoryId, {
+            importance: clamp01(existing.importance + (patch.importanceDelta ?? 0)),
+            confidence: clamp01(existing.confidence + (patch.confidenceDelta ?? 0)),
+            freshness: clamp01(existing.freshness + (patch.freshnessDelta ?? 0)),
+            useCount: Math.max(0, existing.useCount + (patch.useCountDelta ?? 0)),
+            usefulCount: Math.max(0, existing.usefulCount + (patch.usefulCountDelta ?? 0)),
+            captureCount: Math.max(0, existing.captureCount + (patch.captureCountDelta ?? 0)),
+            lastUsedAt: now(),
+        });
+        return updated;
+    }
+    pruneMemories(agentId, maxNodes) {
+        const count = this.countMemories(agentId);
+        if (count <= maxNodes)
+            return 0;
+        const overflow = count - maxNodes;
+        const victims = this.db.prepare(`
+      SELECT id FROM memory_nodes
+      WHERE agent_id = ? AND deleted_at IS NULL
+      ORDER BY importance ASC, confidence ASC, updated_at ASC
+      LIMIT ?
+    `).all(agentId, overflow);
+        for (const victim of victims)
+            this.softDeleteMemory(victim.id);
+        return victims.length;
     }
     // ── Proof events ────────────────────────────────────────────────────────────
     insertProofEvent(event) {
@@ -686,4 +759,7 @@ export function openDb(dbPath) {
     db.pragma('synchronous = NORMAL');
     db.pragma('foreign_keys = ON');
     return db;
+}
+function clamp01(value) {
+    return Math.max(0, Math.min(1, value));
 }

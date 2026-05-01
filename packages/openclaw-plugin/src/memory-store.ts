@@ -390,20 +390,35 @@ export class MemoryStore {
     const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
     const offset = opts.offset ?? 0;
     const trimmed = query.trim();
-    const rows = trimmed
-      ? this.db.prepare(`
+    let rows: any[];
+    if (!trimmed) {
+      rows = this.db.prepare(`
+        SELECT * FROM memory_nodes
+        WHERE agent_id = ? AND deleted_at IS NULL AND superseded_by IS NULL
+        ORDER BY importance DESC, updated_at DESC
+        LIMIT ? OFFSET ?
+      `).all(agentId, limit, offset) as any[];
+    } else {
+      try {
+        rows = this.db.prepare(`
           SELECT mn.* FROM memory_search
           JOIN memory_nodes mn ON mn.rowid = memory_search.rowid
           WHERE memory_search MATCH ? AND mn.agent_id = ? AND mn.deleted_at IS NULL AND mn.superseded_by IS NULL
           ORDER BY rank
           LIMIT ? OFFSET ?
-        `).all(trimmed, agentId, limit, offset) as any[]
-      : this.db.prepare(`
+        `).all(trimmed, agentId, limit, offset) as any[];
+      } catch {
+        const lowerTokens = trimmed.toLowerCase().split(/[^a-z0-9_]+/i).filter(Boolean);
+        rows = (this.db.prepare(`
           SELECT * FROM memory_nodes
           WHERE agent_id = ? AND deleted_at IS NULL AND superseded_by IS NULL
           ORDER BY importance DESC, updated_at DESC
-          LIMIT ? OFFSET ?
-        `).all(agentId, limit, offset) as any[];
+        `).all(agentId) as any[]).filter((row: any) => {
+          const haystack = `${row.content} ${row.normalized_key ?? ''} ${row.tags_json ?? ''}`.toLowerCase();
+          return lowerTokens.every((token) => haystack.includes(token));
+        }).slice(offset, offset + limit);
+      }
+    }
     return rows.map(rowToMemory);
   }
 
@@ -494,6 +509,12 @@ export class MemoryStore {
     ).all(agentId, 'pending') as any[]).map(rowToInjection);
   }
 
+  getInjectionsForRouteDecision(routeDecisionId: string): InjectionEvent[] {
+    return (this.db.prepare(
+      'SELECT * FROM memory_injections WHERE route_decision_id = ? ORDER BY rank ASC, injected_at ASC'
+    ).all(routeDecisionId) as any[]).map(rowToInjection);
+  }
+
   // ── Route decisions ─────────────────────────────────────────────────────────
 
   insertRouteDecision(decision: Omit<RouteDecision, 'id' | 'createdAt'> & { id?: string }): RouteDecision {
@@ -543,13 +564,23 @@ export class MemoryStore {
     ).all(agentId) as any[]).map(rowToRouteDecision);
   }
 
+  getResolvedRouteDecisions(agentId: string, limit = 100): RouteDecision[] {
+    return (this.db.prepare(
+      "SELECT * FROM route_decisions WHERE agent_id = ? AND outcome != 'pending' ORDER BY resolved_at DESC, created_at DESC LIMIT ?"
+    ).all(agentId, limit) as any[]).map(rowToRouteDecision);
+  }
+
   countRouteDecisions(agentId: string): number {
     const row = this.db.prepare('SELECT COUNT(*) as cnt FROM route_decisions WHERE agent_id = ?').get(agentId) as any;
     return row?.cnt ?? 0;
   }
 
-  countRouteExamples(agentId: string): number {
-    const row = this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ?').get(agentId) as any;
+  countRouteExamples(agentId: string, polarity: 'all' | 'positive' | 'negative' = 'all'): number {
+    const row = polarity === 'positive'
+      ? this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ? AND reward > 0').get(agentId) as any
+      : polarity === 'negative'
+        ? this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ? AND reward < 0').get(agentId) as any
+        : this.db.prepare('SELECT COUNT(*) as cnt FROM route_examples WHERE agent_id = ?').get(agentId) as any;
     return row?.cnt ?? 0;
   }
 
@@ -568,13 +599,20 @@ export class MemoryStore {
 
   getRouteExamples(agentId: string, limit = 50): RouteExample[] {
     return (this.db.prepare(
-      'SELECT * FROM route_examples WHERE agent_id = ? ORDER BY reward DESC LIMIT ?'
+      'SELECT * FROM route_examples WHERE agent_id = ? ORDER BY created_at DESC, reward DESC LIMIT ?'
     ).all(agentId, limit) as any[]).map((r: any) => ({
       ...r,
       turnFrame: JSON.parse(r.turn_frame_json),
       routeDecision: JSON.parse(r.route_decision_json),
       tags: JSON.parse(r.tags_json),
     } as RouteExample));
+  }
+
+  hasRouteExampleForDecision(agentId: string, routeDecisionId: string): boolean {
+    const row = this.db.prepare(
+      'SELECT id FROM route_examples WHERE agent_id = ? AND tags_json LIKE ? LIMIT 1'
+    ).get(agentId, `%route_decision:${routeDecisionId}%`) as any;
+    return Boolean(row?.id);
   }
 
   getActivePolicySnapshot(agentId: string): RoutePolicySnapshot | null {
@@ -596,6 +634,21 @@ export class MemoryStore {
     `).run(id, snapshot.agentId, snapshot.policyText, JSON.stringify(snapshot.examples),
       snapshot.model ?? null, snapshot.promptVersion ?? null, ts, snapshot.active ? 1 : 0);
     return { ...snapshot, id, createdAt: ts };
+  }
+
+  listPolicySnapshots(agentId: string, limit = 20): RoutePolicySnapshot[] {
+    return (this.db.prepare(
+      'SELECT * FROM route_policy_snapshots WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?'
+    ).all(agentId, limit) as any[]).map((row: any) => ({
+      id: row.id,
+      agentId: row.agent_id,
+      policyText: row.policy_text,
+      examples: JSON.parse(row.examples_json ?? '[]'),
+      model: row.model,
+      promptVersion: row.prompt_version,
+      createdAt: row.created_at,
+      active: row.active === 1,
+    } as RoutePolicySnapshot));
   }
 
   // ── Distillation run audit ──────────────────────────────────────────────────
@@ -668,6 +721,42 @@ export class MemoryStore {
     }
     const row = this.db.prepare("SELECT COUNT(*) as cnt FROM background_jobs WHERE status = 'pending'").get() as any;
     return row?.cnt ?? 0;
+  }
+
+  adjustMemoryScore(memoryId: string, patch: {
+    importanceDelta?: number;
+    confidenceDelta?: number;
+    freshnessDelta?: number;
+    useCountDelta?: number;
+    usefulCountDelta?: number;
+    captureCountDelta?: number;
+  }) {
+    const existing = this.getMemory(memoryId);
+    if (!existing) return null;
+    const updated = this.updateMemory(memoryId, {
+      importance: clamp01(existing.importance + (patch.importanceDelta ?? 0)),
+      confidence: clamp01(existing.confidence + (patch.confidenceDelta ?? 0)),
+      freshness: clamp01(existing.freshness + (patch.freshnessDelta ?? 0)),
+      useCount: Math.max(0, existing.useCount + (patch.useCountDelta ?? 0)),
+      usefulCount: Math.max(0, existing.usefulCount + (patch.usefulCountDelta ?? 0)),
+      captureCount: Math.max(0, existing.captureCount + (patch.captureCountDelta ?? 0)),
+      lastUsedAt: now(),
+    });
+    return updated;
+  }
+
+  pruneMemories(agentId: string, maxNodes: number): number {
+    const count = this.countMemories(agentId);
+    if (count <= maxNodes) return 0;
+    const overflow = count - maxNodes;
+    const victims = this.db.prepare(`
+      SELECT id FROM memory_nodes
+      WHERE agent_id = ? AND deleted_at IS NULL
+      ORDER BY importance ASC, confidence ASC, updated_at ASC
+      LIMIT ?
+    `).all(agentId, overflow) as Array<{ id: string }>;
+    for (const victim of victims) this.softDeleteMemory(victim.id);
+    return victims.length;
   }
 
   // ── Proof events ────────────────────────────────────────────────────────────
@@ -831,4 +920,8 @@ export function openDb(dbPath: string): BetterSqlite3.Database {
   db.pragma('synchronous = NORMAL');
   db.pragma('foreign_keys = ON');
   return db;
+}
+
+function clamp01(value: number) {
+  return Math.max(0, Math.min(1, value));
 }

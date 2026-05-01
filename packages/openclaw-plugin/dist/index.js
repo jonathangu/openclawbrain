@@ -3,6 +3,7 @@ import { buildInjectionText, ensureActivationRoot, readActivationContext } from 
 import { CaptureOrchestrator } from './capture.js';
 import { ContextSelector } from './context-selector.js';
 import { FeedbackDistiller } from './feedback-distiller.js';
+import { BackgroundLearner } from './learning.js';
 import { JobQueue } from './job-queue.js';
 import { LatencyController } from './latency-controller.js';
 import { OpenAICompatibleLlmClient } from './llm-client.js';
@@ -11,6 +12,8 @@ import { MemoryOperationApplier } from './memory-operations.js';
 import { MemoryStore } from './memory-store.js';
 import { decidePolicy } from './policy.js';
 import { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
+import { RouteLearning } from './route-learning.js';
+import { buildMemoryCorpusSupplement, buildMemoryPromptSupplement, graphPayload, learnPayload, searchPayload } from './search.js';
 import { buildStatus } from './status.js';
 import { clipText, eventId, hashText, latestUserTextFromEvent, redactText, safeString } from './redact.js';
 import { RouteFn } from './route-fn.js';
@@ -30,6 +33,9 @@ export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
 export { ContextSelector } from './context-selector.js';
 export { MemoryPlanner } from './memory-planner.js';
+export { BackgroundLearner } from './learning.js';
+export { RouteLearning } from './route-learning.js';
+export { buildMemoryCorpusSupplement, buildMemoryPromptSupplement, graphPayload, learnPayload, searchPayload } from './search.js';
 export const openClawBrainPluginEntry = {
     id: PLUGIN_ID,
     name: 'OpenClawBrain',
@@ -248,6 +254,34 @@ function registerFirstClassSurfaces(api, resolve) {
         replaceExisting: true,
         handler: async (req, res) => writeJson(res, await proofPayload(resolve(), limitFromRequest(req)))
     });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/graph',
+        auth: 'gateway',
+        match: 'prefix',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, graphPayload(resolve(), agentIdFromRequest(req, resolve()), limitFromRequest(req)))
+    });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/learn',
+        auth: 'gateway',
+        match: 'prefix',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, learnPayload(resolve(), agentIdFromRequest(req, resolve()), limitFromRequest(req)))
+    });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/search',
+        auth: 'gateway',
+        match: 'prefix',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, searchPayload(resolve(), agentIdFromRequest(req, resolve()), queryFromRequest(req), limitFromRequest(req)))
+    });
+    try {
+        api.registerMemoryPromptSupplement?.(buildMemoryPromptSupplement());
+        api.registerMemoryCorpusSupplement?.(buildMemoryCorpusSupplement(resolve()));
+    }
+    catch (error) {
+        api.logger?.debug?.({ error }, 'OpenClawBrain memory supplements unavailable; skipping');
+    }
 }
 async function statusPayload(config, req = {}) {
     const agentId = safeString(req.query?.agentId ?? req.query?.agent ?? config.scopes.agents[0] ?? 'main') || 'main';
@@ -273,7 +307,8 @@ async function statusPayload(config, req = {}) {
                 activePolicySnapshotId: store.getActivePolicySnapshot(agentId)?.id || null,
                 routeDecisions: store.countRouteDecisions(agentId),
                 pendingOutcomes: store.getUnresolvedRouteDecisions(agentId).length,
-                positiveExamples: store.countRouteExamples(agentId),
+                positiveExamples: store.countRouteExamples(agentId, 'positive'),
+                negativeExamples: store.countRouteExamples(agentId, 'negative'),
             },
             learning: {
                 enabled: config.learning.enabled === true,
@@ -411,25 +446,48 @@ async function handleAfterToolCall(event = {}, config = {}, api = {}) {
     return {};
 }
 async function processBackgroundJobs(config = {}, api = {}) {
-    if (config.capture?.enabled !== true)
+    if (config.capture?.enabled !== true && config.learning?.enabled !== true)
         return;
     const agentId = config.scopes.agents[0] || 'main';
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     const queue = new JobQueue({ store });
     const job = queue.claimNext();
-    if (!job) {
-        store.close();
-        return;
-    }
+    const learner = new BackgroundLearner({ store, config });
+    const routeLearning = new RouteLearning({ store, config });
     try {
-        if (job.kind === 'feedback_distillation') {
+        let learningReport = null;
+        if (job?.kind === 'feedback_distillation') {
             await runFeedbackDistillation(job.payload?.packet, config, store);
+            queue.enqueueRouteLearning(agentId, { cause: 'feedback_distillation', turnId: job.payload?.packet?.turnId || '' }, { priority: 4 });
         }
-        queue.complete(job.id);
+        else if (job?.kind === 'outcome_classification') {
+            learningReport = learner.processOutcomeClassification(agentId, job.payload?.packet);
+        }
+        else if (job?.kind === 'route_learning') {
+            learningReport = { ...routeLearning.run(agentId), lastRunAt: new Date().toISOString() };
+        }
+        if (!job) {
+            learningReport = learner.runMaintenance(agentId);
+        }
+        if (learningReport) {
+            await writeStatus(buildStatus(config, {
+                agentId,
+                lastDecisionKind: 'learning_cycle',
+                routing: { activePolicySnapshotId: store.getActivePolicySnapshot(agentId)?.id || null },
+                learning: {
+                    enabled: config.learning.enabled === true,
+                    queueDepth: store.getJobQueueDepth(agentId),
+                    lastRunAt: learningReport.lastRunAt,
+                },
+            }), { activationRoot: config.activationRoot, agentId });
+        }
+        if (job)
+            queue.complete(job.id);
     }
     catch (error) {
-        queue.fail(job.id, error?.message || String(error), 5000);
-        api.logger?.warn?.({ error, jobId: job.id, kind: job.kind }, 'OpenClawBrain background job failed');
+        if (job)
+            queue.fail(job.id, error?.message || String(error), 5000);
+        api.logger?.warn?.({ error, jobId: job?.id, kind: job?.kind }, 'OpenClawBrain background job failed');
     }
     finally {
         store.close();
@@ -544,6 +602,30 @@ function limitFromRequest(req = {}) {
     }
     catch {
         return 20;
+    }
+}
+function queryFromRequest(req = {}) {
+    if (req.query?.query)
+        return String(req.query.query);
+    try {
+        const url = new URL(req.url || 'http://local/plugins/openclawbrain/search', 'http://local');
+        return url.searchParams.get('query') || '';
+    }
+    catch {
+        return '';
+    }
+}
+function agentIdFromRequest(req = {}, config = {}) {
+    if (req.query?.agentId)
+        return safeString(req.query.agentId) || 'main';
+    if (req.query?.agent)
+        return safeString(req.query.agent) || 'main';
+    try {
+        const url = new URL(req.url || 'http://local/plugins/openclawbrain/status', 'http://local');
+        return safeString(url.searchParams.get('agentId') || url.searchParams.get('agent') || config.scopes?.agents?.[0] || 'main') || 'main';
+    }
+    catch {
+        return safeString(config.scopes?.agents?.[0] || 'main') || 'main';
     }
 }
 function agentIdFromEvent(event = {}) {

@@ -41,6 +41,7 @@ export declare class MemoryStore {
     }): InjectionEvent;
     resolveInjectionOutcome(injectionId: string, outcome: InjectionOutcome, correctionSignal?: string): void;
     getPendingInjections(agentId: string): InjectionEvent[];
+    getInjectionsForRouteDecision(routeDecisionId: string): InjectionEvent[];
     insertRouteDecision(decision: Omit<RouteDecision, 'id' | 'createdAt'> & {
         id?: string;
     }): RouteDecision;
@@ -48,16 +49,19 @@ export declare class MemoryStore {
     resolveRouteDecision(id: string, outcome: string, reward: number): void;
     getRecentRouteDecisions(agentId: string, limit?: number): RouteDecision[];
     getUnresolvedRouteDecisions(agentId: string): RouteDecision[];
+    getResolvedRouteDecisions(agentId: string, limit?: number): RouteDecision[];
     countRouteDecisions(agentId: string): number;
-    countRouteExamples(agentId: string): number;
+    countRouteExamples(agentId: string, polarity?: 'all' | 'positive' | 'negative'): number;
     insertRouteExample(example: Omit<RouteExample, 'id' | 'createdAt'> & {
         id?: string;
     }): RouteExample;
     getRouteExamples(agentId: string, limit?: number): RouteExample[];
+    hasRouteExampleForDecision(agentId: string, routeDecisionId: string): boolean;
     getActivePolicySnapshot(agentId: string): RoutePolicySnapshot | null;
     insertPolicySnapshot(snapshot: Omit<RoutePolicySnapshot, 'id' | 'createdAt'> & {
         id?: string;
     }): RoutePolicySnapshot;
+    listPolicySnapshots(agentId: string, limit?: number): RoutePolicySnapshot[];
     insertDistillationRun(run: Omit<DistillationRun, 'id' | 'createdAt'> & {
         id?: string;
     }): DistillationRun;
@@ -68,6 +72,15 @@ export declare class MemoryStore {
     completeJob(id: string): void;
     failJob(id: string, error: string, retryAfterMs?: number): void;
     getJobQueueDepth(agentId?: string): number;
+    adjustMemoryScore(memoryId: string, patch: {
+        importanceDelta?: number;
+        confidenceDelta?: number;
+        freshnessDelta?: number;
+        useCountDelta?: number;
+        usefulCountDelta?: number;
+        captureCountDelta?: number;
+    }): MemoryNode | null;
+    pruneMemories(agentId: string, maxNodes: number): number;
     insertProofEvent(event: Omit<ProofEvent, 'id' | 'createdAt'> & {
         id?: string;
     }): ProofEvent;
