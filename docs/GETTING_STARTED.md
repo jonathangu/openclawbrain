@@ -56,7 +56,7 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/doctor
 
 You should see:
 
-- `pluginVersion: "0.2.8"`
+- `pluginVersion: "0.2.9"`
 
 Privacy note: OpenClawBrain's queued capture/planning packets keep redacted summaries and hashes only; raw user-message text is not stored in those background payloads.
 - `mode: "balanced"`

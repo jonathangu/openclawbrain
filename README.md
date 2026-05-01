@@ -12,7 +12,7 @@
 
 ## Current truth
 
-OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with SQLite self-checks and fallback and 54 passing plugin tests. Current package release: **v0.2.8**.
+OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with SQLite self-checks and fallback and 54 passing plugin tests. Current package release: **v0.2.9**.
 
 The package still keeps **legacy file-backed compatibility modes** (`proof-only`, `conservative`, `active`) for users who want the older activation-file path. The **v0.2 path** is `mode: "balanced"` or `"aggressive"`.
 
@@ -125,7 +125,7 @@ Current gate: `pnpm --dir packages/openclaw-plugin test` → **54/54 pass**.
 clawhub publish packages/openclaw-plugin \
   --slug openclawbrain \
   --name "OpenClawBrain" \
-  --version 0.2.8 \
+  --version 0.2.9 \
   --changelog "Add SQLite self-checks and fallback and scanner-safe reliability metadata."
 ```
 

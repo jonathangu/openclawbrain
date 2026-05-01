@@ -146,7 +146,7 @@ This is the immediate blocker. Live memory search must work before higher-level 
    - run a native SQLite smoke test: import, `:memory:` DB, `select 1`, FTS5 create/query
    - restart/reload Gateway
    - verify `/status`, `/doctor`, `/search`, `/graph`, and `/proof` routes
-2. Cut `0.2.8` as a reliability release with scanner-safe metadata:
+2. Cut `0.2.9` as a reliability release with scanner-safe metadata:
    - remove or reword concrete loopback URL examples from scanner-sensitive fields
    - describe localhost Ollama as a config concept, not as an install/download source
    - make manifest/package copy clearly describe runnable plugin code
@@ -169,8 +169,8 @@ This is the immediate blocker. Live memory search must work before higher-level 
 ```bash
 pnpm --dir packages/openclaw-plugin test
 npm_config_cache=/tmp/openclawbrain-npm-cache npm pack --dry-run --workspace packages/openclaw-plugin
-clawhub package inspect openclawbrain --version 0.2.8 --json
-openclaw plugins install clawhub:openclawbrain@0.2.8   # temp HOME first
+clawhub package inspect openclawbrain --version 0.2.9 --json
+openclaw plugins install clawhub:openclawbrain@0.2.9   # temp HOME first
 openclaw plugins inspect openclawbrain --json
 openclaw plugins doctor
 curl /plugins/openclawbrain/doctor   # with Gateway auth; verifies native SQLite + FTS5
@@ -355,7 +355,7 @@ Scan clean, temp-HOME install works, live install works, routes respond, docs ma
 ### Milestone A — Restore live memory, clean release, and dogfood latest
 
 - Repair live installed `better-sqlite3` and verify SQLite + FTS5 under Gateway Node.
-- Ship `0.2.8` scanner-clean.
+- Ship `0.2.9` scanner-clean.
 - Verify temp-HOME install.
 - Install latest live on Mac mini.
 - Fix native dependency robustness.
