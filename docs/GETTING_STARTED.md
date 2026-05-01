@@ -1,11 +1,18 @@
-# Getting Started
+# Getting Started with OpenClawBrain
 
-This guide gets the **v0.2 memory-graph path** running.
+This is the fastest honest path to a working OpenClawBrain install.
 
-## Prerequisites
+## What you are installing
+
+OpenClawBrain is a native OpenClaw plugin that helps an agent remember useful corrections, preferences, and prior work without bloating every prompt.
+
+## Before you start
+
+You need:
 
 - OpenClaw `2026.4.29` or later
-- A local Ollama or other loopback OpenAI-compatible JSON model endpoint if you want automatic semantic capture
+- a running OpenClaw gateway
+- local Ollama or another local OpenAI-compatible endpoint **only if** you want automatic learning
 
 ## 1) Install the plugin
 
@@ -14,27 +21,29 @@ openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
 ```
 
-## 2) Enable the v0.2 runtime path
+## 2) Turn on the main runtime path
 
 ```bash
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
 openclaw config set plugins.entries.openclawbrain.config.mode '"balanced"' --strict-json
 openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
-openclaw config set plugins.entries.openclawbrain.hooks.allowConversationAccess true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowConversationAccess true --strict-json
+openclaw config validate
+openclaw gateway restart
 ```
 
-`balanced` is the recommended v0.2 default. It keeps most turns on the no-extra-LLM path and escalates only when the turn is ambiguous or high-signal.
+`balanced` is the recommended default. It keeps the common path cheap and only does extra work when the turn looks like it needs help.
 
-## 3) Configure a structured JSON model endpoint
+## 3) Optional: turn on automatic learning
 
-OpenClawBrain's automatic capture/learning path uses a **local OpenAI-compatible** endpoint. Standard practice is local Ollama. Set `baseUrl` to your local Ollama OpenAI-compatible v1 endpoint:
+If you want OpenClawBrain to turn corrections into memory automatically, point it at a local OpenAI-compatible endpoint. Local Ollama is the standard path.
 
 ```bash
 ollama list
 
 openclaw config set plugins.entries.openclawbrain.config.llm '{
   "enabled": true,
-  "baseUrl": "<your local Ollama OpenAI-compatible v1 endpoint>",
+  "baseUrl": "http://127.0.0.1:11434/v1",
   "routeModel": "qwen3.5:9b",
   "plannerModel": "qwen3.5:9b",
   "feedbackModel": "qwen3.5:9b",
@@ -44,9 +53,9 @@ openclaw config validate
 openclaw gateway restart
 ```
 
-If you skip this step, OpenClawBrain can still run its proof/search/status surfaces and legacy compatibility modes, but it will not auto-distill new corrections.
+If you skip this step, the plugin still loads and exposes its local proof, graph, health, and search surfaces. It just will not auto-distill fresh corrections.
 
-## 4) Verify that the plugin is live
+## 4) Check that it is live
 
 ```bash
 openclaw plugins inspect openclawbrain --json
@@ -54,23 +63,22 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/status
 curl http://127.0.0.1:18789/plugins/openclawbrain/doctor
 ```
 
-You should see:
+What you want to see:
 
-- `pluginVersion: "0.2.9"`
+- the plugin is `enabled`
+- the plugin is `activated`
+- the plugin `status` is `loaded`
+- the doctor route succeeds
 
-Privacy note: OpenClawBrain's queued capture/planning packets keep redacted summaries and hashes only; raw user-message text is not stored in those background payloads.
-- `mode: "balanced"`
-- routing / memory / latency sections in the status payload
+## 5) Try it
 
-## 5) Exercise the memory path
-
-Try a correction like:
+Teach the agent something small and practical, for example:
 
 ```text
-Actually, use pnpm instead of npm for this repo.
+Use pnpm instead of npm in this repo.
 ```
 
-Then inspect:
+Then inspect the plugin:
 
 ```bash
 curl 'http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10'
@@ -80,10 +88,10 @@ curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?limit=10'
 
 ## Compatibility note
 
-The package still supports the older file-backed modes:
+Older file-backed modes still exist:
 
 - `proof-only`
 - `conservative`
 - `active`
 
-Those modes read `context.md`, `corrections.md`, and `tool-guidance.md` under the activation root. They remain available for compatibility, but they are **not** the v0.2 product vision.
+They are still supported, but they are not the main product story anymore. The main path is the local memory graph in `balanced` or `aggressive` mode.

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Install OpenClawBrain</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Install OpenClawBrain, turn it on, and verify that it is live.">
+  <link rel="canonical" href="https://openclawbrain.ai/install/">
+  <style>
+    :root { --bg:#09111a; --panel:#111c2a; --text:#ebf2fb; --muted:#a9b7c8; --line:rgba(126,214,255,0.22); --accent:#7ed6ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.7; }
+    .wrap { max-width:900px; margin:0 auto; padding:24px 20px 64px; }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .nav { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+    .nav a { border:1px solid var(--line); border-radius:999px; padding:9px 13px; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:28px; margin-bottom:18px; }
+    h1 { font-size:clamp(32px,5vw,48px); line-height:1.08; margin:0 0 12px; }
+    h2 { margin:0 0 10px; font-size:26px; }
+    p { margin:0 0 14px; }
+    pre { margin:0; overflow:auto; background:#08111b; border:1px solid var(--line); border-radius:16px; padding:16px; font-size:14px; }
+    ul, ol { margin:0; padding-left:20px; }
+    li { margin-bottom:8px; }
+    .muted { color:var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="nav">
+      <a href="/">Home</a>
+      <a href="/proof/">Proof</a>
+      <a href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">GitHub</a>
+    </div>
+
+    <section class="panel">
+      <h1>Install OpenClawBrain</h1>
+      <p>Here is the fast honest path: install the plugin, turn it on, and make sure it is really loaded before you trust it.</p>
+      <p class="muted">Requires OpenClaw <strong>2026.4.29</strong> or later.</p>
+    </section>
+
+    <section class="panel">
+      <h2>1) Install the plugin</h2>
+      <pre><code>openclaw plugins install clawhub:openclawbrain
+openclaw plugins enable openclawbrain</code></pre>
+    </section>
+
+    <section class="panel">
+      <h2>2) Turn it on</h2>
+      <pre><code>openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.mode '"balanced"' --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowConversationAccess true --strict-json
+openclaw config validate
+openclaw gateway restart</code></pre>
+      <p><code>balanced</code> is the recommended default. It keeps the common path light and only does extra work when a turn looks like it needs help.</p>
+    </section>
+
+    <section class="panel">
+      <h2>3) Optional: turn on automatic learning</h2>
+      <p>If you want OpenClawBrain to turn corrections into memory automatically, point it at a local OpenAI-compatible endpoint. Local Ollama is the standard path.</p>
+      <pre><code>ollama list
+
+openclaw config set plugins.entries.openclawbrain.config.llm '{
+  "enabled": true,
+  "baseUrl": "http://127.0.0.1:11434/v1",
+  "routeModel": "qwen3.5:9b",
+  "plannerModel": "qwen3.5:9b",
+  "feedbackModel": "qwen3.5:9b",
+  "learningModel": "qwen3.5:9b"
+}' --strict-json
+openclaw config validate
+openclaw gateway restart</code></pre>
+      <p class="muted">If you skip this step, the plugin still loads and exposes local proof, graph, health, and search surfaces. Automatic learning just stays off.</p>
+    </section>
+
+    <section class="panel">
+      <h2>4) Check that it is really live</h2>
+      <pre><code>openclaw plugins inspect openclawbrain --json
+curl http://127.0.0.1:18789/plugins/openclawbrain/status
+curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
+      <ol>
+        <li>Make sure the plugin is <code>enabled</code>.</li>
+        <li>Make sure it is <code>activated</code>.</li>
+        <li>Make sure its status is <code>loaded</code>.</li>
+        <li>Make sure the doctor route succeeds.</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <h2>5) Teach it something small</h2>
+      <p>For example:</p>
+      <pre><code>Use pnpm instead of npm in this repo.</code></pre>
+      <p>Then inspect what happened:</p>
+      <pre><code>curl 'http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10'
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?limit=10'</code></pre>
+    </section>
+  </div>
+</body>
+</html>

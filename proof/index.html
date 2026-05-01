@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OpenClawBrain Proof</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How to verify that OpenClawBrain is loaded and what it is doing.">
+  <link rel="canonical" href="https://openclawbrain.ai/proof/">
+  <style>
+    :root { --bg:#09111a; --panel:#111c2a; --text:#ebf2fb; --muted:#a9b7c8; --line:rgba(126,214,255,0.22); --accent:#7ed6ff; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.7; }
+    .wrap { max-width:900px; margin:0 auto; padding:24px 20px 64px; }
+    a { color:var(--accent); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .nav { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+    .nav a { border:1px solid var(--line); border-radius:999px; padding:9px 13px; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:28px; margin-bottom:18px; }
+    h1 { font-size:clamp(32px,5vw,48px); line-height:1.08; margin:0 0 12px; }
+    h2 { margin:0 0 10px; font-size:26px; }
+    p { margin:0 0 14px; }
+    pre { margin:0; overflow:auto; background:#08111b; border:1px solid var(--line); border-radius:16px; padding:16px; font-size:14px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top; }
+    th { color:var(--text); }
+    .muted { color:var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="nav">
+      <a href="/">Home</a>
+      <a href="/install/">Install</a>
+      <a href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">GitHub</a>
+    </div>
+
+    <section class="panel">
+      <h1>Proof, not hand-waving</h1>
+      <p>OpenClawBrain is built so you can inspect what it is doing. You should not have to trust a vague claim that an agent “has memory now.”</p>
+      <p class="muted">These commands let you verify that the plugin is loaded, healthy, and doing real work.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Start here</h2>
+      <pre><code>openclaw plugins inspect openclawbrain --json
+curl http://127.0.0.1:18789/plugins/openclawbrain/status
+curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
+      <p>You want to see the plugin enabled, activated, loaded, and able to pass its SQLite + FTS health check.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Inspect the runtime surfaces</h2>
+      <table>
+        <tr><th>Endpoint</th><th>What it shows</th></tr>
+        <tr><td><code>/plugins/openclawbrain/status</code></td><td>Whether the plugin is on, how it is configured, and how the runtime is behaving.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/doctor</code></td><td>Whether SQLite and FTS are healthy under the current Node runtime.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/proof?limit=20</code></td><td>Recent redacted proof and route events.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/graph?limit=50</code></td><td>Redacted memory nodes and edges.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/learn?limit=50</code></td><td>Route examples and current learning state.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/search?query=...&limit=20</code></td><td>Local memory search.</td></tr>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>Example checks</h2>
+      <pre><code>curl http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?limit=10'
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/learn?limit=10'
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'</code></pre>
+      <p>These are the surfaces that let you tell the difference between “we say it works” and “you can inspect what it is doing right now.”</p>
+    </section>
+
+    <section class="panel">
+      <h2>What the product claim is</h2>
+      <p>OpenClawBrain is not claiming that every agent suddenly has perfect memory. The claim is tighter and more useful:</p>
+      <ul>
+        <li>keep memory local</li>
+        <li>retrieve likely candidates quickly</li>
+        <li>inject only a small useful slice</li>
+        <li>show proof and health surfaces you can inspect</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>
