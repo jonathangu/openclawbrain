@@ -1,8 +1,8 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.4",
-  "description": "Latency-safe LLM-distilled memory graph for OpenClaw with local auditability and bounded memory augmentation.",
+  "version": "0.2.5",
+  "description": "Reliability-hardened local memory graph for OpenClaw with local auditability, bounded memory augmentation, and native SQLite self-checks.",
   "activation": { "onStartup": true },
   "configSchema": {
     "type": "object",
@@ -151,8 +151,8 @@
     "enabled": { "label": "Enabled", "help": "Defaults off. Enable per plugin entry config." },
     "mode": { "label": "Runtime Mode", "help": "balanced enables the v0.2 latency-safe memory graph path; conservative/active retain legacy file-backed compatibility modes." },
     "activationRoot": { "label": "Activation Root", "help": "Local agent-scoped root for SQLite state, proof mirrors, and optional compatibility files." },
-    "llm": { "label": "Local LLM Distillation", "help": "Standard practice is a local Ollama or other localhost OpenAI-compatible JSON endpoint. Queued packets and planner inputs use redacted user-message summaries only." },
-    "llm.baseUrl": { "label": "Local LLM Base URL", "help": "Use a localhost OpenAI-compatible endpoint such as http://127.0.0.1:11434/v1." },
+    "llm": { "label": "Local LLM Distillation", "help": "Standard practice is a user-configured local Ollama or other loopback OpenAI-compatible JSON endpoint. Queued packets and planner inputs use redacted user-message summaries only." },
+    "llm.baseUrl": { "label": "Local LLM Base URL", "help": "Optional loopback OpenAI-compatible endpoint for local semantic distillation. Leave blank to keep LLM distillation disabled." },
     "privacy": { "label": "Privacy Defaults", "help": "Raw transcript storage stays hard-disabled. Background packets store redacted summaries and hashes, not raw user-message text." },
     "rawTranscriptUpload": { "label": "Raw Transcript Upload", "help": "Must remain false; true fails closed." }
   }

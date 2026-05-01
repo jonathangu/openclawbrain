@@ -15,6 +15,7 @@ import { appendProofEvent, readProofEvents, readStatus, writeStatus } from './pr
 import { RouteLearning } from './route-learning.js';
 import { buildMemoryCorpusSupplement, buildMemoryPromptSupplement, graphPayload, learnPayload, searchPayload } from './search.js';
 import { buildStatus } from './status.js';
+import { nativeSqliteSmokeTest } from './native-sqlite.js';
 import { clipText, eventId, hashText, latestUserTextFromEvent, redactText, safeString } from './redact.js';
 import { RouteFn } from './route-fn.js';
 export { normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
@@ -33,6 +34,7 @@ export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
 export { ContextSelector } from './context-selector.js';
 export { MemoryPlanner } from './memory-planner.js';
+export { nativeSqliteSmokeTest } from './native-sqlite.js';
 export { BackgroundLearner } from './learning.js';
 export { RouteLearning } from './route-learning.js';
 export { buildMemoryCorpusSupplement, buildMemoryPromptSupplement, graphPayload, learnPayload, searchPayload } from './search.js';
@@ -249,6 +251,13 @@ function registerFirstClassSurfaces(api, resolve) {
         handler: async (req, res) => writeJson(res, await statusPayload(resolve(), req))
     });
     api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/doctor',
+        auth: 'gateway',
+        match: 'exact',
+        replaceExisting: true,
+        handler: async (_req, res) => writeJson(res, doctorPayload(resolve()))
+    });
+    api.registerHttpRoute?.({
         path: '/plugins/openclawbrain/proof',
         auth: 'gateway',
         match: 'prefix',
@@ -286,8 +295,9 @@ function registerFirstClassSurfaces(api, resolve) {
 }
 async function statusPayload(config, req = {}) {
     const agentId = safeString(req.query?.agentId ?? req.query?.agent ?? config.scopes.agents[0] ?? 'main') || 'main';
+    const nativeSqlite = nativeSqliteSmokeTest();
     let persisted = null;
-    let details = {};
+    let details = { nativeSqlite };
     try {
         persisted = await readStatus({ activationRoot: config.activationRoot, agentId });
     }
@@ -325,13 +335,28 @@ async function statusPayload(config, req = {}) {
                 tier1Turns: store.countRouteDecisionsByLatencyTier(agentId, 'cached_route'),
                 tier2Turns: store.countRouteDecisionsByLatencyTier(agentId, 'sync_memory_planner'),
             },
+            nativeSqlite,
         };
         store.close();
     }
     catch {
-        details = {};
+        details = { nativeSqlite };
     }
     return { ...buildStatus(config, { agentId, ...details }), persisted };
+}
+function doctorPayload(config) {
+    const nativeSqlite = nativeSqliteSmokeTest();
+    return {
+        ok: nativeSqlite.ok,
+        plugin: PLUGIN_ID,
+        pluginVersion: PLUGIN_VERSION,
+        enabled: config.enabled === true,
+        checks: {
+            nativeSqlite,
+            rawTranscriptUploadDisabled: config.rawTranscriptUpload !== true,
+            promptInjectionExplicitlyAllowed: config.hooks?.allowPromptInjection === true,
+        },
+    };
 }
 async function proofPayload(config, limit = 20) {
     const agentId = config.scopes.agents[0] || 'main';

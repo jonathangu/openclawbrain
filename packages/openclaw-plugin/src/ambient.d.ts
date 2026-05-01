@@ -1,4 +1,4 @@
-declare const process: { pid: number; platform: string; execPath: string; argv: string[]; env: Record<string, string | undefined>; stderr: { write(value: string): void }; stdout: { write(value: string): void }; exit(code?: number): never };
+declare const process: { pid: number; platform: string; version: string; execPath: string; argv: string[]; env: Record<string, string | undefined>; stderr: { write(value: string): void }; stdout: { write(value: string): void }; exit(code?: number): never };
 
 declare namespace NodeJS {
   interface Timeout {}

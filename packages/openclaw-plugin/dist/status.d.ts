@@ -14,4 +14,5 @@ export declare function buildStatus(config: any, details?: any): {
     routing: any;
     learning: any;
     latency: any;
+    nativeSqlite: any;
 };

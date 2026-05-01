@@ -12,7 +12,7 @@
 
 ## Current truth
 
-OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with 53 passing plugin tests. Current package release: **v0.2.4**.
+OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with native SQLite self-checks and 54 passing plugin tests. Current package release: **v0.2.5**.
 
 The package still keeps **legacy file-backed compatibility modes** (`proof-only`, `conservative`, `active`) for users who want the older activation-file path. The **v0.2 path** is `mode: "balanced"` or `"aggressive"`.
 
@@ -38,14 +38,14 @@ openclaw config validate
 openclaw gateway restart
 ```
 
-To enable automatic semantic distillation and same-turn planning, point the plugin at a structured JSON model endpoint. **Local Ollama is the standard path**:
+To enable automatic semantic distillation and same-turn planning, point the plugin at a structured JSON model endpoint. **Local Ollama is the standard path**. Set `baseUrl` to your local Ollama OpenAI-compatible v1 endpoint:
 
 ```bash
 ollama list
 
 openclaw config set plugins.entries.openclawbrain.config.llm '{
   "enabled": true,
-  "baseUrl": "http://127.0.0.1:11434/v1",
+  "baseUrl": "<your local Ollama OpenAI-compatible v1 endpoint>",
   "routeModel": "qwen3.5:9b",
   "plannerModel": "qwen3.5:9b",
   "feedbackModel": "qwen3.5:9b",
@@ -64,6 +64,7 @@ Privacy note: background packets, route planning inputs, and queued distillation
 ```bash
 openclaw plugins inspect openclawbrain --json
 curl http://127.0.0.1:18789/plugins/openclawbrain/status
+curl http://127.0.0.1:18789/plugins/openclawbrain/doctor
 curl http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10
 curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?limit=10'
 curl 'http://127.0.0.1:18789/plugins/openclawbrain/learn?limit=10'
@@ -75,6 +76,7 @@ curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
 | Endpoint | Description |
 |---|---|
 | `/plugins/openclawbrain/status` | Current plugin config, memory counts, routing stats, latency counters |
+| `/plugins/openclawbrain/doctor` | Native SQLite binding and FTS5 smoke check under the running Node runtime |
 | `/plugins/openclawbrain/proof?limit=20` | Recent redacted proof and route events |
 | `/plugins/openclawbrain/graph?limit=50` | Redacted memory nodes and edges |
 | `/plugins/openclawbrain/learn?limit=50` | Route examples and active policy snapshot |
@@ -115,7 +117,7 @@ pnpm --dir packages/openclaw-plugin build
 pnpm --dir packages/openclaw-plugin test
 ```
 
-Current gate: `pnpm --dir packages/openclaw-plugin test` → **53/53 pass**.
+Current gate: `pnpm --dir packages/openclaw-plugin test` → **54/54 pass**.
 
 ## Publish
 
@@ -123,8 +125,8 @@ Current gate: `pnpm --dir packages/openclaw-plugin test` → **53/53 pass**.
 clawhub publish packages/openclaw-plugin \
   --slug openclawbrain \
   --name "OpenClawBrain" \
-  --version 0.2.4 \
-  --changelog "Make local Ollama the standard LLM path and tighten package metadata."
+  --version 0.2.5 \
+  --changelog "Add native SQLite self-checks and scanner-safe reliability metadata."
 ```
 
 ## License

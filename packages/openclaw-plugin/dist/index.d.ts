@@ -14,6 +14,7 @@ export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
 export { ContextSelector } from './context-selector.js';
 export { MemoryPlanner } from './memory-planner.js';
+export { nativeSqliteSmokeTest } from './native-sqlite.js';
 export { BackgroundLearner } from './learning.js';
 export { RouteLearning } from './route-learning.js';
 export { buildMemoryCorpusSupplement, buildMemoryPromptSupplement, graphPayload, learnPayload, searchPayload } from './search.js';

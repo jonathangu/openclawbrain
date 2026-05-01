@@ -15,6 +15,7 @@ import { appendProofEvent, readProofEvents, readStatus, writeStatus } from './pr
 import { RouteLearning } from './route-learning.js';
 import { buildMemoryCorpusSupplement, buildMemoryPromptSupplement, graphPayload, learnPayload, searchPayload } from './search.js';
 import { buildStatus } from './status.js';
+import { nativeSqliteSmokeTest } from './native-sqlite.js';
 import { clipText, eventId, hashText, latestUserTextFromEvent, redactText, safeString, shortHash } from './redact.js';
 import { RouteFn } from './route-fn.js';
 
@@ -34,6 +35,7 @@ export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
 export { ContextSelector } from './context-selector.js';
 export { MemoryPlanner } from './memory-planner.js';
+export { nativeSqliteSmokeTest } from './native-sqlite.js';
 export { BackgroundLearner } from './learning.js';
 export { RouteLearning } from './route-learning.js';
 export { buildMemoryCorpusSupplement, buildMemoryPromptSupplement, graphPayload, learnPayload, searchPayload } from './search.js';
@@ -265,6 +267,13 @@ function registerFirstClassSurfaces(api: any, resolve: any) {
     handler: async (req: any, res: any) => writeJson(res, await statusPayload(resolve(), req))
   });
   api.registerHttpRoute?.({
+    path: '/plugins/openclawbrain/doctor',
+    auth: 'gateway',
+    match: 'exact',
+    replaceExisting: true,
+    handler: async (_req: any, res: any) => writeJson(res, doctorPayload(resolve()))
+  });
+  api.registerHttpRoute?.({
     path: '/plugins/openclawbrain/proof',
     auth: 'gateway',
     match: 'prefix',
@@ -302,8 +311,9 @@ function registerFirstClassSurfaces(api: any, resolve: any) {
 
 async function statusPayload(config: any, req: any = {}) {
   const agentId = safeString(req.query?.agentId ?? req.query?.agent ?? config.scopes.agents[0] ?? 'main') || 'main';
+  const nativeSqlite = nativeSqliteSmokeTest();
   let persisted = null;
-  let details = {};
+  let details: any = { nativeSqlite };
   try {
     persisted = await readStatus({ activationRoot: config.activationRoot, agentId });
   } catch {
@@ -340,12 +350,28 @@ async function statusPayload(config: any, req: any = {}) {
         tier1Turns: store.countRouteDecisionsByLatencyTier(agentId, 'cached_route'),
         tier2Turns: store.countRouteDecisionsByLatencyTier(agentId, 'sync_memory_planner'),
       },
+      nativeSqlite,
     };
     store.close();
   } catch {
-    details = {};
+    details = { nativeSqlite };
   }
   return { ...buildStatus(config, { agentId, ...details }), persisted };
+}
+
+function doctorPayload(config: any) {
+  const nativeSqlite = nativeSqliteSmokeTest();
+  return {
+    ok: nativeSqlite.ok,
+    plugin: PLUGIN_ID,
+    pluginVersion: PLUGIN_VERSION,
+    enabled: config.enabled === true,
+    checks: {
+      nativeSqlite,
+      rawTranscriptUploadDisabled: config.rawTranscriptUpload !== true,
+      promptInjectionExplicitlyAllowed: config.hooks?.allowPromptInjection === true,
+    },
+  };
 }
 
 async function proofPayload(config: any, limit: any = 20) {

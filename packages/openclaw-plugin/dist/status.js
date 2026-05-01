@@ -16,5 +16,6 @@ export function buildStatus(config, details = {}) {
         routing: details.routing || undefined,
         learning: details.learning || undefined,
         latency: details.latency || undefined,
+        nativeSqlite: details.nativeSqlite || undefined,
     };
 }

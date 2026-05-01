@@ -5,7 +5,7 @@ This guide gets the **v0.2 memory-graph path** running.
 ## Prerequisites
 
 - OpenClaw `2026.4.29` or later
-- A local Ollama or other localhost OpenAI-compatible JSON model endpoint if you want automatic semantic capture
+- A local Ollama or other loopback OpenAI-compatible JSON model endpoint if you want automatic semantic capture
 
 ## 1) Install the plugin
 
@@ -27,14 +27,14 @@ openclaw config set plugins.entries.openclawbrain.hooks.allowConversationAccess 
 
 ## 3) Configure a structured JSON model endpoint
 
-OpenClawBrain's automatic capture/learning path uses a **local OpenAI-compatible** endpoint. Standard practice is local Ollama:
+OpenClawBrain's automatic capture/learning path uses a **local OpenAI-compatible** endpoint. Standard practice is local Ollama. Set `baseUrl` to your local Ollama OpenAI-compatible v1 endpoint:
 
 ```bash
 ollama list
 
 openclaw config set plugins.entries.openclawbrain.config.llm '{
   "enabled": true,
-  "baseUrl": "http://127.0.0.1:11434/v1",
+  "baseUrl": "<your local Ollama OpenAI-compatible v1 endpoint>",
   "routeModel": "qwen3.5:9b",
   "plannerModel": "qwen3.5:9b",
   "feedbackModel": "qwen3.5:9b",
@@ -51,11 +51,12 @@ If you skip this step, OpenClawBrain can still run its proof/search/status surfa
 ```bash
 openclaw plugins inspect openclawbrain --json
 curl http://127.0.0.1:18789/plugins/openclawbrain/status
+curl http://127.0.0.1:18789/plugins/openclawbrain/doctor
 ```
 
 You should see:
 
-- `pluginVersion: "0.2.4"`
+- `pluginVersion: "0.2.5"`
 
 Privacy note: OpenClawBrain's queued capture/planning packets keep redacted summaries and hashes only; raw user-message text is not stored in those background payloads.
 - `mode: "balanced"`

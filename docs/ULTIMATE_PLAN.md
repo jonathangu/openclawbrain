@@ -12,6 +12,22 @@ OpenClawBrain is no longer just an idea or a flat-file prototype: the v0.2 local
 
 ---
 
+## 0.5 Strategic sequencing
+
+The end state is not reached by adding cleverer semantic memory first. It is reached by making the system **boringly reliable**, then **trustworthy**, then **adaptive**, then **provable**.
+
+Execution order:
+
+1. **Reliability first** — live install works, native SQLite works, memory search/graph/proof routes work under the exact Gateway Node runtime.
+2. **Trust layer second** — weak evidence cannot become durable memory; candidates have explicit promotion reasons and contradiction/supersession proof.
+3. **Adaptive routing third** — the learned route function optimizes for helpful injection, missed recall, noisy injection, and correct silence.
+4. **Workflow memory fourth** — only successful, repeated, or explicitly approved tool workflows become procedural memory.
+5. **Proof and evidence last** — public claims come from dogfood evidence, not vibes or broader retrieval.
+
+The strategic discipline is: every feature must make memory more reliable, more selective, more inspectable, or more measurably useful. Anything else is a distraction.
+
+---
+
 ## 1. The final ultimate vision
 
 The target state is not “better memory.” The target state is:
@@ -117,23 +133,29 @@ The installed live extension has a native dependency mismatch on Node `25.5.0`: 
 
 ## 4. The gap list, in priority order
 
-### P0 — Make the public release clean and installable
+### P0 — Restore live memory and make the public release clean
 
-This is the immediate blocker.
+This is the immediate blocker. Live memory search must work before higher-level semantic recall matters.
 
-**Problem:** `0.2.4` is published, but ClawHub still marks it suspicious. Static scan flags the localhost Ollama URL example as an untrusted install source. LLM scan also dislikes the package/skill text presentation.
+**Problem:** the installed extension can fail before recall starts if `better-sqlite3` cannot import, open an in-memory database, and create an FTS5 table under the exact Gateway Node runtime. Separately, `0.2.4` is published, but ClawHub still marks it suspicious. Static scan flags the localhost Ollama URL example as an untrusted install source. LLM scan also dislikes the package/skill text presentation.
 
 **Required work:**
 
-1. Cut `0.2.5` with scanner-safe metadata:
-   - remove or reword `http://127.0.0.1:11434/v1` from scanner-sensitive fields
+1. Repair and verify the live installed extension:
+   - rebuild or reinstall `better-sqlite3` inside `/Users/guclaw/.openclaw/extensions/openclawbrain`
+   - run a native SQLite smoke test: import, `:memory:` DB, `select 1`, FTS5 create/query
+   - restart/reload Gateway
+   - verify `/status`, `/doctor`, `/search`, `/graph`, and `/proof` routes
+2. Cut `0.2.5` as a reliability release with scanner-safe metadata:
+   - remove or reword concrete loopback URL examples from scanner-sensitive fields
    - describe localhost Ollama as a config concept, not as an install/download source
    - make manifest/package copy clearly describe runnable plugin code
    - remove any SKILL/package wording that looks like prompt injection
-2. Re-run tests/build/pack.
-3. Publish to ClawHub.
-4. Confirm scan is clean.
-5. Only then install latest on the live Mac mini, unless Jon explicitly accepts manual-review/danger path.
+3. Re-run tests/build/pack.
+4. Publish to ClawHub.
+5. Confirm scan is clean.
+6. Verify temp-HOME install outside repo-local `node_modules`.
+7. Only then install latest on the live Mac mini, unless Jon explicitly accepts manual-review/danger path.
 
 **Code/doc touchpoints:**
 
@@ -151,6 +173,7 @@ clawhub package inspect openclawbrain --version 0.2.5 --json
 openclaw plugins install clawhub:openclawbrain@0.2.5   # temp HOME first
 openclaw plugins inspect openclawbrain --json
 openclaw plugins doctor
+curl /plugins/openclawbrain/doctor   # with Gateway auth; verifies native SQLite + FTS5
 ```
 
 Scan clean, temp-HOME install works, live install works, routes respond, docs match.
@@ -187,9 +210,10 @@ Scan clean, temp-HOME install works, live install works, routes respond, docs ma
 **Required work:**
 
 1. Add explicit capture candidate state, or make current distillation audits serve that role more clearly.
-2. Promote immediately only for high-confidence explicit corrections.
+2. Promote immediately only for high-confidence explicit corrections, explicit preferences, explicit standing instructions, or high-confidence workflow outcomes.
 3. Treat assistant statements as weak evidence, never authoritative user preference.
-4. Add contradiction/supersession explanations that show exactly why an older memory lost authority.
+4. Track evidence kind, promotion reason, review requirement, source evidence hash, superseded memory ID, and contradicted memory ID.
+5. Add contradiction/supersession explanations that show exactly why an older memory lost authority.
 
 **Code touchpoints:**
 
@@ -214,7 +238,10 @@ Scan clean, temp-HOME install works, live install works, routes respond, docs ma
    - harmless tie
    - noisy injection
    - missed recall
-   - correct `STOP_LOCAL`
+   - correct silence / `STOP_LOCAL`
+   - wrong route
+   - correct capture-only
+   - harmful memory
 3. Learn policy snapshots from actual outcomes, not just heuristics.
 4. Keep a clear zero-extra-LLM default for routine turns.
 
@@ -226,7 +253,7 @@ Scan clean, temp-HOME install works, live install works, routes respond, docs ma
 - [`src/learning.ts`](../packages/openclaw-plugin/src/learning.ts)
 - [`src/memory-planner.ts`](../packages/openclaw-plugin/src/memory-planner.ts)
 
-**Done means:** dashboard/proof can show that most turns use Tier 0/Tier 1, while high-signal turns get better memory decisions.
+**Done means:** dashboard/proof can show that most turns use Tier 0/Tier 1, high-signal turns get better memory decisions, and correct silence is rewarded rather than treated as absence of behavior.
 
 ---
 
@@ -237,9 +264,11 @@ Scan clean, temp-HOME install works, live install works, routes respond, docs ma
 **Required work:**
 
 1. Detect successful tool chains from `after_tool_call` + `agent_end`.
-2. Summarize workflows as durable procedural memory without raw tool output.
-3. Connect workflows to projects/repos/tools through graph edges.
-4. Inject workflows only when task context matches strongly.
+2. Learn workflows only from completed, successful, repeated, or explicitly approved behavior.
+3. Store repo scope, tools used, success signal, failure signal, last verified time, `applies_when`, and `do_not_apply_when`.
+4. Summarize workflows as durable procedural memory without raw tool output.
+5. Connect workflows to projects/repos/tools through graph edges.
+6. Inject workflows only when task context matches strongly.
 
 **Code touchpoints:**
 
@@ -258,11 +287,12 @@ Scan clean, temp-HOME install works, live install works, routes respond, docs ma
 
 **Required work:**
 
-1. Add explanation fields:
-   - why this memory was captured
-   - why it was injected
-   - why it was not injected
-   - what outcome changed its score
+1. Add story-shaped explanation fields:
+   - what did you learn?
+   - why did you learn it?
+   - where did the evidence come from?
+   - why did you inject or not inject it here?
+   - what happened after injection?
 2. Add route-tier counters and latency distribution.
 3. Add “last 20 important decisions” and “recent misses” views.
 4. Make `/search` show source, confidence, and supersession state clearly.
@@ -322,8 +352,9 @@ Scan clean, temp-HOME install works, live install works, routes respond, docs ma
 
 ## 5. Final-state milestone plan
 
-### Milestone A — Clean release and dogfood latest
+### Milestone A — Restore live memory, clean release, and dogfood latest
 
+- Repair live installed `better-sqlite3` and verify SQLite + FTS5 under Gateway Node.
 - Ship `0.2.5` scanner-clean.
 - Verify temp-HOME install.
 - Install latest live on Mac mini.
@@ -381,6 +412,7 @@ Scan clean, temp-HOME install works, live install works, routes respond, docs ma
 
 OpenClawBrain reaches the final vision when all of this is true:
 
+- [ ] Live installed extension passes native SQLite + FTS5 smoke test under Gateway Node.
 - [ ] Latest ClawHub release scans clean.
 - [ ] Fresh temp-HOME install works.
 - [ ] Live Mac mini runs latest release.
