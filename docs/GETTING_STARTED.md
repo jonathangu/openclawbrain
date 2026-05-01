@@ -5,7 +5,7 @@ This guide gets the **v0.2 memory-graph path** running.
 ## Prerequisites
 
 - OpenClaw `2026.4.29` or later
-- A local or remote OpenAI-compatible JSON model endpoint if you want automatic semantic capture
+- A local Ollama or other localhost OpenAI-compatible JSON model endpoint if you want automatic semantic capture
 
 ## 1) Install the plugin
 
@@ -27,28 +27,24 @@ openclaw config set plugins.entries.openclawbrain.hooks.allowConversationAccess 
 
 ## 3) Configure a structured JSON model endpoint
 
-OpenClawBrain's automatic capture/learning path currently uses a local or remote **OpenAI-compatible** endpoint. The intended privacy-first setup is a local server:
+OpenClawBrain's automatic capture/learning path uses a **local OpenAI-compatible** endpoint. Standard practice is local Ollama:
 
 ```bash
+ollama list
+
 openclaw config set plugins.entries.openclawbrain.config.llm '{
   "enabled": true,
-  "provider": "local",
   "baseUrl": "http://127.0.0.1:11434/v1",
-  "plannerModel": "your-local-model",
-  "feedbackModel": "your-local-model",
-  "learningModel": "your-local-model"
+  "routeModel": "qwen3.5:9b",
+  "plannerModel": "qwen3.5:9b",
+  "feedbackModel": "qwen3.5:9b",
+  "learningModel": "qwen3.5:9b"
 }' --strict-json
 openclaw config validate
 openclaw gateway restart
 ```
 
 If you skip this step, OpenClawBrain can still run its proof/search/status surfaces and legacy compatibility modes, but it will not auto-distill new corrections.
-
-For a remote OpenAI-compatible endpoint, set the gateway environment variable first:
-
-```bash
-export OPENCLAWBRAIN_LLM_API_KEY=your_api_key_here
-```
 
 ## 4) Verify that the plugin is live
 
@@ -59,7 +55,7 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/status
 
 You should see:
 
-- `pluginVersion: "0.2.3"`
+- `pluginVersion: "0.2.4"`
 
 Privacy note: OpenClawBrain's queued capture/planning packets keep redacted summaries and hashes only; raw user-message text is not stored in those background payloads.
 - `mode: "balanced"`

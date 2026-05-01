@@ -25,14 +25,12 @@ export declare class FakeLlmClient implements LlmClient {
 }
 export interface OpenAICompatibleLlmClientOptions {
     baseUrl: string;
-    apiKey?: string;
     path?: string;
     fetchImpl?: typeof fetch;
     headers?: Record<string, string>;
 }
 export declare class OpenAICompatibleLlmClient implements LlmClient {
     private baseUrl;
-    private apiKey?;
     private path;
     private fetchImpl;
     private headers;

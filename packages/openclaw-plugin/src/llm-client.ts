@@ -39,7 +39,6 @@ export class FakeLlmClient implements LlmClient {
 
 export interface OpenAICompatibleLlmClientOptions {
   baseUrl: string;
-  apiKey?: string;
   path?: string;
   fetchImpl?: typeof fetch;
   headers?: Record<string, string>;
@@ -47,14 +46,12 @@ export interface OpenAICompatibleLlmClientOptions {
 
 export class OpenAICompatibleLlmClient implements LlmClient {
   private baseUrl: string;
-  private apiKey?: string;
   private path: string;
   private fetchImpl: typeof fetch;
   private headers: Record<string, string>;
 
   constructor(options: OpenAICompatibleLlmClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '');
-    this.apiKey = options.apiKey;
     this.path = options.path ?? '/chat/completions';
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.headers = options.headers ?? {};
@@ -65,7 +62,6 @@ export class OpenAICompatibleLlmClient implements LlmClient {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        ...(this.apiKey ? { authorization: `Bearer ${this.apiKey}` } : {}),
         ...this.headers,
       },
       body: JSON.stringify({

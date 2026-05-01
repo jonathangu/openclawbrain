@@ -1,6 +1,5 @@
 export declare const PLUGIN_ID = "openclawbrain";
-export declare const PLUGIN_VERSION = "0.2.3";
-export declare const REMOTE_LLM_API_KEY_ENV = "OPENCLAWBRAIN_LLM_API_KEY";
+export declare const PLUGIN_VERSION = "0.2.4";
 export declare const DEFAULT_CONFIG: any;
 export declare function resolveOpenClawBrainConfig(api?: any): {
     enabled: boolean;
@@ -22,13 +21,11 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
     };
     llm: {
         enabled: boolean;
-        provider: any;
         routeModel: string;
         plannerModel: string;
         feedbackModel: string;
         learningModel: string;
         baseUrl: string;
-        allowRemoteModels: boolean;
         allowedModels: any;
         temperature: number;
         maxTokens: number;
@@ -98,13 +95,11 @@ export declare function normalizePluginConfig(input?: any): {
     };
     llm: {
         enabled: boolean;
-        provider: any;
         routeModel: string;
         plannerModel: string;
         feedbackModel: string;
         learningModel: string;
         baseUrl: string;
-        allowRemoteModels: boolean;
         allowedModels: any;
         temperature: number;
         maxTokens: number;

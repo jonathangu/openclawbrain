@@ -17,13 +17,11 @@ export class FakeLlmClient {
 }
 export class OpenAICompatibleLlmClient {
     baseUrl;
-    apiKey;
     path;
     fetchImpl;
     headers;
     constructor(options) {
         this.baseUrl = options.baseUrl.replace(/\/$/, '');
-        this.apiKey = options.apiKey;
         this.path = options.path ?? '/chat/completions';
         this.fetchImpl = options.fetchImpl ?? fetch;
         this.headers = options.headers ?? {};
@@ -33,7 +31,6 @@ export class OpenAICompatibleLlmClient {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
-                ...(this.apiKey ? { authorization: `Bearer ${this.apiKey}` } : {}),
                 ...this.headers,
             },
             body: JSON.stringify({

@@ -12,7 +12,7 @@
 
 ## Current truth
 
-OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with 53 passing plugin tests. Current package release: **v0.2.3**.
+OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with 53 passing plugin tests. Current package release: **v0.2.4**.
 
 The package still keeps **legacy file-backed compatibility modes** (`proof-only`, `conservative`, `active`) for users who want the older activation-file path. The **v0.2 path** is `mode: "balanced"` or `"aggressive"`.
 
@@ -38,30 +38,24 @@ openclaw config validate
 openclaw gateway restart
 ```
 
-To enable automatic semantic distillation and same-turn planning, point the plugin at a structured JSON model endpoint. A **local OpenAI-compatible server** is the intended default path:
+To enable automatic semantic distillation and same-turn planning, point the plugin at a structured JSON model endpoint. **Local Ollama is the standard path**:
 
 ```bash
+ollama list
+
 openclaw config set plugins.entries.openclawbrain.config.llm '{
   "enabled": true,
-  "provider": "local",
   "baseUrl": "http://127.0.0.1:11434/v1",
-  "plannerModel": "your-local-model",
-  "feedbackModel": "your-local-model",
-  "learningModel": "your-local-model"
+  "routeModel": "qwen3.5:9b",
+  "plannerModel": "qwen3.5:9b",
+  "feedbackModel": "qwen3.5:9b",
+  "learningModel": "qwen3.5:9b"
 }' --strict-json
 openclaw config validate
 openclaw gateway restart
 ```
 
 If `llm.enabled` is left `false`, the plugin still exposes proof/search/graph/status and can use legacy activation-file modes, but **automatic correction capture and LLM route learning are not active**.
-
-For a remote OpenAI-compatible endpoint, set a fixed gateway environment variable first:
-
-```bash
-export OPENCLAWBRAIN_LLM_API_KEY=your_api_key_here
-```
-
-OpenClawBrain no longer reads an arbitrary environment-variable name from config; remote credentials must come from `OPENCLAWBRAIN_LLM_API_KEY` so the ClawHub package metadata stays explicit.
 
 Privacy note: background packets, route planning inputs, and queued distillation jobs keep only **redacted user-message summaries plus hashes**, not raw user-message text.
 
@@ -109,7 +103,7 @@ See [`FINAL_PLAN.md`](FINAL_PLAN.md), [`VISION.md`](VISION.md), and [`docs/ARCHI
 - Off by default
 - Raw transcript storage hard-disabled (`rawTranscriptUpload: false`)
 - Redaction before store and before LLM by default
-- Fail-closed when prompt injection or conversation access is disabled
+- Fail-closed when prompt augmentation or conversation access is disabled
 - Plugin failure does not block the main agent
 
 ## Development
@@ -129,8 +123,8 @@ Current gate: `pnpm --dir packages/openclaw-plugin test` → **53/53 pass**.
 clawhub publish packages/openclaw-plugin \
   --slug openclawbrain \
   --name "OpenClawBrain" \
-  --version 0.2.3 \
-  --changelog "Declare remote auth explicitly and keep queued planner/distillation packets redacted-only."
+  --version 0.2.4 \
+  --changelog "Make local Ollama the standard LLM path and tighten package metadata."
 ```
 
 ## License

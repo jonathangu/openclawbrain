@@ -1,4 +1,4 @@
-import { DEFAULT_CONFIG, PLUGIN_ID, PLUGIN_VERSION, REMOTE_LLM_API_KEY_ENV, isAgentAllowed, normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
+import { DEFAULT_CONFIG, PLUGIN_ID, PLUGIN_VERSION, isAgentAllowed, normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 import { buildInjectionText, ensureActivationRoot, readActivationContext } from './context-files.js';
 import { CaptureOrchestrator } from './capture.js';
 import { ContextSelector } from './context-selector.js';
@@ -535,18 +535,9 @@ async function runFeedbackDistillation(packet, config, store) {
 function llmClientFromConfig(config) {
     if (config.llm?.enabled !== true)
         return null;
-    if ((config.llm.provider === 'openai-compatible' || config.llm.provider === 'local') && config.llm.baseUrl) {
-        const clientOptions = { baseUrl: config.llm.baseUrl };
-        const configuredValue = readProcessEnv(REMOTE_LLM_API_KEY_ENV);
-        if (configuredValue)
-            clientOptions.apiKey = configuredValue;
-        return new OpenAICompatibleLlmClient(clientOptions);
-    }
+    if (config.llm.baseUrl)
+        return new OpenAICompatibleLlmClient({ baseUrl: config.llm.baseUrl });
     return null;
-}
-function readProcessEnv(name) {
-    const env = process.env;
-    return env[name];
 }
 function retrieveCandidates(store, agentId, queries, memoryTypes, maxCandidates) {
     const seen = new Set();

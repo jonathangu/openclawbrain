@@ -1,34 +1,9 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.3",
-  "description": "Latency-safe LLM-distilled memory graph for OpenClaw with local auditability and bounded prompt injection.",
+  "version": "0.2.4",
+  "description": "Latency-safe LLM-distilled memory graph for OpenClaw with local auditability and bounded memory augmentation.",
   "activation": { "onStartup": true },
-  "providerAuthEnvVars": {
-    "openclawbrain-remote-llm": ["OPENCLAWBRAIN_LLM_API_KEY"]
-  },
-  "providerAuthChoices": [
-    {
-      "provider": "openclawbrain-remote-llm",
-      "method": "api-key",
-      "choiceId": "openclawbrain-remote-llm-api-key",
-      "choiceLabel": "OpenClawBrain remote LLM API key",
-      "groupId": "openclawbrain-remote-llm",
-      "groupLabel": "OpenClawBrain remote LLM",
-      "optionKey": "openclawbrainRemoteLlmApiKey",
-      "cliDescription": "Gateway environment variable OPENCLAWBRAIN_LLM_API_KEY for optional remote OpenAI-compatible LLM use."
-    }
-  ],
-  "setup": {
-    "providers": [
-      {
-        "id": "openclawbrain-remote-llm",
-        "authMethods": ["api-key"],
-        "envVars": ["OPENCLAWBRAIN_LLM_API_KEY"]
-      }
-    ],
-    "requiresRuntime": false
-  },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -62,17 +37,11 @@
         "additionalProperties": false,
         "properties": {
           "enabled": { "type": "boolean", "default": false },
-          "provider": {
-            "type": "string",
-            "enum": ["local", "openai-compatible"],
-            "default": "local"
-          },
           "routeModel": { "type": "string", "default": "" },
           "plannerModel": { "type": "string", "default": "" },
           "feedbackModel": { "type": "string", "default": "" },
           "learningModel": { "type": "string", "default": "" },
           "baseUrl": { "type": "string", "default": "" },
-          "allowRemoteModels": { "type": "boolean", "default": false },
           "allowedModels": {
             "type": "array",
             "items": { "type": "string" },
@@ -83,8 +52,6 @@
         },
         "default": {
           "enabled": false,
-          "provider": "local",
-          "allowRemoteModels": false,
           "allowedModels": [],
           "temperature": 0,
           "maxTokens": 1200
@@ -180,14 +147,12 @@
     "gateway_start": {},
     "gateway_stop": {}
   },
-  "uiHints": {
+  "configUiHints": {
     "enabled": { "label": "Enabled", "help": "Defaults off. Enable per plugin entry config." },
     "mode": { "label": "Runtime Mode", "help": "balanced enables the v0.2 latency-safe memory graph path; conservative/active retain legacy file-backed compatibility modes." },
     "activationRoot": { "label": "Activation Root", "help": "Local agent-scoped root for SQLite state, proof mirrors, and optional compatibility files." },
-    "llm": { "label": "LLM Distillation", "help": "Optional structured JSON model path for feedback distillation, planning, and learning. All queued packets and planner inputs use redacted user-message summaries only." },
-    "llm.provider": { "label": "LLM Provider Mode", "help": "Use local for privacy-first localhost endpoints, or openai-compatible for explicit remote-compatible APIs." },
-    "llm.baseUrl": { "label": "LLM Base URL", "help": "Local endpoints can run without credentials. For remote OpenAI-compatible endpoints, set OPENCLAWBRAIN_LLM_API_KEY in the gateway environment before enabling the plugin." },
-    "llm.allowRemoteModels": { "label": "Allow Remote Models", "help": "Defaults false. Keep this off unless you explicitly want redacted memory-planning traffic to leave the machine." },
+    "llm": { "label": "Local LLM Distillation", "help": "Standard practice is a local Ollama or other localhost OpenAI-compatible JSON endpoint. Queued packets and planner inputs use redacted user-message summaries only." },
+    "llm.baseUrl": { "label": "Local LLM Base URL", "help": "Use a localhost OpenAI-compatible endpoint such as http://127.0.0.1:11434/v1." },
     "privacy": { "label": "Privacy Defaults", "help": "Raw transcript storage stays hard-disabled. Background packets store redacted summaries and hashes, not raw user-message text." },
     "rawTranscriptUpload": { "label": "Raw Transcript Upload", "help": "Must remain false; true fails closed." }
   }

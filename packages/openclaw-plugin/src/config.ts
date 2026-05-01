@@ -3,8 +3,7 @@ import path from 'node:path';
 import { safeString } from './redact.js';
 
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.3';
-export const REMOTE_LLM_API_KEY_ENV = 'OPENCLAWBRAIN_LLM_API_KEY';
+export const PLUGIN_VERSION = '0.2.4';
 export const DEFAULT_CONFIG: any = Object.freeze({
   enabled: false,
   mode: 'balanced',
@@ -18,8 +17,6 @@ export const DEFAULT_CONFIG: any = Object.freeze({
   hooks: Object.freeze({ allowPromptInjection: false, allowConversationAccess: false, allowToolObservation: false }),
   llm: Object.freeze({
     enabled: false,
-    provider: 'local',
-    allowRemoteModels: false,
     allowedModels: Object.freeze([]),
     temperature: 0,
     maxTokens: 1200,
@@ -88,7 +85,7 @@ export function resolveOpenClawBrainConfig(api: any = {}) {
 
 export function livePluginEntry(api: any = {}) {
   try {
-    const config = api.runtime?.config?.loadConfig?.();
+    const config = api.runtime?.config?.current?.();
     const entry = config?.plugins?.entries?.openclawbrain;
     return entry && typeof entry === 'object' && !Array.isArray(entry) ? entry : null;
   } catch {
@@ -121,13 +118,11 @@ export function normalizePluginConfig(input: any = {}) {
     },
     llm: {
       enabled: source.llm?.enabled === true,
-      provider: safeString(source.llm?.provider) || DEFAULT_CONFIG.llm.provider,
       routeModel: nonEmptyString(source.llm?.routeModel) || '',
       plannerModel: nonEmptyString(source.llm?.plannerModel) || '',
       feedbackModel: nonEmptyString(source.llm?.feedbackModel) || '',
       learningModel: nonEmptyString(source.llm?.learningModel) || '',
       baseUrl: nonEmptyString(source.llm?.baseUrl) || '',
-      allowRemoteModels: source.llm?.allowRemoteModels === true,
       allowedModels: Array.isArray(source.llm?.allowedModels) ? source.llm.allowedModels.map((v: any) => safeString(v)).filter(Boolean) : [],
       temperature: clampNumber(source.llm?.temperature, DEFAULT_CONFIG.llm.temperature, 0, 2),
       maxTokens: clampInteger(source.llm?.maxTokens, DEFAULT_CONFIG.llm.maxTokens, 1, 100000),

@@ -25,11 +25,11 @@ async function tempRoot() {
 
 test('config defaults off and ignores root openclawbrain config', () => {
   const config = resolveOpenClawBrainConfig({
-    runtime: { config: { loadConfig: () => ({ openclawbrain: { enabled: true }, plugins: { entries: {} } }) } }
+    runtime: { config: { current: () => ({ openclawbrain: { enabled: true }, plugins: { entries: {} } }) } }
   });
   assert.equal(config.enabled, false);
   assert.equal(config.mode, 'balanced');
-  assert.equal(config.llm.provider, 'local');
+  assert.equal(config.llm.baseUrl, '');
   assert.deepEqual(config.scopes.agents, ['main']);
   assert.equal(config.hooks.allowPromptInjection, false);
 });

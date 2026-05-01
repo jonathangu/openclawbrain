@@ -32,7 +32,7 @@ packages/openclaw-plugin/src/
 Used when:
 
 - `config.mode` is `balanced` or `aggressive`
-- prompt injection is allowed
+- OpenClaw's prompt-augmentation hook is allowed
 
 Flow:
 
@@ -89,8 +89,7 @@ Search uses SQLite FTS5 plus graph expansion and scope filters.
 
 Current runtime support is intentionally narrow:
 
-- `provider: "local"` → local OpenAI-compatible endpoint
-- `provider: "openai-compatible"` → remote or self-hosted OpenAI-compatible endpoint
+- local Ollama or another localhost OpenAI-compatible endpoint
 
 The LLM never writes directly to storage. It only returns structured JSON proposals. `memory-operations.ts` validates, redacts, scopes, dedupes, and applies them.
 
