@@ -51,6 +51,7 @@ openclaw plugins enable openclawbrain</code></pre>
 openclaw config set plugins.entries.openclawbrain.config.mode '"balanced"' --strict-json
 openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
 openclaw config set plugins.entries.openclawbrain.config.hooks.allowConversationAccess true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowToolObservation true --strict-json
 openclaw config validate
 openclaw gateway restart</code></pre>
       <p><code>balanced</code> is the recommended default. It keeps the common path light and only does extra work when a turn looks like it needs help.</p>
