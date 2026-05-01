@@ -47,3 +47,7 @@ declare module 'node:crypto' {
   export function randomUUID(): string;
   export function createHash(algorithm: string): { update(value: string): { digest(encoding: 'hex'): string } };
 }
+
+declare module 'node:module' {
+  export function createRequire(url: string): (id: string) => any;
+}

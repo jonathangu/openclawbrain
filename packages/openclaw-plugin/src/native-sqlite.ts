@@ -1,17 +1,17 @@
-import BetterSqlite3 from 'better-sqlite3';
+import { openDatabase } from './sqlite-driver.js';
 
 export interface NativeSqliteSmokeResult {
   ok: boolean;
   nodeVersion: string;
-  betterSqlite3: string;
+  sqliteEngine: string;
   fts5: boolean;
   error?: string;
 }
 
 export function nativeSqliteSmokeTest(): NativeSqliteSmokeResult {
-  let db: BetterSqlite3.Database | null = null;
+  const opened = openDatabase(':memory:');
+  const db = opened.db;
   try {
-    db = new BetterSqlite3(':memory:');
     const row = db.prepare('select 1 as ok').get() as { ok?: number } | undefined;
     if (row?.ok !== 1) throw new Error('sqlite select smoke test failed');
     db.exec('create virtual table x using fts5(content)');
@@ -21,19 +21,19 @@ export function nativeSqliteSmokeTest(): NativeSqliteSmokeResult {
     return {
       ok: true,
       nodeVersion: process.version,
-      betterSqlite3: 'imported',
+      sqliteEngine: opened.engine,
       fts5: true,
     };
   } catch (error: any) {
     return {
       ok: false,
       nodeVersion: process.version,
-      betterSqlite3: 'failed',
+      sqliteEngine: opened.engine,
       fts5: false,
       error: safeError(error),
     };
   } finally {
-    try { db?.close(); } catch { /* ignore close failure */ }
+    try { db.close(); } catch { /* ignore close failure */ }
   }
 }
 

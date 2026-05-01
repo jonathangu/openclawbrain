@@ -4,7 +4,7 @@
 import path from 'node:path';
 import os from 'node:os';
 import { mkdirSync } from 'node:fs';
-import BetterSqlite3 from 'better-sqlite3';
+import { openDatabase } from './sqlite-driver.js';
 // ── Schema version ────────────────────────────────────────────────────────────
 const SCHEMA_VERSION = 2;
 // ── Schema SQL ────────────────────────────────────────────────────────────────
@@ -811,7 +811,7 @@ export function dbPathForAgent(activationRoot, agentId) {
 export function openDb(dbPath) {
     const dir = path.dirname(dbPath);
     mkdirSync(dir, { recursive: true });
-    const db = new BetterSqlite3(dbPath, { readonly: false });
+    const { db } = openDatabase(dbPath);
     db.pragma('journal_mode = WAL');
     db.pragma('synchronous = NORMAL');
     db.pragma('foreign_keys = ON');

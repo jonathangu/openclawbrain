@@ -1,8 +1,8 @@
-import BetterSqlite3 from 'better-sqlite3';
+import { openDatabase } from './sqlite-driver.js';
 export function nativeSqliteSmokeTest() {
-    let db = null;
+    const opened = openDatabase(':memory:');
+    const db = opened.db;
     try {
-        db = new BetterSqlite3(':memory:');
         const row = db.prepare('select 1 as ok').get();
         if (row?.ok !== 1)
             throw new Error('sqlite select smoke test failed');
@@ -14,7 +14,7 @@ export function nativeSqliteSmokeTest() {
         return {
             ok: true,
             nodeVersion: process.version,
-            betterSqlite3: 'imported',
+            sqliteEngine: opened.engine,
             fts5: true,
         };
     }
@@ -22,14 +22,14 @@ export function nativeSqliteSmokeTest() {
         return {
             ok: false,
             nodeVersion: process.version,
-            betterSqlite3: 'failed',
+            sqliteEngine: opened.engine,
             fts5: false,
             error: safeError(error),
         };
     }
     finally {
         try {
-            db?.close();
+            db.close();
         }
         catch { /* ignore close failure */ }
     }

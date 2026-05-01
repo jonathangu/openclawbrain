@@ -1,4 +1,4 @@
-import BetterSqlite3 from 'better-sqlite3';
+import { type DatabaseLike } from './sqlite-driver.js';
 import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot } from './memory-types.js';
 export declare const uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 export declare const now: () => string;
@@ -99,4 +99,4 @@ export declare class MemoryStore {
     transaction<T>(fn: () => T): T;
 }
 export declare function dbPathForAgent(activationRoot: string, agentId: string): string;
-export declare function openDb(dbPath: string): BetterSqlite3.Database;
+export declare function openDb(dbPath: string): DatabaseLike;

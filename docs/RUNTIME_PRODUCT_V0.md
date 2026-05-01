@@ -43,7 +43,7 @@ Prompt mutation requires:
 openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
 ```
 
-If prompt injection is disabled, OpenClawBrain fails closed and writes `stay_silent` proof.
+If prompt-context augmentation is disabled, OpenClawBrain fails closed and writes `stay_silent` proof.
 
 ## First-class plugin surfaces
 

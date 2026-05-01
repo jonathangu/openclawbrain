@@ -1,7 +1,7 @@
 export interface NativeSqliteSmokeResult {
     ok: boolean;
     nodeVersion: string;
-    betterSqlite3: string;
+    sqliteEngine: string;
     fts5: boolean;
     error?: string;
 }

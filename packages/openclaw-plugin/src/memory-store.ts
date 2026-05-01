@@ -5,7 +5,7 @@
 import path from 'node:path';
 import os from 'node:os';
 import { mkdirSync } from 'node:fs';
-import BetterSqlite3 from 'better-sqlite3';
+import { openDatabase, type DatabaseLike } from './sqlite-driver.js';
 import type {
   MemoryNode, MemoryType, MemoryEdge, EdgeRelation,
   RouteDecision, RouteKind, TurnFrame, RetrievalPlan, InjectionPlan,
@@ -285,7 +285,7 @@ export interface MemoryStoreOptions {
 }
 
 export class MemoryStore {
-  private db: BetterSqlite3.Database;
+  private db: DatabaseLike;
   private dbPath: string;
 
   constructor(options: MemoryStoreOptions) {
@@ -994,10 +994,10 @@ export function dbPathForAgent(activationRoot: string, agentId: string): string 
   return path.join(dir, 'openclawbrain.db');
 }
 
-export function openDb(dbPath: string): BetterSqlite3.Database {
+export function openDb(dbPath: string): DatabaseLike {
   const dir = path.dirname(dbPath);
   mkdirSync(dir, { recursive: true });
-  const db = new BetterSqlite3(dbPath, { readonly: false });
+  const { db } = openDatabase(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('synchronous = NORMAL');
   db.pragma('foreign_keys = ON');

@@ -141,7 +141,7 @@ test('correction and full-context injections are bounded and redacted', async ()
   }
 });
 
-test('prompt injection disabled returns no mutation and writes fail-closed proof', async () => {
+test('prompt-context augmentation disabled returns no mutation and writes fail-closed proof', async () => {
   const root = await tempRoot();
   try {
     await writeFile(path.join(root, 'corrections.md'), 'Use family inbox.');
