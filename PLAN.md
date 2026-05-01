@@ -1,23 +1,33 @@
-# OpenClawBrain v0.2 — Implementation Plan
+# OpenClawBrain v0.2 — Implementation Plan (LLM-First Architecture)
 
-*How to actually build the real product. Incorporates implementation feedback.*
+*The real product. LLM distillers + learned route function + deterministic guardrails.*
 
 ---
 
-## Architecture: Three Planes
+## Core architecture change
 
-Build v0.2 as an **event-driven local memory runtime** with three separate planes:
+**v0.1:** Deterministic regex + flat file injection.
 
-1. **Evidence plane** — what happened
-   - Hook observations, capture candidates, injection decisions, outcome signals, proof events
+**v0.2 (old plan):** Deterministic regex + SQLite memory graph + heuristic scoring.
 
-2. **Memory plane** — what the system currently believes
-   - Memory nodes, edges, confidence, importance, freshness, supersession, redacted content
+**v0.2 (this plan):** LLM distillers + learned route function + SQLite memory graph + deterministic guardrails.
 
-3. **Recall plane** — what the model sees or can search
-   - Ranked retrieval, bounded prompt injection, native memory corpus supplement, search route
+The deterministic code is NOT responsible for understanding feedback or deciding context relevance. It only validates, redacts, budgets, persists, and audits. The semantic decisions come from small, structured LLM calls.
 
-This separation matters because auto-capture will make mistakes. If the system stores only final memory nodes, it becomes hard to debug bad behavior. If it stores evidence, candidates, injections, and outcomes separately, you can inspect exactly why a memory exists and why it was injected.
+---
+
+## Mental model
+
+```
+Turn comes in
+  → LLM distills the turn into a compact TurnFrame
+  → learned route fn decides whether memory is needed and what kind
+  → broad retrieval gets candidate memories from SQLite/FTS
+  → LLM context selector chooses/distills final context
+  → prompt receives only the selected distilled context
+  → after completion, LLM feedback distiller captures corrections/preferences/workflows/outcomes
+  → route learner updates policy from prior successes/failures
+```
 
 ---
 
@@ -25,23 +35,30 @@ This separation matters because auto-capture will make mistakes. If the system s
 
 ```
 packages/openclaw-plugin/src/
-  index.ts            # plugin registration and wiring only
-  config.ts           # config schema/types/defaults/resolution
-  redact.ts           # redaction, hashing, safe snippets
-  policy.ts           # turn classification and injection gating
-  memory-types.ts     # shared TS interfaces and enums          [NEW]
-  sqlite-driver.ts    # tiny adapter around better-sqlite3       [NEW]
-  memory-store.ts     # schema, migrations, CRUD, FTS, proof, stats [NEW]
-  capture.ts          # candidate extraction and promotion logic [NEW]
-  injection.ts        # search/rank/format/record injection      [NEW, replaces context-files.ts]
-  learning.ts         # scoring, outcome resolution, pruning, linking [NEW]
-  graph.ts            # edge creation, traversal, contradiction logic [NEW]
-  search.ts           # OpenClaw memory supplement integration   [NEW]
-  status.ts           # status payloads
-  routes.ts           # HTTP route handlers and safe serialization [NEW]
+  index.ts               # plugin registration and wiring only
+  config.ts              # config schema/types/defaults/resolution
+  redact.ts              # redaction, hashing, safe snippets
+  llm-client.ts          # abstract LLM client interface           [NEW]
+  llm-json.ts            # structured JSON LLM calls with validation [NEW]
+  feedback-distiller.ts  # LLM feedback distillation               [NEW, replaces capture.ts]
+  turn-distiller.ts      # LLM turn frame extraction               [NEW]
+  route-fn.ts            # learned LLM route function               [NEW, replaces policy.ts]
+  context-selector.ts    # LLM selects + distills candidate memories [NEW]
+  route-learning.ts      # background route policy improvement      [NEW]
+  memory-store.ts        # schema, migrations, CRUD, FTS, proof, stats
+  graph.ts               # edge creation, traversal, contradiction logic
+  injection.ts           # budget enforcement, format, record injection
+  search.ts              # OpenClaw memory supplement integration
+  status.ts              # status payloads
+  routes.ts              # HTTP route handlers and safe serialization
+  memory-types.ts        # shared TS interfaces and enums
+  sqlite-driver.ts       # tiny adapter around better-sqlite3
 ```
 
-Three new files beyond the original plan: `memory-types.ts`, `sqlite-driver.ts`, `routes.ts`. They keep the rest of the implementation cleaner.
+Key changes from v0.2 original:
+- **Removed:** `capture.ts` (replaced by `feedback-distiller.ts`)
+- **Removed:** `policy.ts` (replaced by `route-fn.ts`)
+- **Added:** `llm-client.ts`, `llm-json.ts`, `feedback-distiller.ts`, `turn-distiller.ts`, `route-fn.ts`, `context-selector.ts`, `route-learning.ts`
 
 ---
 
@@ -49,1149 +66,863 @@ Three new files beyond the original plan: `memory-types.ts`, `sqlite-driver.ts`,
 
 | File | Responsibility | Should not do |
 |---|---|---|
-| `index.ts` | Register hooks, services, routes, supplements | SQL, ranking, capture regexes |
-| `memory-store.ts` | All SQL, migrations, transactions, FTS, persistence | Hook-specific logic |
-| `capture.ts` | Extract and normalize candidates from events | Prompt injection |
-| `injection.ts` | Select and format memories for the current turn | Capture or learning |
-| `learning.ts` | Resolve outcomes, update scores, prune, link | Prompt formatting |
-| `graph.ts` | Contradiction/supersession/related-edge logic | SQL details if avoidable |
-| `search.ts` | Expose memory as OpenClaw search/prompt supplement | Replace all injection policy |
-| `policy.ts` | Decide whether a turn deserves memory lookup | Database access |
-| `routes.ts` | HTTP route handlers and safe serialization | Core memory algorithms |
+| `index.ts` | Register hooks, services, routes, supplements | LLM calls, SQL, ranking |
+| `llm-client.ts` | Abstract LLM client interface + adapters | Store, injection logic |
+| `llm-json.ts` | Structured JSON calls with schema validation, retries | Business logic |
+| `feedback-distiller.ts` | LLM distills feedback from turns and runs | SQL, injection |
+| `turn-distiller.ts` | LLM extracts TurnFrame from user message | SQL, capture |
+| `route-fn.ts` | LLM decides route, retrieval plan, injection plan | SQL |
+| `context-selector.ts` | LLM selects and distills candidate memories | Capture, learning |
+| `route-learning.ts` | Background learner updates route policy from outcomes | Prompt formatting |
+| `memory-store.ts` | All SQL, migrations, transactions, FTS, persistence | LLM calls |
+| `graph.ts` | Contradiction/supersession/related-edge logic | LLM calls |
+| `injection.ts` | Budget enforcement, format, record injection | Semantic decisions |
+| `search.ts` | OpenClaw memory supplement integration | Injection policy |
+| `routes.ts` | HTTP route handlers | Core algorithms |
 
-**Key design rule:** No file other than `memory-store.ts` should call `db.prepare()`.
+**Key design rule:** No file other than `memory-store.ts` should call `db.prepare()`. No file other than `llm-json.ts` should call the LLM. The LLM is a semantic engine. The code is the trust boundary.
 
 ---
 
-## OpenClaw API integration
+## LLM abstraction layer
 
-### Hooks
+### `llm-client.ts` — abstract interface
 
 ```typescript
-api.on('before_prompt_build', handleBeforePromptBuild);   // inject memory
-api.on('after_tool_call', handleAfterToolCall);           // capture workflows
-api.on('agent_end', handleAgentEnd);                      // observe outcomes
-api.on('before_compaction', handleBeforeCompaction);      // snapshot state
-api.on('llm_output', handleLlmOutput);                    // detect preferences
+export interface DistillerModelClient {
+  generateJson(input: {
+    model: string;
+    system: string;
+    user: string;
+    schema: JsonSchema;
+    timeoutMs: number;
+  }): Promise<string>;
+}
 ```
 
-**Do NOT register `before_agent_reply`.** It can claim turns. For v0.2, `before_agent_reply` should be either unused or strictly observational. Do not claim turns.
+Adapters:
+- `OpenClawModelClient` — uses OpenClaw's model infrastructure
+- `OpenAICompatibleClient` — direct OpenAI-compatible API
+- `LocalModelClient` — local model (Ollama, etc.)
+- `TestFakeModelClient` — for testing
 
-Correction detection runs in `before_prompt_build` on the *next* turn (looking back at what was said), not in `before_agent_reply`.
+Do NOT bake one provider directly into the memory store or route function.
 
-### Memory surfaces — use additive supplements by default
+### `llm-json.ts` — structured JSON calls
 
 ```typescript
-api.registerMemoryCorpusSupplement?.({
-  id: 'openclawbrain',
-  label: 'OpenClawBrain',
-  search: async ({ query, maxResults, agentId }) => { ... },
-  get: async ({ id, agentId }) => { ... },
-});
+export async function callJsonModel<T>({
+  client,
+  model,
+  system,
+  user,
+  schema,
+  timeoutMs,
+  retries = 1,
+}: {
+  client: DistillerModelClient;
+  model: string;
+  system: string;
+  user: string;
+  schema: JsonSchema;
+  timeoutMs: number;
+  retries?: number;
+}): Promise<T> {
+  const raw = await client.generateJson({ model, system, user, schema, timeoutMs });
+  const parsed = JSON.parse(raw);
+  const validation = validateJsonSchema(schema, parsed);
 
-api.registerMemoryPromptSupplement?.({
-  id: 'openclawbrain',
-  builder: ({ availableTools }) => {
-    // Build prompt sections from high-importance memories
+  if (!validation.ok) {
+    if (retries > 0) {
+      return callJsonModel({
+        client, model, system,
+        user: repairPrompt(user, raw, validation.errors),
+        schema, timeoutMs,
+        retries: retries - 1,
+      });
+    }
+    throw new Error(`LLM JSON validation failed: ${validation.errors.join('; ')}`);
   }
-});
+
+  return parsed as T;
+}
 ```
 
-**Do NOT use `registerMemoryCapability` by default.** Put it behind config:
-
-```typescript
-memoryIntegration: 'supplement' | 'exclusive'  // default: 'supplement'
-```
-
-Reason: the vision says OpenClawBrain plugs into OpenClaw's memory engine and is not a replacement.
-
-### Background service
-
-```typescript
-api.registerService?.({
-  id: 'openclawbrain-learning',
-  start: async () => learning.start(),
-  stop: async () => learning.stop(),
-});
-```
-
-Each learning pass opens short transactions and returns a report. Never keep a transaction open across ticks.
-
-### Routes — all require `auth: 'gateway'`
-
-```
-GET  /plugins/openclawbrain/status
-GET  /plugins/openclawbrain/proof?limit=20
-GET  /plugins/openclawbrain/graph?agentId=main&limit=50
-GET  /plugins/openclawbrain/search?agentId=main&q=pnpm
-GET  /plugins/openclawbrain/learn?agentId=main
-POST /plugins/openclawbrain/learn/run-once?agentId=main
-```
+Do not let random model text touch the store.
 
 ---
 
-## SQLite store design
+## The two LLM jobs
 
-### Driver adapter — `sqlite-driver.ts`
+### Job 1: Feedback distillation
 
-Isolate SQLite behind a tiny adapter so you can later switch implementations:
+**Question it answers:** "What did this turn teach us?"
 
-```typescript
-export interface SqliteDriver {
-  prepare<T = unknown>(sql: string): PreparedStatement<T>;
-  exec(sql: string): void;
-  pragma(sql: string, options?: { simple?: boolean }): unknown;
-  transaction<TArgs extends unknown[], TResult>(
-    fn: (...args: TArgs) => TResult,
-  ): (...args: TArgs) => TResult;
-  close(): void;
-}
-```
+Runs in two modes:
 
-Important: if using `better-sqlite3`, transaction callbacks must remain **synchronous**. Do not use `async` transaction functions.
+**Immediate (during `before_prompt_build`):**
+- Detects user corrections in the current message
+- Captures preferences, standing instructions
+- Runs BEFORE retrieval so the new memory can even be injected into the same turn
 
-### Pragmas
+**Post-run (during `agent_end`):**
+- Captures workflow patterns
+- Observes tool success/failure
+- Resolves whether injected memory helped
+- Detects whether assistant complied with injected correction
 
-```sql
-PRAGMA journal_mode = WAL;
-PRAGMA foreign_keys = ON;
-PRAGMA busy_timeout = 5000;
-PRAGMA synchronous = NORMAL;
-```
-
-### Schema
-
-Use integer `rowid` plus public UUID `id`. FTS5 external-content tables work most cleanly with integer `rowid` joins.
-
-```sql
-CREATE TABLE IF NOT EXISTS memory_nodes (
-  rowid INTEGER PRIMARY KEY,
-  id TEXT NOT NULL UNIQUE,
-  agent_id TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (
-    type IN ('correction', 'preference', 'workflow', 'context', 'tool_result')
-  ),
-  content TEXT NOT NULL,
-  positive TEXT,
-  negative TEXT,
-  confidence REAL NOT NULL DEFAULT 0.5,
-  importance REAL NOT NULL DEFAULT 0.3,
-  freshness REAL NOT NULL DEFAULT 1.0,
-  use_count INTEGER NOT NULL DEFAULT 0,
-  useful_count INTEGER NOT NULL DEFAULT 0,
-  capture_count INTEGER NOT NULL DEFAULT 1,
-  tags_json TEXT NOT NULL DEFAULT '[]',
-  topic_key TEXT,
-  metadata_json TEXT NOT NULL DEFAULT '{}',
-  source_hook TEXT,
-  source_hash TEXT NOT NULL,
-  source_turn_id TEXT,
-  source_session_id TEXT,
-  source_run_id TEXT,
-  origin TEXT NOT NULL DEFAULT 'auto' CHECK (
-    origin IN ('auto', 'explicit', 'derived', 'seeded')
-  ),
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
-  last_seen_at TEXT NOT NULL,
-  last_used_at TEXT,
-  superseded_by TEXT,
-  deleted_at TEXT,
-  redaction_applied INTEGER NOT NULL DEFAULT 1,
-  UNIQUE(agent_id, type, source_hash)
-);
-
-CREATE INDEX IF NOT EXISTS idx_memory_nodes_agent_active
-  ON memory_nodes(agent_id, type, importance DESC, freshness DESC)
-  WHERE deleted_at IS NULL AND superseded_by IS NULL;
-
-CREATE INDEX IF NOT EXISTS idx_memory_nodes_topic
-  ON memory_nodes(agent_id, topic_key)
-  WHERE deleted_at IS NULL;
-
-CREATE TABLE IF NOT EXISTS memory_edges (
-  id TEXT PRIMARY KEY,
-  agent_id TEXT NOT NULL,
-  from_id TEXT NOT NULL,
-  to_id TEXT NOT NULL,
-  relation TEXT NOT NULL CHECK (
-    relation IN (
-      'related', 'contradicts', 'supersedes', 'supports',
-      'extends', 'used_with', 'supports_workflow'
-    )
-  ),
-  weight REAL NOT NULL DEFAULT 0.5,
-  evidence_count INTEGER NOT NULL DEFAULT 1,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
-  UNIQUE(agent_id, from_id, to_id, relation)
-);
-
-CREATE INDEX IF NOT EXISTS idx_memory_edges_from
-  ON memory_edges(agent_id, from_id, relation, weight DESC);
-CREATE INDEX IF NOT EXISTS idx_memory_edges_to
-  ON memory_edges(agent_id, to_id, relation, weight DESC);
-
--- Capture candidates (don't promote immediately)
-CREATE TABLE IF NOT EXISTS capture_candidates (
-  id TEXT PRIMARY KEY,
-  agent_id TEXT NOT NULL,
-  type TEXT NOT NULL,
-  content TEXT NOT NULL,
-  positive TEXT,
-  negative TEXT,
-  confidence REAL NOT NULL,
-  tags_json TEXT NOT NULL DEFAULT '[]',
-  topic_key TEXT,
-  metadata_json TEXT NOT NULL DEFAULT '{}',
-  source_hook TEXT NOT NULL,
-  source_hash TEXT NOT NULL,
-  source_turn_id TEXT,
-  source_session_id TEXT,
-  source_run_id TEXT,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (
-    status IN ('pending', 'promoted', 'rejected', 'merged')
-  ),
-  promoted_memory_id TEXT,
-  rejection_reason TEXT,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_capture_candidates_pending
-  ON capture_candidates(agent_id, status, confidence DESC);
-
--- Injection events (critical for learning)
-CREATE TABLE IF NOT EXISTS memory_injections (
-  id TEXT PRIMARY KEY,
-  agent_id TEXT NOT NULL,
-  memory_id TEXT NOT NULL,
-  run_id TEXT,
-  turn_id TEXT,
-  session_id TEXT,
-  query TEXT NOT NULL,
-  turn_slice TEXT,
-  rank INTEGER NOT NULL,
-  score REAL NOT NULL,
-  injected_at TEXT NOT NULL,
-  resolved_at TEXT,
-  outcome TEXT NOT NULL DEFAULT 'pending' CHECK (
-    outcome IN (
-      'pending', 'accepted', 'useful', 'corrected', 'ignored',
-      'tool_success', 'tool_failure', 'unknown'
-    )
-  ),
-  correction_signal TEXT,
-  metadata_json TEXT NOT NULL DEFAULT '{}'
-);
-
-CREATE INDEX IF NOT EXISTS idx_memory_injections_pending
-  ON memory_injections(agent_id, outcome, injected_at);
-CREATE INDEX IF NOT EXISTS idx_memory_injections_memory
-  ON memory_injections(agent_id, memory_id, injected_at DESC);
-
--- Proof events
-CREATE TABLE IF NOT EXISTS proof_events (
-  id TEXT PRIMARY KEY,
-  agent_id TEXT NOT NULL,
-  event_type TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  source_hook TEXT,
-  turn_id TEXT,
-  session_id TEXT,
-  run_id TEXT,
-  memory_id TEXT,
-  candidate_id TEXT,
-  injection_id TEXT,
-  decision TEXT,
-  reason TEXT,
-  raw_transcript_stored INTEGER NOT NULL DEFAULT 0,
-  raw_user_text_stored INTEGER NOT NULL DEFAULT 0,
-  payload_json TEXT NOT NULL DEFAULT '{}'
-);
-
-CREATE INDEX IF NOT EXISTS idx_proof_events_recent
-  ON proof_events(agent_id, created_at DESC);
-
--- Learning run summaries
-CREATE TABLE IF NOT EXISTS learning_runs (
-  id TEXT PRIMARY KEY,
-  agent_id TEXT NOT NULL,
-  started_at TEXT NOT NULL,
-  finished_at TEXT,
-  duration_ms INTEGER,
-  scores_updated INTEGER NOT NULL DEFAULT 0,
-  outcomes_resolved INTEGER NOT NULL DEFAULT 0,
-  edges_created INTEGER NOT NULL DEFAULT 0,
-  nodes_pruned INTEGER NOT NULL DEFAULT 0,
-  errors_json TEXT NOT NULL DEFAULT '[]'
-);
-```
-
-### FTS5 external-content table with triggers
-
-```sql
-CREATE VIRTUAL TABLE IF NOT EXISTS memory_search USING fts5(
-  content,
-  tags,
-  topic_key,
-  content='memory_nodes',
-  content_rowid='rowid',
-  tokenize='porter unicode61'
-);
-
--- Triggers keep FTS aligned with content table
-CREATE TRIGGER IF NOT EXISTS memory_nodes_ai AFTER INSERT ON memory_nodes
-  WHEN new.deleted_at IS NULL
-BEGIN
-  INSERT INTO memory_search(rowid, content, tags, topic_key)
-  VALUES (new.rowid, new.content, new.tags_json, COALESCE(new.topic_key, ''));
-END;
-
-CREATE TRIGGER IF NOT EXISTS memory_nodes_ad AFTER DELETE ON memory_nodes
-BEGIN
-  INSERT INTO memory_search(memory_search, rowid, content, tags, topic_key)
-  VALUES ('delete', old.rowid, old.content, old.tags_json, COALESCE(old.topic_key, ''));
-END;
-
-CREATE TRIGGER IF NOT EXISTS memory_nodes_au AFTER UPDATE ON memory_nodes
-BEGIN
-  INSERT INTO memory_search(memory_search, rowid, content, tags, topic_key)
-  VALUES ('delete', old.rowid, old.content, old.tags_json, COALESCE(old.topic_key, ''));
-  INSERT INTO memory_search(rowid, content, tags, topic_key)
-  SELECT new.rowid, new.content, new.tags_json, COALESCE(new.topic_key, '')
-  WHERE new.deleted_at IS NULL AND new.superseded_by IS NULL;
-END;
-```
-
-### Migrations
-
-Use `PRAGMA user_version`. Each migration runs inside a transaction. Never wipe memory on migration failure.
+**Feedback distiller schema:**
 
 ```typescript
-export function migrate(db: SqliteDriver): void {
-  const version = db.pragma('user_version', { simple: true }) as number;
-  if (version < 1) {
-    db.transaction(() => {
-      db.exec(schemaV1);
-      db.pragma('user_version = 1');
-    })();
-  }
-}
-```
-
----
-
-## Type contracts — `memory-types.ts`
-
-```typescript
-export type MemoryType = 'correction' | 'preference' | 'workflow' | 'context' | 'tool_result';
-
-export type EdgeRelation =
-  | 'related' | 'contradicts' | 'supersedes' | 'supports'
-  | 'extends' | 'used_with' | 'supports_workflow';
-
-export interface MemoryNode {
-  id: string;
-  rowid?: number;
-  agentId: string;
-  type: MemoryType;
-  content: string;
-  positive?: string | null;
-  negative?: string | null;
+export interface FeedbackDistillation {
+  version: 1;
+  shouldStore: boolean;
   confidence: number;
-  importance: number;
-  freshness: number;
-  useCount: number;
-  usefulCount: number;
-  captureCount: number;
-  tags: string[];
-  topicKey?: string | null;
-  metadata: Record<string, unknown>;
-  sourceHook?: string | null;
-  sourceHash: string;
-  sourceTurnId?: string | null;
-  sourceSessionId?: string | null;
-  sourceRunId?: string | null;
-  origin: 'auto' | 'explicit' | 'derived' | 'seeded';
-  createdAt: string;
-  updatedAt: string;
-  lastSeenAt: string;
-  lastUsedAt?: string | null;
-  supersededBy?: string | null;
-  deletedAt?: string | null;
-  redactionApplied: boolean;
-}
-
-export interface CaptureCandidate {
-  id?: string;
-  agentId: string;
-  type: MemoryType;
-  content: string;
-  positive?: string;
-  negative?: string;
-  confidence: number;
-  tags: string[];
-  topicKey?: string;
-  metadata: Record<string, unknown>;
-  source: {
-    hook: string;
-    turnId?: string;
-    sessionId?: string;
-    runId?: string;
-    pattern?: string;
+  feedbackType: 'correction' | 'preference' | 'standing_instruction' |
+                'workflow' | 'context' | 'outcome' | 'none';
+  memoryCandidates: Array<{
+    type: 'correction' | 'preference' | 'workflow' | 'context';
+    distilledText: string;
+    subject: string;
+    scope: 'global_user' | 'agent' | 'repo' | 'project' | 'session' | 'tool' | 'unknown';
+    positive?: string;
+    negative?: string;
+    normalizedKey: string;
+    tags: string[];
+    confidence: number;
+    importanceHint: number;
+    retention: 'durable' | 'medium_term' | 'short_term' | 'ephemeral';
+    contradictions: Array<{
+      existingMemoryId?: string;
+      reason: string;
+      action: 'supersede_existing' | 'merge' | 'keep_both';
+    }>;
+  }>;
+  injectionFeedback: Array<{
+    injectionId: string;
+    memoryId: string;
+    outcome: 'helped' | 'ignored' | 'assistant_failed_to_use' |
+             'user_corrected' | 'harmful' | 'unknown';
+    confidence: number;
+    evidence: string;
+  }>;
+  workflowCandidates: Array<{
+    distilledWorkflow: string;
+    prerequisites: string[];
+    steps: string[];
+    successSignal: string;
+    failureSignal?: string;
+    confidence: number;
+  }>;
+  audit: {
+    modelReasonCode: 'explicit_user_correction' | 'explicit_user_preference' |
+                     'implicit_outcome' | 'tool_success' | 'tool_failure' |
+                     'no_durable_signal';
+    storeRawTranscript: false;
+    redactionNeeded: boolean;
   };
-  sourceHash: string;
-}
-
-export interface MemoryInjection {
-  id: string;
-  agentId: string;
-  memoryId: string;
-  runId?: string;
-  turnId?: string;
-  sessionId?: string;
-  query: string;
-  turnSlice: string;
-  rank: number;
-  score: number;
-  injectedAt: string;
-  resolvedAt?: string;
-  outcome: 'pending' | 'accepted' | 'useful' | 'corrected' | 'ignored' | 'tool_success' | 'tool_failure' | 'unknown';
-  correctionSignal?: string;
-}
-
-export interface SearchQuery {
-  agentId: string;
-  query: string;
-  tags?: string[];
-  types?: MemoryType[];
-  limit?: number;
-  includeSuperseded?: boolean;
-  includeDeleted?: boolean;
-}
-
-export interface MemorySearchResult extends MemoryNode {
-  textRank: number;
-  relevanceScore: number;
-  graphBoost: number;
-  finalScore: number;
-}
-
-export interface InjectionDecision {
-  action: 'stay_silent' | 'proof_only' | 'inject';
-  reason: string;
-  turnSlice: string;
-  query: string;
-  selected: MemorySearchResult[];
-  injectionText: string;
-  budgetChars: number;
 }
 ```
 
----
+**What the LLM returns vs. what gets stored:**
 
-## Capture engine — `src/capture.ts`
-
-### Pipeline
-
-```
-event → extract candidate → redact → hash → dedupe/merge →
-contradiction check → insert/promote → proof event
-```
-
-### Do not store raw transcript text
-
-Hard invariant: `rawTranscriptStored: false`, `rawUserTextStored: false`, `redactionApplied: true`.
-
-### Capture candidates before promoting
-
-Do not let every regex match immediately become a high-authority memory. Store capture candidates separately, then promote when confidence is high or supporting evidence appears.
-
-### Treat assistant output as weak evidence
-
-Assistant-generated text like "I'll remember to use pnpm going forward" should not, by itself, create durable memory. It can support a candidate that came from the user, but the user is the authority.
-
-### Correction detection patterns
-
-```typescript
-const correctionPatterns = [
-  {
-    name: 'use_x_instead_of_y',
-    regex: /\b(?:actually,?\s*)?use\s+(.+?)\s+(?:instead of|not)\s+(.+?)(?:[.!?]|$)/i,
-    confidence: 0.9,
-  },
-  {
-    name: 'dont_use_y_use_x',
-    regex: /\b(?:don't|do not)\s+use\s+(.+?)[,;]\s*use\s+(.+?)(?:[.!?]|$)/i,
-    confidence: 0.9,
-  },
-  {
-    name: 'prefer_x_over_y',
-    regex: /\bprefer\s+(.+?)\s+(?:over|to)\s+(.+?)(?:[.!?]|$)/i,
-    confidence: 0.82,
-  },
-  {
-    name: 'correct_way_is_x',
-    regex: /\bthe correct\s+(?:way|approach|command|tool)\s+is\s+(.+?)(?:[.!?]|$)/i,
-    confidence: 0.75,
-  },
-];
-```
-
-Normalize "use pnpm instead of npm" to:
-```typescript
-{
-  type: 'correction',
-  content: 'Use pnpm instead of npm.',
-  positive: 'pnpm',
-  negative: 'npm',
-  confidence: 0.9,
-  tags: ['package-manager'],
-  topicKey: 'package-manager'
-}
-```
-
-### Preference detection patterns
-
-```typescript
-const preferencePatterns = [
-  { name: 'always_x', regex: /\b(?:always|from now on)\s+(.+?)(?:[.!?]|$)/i, confidence: 0.72 },
-  { name: 'i_prefer_x', regex: /\bI\s+prefer\s+(.+?)(?:[.!?]|$)/i, confidence: 0.68 },
-  { name: 'my_timezone_is_x', regex: /\bmy\s+timezone\s+is\s+([A-Za-z_\/+-]+)(?:[.!?]|$)/i, confidence: 0.85 },
-];
-```
-
-### Explicit memory request patterns
-
-```typescript
-const explicitMemoryPatterns = [
-  /\bremember\s+(?:that\s+)?(.+?)(?:[.!?]|$)/i,
-  /\bdon't\s+forget\s+(.+?)(?:[.!?]|$)/i,
-  /\bnote\s*:\s*(.+?)(?:[.!?]|$)/i,
-  /\bfor\s+future\s+reference[:,]?\s*(.+?)(?:[.!?]|$)/i,
-];
-```
-
-### Confidence tiers
-
-```
-explicit correction:    0.85–0.95
-explicit preference:    0.65–0.85
-explicit remember req:  0.70–0.90
-inferred workflow:      0.45–0.70
-inferred context:       0.35–0.60
-```
-
-### Candidate promotion thresholds
-
-```typescript
-function shouldPromote(candidate: CaptureCandidate): boolean {
-  if (candidate.type === 'correction' && candidate.confidence >= 0.8) return true;
-  if (candidate.type === 'preference' && candidate.confidence >= 0.75) return true;
-  if (candidate.type === 'context' && candidate.confidence >= 0.8) return true;
-  return false;
-}
-```
-
-Lower-confidence candidates stay in `capture_candidates` until repeated evidence appears, user confirms, or background learning passes.
-
-### Deduplication
-
-```typescript
-const sourceHash = hashText([
-  candidate.agentId,
-  candidate.type,
-  normalizeForHash(candidate.content),
-].join('\n'));
-
-// If duplicate:
-capture_count += 1
-last_seen_at = now
-confidence = min(1, confidence + 0.03)
-```
-
----
-
-## Contradiction and supersession
-
-### Detection
-
-```typescript
-function isDirectContradiction(a: MemoryNode, b: MemoryNode): boolean {
-  return Boolean(
-    a.positive && a.negative &&
-    b.positive && b.negative &&
-    normalize(a.positive) === normalize(b.negative) &&
-    normalize(a.negative) === normalize(b.positive)
-  );
-}
-```
-
-### Supersede instead of delete
-
-```sql
-UPDATE memory_nodes
-SET superseded_by = :newId,
-    importance = MIN(importance, 0.1),
-    updated_at = :now
-WHERE id = :oldId;
-
--- Then insert edge:
-INSERT INTO memory_edges (id, agent_id, from_id, to_id, relation, weight, ...)
-VALUES (:edgeId, :agentId, :newId, :oldId, 'supersedes', 1.0, ...);
-```
-
-Do not hard-delete superseded memories. They are valuable for auditability.
-
-### Topic keys for contradiction lookup
-
-Use normalized topic keys for common domains:
-
-```
-package-manager, timezone, test-command, build-command,
-repo-tooling, communication-style, answer-format, release-workflow
-```
-
-Search by `topic_key` first, then by FTS.
-
----
-
-## Injection engine — `src/injection.ts`
-
-### Algorithm
-
-```
-1. Resolve agent ID and config.
-2. Fail closed if disabled or unsafe config.
-3. Classify the turn.
-4. If turn does not need memory, stay silent and log proof.
-5. Build redacted query summary.
-6. Search FTS for seed memories.
-7. Expand graph only for boosts/support, not prompt flooding.
-8. Rerank candidates.
-9. Apply mode thresholds.
-10. Fit selected memories into character budget.
-11. Format bounded prompt section.
-12. Record EACH injection in memory_injections.
-13. Write proof event.
-14. Return prependContext.
-```
-
-### Turn classification still matters
-
-| Turn slice | Memory action |
+| LLM returns | Gets stored |
 |---|---|
-| `direct-answer` | stay silent |
-| `continuation` | low aggression |
-| `correction-follow-up` | search corrections first |
-| `retrieval-heavy` | search context/preferences |
-| `tool-heavy` | search workflows/corrections |
-| `stale-memory-conflict` | search corrections and supersession edges |
+| "User corrected: use pnpm instead of npm for this repo" | "Use pnpm instead of npm for this repo." |
+| Distilled correction with positive/negative | Correction node with positive="pnpm", negative="npm" |
+| Injection feedback: "assistant failed to use" | injection.outcome = 'corrected' |
+| Workflow: "build then test then pack" | Workflow node with steps |
+| Raw transcript | NEVER stored |
 
-### Ranking formula
+### Job 2: Context route decision
 
-```typescript
-finalScore = relevanceScore * importanceFactor * freshnessFactor *
-             confidenceFactor * typeBoost * sliceBoost *
-             graphBoost * safetyPenalty;
-```
+**Question it answers:** "For this turn, should memory be used? If yes, what kind and which?"
 
-```typescript
-const typeBoost = {
-  correction: 1.35,
-  preference: 1.0,
-  workflow: 0.95,
-  context: 0.8,
-  tool_result: 0.6,
-}[node.type];
-```
+This is the "distilling LLM at context turn decision time." The route function does not just ask "does this look like coding?" It produces a structured semantic frame and uses that to decide recall.
 
-### Freshness — exponential decay with type-specific half-lives
+---
+
+## The learned route function
 
 ```typescript
-function freshnessScore(node: MemoryNode, now: Date, halfLifeDays: number): number {
-  const anchor = node.lastUsedAt ?? node.lastSeenAt ?? node.createdAt;
-  const ageDays = daysBetween(new Date(anchor), now);
-  return Math.exp(-ageDays / halfLifeDays);
+type LearnedRouteFn = (input: RouteInput) => Promise<RouteDecision>;
+
+export interface RouteInput {
+  agentId: string;
+  sessionId?: string;
+  turnId?: string;
+  latestUserMessage: string;
+  recentMessages: DistilledMessage[];
+  recentInjections: RecentInjectionSummary[];
+  routePolicySnapshot: RoutePolicySnapshot;
+  nearestRouteExamples: RouteExample[];
+  config: {
+    mode: 'conservative' | 'balanced' | 'aggressive';
+    maxCandidateMemories: number;
+    maxInjectedMemories: number;
+    maxInjectedChars: number;
+  };
+}
+
+export interface RouteDecision {
+  route: 'no_memory' | 'capture_only' | 'retrieve_memory' |
+         'retrieve_and_distill' | 'high_confidence_correction_only';
+  confidence: number;
+  turnFrame: {
+    userIntent: string;
+    taskType: 'coding' | 'planning' | 'debugging' | 'writing' |
+              'preference_update' | 'correction' | 'general_question' | 'other';
+    topicKeys: string[];
+    entities: string[];
+    constraints: string[];
+    memoryNeed: 'none' | 'low' | 'medium' | 'high';
+    memoryNeedReason: string;
+  };
+  retrievalPlan: {
+    queries: string[];
+    memoryTypes: Array<'correction' | 'preference' | 'workflow' | 'context'>;
+    requiredTags: string[];
+    excludedTags: string[];
+    graphDepth: 0 | 1 | 2;
+    maxCandidates: number;
+  };
+  injectionPlan: {
+    maxItems: number;
+    maxChars: number;
+    preferredFormat: 'bullets' | 'rules' | 'workflow_steps' | 'do_dont' | 'none';
+  };
+  capturePlan: {
+    shouldDistillFeedbackNow: boolean;
+    likelyFeedbackType?: 'correction' | 'preference' | 'workflow' | 'outcome' | 'none';
+  };
 }
 ```
 
-| Type | Half-life |
-|---|---:|
-| correction | 180 days |
-| preference | 90 days |
-| workflow | 45 days |
-| context | 30 days |
-| tool_result | 14 days |
+**What makes it "learned":**
 
-### Mode thresholds
+The route function is fed:
+1. A **policy snapshot** produced by prior learning runs (text-based rules)
+2. **Nearest successful/failed route examples** (from SQLite)
+3. **Recent injection outcomes** (from SQLite)
+4. **Current turn frame** (from turn distiller)
 
-Use final score by type, not just importance:
+Instead of hardcoding `if (turnType === 'coding') inject tool-guidance`, the LLM route function uses the policy + examples + outcomes to decide.
+
+---
+
+## Two-pass routing
+
+### Pass A: Turn distillation + retrieval plan
+
+**Input:** latest user message, recent message summaries, recent injection outcomes, route policy snapshot, nearest route examples
+
+**Output:** TurnFrame + RetrievalPlan
+
+Then the system retrieves broadly from SQLite/FTS.
+
+### Pass B: Context selection + prompt distillation
+
+**Input:** TurnFrame, candidate memories, recent injection history, prompt budget
+
+**Output:** selected memory IDs, distilled prompt block, omitted memory IDs, reasoning labels, confidence
+
+The route function should NOT be forced to select memories before seeing candidates. First it decides what to look for, then it decides what to inject.
+
+---
+
+## Turn-time flow (`before_prompt_build`)
 
 ```typescript
-const thresholds = {
-  'proof-only': { correction: Infinity, preference: Infinity, workflow: Infinity, context: Infinity, tool_result: Infinity },
-  conservative: { correction: 0.38, preference: 0.58, workflow: 0.62, context: 0.70, tool_result: 0.80 },
-  active:       { correction: 0.25, preference: 0.45, workflow: 0.50, context: 0.60, tool_result: 0.70 },
-};
+api.on('before_prompt_build', async event => {
+  const turnInput = buildRouteInput(event, store);
+
+  // Pass A: LLM distills turn + decides route
+  const routeDecision = await routeFn.decide(turnInput);
+
+  await store.recordRouteDecision({
+    agentId: turnInput.agentId,
+    sessionId: turnInput.sessionId,
+    turnId: turnInput.turnId,
+    decision: routeDecision,
+    phase: 'pre_retrieval',
+  });
+
+  // Immediate feedback capture (if flagged)
+  if (routeDecision.capturePlan.shouldDistillFeedbackNow) {
+    const feedback = await feedbackDistiller.distillUserFeedback({
+      latestUserMessage: turnInput.latestUserMessage,
+      recentMessages: turnInput.recentMessages,
+      recentInjections: turnInput.recentInjections,
+      existingSimilarMemories: await store.findSimilar(turnInput.agentId, turnInput.latestUserMessage),
+    });
+    await store.applyFeedbackDistillation(feedback);
+  }
+
+  // If no memory needed, return
+  if (routeDecision.route === 'no_memory' || routeDecision.route === 'capture_only') {
+    return {};
+  }
+
+  // Broad retrieval from SQLite/FTS
+  const candidates = await store.retrieveCandidates({
+    agentId: turnInput.agentId,
+    plan: routeDecision.retrievalPlan,
+  });
+
+  // Pass B: LLM selects + distills context
+  const contextDecision = await contextSelector.select({
+    routeDecision,
+    candidates,
+    recentInjections: turnInput.recentInjections,
+    maxChars: routeDecision.injectionPlan.maxChars,
+  });
+
+  await store.recordContextSelection({
+    agentId: turnInput.agentId,
+    sessionId: turnInput.sessionId,
+    turnId: turnInput.turnId,
+    routeDecisionId: routeDecision.id,
+    selectedMemoryIds: contextDecision.selectedMemoryIds,
+    distilledContext: contextDecision.distilledContext,
+    confidence: contextDecision.confidence,
+  });
+
+  if (!contextDecision.distilledContext) {
+    return {};
+  }
+
+  return {
+    prependContext: contextDecision.distilledContext,
+  };
+});
 ```
 
-### Prompt budget
+**Important:** The LLM decides whether context is needed and what shape it should take. The deterministic code only enforces the budget and writes the audit trail.
 
-Hard cap: `maxContextChars: 3000`, `maxInjectedMemories: 5`.
+---
 
-### Injection format
+## Feedback capture flow
 
-```text
+### Immediate (`before_prompt_build`)
+
+For things that affect the current turn:
+- "Actually, use pnpm instead of npm"
+- "From now on, give me file-by-file plans"
+- "No, I prefer X"
+
+The route LLM can flag `capturePlan.shouldDistillFeedbackNow = true`. Then the feedback distiller runs.
+
+If the feedback is a high-confidence correction, store it immediately before retrieval, so it can even be injected into the SAME turn.
+
+### Post-run (`agent_end`)
+
+For things that need the full run context:
+- Workflow capture
+- Tool success/failure
+- Whether injected memory helped
+- Whether assistant complied
+- Whether user correction was resolved
+
+```typescript
+api.on('agent_end', async event => {
+  const distillation = await feedbackDistiller.distillRunOutcome({
+    agentId: resolveAgentId(event),
+    sessionId: event.sessionId,
+    turnId: event.turnId,
+    finalMessages: event.messages,
+    recentInjections: await store.getRecentInjections(event),
+    toolEvents: await store.getBufferedToolEvents(event),
+  });
+
+  await store.applyFeedbackDistillation(distillation);
+  await learning.observeDistillation(distillation);
+
+  return {};
+});
+```
+
+---
+
+## Context selector schema
+
+```typescript
+export interface ContextSelection {
+  shouldInject: boolean;
+  confidence: number;
+  selectedMemoryIds: string[];
+  distilledContext: string;
+  selected: Array<{
+    memoryId: string;
+    reason: 'directly_relevant_correction' | 'matching_user_preference' |
+            'repo_workflow' | 'tool_guidance' | 'contradiction_resolution' |
+            'supporting_context';
+    useHow: 'must_follow' | 'prefer' | 'consider' | 'avoid';
+    confidence: number;
+  }>;
+  omitted: Array<{
+    memoryId: string;
+    reason: 'irrelevant' | 'too_general' | 'superseded' | 'low_confidence' |
+            'would_pollute_prompt' | 'budget';
+  }>;
+  audit: {
+    promptBudgetUsedChars: number;
+    risk: 'low' | 'medium' | 'high';
+  };
+}
+```
+
+**Context selector prompt (simplified):**
+- Inject only memories likely to change assistant behavior
+- Prefer corrections over preferences
+- Prefer repo/project-specific over global generic
+- Do not inject superseded memories
+- Do not inject memories merely because they share keywords
+- Distill selected memories into a small prompt block
+- Keep context operational, not explanatory
+
+**Output prompt block example:**
+```
 <openclawbrain-memory>
-Use only if relevant to the current request.
-- Correction: Use pnpm instead of npm for this repo.
-- Workflow: For plugin release, run build, tests, pack, then fresh install.
+- Must follow: Use pnpm instead of npm for this repo.
+- User preference: For implementation feedback, give file-by-file details.
 </openclawbrain-memory>
 ```
 
-### Record each injection
-
-For every selected memory, record in `memory_injections`:
-
-```typescript
-store.recordInjection({
-  agentId, memoryId: node.id, runId, turnId, sessionId,
-  query, turnSlice, rank, score: node.finalScore,
-  outcome: 'pending',
-});
-```
-
-This is critical for learning.
+The context selector is therefore not "search result ranking." It is a **semantic compression step**.
 
 ---
 
-## Graph rules
+## Learned route function in practice
 
-### Search seeds first, graph second
+### Route decisions table
 
-FTS finds seed memories. Graph edges boost or suppress. Only seed memories are injected by default. Neighbors injected only when very high-confidence and within budget.
-
-### Edge types
-
-| Edge | Direction | Meaning |
-|---|---|---|
-| `related` | either | loose relationship; small boost only |
-| `supports` | supporter → supported | evidence strengthens target |
-| `extends` | old → new or broad → specific | new memory elaborates old |
-| `contradicts` | either | incompatible claims |
-| `supersedes` | new → old | new memory replaces old |
-| `used_with` | memory ↔ memory | commonly injected together |
-| `supports_workflow` | context/correction → workflow | helps execute workflow |
-
-### Edge caps
-
+```sql
+CREATE TABLE route_decisions (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL,
+  session_id TEXT,
+  turn_id TEXT,
+  route TEXT NOT NULL,
+  confidence REAL NOT NULL,
+  turn_frame_json TEXT NOT NULL,
+  retrieval_plan_json TEXT NOT NULL,
+  injection_plan_json TEXT NOT NULL,
+  selected_memory_ids_json TEXT NOT NULL DEFAULT '[]',
+  omitted_memory_ids_json TEXT NOT NULL DEFAULT '[]',
+  model TEXT NOT NULL,
+  prompt_version TEXT NOT NULL,
+  policy_snapshot_id TEXT,
+  outcome TEXT DEFAULT 'pending',
+  reward REAL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  resolved_at TEXT
+);
 ```
-maxRelatedEdgesPerNode = 20
-maxSupportEdgesPerNode = 20
-maxUsedWithEdgesPerNode = 15
-maxSupersedesEdgesPerNode = 10
+
+### Route examples table
+
+```sql
+CREATE TABLE route_examples (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL,
+  turn_frame_json TEXT NOT NULL,
+  route_decision_json TEXT NOT NULL,
+  outcome TEXT NOT NULL,
+  reward REAL NOT NULL,
+  lesson TEXT NOT NULL,
+  tags TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL
+);
 ```
+
+### Route policy snapshots table
+
+```sql
+CREATE TABLE route_policy_snapshots (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL,
+  policy_text TEXT NOT NULL,
+  examples_json TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL,
+  active INTEGER NOT NULL DEFAULT 0
+);
+```
+
+### Route outcomes
+
+Each route decision gets an outcome later:
+- `accepted` — no correction after injection
+- `corrected` — user corrected after injection
+- `irrelevant_context` — context didn't matter
+- `helpful_context` — context demonstrably helped
+- `tool_success` — tools succeeded after injection
+- `tool_failure` — tools failed after injection
+- `no_signal` — couldn't determine
 
 ---
 
-## Learning engine — `src/learning.ts`
+## Route learning loop
 
-### Jobs
+The background learner periodically asks an LLM:
 
-```typescript
-export interface LearningEngine {
-  runOnce(agentId: string, now?: Date): LearningRunResult;
-  resolvePendingOutcomes(agentId: string, now?: Date): OutcomeResolutionResult;
-  recomputeScores(agentId: string, now?: Date): ScoreUpdateResult;
-  buildLinks(agentId: string, now?: Date): LinkBuildResult;
-  pruneStaleMemories(agentId: string, now?: Date): PruneResult;
-  enforceNodeLimit(agentId: string): PruneResult;
-  start(): void;
-  stop(): void;
-}
+**"Given recent successful and failed route decisions, update the route policy."**
+
+Input:
+- Top positive route examples
+- Top negative route examples
+- Recent corrections after injection
+- Memory types that were useful
+- Memory types that polluted prompts
+
+Output:
+- New route policy snapshot
+- New route examples
+- Suppression rules
+- Boost rules
+
+Example generated policy snapshot:
+
+```
+Route policy snapshot v12:
+
+1. For repo implementation-plan discussions, retrieve:
+   - correction memories for this repo
+   - user planning/style preferences
+   - workflow memories involving PLAN.md, VISION.md, package.json
+   Avoid generic context memories unless the user asks for background.
+
+2. For short factual questions, route to no_memory unless
+   the user references prior preferences.
+
+3. If the latest user message contains a correction, run feedback
+   distillation before context selection.
+
+4. When memories conflict, prefer the newest high-confidence
+   correction and omit superseded memories.
+
+5. If the user asks for "deep discussion" or "implementation",
+   style preferences are usually relevant.
 ```
 
-### Delayed outcome resolution
+That snapshot becomes part of the next route LLM prompt.
 
-Do not assume `agent_end` is enough. Failure often appears in the next user turn:
-
+**This is the learned route function:**
 ```
-Assistant: npm install
-User: No, I told you to use pnpm.
-```
-
-Each injection remains `pending` until:
-- User explicitly corrects the response
-- A tool workflow succeeds or fails
-- A timeout window passes with no correction
-- The next turn appears without correction
-
-Outcome lifecycle:
-```
-pending → useful
-pending → accepted
-pending → corrected
-pending → ignored
-pending → tool_success
-pending → tool_failure
-pending → unknown
+RouteFn(current turn, active route policy, nearest examples, recent outcomes)
+  → RouteDecision
 ```
 
-### Outcome heuristics
-
-**corrected signals:** "no", "wrong", "actually", "I said", "I told you", "use X, not Y"
-
-**tool_success:** tool result exit code 0, build/test succeeds, final answer says done
-
-**tool_failure:** tool error, exit code nonzero, assistant retries
-
-**accepted:** no correction in next turn, same memory later reinjected without correction, user says thanks/works/good
-
-Be conservative. Leave outcome `unknown` rather than marking a bad memory useful.
-
-### Importance scoring
-
-```typescript
-function baseImportance(type: MemoryType): number {
-  switch (type) {
-    case 'correction': return 0.55;
-    case 'preference': return 0.35;
-    case 'workflow': return 0.30;
-    case 'context': return 0.22;
-    case 'tool_result': return 0.12;
-  }
-}
-
-function computeImportance(node: MemoryNode, stats: OutcomeStats): number {
-  const utility = stats.resolved > 0
-    ? (stats.useful + stats.accepted + stats.toolSuccess) / stats.resolved
-    : 0;
-  const failureRate = stats.resolved > 0
-    ? (stats.corrected + stats.toolFailure) / stats.resolved
-    : 0;
-  const repeatedEvidenceBoost = 0.08 * Math.log1p(node.captureCount);
-  const useBoost = 0.05 * Math.log1p(node.useCount);
-
-  return clamp01(
-    baseImportance(node.type) +
-    repeatedEvidenceBoost +
-    useBoost +
-    0.30 * utility -
-    0.35 * failureRate
-  );
-}
-```
-
-### Freshness scoring (separate from importance)
-
-```typescript
-function computeFreshness(node: MemoryNode, now: Date, config: Config): number {
-  const halfLife = halfLifeForType(node.type, config);
-  const anchor = node.lastUsedAt ?? node.lastSeenAt ?? node.createdAt;
-  const ageDays = daysBetween(new Date(anchor), now);
-  return clamp01(Math.exp(-ageDays / halfLife));
-}
-```
-
-### Pruning rules
-
-1. Never hard-delete by default; soft-delete with `deleted_at`
-2. Prune deleted/superseded memories from injection immediately
-3. Soft-delete low-importance, low-confidence, old memories
-4. Hard-delete only through maintenance if explicitly configured
-
-Prune candidates:
-```
-importance < 0.05 AND confidence < 0.4 AND age > 30 days
-```
-
-Superseded memories hidden from search/injection when superseding node has survived 7+ days.
-
-Node cap: `maxMemoryNodes = 10,000`. Prune oldest lowest-score first. Preserve corrections and explicit preferences longer.
-
-### Learning run proof
-
-Every pass writes:
-```json
-{
-  "eventType": "learning_run",
-  "scoresUpdated": 42,
-  "outcomesResolved": 9,
-  "edgesCreated": 7,
-  "nodesPruned": 2,
-  "rawTranscriptStored": false,
-  "rawUserTextStored": false
-}
-```
+Not hardcoded rules. Not RL in the strict sense. But it IS learned because its prompt policy and examples are continuously distilled from outcomes.
 
 ---
 
-## `index.ts` wiring
+## Deterministic guardrails
 
-Keep it thin:
+The deterministic code handles:
 
-```typescript
-export default definePluginEntry({
-  id: 'openclawbrain',
-  name: 'OpenClawBrain',
-  version: PLUGIN_VERSION,
-  register(api) {
-    const config = resolveOpenClawBrainConfig(api.config);
-    const stores = new MemoryStoreRegistry(config);
-    const deps = {
-      api, config, stores,
-      capture: createCaptureEngine(config),
-      injection: createInjectionEngine(config),
-      learning: createLearningEngine(config, stores),
-    };
+1. **Validation** — LLM JSON output matches schema
+2. **Redaction** — all stored content passes through `redactText()` before persistence
+3. **Budget** — hard cap on injection characters and count
+4. **Persistence** — SQLite CRUD, transactions, FTS index
+5. **Audit** — proof events for every capture, injection, and learning pass
+6. **Safety** — `rawTranscriptUpload=true` → fail closed. `allowPromptInjection=false` → no injection.
 
-    registerRoutes(api, deps);
-    registerMemorySupplements(api, deps);
-
-    api.on('before_prompt_build', async (event) => handleBeforePromptBuild(event, deps));
-    api.on('after_tool_call', async (event) => handleAfterToolCall(event, deps));
-    api.on('agent_end', async (event) => handleAgentEnd(event, deps));
-    api.on('before_compaction', async (event) => handleBeforeCompaction(event, deps));
-    api.on('llm_output', async (event) => handleLlmOutput(event, deps));
-
-    api.registerService?.({
-      id: 'openclawbrain-learning',
-      start: async () => deps.learning.start(),
-      stop: async () => deps.learning.stop(),
-    });
-  },
-});
-```
-
-### Agent-scoped stores
-
-Resolve agent ID from event, not config:
-
-```typescript
-function resolveAgentId(event: unknown, config: OpenClawBrainConfig): string {
-  return (
-    getNestedString(event, ['agent', 'id']) ??
-    getNestedString(event, ['agentId']) ??
-    config.scopes.agents[0] ??
-    'main'
-  );
-}
-
-const store = stores.forAgent(agentId);
-```
+The deterministic code does NOT:
+- Parse natural language
+- Decide what a correction means
+- Decide what context is relevant
+- Rank memories by semantic relevance
+- Decide whether a turn needs memory
 
 ---
 
-## Config
+## Feedback distiller prompt
+
+```
+You are OpenClawBrain's feedback distiller.
+
+Your job is to identify durable feedback from the current turn.
+Durable feedback includes:
+- corrections from the user
+- preferences from the user
+- standing instructions
+- successful workflows
+- negative outcomes after injected memory
+- contradictions with existing memory
+
+Do not invent preferences.
+Do not store generic conversational content.
+Do not treat assistant claims as user preferences.
+Do not store raw transcript text.
+Return only JSON matching the schema.
+
+Important distinction:
+- User says "use X instead of Y" => correction memory.
+- User asks "can you use X?" => not durable unless accepted as instruction.
+- Assistant says "I'll remember X" => not durable by itself.
+- Tool succeeds after a sequence => possible workflow candidate.
+- User corrects assistant after a memory was injected => injection feedback.
+
+Existing similar memories:
+{{existingSimilarMemories}}
+
+Recent injected memories:
+{{recentInjections}}
+
+Current turn:
+{{distilledCurrentTurn}}
+```
+
+This is where LLMs are much better than regex. The model can understand:
+
+- "Actually, don't do the npm thing here — this repo is pnpm."
+- "same as before: check the plan doc first"
+- "no, that's not what I meant; I wanted code, not an essay"
+
+Regex will miss or misclassify these. The LLM can distill them into useful memory atoms.
+
+---
+
+## Hooks (unchanged from prior plan)
+
+```typescript
+api.on('before_prompt_build', handleBeforePromptBuild);   // route + capture + inject
+api.on('after_tool_call', handleAfterToolCall);           // buffer tool events
+api.on('agent_end', handleAgentEnd);                      // post-run feedback distillation
+api.on('before_compaction', handleBeforeCompaction);      // snapshot state
+api.on('llm_output', handleLlmOutput);                    // buffer assistant response
+```
+
+Do NOT register `before_agent_reply`. Correction detection runs in `before_prompt_build`.
+
+---
+
+## SQLite schema (additions)
+
+Adding to the prior schema, three new tables for the route function:
+
+```sql
+-- Route decisions (per turn)
+CREATE TABLE IF NOT EXISTS route_decisions (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL,
+  session_id TEXT,
+  turn_id TEXT,
+  route TEXT NOT NULL,
+  confidence REAL NOT NULL,
+  turn_frame_json TEXT NOT NULL,
+  retrieval_plan_json TEXT NOT NULL,
+  injection_plan_json TEXT NOT NULL,
+  selected_memory_ids_json TEXT NOT NULL DEFAULT '[]',
+  omitted_memory_ids_json TEXT NOT NULL DEFAULT '[]',
+  model TEXT NOT NULL,
+  prompt_version TEXT NOT NULL,
+  policy_snapshot_id TEXT,
+  outcome TEXT DEFAULT 'pending',
+  reward REAL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  resolved_at TEXT
+);
+
+-- Route examples (distilled learning)
+CREATE TABLE IF NOT EXISTS route_examples (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL,
+  turn_frame_json TEXT NOT NULL,
+  route_decision_json TEXT NOT NULL,
+  outcome TEXT NOT NULL,
+  reward REAL NOT NULL,
+  lesson TEXT NOT NULL,
+  tags TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL
+);
+
+-- Route policy snapshots
+CREATE TABLE IF NOT EXISTS route_policy_snapshots (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL,
+  policy_text TEXT NOT NULL,
+  examples_json TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL,
+  active INTEGER NOT NULL DEFAULT 0
+);
+```
+
+The full schema (memory_nodes, memory_edges, capture_candidates, memory_injections, proof_events, learning_runs, FTS5) is unchanged from the prior plan.
+
+---
+
+## Config additions
 
 ```typescript
 export interface OpenClawBrainConfig {
-  enabled: boolean;
-  mode: 'off' | 'proof-only' | 'conservative' | 'active';
-  activationRoot: string;
-  proofEvents: boolean;
-  proofRetentionEvents: number;
-  rawTranscriptUpload: false;
-  memory: {
-    dbPath?: string;
-    maxNodes: number;
-    maxEdgesPerNode: number;
-    maxInjectedMemories: number;
-    maxInjectionChars: number;
-    minSearchScore: number;
-    integration: 'supplement' | 'exclusive';
-  };
-  capture: {
-    enabled: boolean;
-    corrections: boolean;
-    preferences: boolean;
-    workflows: boolean;
-    explicitRequests: boolean;
-    minConfidence: number;
-    promoteCorrectionsAbove: number;
-    promotePreferencesAbove: number;
-    promoteWorkflowsAbove: number;
-  };
-  learning: {
-    enabled: boolean;
-    intervalMs: number;
-    staleOutcomeAfterMs: number;
-    pruneAfterDays: number;
-    correctionHalfLifeDays: number;
-    preferenceHalfLifeDays: number;
-    workflowHalfLifeDays: number;
-    contextHalfLifeDays: number;
-    toolResultHalfLifeDays: number;
-    boostOnUseful: number;
-    penaltyOnCorrected: number;
-  };
-  privacy: {
-    redactBeforeStore: true;
-    storeRawTranscript: false;
-  };
-  hooks: {
-    allowPromptInjection: boolean;
-    allowConversationAccess: boolean;
-    allowToolObservation: boolean;
-  };
-  scopes: { agents: string[] };
-}
-```
+  // ... existing fields from prior plan ...
 
-Defaults:
-```typescript
-{
-  enabled: false,
-  mode: 'conservative',
-  memory: {
-    maxNodes: 10_000,
-    maxEdgesPerNode: 25,
-    maxInjectedMemories: 5,
-    maxInjectionChars: 3000,
-    minSearchScore: 0.35,
-    integration: 'supplement',
-  },
-  capture: {
-    enabled: true, corrections: true, preferences: true,
-    workflows: true, explicitRequests: true,
-    minConfidence: 0.55,
-    promoteCorrectionsAbove: 0.80,
-    promotePreferencesAbove: 0.75,
-    promoteWorkflowsAbove: 0.70,
-  },
-  learning: {
-    enabled: true,
-    intervalMs: 5 * 60 * 1000,
-    staleOutcomeAfterMs: 24 * 60 * 60 * 1000,
-    pruneAfterDays: 30,
-    correctionHalfLifeDays: 180,
-    preferenceHalfLifeDays: 90,
-    workflowHalfLifeDays: 45,
-    contextHalfLifeDays: 30,
-    toolResultHalfLifeDays: 14,
-    boostOnUseful: 0.10,
-    penaltyOnCorrected: 0.15,
-  },
-  privacy: { redactBeforeStore: true, storeRawTranscript: false },
+  llm: {
+    model: string;           // model for distillers (default: use OpenClaw's model)
+    timeoutMs: number;       // per LLM call timeout (default: 10000)
+    maxRetries: number;      // JSON validation retries (default: 1)
+  };
+
+  route: {
+    enabled: boolean;        // use learned route function (default: true)
+    policyRefreshIntervalMs: number;  // how often to update policy (default: 3600000 = 1 hour)
+    maxExamples: number;     // max route examples in context (default: 10)
+  };
+
+  // ... rest unchanged ...
 }
 ```
 
 ---
 
-## Build phases (7 PRs)
+## Build phases (revised)
 
-### PR 1 — SQLite store and migration foundation
+### PR 1 — SQLite store + LLM infrastructure
 - `memory-types.ts`
 - `sqlite-driver.ts`
-- `memory-store.ts` — schema v1, FTS5 triggers, proof store facade
-- Storage tests
+- `memory-store.ts` (with route_decisions, route_examples, route_policy_snapshots tables)
+- `llm-client.ts` (abstract interface + test fake)
+- `llm-json.ts` (structured JSON calls with validation)
+- Storage tests + LLM integration tests
 
-**Acceptance:** DB opens, node insert/search works, FTS updates on insert/update/delete, soft delete hides from search.
+### PR 2 — Turn distiller + route function
+- `turn-distiller.ts` (LLM extracts TurnFrame)
+- `route-fn.ts` (LLM route decision with policy + examples)
+- `injection.ts` (budget enforcement + recording)
+- Route decision recording
+- Route smoke tests
 
-### PR 2 — Graph-backed injection using seeded memories
-- `injection.ts`
-- Policy integration, memory search/ranking
-- Bounded prompt formatting
-- Injection recording
+### PR 3 — Feedback distiller (immediate)
+- `feedback-distiller.ts` (LLM distills user corrections/preferences)
+- Immediate capture in `before_prompt_build`
+- Dedup/merge/contradiction handling
+- Memory node creation from distilled feedback
+- Capture tests
 
-**Acceptance:** Manually seeded "Use pnpm" memory is retrieved on relevant turn. Direct-answer stays silent. Injection event recorded.
+### PR 4 — Context selector
+- `context-selector.ts` (LLM selects/distills candidate memories)
+- Two-pass routing integration
+- Injection formatting and budget enforcement
+- Injection tests
 
-### PR 3 — Correction and preference capture
-- `capture.ts`
-- Correction/preference/explicit patterns
-- Dedupe/merge
-- Proof events
-- Contradiction/supersession basics
+### PR 5 — Post-run feedback + route learning
+- `agent_end` feedback distillation
+- `route-learning.ts` (background policy improvement)
+- Route outcome resolution
+- Background service registration
+- Learning tests
 
-**Acceptance:** "Actually use pnpm, not npm" creates correction node. `/proof` shows capture. `/graph` shows node. Next session injects correction.
+### PR 6 — OpenClaw memory supplements
+- `search.ts` (MemoryCorpusSupplement + MemoryPromptSupplement)
+- `/search` route
+- No double injection
 
-### PR 4 — Delayed outcome learning
-- `memory_injections` outcome resolution
-- `learning.ts`
-- `agent_end` observation
-- Next-turn correction observation
-- Score recomputation
-
-**Acceptance:** Useful injection gets boosted. Corrected injection gets penalized. Pending outcomes resolve. `/learn` shows run stats.
-
-### PR 5 — Workflow capture and graph linking
-- Tool sequence observations
-- Workflow candidate creation
-- Successful workflow promotion
-- Related/supports/used_with edges
-
-**Acceptance:** Successful build/test sequence creates workflow memory. Related edges appear in `/graph`.
-
-### PR 6 — OpenClaw memory supplement integration
-- `search.ts`
-- `registerMemoryCorpusSupplement`
-- Optional `registerMemoryPromptSupplement`
-- `/search` route parity
-
-**Acceptance:** Native memory search surfaces OCB memories. `/search` returns matches. No double injection.
-
-### PR 7 — Self-regulation and release polish
-- Hard 10K node cap
-- Pruning
-- Edge caps
-- Status polish
-- Docs, release, fresh install test
-
-**Acceptance:** Low-value stale memories prune. Superseded memories stop injecting. All routes redact. v0.2 installs cleanly.
+### PR 7 — Self-regulation + release
+- Pruning, node cap, edge caps
+- Status, graph, learn routes
+- Fresh install test
+- ClawHub publish v0.2
 
 ---
 
-## Routes — full inventory
+## Test plan (revised)
 
-| Endpoint | Description |
-|---|---|
-| `GET /plugins/openclawbrain/status` | Plugin state, memory count, learning stats |
-| `GET /plugins/openclawbrain/proof?limit=20` | Recent proof events |
-| `GET /plugins/openclawbrain/graph?limit=50` | Memory graph nodes + edges (redacted) |
-| `GET /plugins/openclawbrain/search?q=pnpm` | Search memory graph |
-| `GET /plugins/openclawbrain/learn` | Learning engine stats, importance distribution |
-| `POST /plugins/openclawbrain/learn/run-once` | Trigger a single learning pass |
+### LLM infrastructure tests (8)
+1. `callJsonModel` validates against schema
+2. `callJsonModel` retries on validation failure
+3. `callJsonModel` throws after max retries
+4. TestFakeModelClient works for all components
+5. Redaction applied before LLM returns memory candidates
+6. Schema rejects raw transcript content
+7. Timeout handled gracefully
+8. Repair prompt generates valid retry
 
----
+### Turn distiller tests (6)
+1. Extracts TurnFrame from simple question
+2. Identifies correction turn
+3. Identifies coding task type
+4. Extracts topic keys
+5. Memory need assessment matches expected
+6. Capture plan flags feedback detection
 
-## Proof store migration
+### Route function tests (8)
+1. Routes direct question to no_memory
+2. Routes correction to retrieve_and_distill
+3. Uses policy snapshot in decision
+4. Uses nearest examples in decision
+5. Retrieval plan has correct memory types
+6. Injection plan respects budget
+7. Conservative mode thresholds correct
+8. Route decision recorded in DB
 
-Keep `proof-store.ts` as a compatibility facade. Internally backed by SQLite.
+### Feedback distiller tests (10)
+1. Detects explicit correction
+2. Detects explicit preference
+3. Detects standing instruction
+4. Does NOT store assistant "I'll remember" alone
+5. Detects injection feedback (corrected)
+6. Detects workflow from tool sequence
+7. Distills raw text into operational memory (not raw transcript)
+8. Detects contradiction with existing memory
+9. Deduplicates with existing similar memory
+10. High-confidence correction promotes immediately
 
-```typescript
-export function writeProofEvent(store: MemoryStore, event: ProofEventInput): void {
-  store.insertProofEvent(event);
-}
-export function readRecentProofEvents(store: MemoryStore, agentId: string, limit: number): ProofEvent[] {
-  return store.listProofEvents(agentId, limit);
-}
-```
+### Context selector tests (8)
+1. Selects relevant correction over irrelevant preference
+2. Omits superseded memory
+3. Respects prompt budget
+4. Distills selected memories into compact block
+5. Format: must_follow vs prefer vs consider
+6. Risk assessment for injection
+7. Records selection with reasoning
+8. Returns empty if no candidates are relevant
 
----
-
-## Test plan
-
-### Storage tests (14)
-Schema, migrations, CRUD, FTS sync, dedup, stats, node cap.
-
-### Capture tests (10)
-Correction detection, preference detection, explicit requests, dedup, contradiction.
-
-### Injection tests (10)
-Turn classification, threshold filtering, budget enforcement, superseded exclusion, injection recording.
-
-### Learning tests (10)
-Scoring, outcome resolution, pruning, freshness decay, link building.
+### Route learning tests (6)
+1. Resolves route outcomes from injection feedback
+2. Updates policy snapshot from examples
+3. New policy contains learned rules
+4. Nearest examples retrieval works
+5. Learning run writes proof event
+6. Policy snapshot stored and marked active
 
 ### Route tests (6)
-Status, proof, graph, search, learn — all authenticated, all redacted.
+1. /status shows memory stats + last route decision
+2. /proof returns no raw user text
+3. /graph returns redacted nodes
+4. /search finds known memory
+5. /learn returns route learning stats
+6. Routes require gateway auth
 
-### Hook registration tests (8)
-Correct hooks registered, `before_agent_reply` NOT registered, service registered, supplement registered.
+### Hook registration tests (6)
+1. Registers before_prompt_build
+2. Registers agent_end
+3. Registers learning service
+4. Registers corpus supplement
+5. Does NOT register before_agent_reply
+6. TestFakeModelClient works end-to-end
 
 ### End-to-end test (1)
-Correction captured → injected → outcome resolved → score updated.
+```
+Session 1:
+  User: Actually use pnpm, not npm.
+  → Feedback distiller detects correction
+  → Memory node created
+  → Proof event written
+
+Session 2:
+  User: Install dependencies for this repo.
+  → Turn distiller: coding task, topic=repo, memoryNeed=medium
+  → Route fn: retrieve_memory
+  → Retrieval: finds pnpm correction
+  → Context selector: selects, formats as "Must follow: Use pnpm"
+  → Injection recorded
+  → Assistant uses pnpm
+
+Session 2 next turn:
+  User does not correct.
+  → agent_end: resolve injection as accepted/useful
+  → importance increases
+```
 
 **Total: ~59 test cases.**
