@@ -392,9 +392,9 @@ export class MemoryStore {
     const trimmed = query.trim();
     const rows = trimmed
       ? this.db.prepare(`
-          SELECT mn.* FROM memory_search ms
-          JOIN memory_nodes mn ON mn.rowid = ms.rowid
-          WHERE ms MATCH ? AND mn.agent_id = ? AND mn.deleted_at IS NULL AND mn.superseded_by IS NULL
+          SELECT mn.* FROM memory_search
+          JOIN memory_nodes mn ON mn.rowid = memory_search.rowid
+          WHERE memory_search MATCH ? AND mn.agent_id = ? AND mn.deleted_at IS NULL AND mn.superseded_by IS NULL
           ORDER BY rank
           LIMIT ? OFFSET ?
         `).all(trimmed, agentId, limit, offset) as any[]

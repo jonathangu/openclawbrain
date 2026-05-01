@@ -12,6 +12,8 @@ export { MemoryOperationApplier } from './memory-operations.js';
 export { JobQueue } from './job-queue.js';
 export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
+export { ContextSelector } from './context-selector.js';
+export { MemoryPlanner } from './memory-planner.js';
 export declare const openClawBrainPluginEntry: {
     id: string;
     name: string;

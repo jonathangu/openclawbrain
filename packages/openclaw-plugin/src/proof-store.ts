@@ -52,7 +52,21 @@ export async function readProofEvents(options: any = {}) {
 
   try {
     const store = new MemoryStore({ activationRoot: root, agentId });
-    const events = store.getProofEvents(agentId, limit).map((event) => sanitizeProofEvent(event.payload ?? event)).reverse();
+    const events = store.getProofEvents(agentId, limit).map((event) => sanitizeProofEvent({
+      ...(event.payload ?? {}),
+      kind: event.kind,
+      agentId: event.agentId,
+      createdAt: event.createdAt,
+      sourceHook: event.sourceHook,
+      turnId: event.turnId,
+      sessionId: event.sessionId,
+      runId: event.runId,
+      memoryId: event.memoryId,
+      injectionId: event.injectionId,
+      routeDecisionId: event.routeDecisionId,
+      distillationRunId: event.distillationRunId,
+      rawTranscriptStored: event.rawTranscriptStored,
+    })).reverse();
     store.close();
     if (events.length > 0) return events;
   } catch {

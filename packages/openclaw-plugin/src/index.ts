@@ -1,15 +1,19 @@
 import { DEFAULT_CONFIG, PLUGIN_ID, PLUGIN_VERSION, activationRootForAgent, isAgentAllowed, normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 import { buildInjectionText, ensureActivationRoot, readActivationContext } from './context-files.js';
 import { CaptureOrchestrator } from './capture.js';
+import { ContextSelector } from './context-selector.js';
 import { FeedbackDistiller } from './feedback-distiller.js';
 import { JobQueue } from './job-queue.js';
+import { LatencyController } from './latency-controller.js';
 import { FakeLlmClient, OpenAICompatibleLlmClient } from './llm-client.js';
+import { MemoryPlanner } from './memory-planner.js';
 import { MemoryOperationApplier } from './memory-operations.js';
 import { MemoryStore } from './memory-store.js';
 import { decidePolicy } from './policy.js';
 import { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 import { buildStatus } from './status.js';
 import { clipText, eventId, hashText, latestUserTextFromEvent, redactText, safeString, shortHash } from './redact.js';
+import { RouteFn } from './route-fn.js';
 
 export { normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 export { redactText, hashText } from './redact.js';
@@ -25,6 +29,8 @@ export { MemoryOperationApplier } from './memory-operations.js';
 export { JobQueue } from './job-queue.js';
 export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
+export { ContextSelector } from './context-selector.js';
+export { MemoryPlanner } from './memory-planner.js';
 
 export const openClawBrainPluginEntry = {
   id: PLUGIN_ID,
@@ -67,6 +73,10 @@ export async function handleTurnHook(event: any = {}, config: any = normalizePlu
   if (!config.enabled || config.mode === 'off') return {};
   if (!isAgentAllowed(config, agentId)) return {};
 
+  if (phase === 'before_prompt_build' && config.routing?.enabled === true && (config.mode === 'balanced' || config.mode === 'aggressive')) {
+    return handleV2PromptHook(event, config, api, phase);
+  }
+
   const redactedTurn = redactedTurnFromPromptEvent(event, config);
   const decision = decidePolicy({
     mode: config.mode,
@@ -96,6 +106,110 @@ export async function handleTurnHook(event: any = {}, config: any = normalizePlu
   await writeDecisionStatus(config, redactedTurn, decision);
   if (!injection) return {};
   return { prependContext: injection };
+}
+
+async function handleV2PromptHook(event: any = {}, config: any = normalizePluginConfig(), api: any = {}, phase = 'before_prompt_build') {
+  const agentId = agentIdFromEvent(event);
+  const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+  const queue = new JobQueue({ store });
+  const packet = new CaptureOrchestrator().fromBeforePromptBuild(event, config);
+  const routeFn = new RouteFn({ config });
+  const contextSelector = new ContextSelector(config);
+  const initialPlan = routeFn.plan(packet);
+  const initialCandidates = initialPlan.shouldRetrieve
+    ? retrieveCandidates(store, packet.agentId, initialPlan.retrievalPlan.queries, initialPlan.retrievalPlan.memoryTypes, initialPlan.retrievalPlan.maxCandidates)
+    : [];
+  const latency = new LatencyController(config).chooseTier({
+    agentId: packet.agentId,
+    sessionId: packet.sessionId,
+    latestUserMessage: packet.latestUserMessage,
+    recentRouteCacheHit: initialPlan.latencyReason === 'cached route plan',
+    recentPolicyMatch: false,
+    candidateCount: initialCandidates.length,
+    candidateAmbiguity: initialCandidates.length > 0 ? Math.min(1, initialCandidates.length / Math.max(1, initialPlan.retrievalPlan.maxCandidates)) : 0,
+    hasHighConfidenceCorrectionCandidate: initialPlan.route === 'high_confidence_correction_only',
+    userExplicitlyReferencesMemory: /\b(as before|same as last time|remember|we discussed before)\b/i.test(packet.latestUserMessage),
+    taskValueEstimate: estimateTaskValue(packet.latestUserMessage),
+    configMode: config.mode,
+  });
+
+  const client = llmClientFromConfig(config);
+  let plan = initialPlan;
+  let selection = initialPlan.shouldRetrieve ? contextSelector.select({ packet, plan, candidates: initialCandidates }) : emptySelection();
+
+  if (latency.kind === 'sync_memory_planner' && client) {
+    const planner = new MemoryPlanner({ config, routeFn, store, client });
+    const planned = await planner.run(packet);
+    plan = planned.routePlan;
+    selection = planned.contextSelection ?? emptySelection();
+  } else if (plan.enqueueCapture) {
+    queue.enqueueFeedbackDistillation(agentId, { packet }, { priority: 10 });
+  }
+
+  const routeDecision = store.insertRouteDecision({
+    agentId: packet.agentId,
+    sessionId: packet.sessionId,
+    turnId: packet.turnId,
+    runId: packet.runId,
+    route: plan.route,
+    confidence: plan.confidence,
+    latencyTier: latency.kind,
+    syncLlmUsed: latency.kind === 'sync_memory_planner' && Boolean(client),
+    syncLatencyMs: latency.maxSyncMs || undefined,
+    fallbackUsed: latency.kind === 'sync_memory_planner' && !client,
+    turnFrame: plan.turnFrame,
+    retrievalPlan: plan.retrievalPlan,
+    injectionPlan: plan.injectionPlan,
+    selectedMemoryIds: selection.selectedMemoryIds,
+    omittedMemoryIds: selection.omitted.map((it) => it.memoryId),
+    model: client ? (config.llm.plannerModel || config.llm.routeModel || config.llm.feedbackModel || '') : undefined,
+    promptVersion: latency.kind === 'sync_memory_planner' ? 'memory-planner-v1' : 'route-fn-v1',
+    reward: 0,
+  });
+
+  await appendProofEvent({
+    kind: latency.kind === 'sync_memory_planner' ? 'llm_route_decision' : 'route_decision',
+    agentId: packet.agentId,
+    routeDecisionId: routeDecision.id,
+    rawTranscriptStored: false,
+    payload: {
+      latencyTier: latency.kind,
+      route: routeDecision.route,
+      confidence: routeDecision.confidence,
+      selectedMemoryIds: selection.selectedMemoryIds,
+      model: routeDecision.model,
+      promptVersion: routeDecision.promptVersion,
+    },
+  }, { activationRoot: config.activationRoot, agentId: packet.agentId, proofRetentionEvents: config.proofRetentionEvents });
+
+  if (!selection.shouldInject) {
+    await writeStatus(buildStatus(config, { agentId: packet.agentId, lastDecisionKind: 'no_memory', routing: { activePolicySnapshotId: routeDecision.policySnapshotId || null } }), { activationRoot: config.activationRoot, agentId: packet.agentId });
+    store.close();
+    return {};
+  }
+
+  for (const [index, memoryId] of selection.selectedMemoryIds.entries()) {
+    store.insertInjection({
+      agentId: packet.agentId,
+      memoryId,
+      routeDecisionId: routeDecision.id,
+      runId: packet.runId,
+      turnId: packet.turnId,
+      sessionId: packet.sessionId,
+      query: plan.retrievalPlan.queries[0] || packet.latestUserMessage,
+      rank: index + 1,
+      score: selection.selected[index]?.confidence || 0,
+    });
+  }
+
+  await writeStatus(buildStatus(config, {
+    agentId: packet.agentId,
+    lastDecisionKind: 'memory_injected',
+    routing: { activePolicySnapshotId: routeDecision.policySnapshotId || null },
+    latency: { syncPlannerEnabled: config.latency.syncPlannerEnabled === true },
+  }), { activationRoot: config.activationRoot, agentId: packet.agentId });
+  store.close();
+  return { prependContext: `<openclawbrain_context>\n${selection.distilledContext}\n</openclawbrain_context>` };
 }
 
 function registerPromptHooks(api: any, resolve: any) {
@@ -367,6 +481,49 @@ function llmClientFromConfig(config: any) {
     return new OpenAICompatibleLlmClient({ baseUrl: config.llm.baseUrl, apiKey });
   }
   return null;
+}
+
+function retrieveCandidates(store: MemoryStore, agentId: string, queries: string[], memoryTypes: string[], maxCandidates: number) {
+  const seen = new Set<string>();
+  const results: any[] = [];
+  for (const query of queries) {
+    const hits = store.searchMemories(query, agentId, { limit: maxCandidates });
+    for (const hit of hits) {
+      if (seen.has(hit.id)) continue;
+      seen.add(hit.id);
+      results.push(hit);
+      if (results.length >= maxCandidates) return results;
+    }
+  }
+  for (const memoryType of memoryTypes) {
+    const hits = store.listMemories(agentId, { type: memoryType as any, limit: maxCandidates });
+    for (const hit of hits) {
+      if (seen.has(hit.id)) continue;
+      seen.add(hit.id);
+      results.push(hit);
+      if (results.length >= maxCandidates) return results;
+    }
+  }
+  return results;
+}
+
+function emptySelection() {
+  return {
+    shouldInject: false,
+    confidence: 0,
+    selectedMemoryIds: [],
+    distilledContext: '',
+    selected: [],
+    omitted: [],
+    audit: { promptBudgetUsedChars: 0, risk: 'low' as const },
+  };
+}
+
+function estimateTaskValue(message: string): 'low' | 'medium' | 'high' {
+  const lower = message.toLowerCase();
+  if (/\b(architecture|implementation|debug|production|repo|build|design|plan)\b/.test(lower)) return 'high';
+  if (/\b(install|dependency|test|setup|continue)\b/.test(lower)) return 'medium';
+  return 'low';
 }
 
 function safeRegisterHook(api: any, name: string, handler: any) {

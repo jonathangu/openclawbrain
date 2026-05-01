@@ -111,6 +111,26 @@ export interface RouteDecision {
     createdAt: string;
     resolvedAt?: string;
 }
+export interface ContextSelection {
+    shouldInject: boolean;
+    confidence: number;
+    selectedMemoryIds: string[];
+    distilledContext: string;
+    selected: Array<{
+        memoryId: string;
+        reason: 'directly_relevant_correction' | 'matching_user_preference' | 'repo_workflow' | 'tool_guidance' | 'contradiction_resolution' | 'supporting_context';
+        useHow: 'must_follow' | 'prefer' | 'consider' | 'avoid';
+        confidence: number;
+    }>;
+    omitted: Array<{
+        memoryId: string;
+        reason: 'irrelevant' | 'too_general' | 'superseded' | 'low_confidence' | 'would_pollute_prompt' | 'budget';
+    }>;
+    audit: {
+        promptBudgetUsedChars: number;
+        risk: 'low' | 'medium' | 'high';
+    };
+}
 export type InjectionOutcome = 'pending' | 'helped' | 'accepted' | 'ignored' | 'assistant_failed_to_use' | 'user_corrected' | 'harmful' | 'tool_success' | 'tool_failure' | 'unknown';
 export interface InjectionEvent {
     id: string;
