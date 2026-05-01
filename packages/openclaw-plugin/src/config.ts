@@ -3,7 +3,8 @@ import path from 'node:path';
 import { safeString } from './redact.js';
 
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.1';
+export const PLUGIN_VERSION = '0.2.2';
+export const REMOTE_LLM_API_KEY_ENV = 'OPENCLAWBRAIN_LLM_API_KEY';
 export const DEFAULT_CONFIG: any = Object.freeze({
   enabled: false,
   mode: 'balanced',
@@ -126,7 +127,6 @@ export function normalizePluginConfig(input: any = {}) {
       feedbackModel: nonEmptyString(source.llm?.feedbackModel) || '',
       learningModel: nonEmptyString(source.llm?.learningModel) || '',
       baseUrl: nonEmptyString(source.llm?.baseUrl) || '',
-      apiKeyEnv: nonEmptyString(source.llm?.apiKeyEnv) || '',
       allowRemoteModels: source.llm?.allowRemoteModels === true,
       allowedModels: Array.isArray(source.llm?.allowedModels) ? source.llm.allowedModels.map((v: any) => safeString(v)).filter(Boolean) : [],
       temperature: clampNumber(source.llm?.temperature, DEFAULT_CONFIG.llm.temperature, 0, 2),

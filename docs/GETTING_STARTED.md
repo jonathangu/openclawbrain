@@ -44,6 +44,12 @@ openclaw gateway restart
 
 If you skip this step, OpenClawBrain can still run its proof/search/status surfaces and legacy compatibility modes, but it will not auto-distill new corrections.
 
+For a remote OpenAI-compatible endpoint, set the gateway environment variable first:
+
+```bash
+export OPENCLAWBRAIN_LLM_API_KEY=your_api_key_here
+```
+
 ## 4) Verify that the plugin is live
 
 ```bash
@@ -53,7 +59,7 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/status
 
 You should see:
 
-- `pluginVersion: "0.2.1"`
+- `pluginVersion: "0.2.2"`
 - `mode: "balanced"`
 - routing / memory / latency sections in the status payload
 

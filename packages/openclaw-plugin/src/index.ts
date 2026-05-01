@@ -1,4 +1,4 @@
-import { DEFAULT_CONFIG, PLUGIN_ID, PLUGIN_VERSION, activationRootForAgent, isAgentAllowed, normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
+import { DEFAULT_CONFIG, PLUGIN_ID, PLUGIN_VERSION, REMOTE_LLM_API_KEY_ENV, activationRootForAgent, isAgentAllowed, normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 import { buildInjectionText, ensureActivationRoot, readActivationContext } from './context-files.js';
 import { CaptureOrchestrator } from './capture.js';
 import { ContextSelector } from './context-selector.js';
@@ -546,11 +546,8 @@ function llmClientFromConfig(config: any) {
   if (config.llm?.enabled !== true) return null;
   if ((config.llm.provider === 'openai-compatible' || config.llm.provider === 'local') && config.llm.baseUrl) {
     const clientOptions: { baseUrl: string; apiKey?: string } = { baseUrl: config.llm.baseUrl };
-    const envName = safeString(config.llm.apiKeyEnv).trim();
-    if (envName) {
-      const configuredValue = readProcessEnv(envName);
-      if (configuredValue) clientOptions.apiKey = configuredValue;
-    }
+    const configuredValue = readProcessEnv(REMOTE_LLM_API_KEY_ENV);
+    if (configuredValue) clientOptions.apiKey = configuredValue;
     return new OpenAICompatibleLlmClient(clientOptions);
   }
   return null;
