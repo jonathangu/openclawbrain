@@ -53,7 +53,7 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/status
 
 You should see:
 
-- `pluginVersion: "0.2.0"`
+- `pluginVersion: "0.2.1"`
 - `mode: "balanced"`
 - routing / memory / latency sections in the status payload
 

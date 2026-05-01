@@ -119,8 +119,8 @@ Current gate: `pnpm --dir packages/openclaw-plugin test` → **53/53 pass**.
 clawhub publish packages/openclaw-plugin \
   --slug openclawbrain \
   --name "OpenClawBrain" \
-  --version 0.2.0 \
-  --changelog "Ship the v0.2 latency-safe LLM-distilled memory graph runtime."
+  --version 0.2.1 \
+  --changelog "Tighten the published artifact and privacy-scan surface for the v0.2 memory graph runtime."
 ```
 
 ## License

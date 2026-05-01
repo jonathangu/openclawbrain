@@ -536,10 +536,20 @@ function llmClientFromConfig(config) {
     if (config.llm?.enabled !== true)
         return null;
     if ((config.llm.provider === 'openai-compatible' || config.llm.provider === 'local') && config.llm.baseUrl) {
-        const apiKey = config.llm.apiKeyEnv ? process.env[config.llm.apiKeyEnv] : undefined;
-        return new OpenAICompatibleLlmClient({ baseUrl: config.llm.baseUrl, apiKey });
+        const clientOptions = { baseUrl: config.llm.baseUrl };
+        const envName = safeString(config.llm.apiKeyEnv).trim();
+        if (envName) {
+            const configuredValue = readProcessEnv(envName);
+            if (configuredValue)
+                clientOptions.apiKey = configuredValue;
+        }
+        return new OpenAICompatibleLlmClient(clientOptions);
     }
     return null;
+}
+function readProcessEnv(name) {
+    const env = process.env;
+    return env[name];
 }
 function retrieveCandidates(store, agentId, queries, memoryTypes, maxCandidates) {
     const seen = new Set();
