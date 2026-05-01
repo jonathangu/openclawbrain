@@ -1,134 +1,134 @@
 # Architecture
 
-OpenClawBrain is a native OpenClaw plugin that runs entirely on the user's machine. It hooks into the agent's pre-prompt build cycle and optionally injects bounded, redacted context.
+OpenClawBrain v0.2 is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, and injects only bounded context back into the prompt.
 
-## Plugin structure
+## Runtime shape
 
-```
-packages/openclaw-plugin/
-├── src/
-│   ├── index.ts          # Plugin entry: hooks, routes, service registration
-│   ├── config.ts         # Config resolution (plugins.entries.openclawbrain.config)
-│   ├── policy.ts         # Turn classification and decision policy
-│   ├── context-files.ts  # Read/redact/clip activation files
-│   ├── proof-store.ts    # Local proof event append/read/status
-│   ├── redact.ts         # Text redaction, hashing, safe string
-│   └── status.ts         # Status payload builder
-├── dist/                 # Built JS (committed for ClawHub installs)
-├── test/
-│   └── index.test.mjs    # 12 tests covering all paths
-├── openclaw.plugin.json  # Plugin manifest (family, config schema, hooks)
-└── package.json          # Package metadata with ClawHub compat/build fields
-```
+The important modules are:
 
-## Turn classification
-
-When a turn arrives, the plugin classifies it into one of six slices:
-
-| Slice | Example | Default policy |
-|-------|---------|----------------|
-| `direct-answer` | "What is 2+2?" | stay silent |
-| `continuation` | "continue" / "keep going" | inject context |
-| `correction-follow-up` | "use family inbox, not work" | inject corrections |
-| `retrieval-heavy` | "what did we decide about X?" | inject context |
-| `tool-heavy` | "run tests and check results" | inject context + verification hint |
-| `stale-memory-conflict` | "that's wrong, use X instead" | inject corrections |
-
-Classification is heuristic-based on the turn type (if provided by OpenClaw) and redacted prompt patterns. It does not make model calls.
-
-## Decision policy
-
-The policy engine takes the classification, the mode, and the config, and returns one of:
-
-- **`stay_silent`** — No context injected. Proof event written.
-- **`proof_only`** — Log what was considered but don't inject.
-- **`correction_only`** — Inject `corrections.md` content only.
-- **`full_context`** — Inject `context.md` + `corrections.md` + `tool-guidance.md` as relevant.
-
-Mode affects which slices are acted on:
-
-| Mode | Behavior |
-|------|----------|
-| `off` | Always stay silent. |
-| `proof-only` | Classify and log, never inject. |
-| `conservative` | Inject only on corrections, continuation, tool-heavy, and stale memory. Stay silent on direct answers and unknown. |
-| `active` | Inject on most slices (conservative + more). |
-
-## Hooks
-
-The plugin registers these OpenClaw hooks:
-
-- **`before_prompt_build`** — Main hook. Classifies the turn, decides policy, reads context, returns `{ prependContext: "..." }` or `{}`.
-- **`agent_turn_prepare`** — Optional secondary hook (same logic, gated by `supportsHook`).
-- **`model_call_started`** — Writes a telemetry proof event.
-- **`model_call_ended`** — Writes a telemetry proof event.
-- **`gateway_start`** — Writes status to the activation root.
-- **`gateway_stop`** — Writes status to the activation root.
-- **`agent_end`** — Optional, gated by `hooks.allowConversationAccess` and `supportsHook`.
-
-## Injection mechanism
-
-When the policy decides to inject context:
-
-1. Read activation files (`context.md`, `corrections.md`, `tool-guidance.md`) from the agent's activation root.
-2. Reject symlinks, oversized files, and non-regular files before reading.
-3. Redact sensitive values (emails, tokens, phone numbers, URLs) from the content.
-4. Clip to `maxContextChars`.
-5. Build a bounded injection string with headers indicating the slice and decision.
-6. Return `{ prependContext: injectionText }` to the OpenClaw hook caller.
-
-If anything fails, return `{}` (no mutation). The agent runs normally.
-
-## Proof events
-
-Every decision writes a local proof event as JSONL under the activation root:
-
-```json
-{
-  "schemaVersion": "ocb.proof.event.v1",
-  "pluginVersion": "0.1.1",
-  "agentId": "main",
-  "decisionKind": "correction_only",
-  "reasonCode": "correction_follow_up_detected",
-  "slice": "correction-follow-up",
-  "mode": "conservative",
-  "rawTranscriptStored": false,
-  "rawUserTextStored": false,
-  "redactionApplied": true,
-  "hashesOnlyForUserText": true
-}
+```text
+packages/openclaw-plugin/src/
+├── index.ts              # plugin entry, hooks, routes, memory supplements
+├── config.ts             # defaults + config normalization
+├── memory-store.ts       # SQLite schema, FTS5, graph storage, proofs, jobs
+├── job-queue.ts          # local async work queue
+├── feedback-distiller.ts # structured JSON feedback capture
+├── memory-operations.ts  # validates/applies distillation output
+├── route-fn.ts           # local/cached route planning
+├── latency-controller.ts # decides whether sync planner is allowed
+├── memory-planner.ts     # one-call planner for ambiguous/high-signal turns
+├── context-selector.ts   # selects and formats bounded context
+├── learning.ts           # outcome learning, freshness decay, pruning
+├── route-learning.ts     # route examples + active policy snapshot
+├── search.ts             # graph/learn/search payloads + memory supplements
+├── proof-store.ts        # proof mirror and status persistence
+└── context-files.ts      # legacy activation-file compatibility path
 ```
 
-Privacy claims in every proof event:
-- `rawTranscriptStored: false` — raw transcripts are never written.
-- `rawUserTextStored: false` — raw user text is never written.
-- `redactionApplied: true` — sensitive values are removed before any storage.
-- `hashesOnlyForUserText: true` — user text appears only as SHA-256 hashes.
+## Two runtime lanes
 
-Proof events rotate after `proofRetentionEvents` (default 1000).
+### 1) v0.2 memory-graph lane
 
-## HTTP routes
+Used when:
 
-Two routes are registered for the gateway:
+- `config.mode` is `balanced` or `aggressive`
+- prompt injection is allowed
 
-- `GET /plugins/openclawbrain/status` — Returns plugin status, config, last decision kind, and timestamp.
-- `GET /plugins/openclawbrain/proof?limit=N` — Returns the most recent N proof events (max 100).
+Flow:
 
-Both require gateway authentication.
+1. `before_prompt_build` creates a redacted turn packet.
+2. `RouteFn` makes an initial local plan from cached policy + retrieval hints.
+3. `LatencyController` decides whether to stay local or allow one bounded `MemoryPlanner` call.
+4. Candidate memories come from local SQLite/FTS.
+5. `ContextSelector` picks a small memory set and formats bounded prompt text.
+6. Route decisions, injections, and proofs are recorded.
+7. `agent_end`, `after_tool_call`, and the background service update outcomes and policy snapshots.
 
-## Redaction
+### 2) legacy compatibility lane
 
-The redactor covers:
-- Email addresses → `[redacted-email]`
-- Token/secret-like patterns → `[redacted-secret]`
-- Phone numbers → `[redacted-phone]`
-- URLs → `[redacted-url]`
-- API key patterns → `[redacted-secret]`
+Used when:
 
-Redaction happens before any storage or injection. Original content is never persisted.
+- `config.mode` is `proof-only`, `conservative`, or `active`
 
-## Config resolution
+This preserves the older activation-file behavior by reading:
 
-Config is resolved from `plugins.entries.openclawbrain.config` only. A root `openclawbrain` config key is intentionally ignored. This prevents namespace collisions with other plugins and keeps config discoverable under the standard plugin entry point.
+- `context.md`
+- `corrections.md`
+- `tool-guidance.md`
 
-`rawTranscriptUpload` is a `const: false` field. If set to `true`, the plugin fails closed and returns empty on all turns.
+That lane remains for backward compatibility, but it is no longer the product center.
+
+## Latency model
+
+OpenClawBrain is designed so memory does **not** add a blocking model call to every turn.
+
+The code follows the four-tier plan from `FINAL_PLAN.md`:
+
+- **Tier 0** — no extra sync LLM call, local cache/policy/retrieval only
+- **Tier 1** — cached learned route + local retrieval
+- **Tier 2** — one bounded `MemoryPlanner` call for ambiguous/high-signal turns
+- **Tier 3** — async distillation, route learning, maintenance, pruning
+
+## Storage model
+
+`memory-store.ts` persists:
+
+- memory nodes
+- memory edges
+- route decisions
+- route examples
+- policy snapshots
+- injection records
+- distillation runs
+- background jobs
+- proof events
+
+Search uses SQLite FTS5 plus graph expansion and scope filters.
+
+## LLM boundary
+
+Current runtime support is intentionally narrow:
+
+- `provider: "local"` → local OpenAI-compatible endpoint
+- `provider: "openai-compatible"` → remote or self-hosted OpenAI-compatible endpoint
+
+The LLM never writes directly to storage. It only returns structured JSON proposals. `memory-operations.ts` validates, redacts, scopes, dedupes, and applies them.
+
+## Hooks and surfaces
+
+Registered hooks:
+
+- `before_prompt_build`
+- `agent_end` (when conversation access is allowed)
+- `after_tool_call` (when tool observation is allowed)
+- `model_call_started`
+- `model_call_ended`
+- `gateway_start`
+- `gateway_stop`
+
+Registered HTTP routes:
+
+- `/plugins/openclawbrain/status`
+- `/plugins/openclawbrain/proof`
+- `/plugins/openclawbrain/graph`
+- `/plugins/openclawbrain/learn`
+- `/plugins/openclawbrain/search`
+
+Registered additive memory surfaces:
+
+- `registerMemoryPromptSupplement(...)`
+- `registerMemoryCorpusSupplement(...)`
+
+## Privacy and trust boundaries
+
+- raw transcript storage stays off
+- redaction happens before persistence
+- redaction before LLM is on by default
+- proof rows and status surfaces remain inspectable
+- plugin failure should not block the main OpenClaw run
+
+## Product invariant
+
+The design center is unchanged:
+
+> **LLM decides semantic meaning. Code enforces trust boundaries. SQLite stores the graph and evidence.**

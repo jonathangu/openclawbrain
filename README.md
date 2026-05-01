@@ -1,122 +1,128 @@
 # OpenClawBrain
 
-**Memory that learns from your corrections.** A plugin for [OpenClaw](https://docs.openclaw.ai) that remembers what you correct, carries useful context across sessions, and keeps prompts smaller.
+**Latency-safe memory that learns from your corrections.** OpenClawBrain is a native [OpenClaw](https://docs.openclaw.ai) plugin that stores redacted memory nodes in local SQLite, retrieves only the few memories that matter, and keeps full proof/audit surfaces.
 
-If you use the same OpenClaw agent day-to-day, you probably correct the same things twice. OpenClawBrain fixes that.
+## What v0.2 does
 
-## What it does
+- **Corrections can stick automatically.** With LLM distillation enabled, user corrections and preferences become scoped memory nodes instead of handwritten notes.
+- **Routing stays latency-safe.** Most turns use cached policy + local SQLite retrieval. Only ambiguous or high-signal turns pay for one bounded planner call.
+- **Learning happens in the background.** `agent_end`, tool observations, and background jobs update outcomes, route examples, and policy snapshots.
+- **Prompts stay bounded.** Candidate retrieval happens locally; only 0-5 selected memories are injected.
+- **Everything is inspectable.** Status, proof, graph, learning, and search routes expose the current state.
 
-- **Corrections stick.** You correct a workflow once; OpenClawBrain brings that lesson into future turns.
-- **Context carries forward.** Relevant context from previous sessions is available, not dumped into every prompt.
-- **Prompts stay small.** Only useful context is injected, not your entire history.
-- **Stays silent when not needed.** On simple direct answers, it does nothing. No overhead.
-- **You can verify it.** Status and proof routes let you see what it decided and why.
+## Current truth
+
+OpenClawBrain v0.2 is the memory-graph runtime described in [`FINAL_PLAN.md`](FINAL_PLAN.md), with 53 passing plugin tests.
+
+The package still keeps **legacy file-backed compatibility modes** (`proof-only`, `conservative`, `active`) for users who want the older activation-file path. The **v0.2 path** is `mode: "balanced"` or `"aggressive"`.
 
 ## Install
 
-Requires [OpenClaw](https://docs.openclaw.ai) 2026.4.29 or later.
+Requires OpenClaw `2026.4.29` or later.
 
 ```bash
 openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
 ```
 
-Then configure it:
+## Configure the v0.2 path
+
+Minimum runtime config:
 
 ```bash
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
-openclaw config set plugins.entries.openclawbrain.config.mode '"conservative"' --strict-json
+openclaw config set plugins.entries.openclawbrain.config.mode '"balanced"' --strict-json
 openclaw config set plugins.entries.openclawbrain.hooks.allowPromptInjection true --strict-json
+openclaw config set plugins.entries.openclawbrain.hooks.allowConversationAccess true --strict-json
 openclaw config validate
 openclaw gateway restart
 ```
 
-Verify it's running:
+To enable automatic semantic distillation and same-turn planning, point the plugin at a structured JSON model endpoint. A **local OpenAI-compatible server** is the intended default path:
+
+```bash
+openclaw config set plugins.entries.openclawbrain.config.llm '{
+  "enabled": true,
+  "provider": "local",
+  "baseUrl": "http://127.0.0.1:11434/v1",
+  "plannerModel": "your-local-model",
+  "feedbackModel": "your-local-model",
+  "learningModel": "your-local-model"
+}' --strict-json
+openclaw config validate
+openclaw gateway restart
+```
+
+If `llm.enabled` is left `false`, the plugin still exposes proof/search/graph/status and can use legacy activation-file modes, but **automatic correction capture and LLM route learning are not active**.
+
+## Verify
 
 ```bash
 openclaw plugins inspect openclawbrain --json
 curl http://127.0.0.1:18789/plugins/openclawbrain/status
+curl http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?limit=10'
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/learn?limit=10'
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
 ```
-
-## How it works
-
-OpenClawBrain is a native OpenClaw plugin. It hooks into the agent's pre-prompt build and runs locally on your machine. It does not upload data anywhere.
-
-1. A turn comes in with a user message.
-2. OpenClawBrain classifies the turn (direct answer, correction follow-up, continuation, tool-heavy, etc.).
-3. Based on its mode, it decides whether to stay silent or inject bounded context.
-4. If it injects, it reads local files and clips/redacts before returning.
-5. It writes a local proof event so you can audit what it did.
-
-Context comes from files on your machine:
-
-```
-~/.openclawbrain/activation/<agent-id>/context.md
-~/.openclawbrain/activation/<agent-id>/corrections.md
-~/.openclawbrain/activation/<agent-id>/tool-guidance.md
-```
-
-Create these files and fill them with what you want the agent to remember. Symlinks and oversized files are rejected before reading.
-
-## Configuration
-
-All config lives under `plugins.entries.openclawbrain.config` — never a root `openclawbrain` key.
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `enabled` | `false` | Must be `true` to do anything. |
-| `mode` | `"conservative"` | `off`, `proof-only`, `conservative`, or `active`. Conservative stays silent unless bounded correction/context is useful. |
-| `activationRoot` | `"~/.openclawbrain/activation/${agentId}"` | Where context/corrections/tool-guidance files live. |
-| `proofEvents` | `true` | Write local proof events for auditing. |
-| `proofRetentionEvents` | `1000` | Max proof events before old ones rotate out. |
-| `maxContextChars` | `3000` | Max characters injected from activation files. |
-| `includeActivationContext` | `true` | Whether to read activation context files. |
-
-## Safety
-
-- **Off by default.** `enabled` is `false` until you turn it on.
-- **Local only.** No network calls, no data upload, no cloud service.
-- **Redacted storage.** Proof events store hashes of user text, never raw text. `rawTranscriptStored: false`, `rawUserTextStored: false`, `redactionApplied: true`.
-- **Fail-closed.** If `rawTranscriptUpload` is set to `true`, the plugin shuts down entirely. If `allowPromptInjection` is `false`, it returns no mutation.
-- **Not a single point of failure.** If the plugin errors, the agent runs normally without it.
 
 ## Routes
 
 | Endpoint | Description |
-|----------|-------------|
-| `/plugins/openclawbrain/status` | Current plugin status, config, last decision. |
-| `/plugins/openclawbrain/proof?limit=20` | Recent proof events. |
+|---|---|
+| `/plugins/openclawbrain/status` | Current plugin config, memory counts, routing stats, latency counters |
+| `/plugins/openclawbrain/proof?limit=20` | Recent redacted proof and route events |
+| `/plugins/openclawbrain/graph?limit=50` | Redacted memory nodes and edges |
+| `/plugins/openclawbrain/learn?limit=50` | Route examples and active policy snapshot |
+| `/plugins/openclawbrain/search?query=...&limit=20` | Local memory search over SQLite/FTS |
+
+## Architecture
+
+Core runtime pieces live in `packages/openclaw-plugin/src/`:
+
+- `memory-store.ts` — SQLite schema, FTS5 search, graph storage, route decisions, injections, proofs, jobs
+- `feedback-distiller.ts` — structured JSON memory distillation
+- `route-fn.ts` + `latency-controller.ts` — cache-aware routing and sync-budget control
+- `memory-planner.ts` — single-call fast planner for ambiguous/high-signal turns
+- `context-selector.ts` — bounded memory selection and formatting
+- `learning.ts` + `route-learning.ts` — background outcomes, memory scoring, and policy snapshots
+- `search.ts` — status/graph/learn/search payloads plus additive memory supplements
+
+The design target is simple:
+
+> **LLM decides semantic meaning. Code enforces trust boundaries. SQLite stores the graph and evidence.**
+
+See [`FINAL_PLAN.md`](FINAL_PLAN.md), [`VISION.md`](VISION.md), and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full model.
+
+## Safety
+
+- Off by default
+- Raw transcript storage hard-disabled (`rawTranscriptUpload: false`)
+- Redaction before store and before LLM by default
+- Fail-closed when prompt injection or conversation access is disabled
+- Plugin failure does not block the main agent
 
 ## Development
 
 ```bash
-# Install deps
 pnpm install
-
-# Build plugin
-pnpm --dir packages/openclaw-plugin build
-
-# Run tests (12 tests, all must pass)
-pnpm --dir packages/openclaw-plugin test
-
-# Check types
 pnpm --dir packages/openclaw-plugin check
+pnpm --dir packages/openclaw-plugin build
+pnpm --dir packages/openclaw-plugin test
 ```
 
-### Architecture
+Current gate: `pnpm --dir packages/openclaw-plugin test` → **53/53 pass**.
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-### Publishing
+## Publish
 
 ```bash
-clawhub package publish packages/openclaw-plugin \
-  --source-repo jonathangu/openclawbrain \
-  --source-commit <sha> \
-  --source-ref refs/tags/openclawbrain-v<version> \
-  --source-path packages/openclaw-plugin
+clawhub publish packages/openclaw-plugin \
+  --slug openclawbrain \
+  --name "OpenClawBrain" \
+  --version 0.2.0 \
+  --changelog "Ship the v0.2 latency-safe LLM-distilled memory graph runtime."
 ```
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT

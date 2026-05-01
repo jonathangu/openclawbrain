@@ -216,7 +216,7 @@ function registerLifecycleHooks(api, resolve) {
     if (resolve().hooks.allowConversationAccess === true) {
         safeRegisterOptionalHook(api, 'agent_end', async (event = {}) => handleAgentEnd(event, resolve(), api));
     }
-    if (resolve().hooks.allowToolObservation === true) {
+    if (resolve().capture?.enabled === true || resolve().learning?.enabled === true) {
         safeRegisterOptionalHook(api, 'after_tool_call', async (event = {}) => handleAfterToolCall(event, resolve(), api));
     }
 }
@@ -535,7 +535,7 @@ async function runFeedbackDistillation(packet, config, store) {
 function llmClientFromConfig(config) {
     if (config.llm?.enabled !== true)
         return null;
-    if (config.llm.provider === 'openai-compatible' && config.llm.baseUrl) {
+    if ((config.llm.provider === 'openai-compatible' || config.llm.provider === 'local') && config.llm.baseUrl) {
         const apiKey = config.llm.apiKeyEnv ? process.env[config.llm.apiKeyEnv] : undefined;
         return new OpenAICompatibleLlmClient({ baseUrl: config.llm.baseUrl, apiKey });
     }

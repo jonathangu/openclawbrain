@@ -2,10 +2,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { safeString } from './redact.js';
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.1.1';
+export const PLUGIN_VERSION = '0.2.0';
 export const DEFAULT_CONFIG = Object.freeze({
     enabled: false,
-    mode: 'conservative',
+    mode: 'balanced',
     activationRoot: '~/.openclawbrain/activation/${agentId}',
     proofEvents: true,
     proofRetentionEvents: 1000,
@@ -16,7 +16,7 @@ export const DEFAULT_CONFIG = Object.freeze({
     hooks: Object.freeze({ allowPromptInjection: false, allowConversationAccess: false, allowToolObservation: false }),
     llm: Object.freeze({
         enabled: false,
-        provider: 'openclaw',
+        provider: 'local',
         allowRemoteModels: false,
         allowedModels: Object.freeze([]),
         temperature: 0,

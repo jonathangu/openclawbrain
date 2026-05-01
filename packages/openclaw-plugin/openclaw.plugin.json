@@ -1,15 +1,19 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.1.1",
-  "description": "Local, agent-scoped selective intervention layer with redacted proof events.",
+  "version": "0.2.0",
+  "description": "Latency-safe LLM-distilled memory graph for OpenClaw with local auditability and bounded prompt injection.",
   "activation": { "onStartup": true },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
       "enabled": { "type": "boolean", "default": false },
-      "mode": { "type": "string", "enum": ["off", "proof-only", "conservative", "active"], "default": "conservative" },
+      "mode": {
+        "type": "string",
+        "enum": ["off", "proof-only", "conservative", "active", "balanced", "aggressive"],
+        "default": "balanced"
+      },
       "activationRoot": { "type": "string", "default": "~/.openclawbrain/activation/${agentId}" },
       "proofEvents": { "type": "boolean", "default": true },
       "proofRetentionEvents": { "type": "integer", "minimum": 50, "maximum": 50000, "default": 1000 },
@@ -20,23 +24,143 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "agents": { "type": "array", "items": { "type": "string" }, "default": ["main"] }
+          "agents": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": ["main"]
+          }
         },
         "default": { "agents": ["main"] }
+      },
+      "llm": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": { "type": "boolean", "default": false },
+          "provider": {
+            "type": "string",
+            "enum": ["local", "openai-compatible"],
+            "default": "local"
+          },
+          "routeModel": { "type": "string", "default": "" },
+          "plannerModel": { "type": "string", "default": "" },
+          "feedbackModel": { "type": "string", "default": "" },
+          "learningModel": { "type": "string", "default": "" },
+          "baseUrl": { "type": "string", "default": "" },
+          "apiKeyEnv": { "type": "string", "default": "" },
+          "allowRemoteModels": { "type": "boolean", "default": false },
+          "allowedModels": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": []
+          },
+          "temperature": { "type": "number", "minimum": 0, "maximum": 2, "default": 0 },
+          "maxTokens": { "type": "integer", "minimum": 1, "maximum": 100000, "default": 1200 }
+        },
+        "default": {
+          "enabled": false,
+          "provider": "local",
+          "allowRemoteModels": false,
+          "allowedModels": [],
+          "temperature": 0,
+          "maxTokens": 1200
+        }
+      },
+      "latency": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "noSynchronousLlmByDefault": { "type": "boolean", "default": true },
+          "syncPlannerEnabled": { "type": "boolean", "default": true },
+          "syncPlannerSoftTimeoutMs": { "type": "integer", "minimum": 100, "maximum": 10000, "default": 900 },
+          "syncPlannerHardTimeoutMs": { "type": "integer", "minimum": 100, "maximum": 30000, "default": 1800 },
+          "maxSyncPlannerCallsPerSession": { "type": "integer", "minimum": 0, "maximum": 1000, "default": 5 },
+          "maxSyncPlannerCallsPerHour": { "type": "integer", "minimum": 0, "maximum": 10000, "default": 30 },
+          "fallbackOnTimeout": {
+            "type": "string",
+            "enum": ["no_memory", "cached_route", "high_confidence_corrections_only"],
+            "default": "cached_route"
+          }
+        }
+      },
+      "capture": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": { "type": "boolean", "default": true },
+          "mode": {
+            "type": "string",
+            "enum": ["off", "async_only", "hybrid", "sync_for_high_signal"],
+            "default": "hybrid"
+          },
+          "minConfidence": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.7 },
+          "immediateCorrectionCapture": { "type": "boolean", "default": true },
+          "postRunWorkflowCapture": { "type": "boolean", "default": true },
+          "storeCandidates": { "type": "boolean", "default": true },
+          "agentEndMode": {
+            "type": "string",
+            "enum": ["enqueue", "best_effort_async"],
+            "default": "enqueue"
+          }
+        }
+      },
+      "routing": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": { "type": "boolean", "default": true },
+          "mode": {
+            "type": "string",
+            "enum": ["off", "cached_policy_only", "hybrid_llm_on_cache_miss", "aggressive_llm"],
+            "default": "hybrid_llm_on_cache_miss"
+          },
+          "minRouteConfidence": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.7 },
+          "maxCandidateMemories": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 40 },
+          "maxInjectedMemories": { "type": "integer", "minimum": 0, "maximum": 100, "default": 5 },
+          "maxInjectedChars": { "type": "integer", "minimum": 0, "maximum": 20000, "default": 1200 },
+          "learnFromOutcomes": { "type": "boolean", "default": true }
+        }
+      },
+      "learning": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": { "type": "boolean", "default": true },
+          "intervalMs": { "type": "integer", "minimum": 1000, "maximum": 86400000, "default": 60000 },
+          "minExamplesForPolicyUpdate": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 5 },
+          "maxPositiveExamples": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 25 },
+          "maxNegativeExamples": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 25 },
+          "pruneIntervalMs": { "type": "integer", "minimum": 1000, "maximum": 86400000, "default": 3600000 },
+          "maxMemoryNodesPerAgent": { "type": "integer", "minimum": 1, "maximum": 1000000, "default": 5000 }
+        }
+      },
+      "privacy": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "storeRawTranscript": { "type": "boolean", "const": false, "default": false },
+          "redactBeforeStore": { "type": "boolean", "default": true },
+          "redactBeforeLlm": { "type": "boolean", "default": true },
+          "storeDistillationInputs": { "type": "boolean", "default": false },
+          "storeDistillationOutputs": { "type": "boolean", "default": true }
+        }
       }
     }
   },
   "hooks": {
     "before_prompt_build": { "allowPromptInjection": false },
+    "agent_end": {},
+    "after_tool_call": {},
     "model_call_started": {},
     "model_call_ended": {},
     "gateway_start": {},
     "gateway_stop": {}
   },
   "uiHints": {
-    "enabled": { "label": "Enabled", "help": "Defaults off; enable per OpenClaw plugin entry config." },
-    "mode": { "label": "Runtime Mode", "help": "Conservative stays silent unless bounded correction/context intervention is useful." },
-    "activationRoot": { "label": "Activation Root", "help": "Local agent-scoped directory for context.md, corrections.md, tool-guidance.md, proof-events.jsonl, and status.json." },
+    "enabled": { "label": "Enabled", "help": "Defaults off. Enable per plugin entry config." },
+    "mode": { "label": "Runtime Mode", "help": "balanced enables the v0.2 latency-safe memory graph path; conservative/active retain legacy file-backed compatibility modes." },
+    "activationRoot": { "label": "Activation Root", "help": "Local agent-scoped root for SQLite state, proof mirrors, and optional compatibility files." },
+    "llm": { "label": "LLM Distillation", "help": "Optional structured JSON model path for feedback distillation, planning, and learning. Configure a local or OpenAI-compatible endpoint explicitly." },
     "rawTranscriptUpload": { "label": "Raw Transcript Upload", "help": "Must remain false; true fails closed." }
   }
 }

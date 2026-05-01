@@ -28,7 +28,8 @@ test('config defaults off and ignores root openclawbrain config', () => {
     runtime: { config: { loadConfig: () => ({ openclawbrain: { enabled: true }, plugins: { entries: {} } }) } }
   });
   assert.equal(config.enabled, false);
-  assert.equal(config.mode, 'conservative');
+  assert.equal(config.mode, 'balanced');
+  assert.equal(config.llm.provider, 'local');
   assert.deepEqual(config.scopes.agents, ['main']);
   assert.equal(config.hooks.allowPromptInjection, false);
 });
@@ -59,7 +60,7 @@ test('redaction covers common sensitive values', () => {
   assert.match(redacted, /\[redacted-email\]/);
 });
 
-test('policy maps selected v0.1 turn slices', () => {
+test('policy maps selected legacy turn slices', () => {
   assert.equal(decidePolicy({ mode: 'conservative', turnType: 'direct-answer' }).kind, 'stay_silent');
   assert.equal(decidePolicy({ mode: 'conservative', turnType: 'unknown' }).kind, 'stay_silent');
   assert.equal(decidePolicy({ mode: 'conservative', turnType: 'correction-follow-up' }).kind, 'correction_only');
@@ -109,7 +110,7 @@ test('context reader rejects symlinks and oversize files before reading', async 
 test('direct-answer returns no prompt mutation but writes stay_silent proof', async () => {
   const root = await tempRoot();
   try {
-    const config = normalizePluginConfig({ enabled: true, activationRoot: root, hooks: { allowPromptInjection: true } });
+    const config = normalizePluginConfig({ enabled: true, mode: 'conservative', activationRoot: root, hooks: { allowPromptInjection: true } });
     const result = await handleTurnHook({ agentId: 'main', turnType: 'direct-answer', userMessage: 'What is 2+2?' }, config, {}, 'before_prompt_build');
     assert.deepEqual(result, {});
     const proof = await readProofEvents({ activationRoot: root, agentId: 'main', limit: 5 });
@@ -127,7 +128,7 @@ test('correction and full-context injections are bounded and redacted', async ()
     await writeFile(path.join(root, 'corrections.md'), 'Prefer family inbox. Email private@example.com');
     await writeFile(path.join(root, 'context.md'), 'Continue the deployment checklist.');
     await writeFile(path.join(root, 'tool-guidance.md'), 'Run tests and inspect output.');
-    const config = normalizePluginConfig({ enabled: true, activationRoot: root, maxContextChars: 900, hooks: { allowPromptInjection: true } });
+    const config = normalizePluginConfig({ enabled: true, mode: 'conservative', activationRoot: root, maxContextChars: 900, hooks: { allowPromptInjection: true } });
     const correction = await handleTurnHook({ agentId: 'main', turnType: 'correction-follow-up', userMessage: 'actually use family inbox' }, config, {}, 'before_prompt_build');
     assert.match(correction.prependContext, /correction guidance/);
     assert.match(correction.prependContext, /\[redacted-email\]/);
@@ -144,7 +145,7 @@ test('prompt injection disabled returns no mutation and writes fail-closed proof
   const root = await tempRoot();
   try {
     await writeFile(path.join(root, 'corrections.md'), 'Use family inbox.');
-    const config = normalizePluginConfig({ enabled: true, activationRoot: root, hooks: { allowPromptInjection: false } });
+    const config = normalizePluginConfig({ enabled: true, mode: 'conservative', activationRoot: root, hooks: { allowPromptInjection: false } });
     const result = await handleTurnHook({ agentId: 'main', turnType: 'stale-memory-conflict', userMessage: 'stale memory conflict' }, config, {}, 'before_prompt_build');
     assert.deepEqual(result, {});
     const proof = await readFile(path.join(root, 'proof-events.jsonl'), 'utf8');
