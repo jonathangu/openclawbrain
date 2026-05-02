@@ -84,7 +84,7 @@ export class BackgroundLearner {
     }
 }
 function hasCorrelationId(packet) {
-    return Boolean(packet.runId || packet.turnId);
+    return Boolean(packet.runId && packet.turnId);
 }
 function scopeForPacket(agentId, packet) {
     return {

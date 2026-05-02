@@ -20,7 +20,7 @@ test('memory planner uses LLM-selected memory ids for ambiguous retrieval', asyn
       enabled: true,
       mode: 'balanced',
       activationRoot: root,
-      llm: { enabled: true, plannerModel: 'fake-planner' },
+      llm: { enabled: true, plannerModel: 'fake-planner', allowedModels: ['fake-planner', 'qwen2.5:32b-instruct'] },
       routing: { enabled: true, maxCandidateMemories: 10, maxInjectedMemories: 2, maxInjectedChars: 400 },
     });
     const store = new MemoryStore({ activationRoot: root, agentId: 'main' });

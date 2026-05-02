@@ -102,6 +102,7 @@ export class FeedbackDistiller {
       temperature: this.config.llm.temperature,
       maxTokens: this.config.llm.maxTokens,
     };
+    assertAllowedModel(call.model, this.config);
 
     return runJsonWithValidation({
       client: this.client,
@@ -110,6 +111,11 @@ export class FeedbackDistiller {
       fallback: () => explicitFallback(packet, { captureIntent, retrievalIntent }),
     });
   }
+}
+
+function assertAllowedModel(model: string, config: any) {
+  const allowed = new Set(Array.isArray(config.llm?.allowedModels) ? config.llm.allowedModels : []);
+  if (allowed.size > 0 && !allowed.has(model)) throw new Error(`model_not_allowed:${model}`);
 }
 
 export const FEEDBACK_DISTILLATION_SCHEMA = {

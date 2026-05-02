@@ -9,6 +9,7 @@ import type { MemoryStore } from './memory-store.js';
 import type { RoutePlan } from './route-fn.js';
 import { RouteFn } from './route-fn.js';
 import { scopeContextFromPacket } from './scope.js';
+import { redactJsonValue, redactText } from './redact.js';
 
 export interface MemoryPlannerResult {
   routePlan: RoutePlan;
@@ -41,28 +42,30 @@ export class MemoryPlanner {
   async run(packet: TurnEventPacket, options: MemoryPlannerRunOptions = {}): Promise<MemoryPlannerResult> {
     const timeoutMs = options.timeoutMs ?? this.config.latency.syncPlannerHardTimeoutMs;
     const fallback = options.fallback ?? (() => this.routeFn.plan(packet));
+    const deadlineMs = timeoutMs > 0 ? Date.now() + timeoutMs : 0;
 
     if (timeoutMs > 0) {
-      return runWithTimeout(() => this.runInner(packet), timeoutMs, () => {
+      return runWithTimeout(() => this.runInner(packet, deadlineMs), timeoutMs, () => {
         return this.runWithFallback(packet, fallback);
       });
     }
     return this.runInner(packet);
   }
 
-  private async runInner(packet: TurnEventPacket): Promise<MemoryPlannerResult> {
-    const baseRoutePlan = this.routeFn.plan(packet);
+  private async runInner(packet: TurnEventPacket, deadlineMs = 0): Promise<MemoryPlannerResult> {
+    const baseRoutePlan = suppressSyntheticCapture(this.routeFn.plan(packet), packet);
     const baseCandidates = baseRoutePlan.shouldRetrieve
       ? retrieveCandidates(this.store, packet, baseRoutePlan.retrievalPlan.queries, baseRoutePlan.retrievalPlan.memoryTypes, baseRoutePlan.retrievalPlan.maxCandidates)
       : [];
     const planner = this.client ? await this.planWithLlm(packet, baseRoutePlan, baseCandidates) : null;
+    throwIfExpired(deadlineMs);
     const routePlan = planner
       ? {
           ...baseRoutePlan,
           route: planner.output.route,
           confidence: planner.output.confidence,
           shouldRetrieve: planner.output.shouldRetrieve,
-          enqueueCapture: baseRoutePlan.enqueueCapture || planner.output.likelyFeedbackType === 'correction',
+          enqueueCapture: !shouldSuppressCapture(packet) && (baseRoutePlan.enqueueCapture || planner.output.likelyFeedbackType === 'correction'),
           retrievalIntent: baseRoutePlan.retrievalIntent,
           captureIntent: baseRoutePlan.captureIntent,
           latencyReason: 'llm memory planner',
@@ -70,6 +73,7 @@ export class MemoryPlanner {
       : baseRoutePlan;
 
     if (planner) {
+      throwIfExpired(deadlineMs);
       this.store.insertDistillationRun({
         agentId: packet.agentId,
         sessionId: packet.sessionId,
@@ -80,16 +84,17 @@ export class MemoryPlanner {
         promptVersion: 'memory-planner-v1',
         inputHash: planner.audit.inputHash,
         redactedInputSummary: planner.audit.redactedInputSummary,
-        outputJson: this.config.privacy?.storeDistillationOutputs === false ? JSON.stringify({ stored: false, reason: 'storeDistillationOutputs=false' }) : JSON.stringify(planner.output),
-        validationStatus: planner.audit.validationStatus === 'fallback' ? 'repaired' : planner.audit.validationStatus,
+        outputJson: this.config.privacy?.storeDistillationOutputs === false ? JSON.stringify({ stored: false, reason: 'storeDistillationOutputs=false' }) : JSON.stringify(redactJsonValue(planner.output)),
+        validationStatus: planner.audit.validationStatus,
         validationError: planner.audit.validationError || planner.audit.parseError,
         latencyMs: planner.audit.latencyMs,
       });
     }
 
     let feedbackDistillation: FeedbackDistillation | undefined;
-    if (routePlan.enqueueCapture && this.distiller && this.config.capture?.enabled === true && this.config.capture?.mode !== 'off' && this.config.memory?.captureMode !== 'off') {
+    if (routePlan.enqueueCapture && !shouldSuppressCapture(packet) && this.distiller && this.config.capture?.enabled === true && this.config.capture?.mode !== 'off' && this.config.memory?.captureMode !== 'off') {
       const result = await this.distiller.distill(packet, { captureIntent: routePlan.captureIntent, retrievalIntent: routePlan.retrievalIntent });
+      throwIfExpired(deadlineMs);
       feedbackDistillation = result.output;
       let applied: any = null;
       if (feedbackDistillation.shouldStore || feedbackDistillation.injectionFeedback.length > 0) {
@@ -111,7 +116,7 @@ export class MemoryPlanner {
         storedCount: applied?.storedCandidates ?? 0,
         rejectedCount: (applied?.rejectedCandidates ?? 0) + (feedbackDistillation.shouldStore ? 0 : 1),
         rejectionReasons: [...new Set([...(applied?.rejectionReasons ?? []), ...(feedbackDistillation.audit.rejectionReasons ?? [feedbackDistillation.audit.modelReasonCode])])],
-        safeCandidatePreview: feedbackDistillation.audit.safeCandidatePreview,
+        safeCandidatePreview: this.config.privacy?.storeDistillationOutputs === false ? undefined : redactText(feedbackDistillation.audit.safeCandidatePreview || '', 500),
         evidenceHash: String(packet.metadata.promptHash || ''),
       });
     }
@@ -125,7 +130,7 @@ export class MemoryPlanner {
   }
 
   private runWithFallback(packet: TurnEventPacket, fallback: () => RoutePlan): MemoryPlannerResult {
-    const routePlan = fallback();
+    const routePlan = suppressSyntheticCapture(fallback(), packet);
     if (!routePlan.shouldRetrieve) return { routePlan };
     const candidates = retrieveCandidates(this.store, packet, routePlan.retrievalPlan.queries, routePlan.retrievalPlan.memoryTypes, routePlan.retrievalPlan.maxCandidates);
     const contextSelection = this.contextSelector.select({ packet, plan: routePlan, candidates, store: this.store });
@@ -161,6 +166,7 @@ export class MemoryPlanner {
       temperature: this.config.llm.temperature,
       maxTokens: this.config.llm.maxTokens,
     };
+    assertAllowedModel(call.model, this.config);
 
     return runJsonWithValidation({
       client: this.client,
@@ -175,6 +181,38 @@ export class MemoryPlanner {
       }),
     });
   }
+}
+
+function shouldSuppressCapture(packet: TurnEventPacket) {
+  const trigger = String(packet?.metadata?.trigger || '').toLowerCase();
+  return ['heartbeat', 'cron', 'system', 'subagent'].includes(trigger);
+}
+
+function suppressSyntheticCapture(plan: RoutePlan, packet: TurnEventPacket): RoutePlan {
+  if (!shouldSuppressCapture(packet)) return plan;
+  const trigger = String(packet?.metadata?.trigger || '').toLowerCase();
+  return {
+    ...plan,
+    route: plan.route === 'capture_only' ? 'no_memory' : plan.route,
+    enqueueCapture: false,
+    captureIntent: {
+      ...plan.captureIntent,
+      shouldConsiderCapture: false,
+      intent: 'one_off',
+      confidence: Math.max(0.9, Number(plan.captureIntent?.confidence || 0)),
+      reason: `System-generated ${trigger || 'non-user'} prompt; capture disabled`,
+      matchedSignals: [],
+    },
+  };
+}
+
+function throwIfExpired(deadlineMs: number) {
+  if (deadlineMs > 0 && Date.now() >= deadlineMs) throw new Error('memory planner timeout');
+}
+
+function assertAllowedModel(model: string, config: any) {
+  const allowed = new Set(Array.isArray(config.llm?.allowedModels) ? config.llm.allowedModels : []);
+  if (allowed.size > 0 && !allowed.has(model)) throw new Error(`model_not_allowed:${model}`);
 }
 
 interface PlannerLlmOutput {

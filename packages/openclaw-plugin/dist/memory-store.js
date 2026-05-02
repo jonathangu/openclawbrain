@@ -7,7 +7,7 @@ import { mkdirSync } from 'node:fs';
 import { openDatabase } from './sqlite-driver.js';
 import { filterMemoriesForScope } from './scope.js';
 // ── Schema version ────────────────────────────────────────────────────────────
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 const MIGRATIONS = {
     1: `
@@ -379,6 +379,24 @@ const MIGRATIONS = {
     CREATE INDEX IF NOT EXISTS idx_capture_audit_agent ON capture_audit(agent_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_capture_audit_turn ON capture_audit(turn_id);
   `,
+    4: `
+    UPDATE memory_nodes
+    SET scope_key = ''
+    WHERE scope_key IS NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM memory_nodes AS other
+        WHERE other.agent_id = memory_nodes.agent_id
+          AND other.type = memory_nodes.type
+          AND COALESCE(other.normalized_key, '') = COALESCE(memory_nodes.normalized_key, '')
+          AND other.scope_kind = memory_nodes.scope_kind
+          AND other.scope_key = ''
+          AND other.id != memory_nodes.id
+      );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_active_dedupe
+      ON background_jobs(agent_id, kind, dedupe_key)
+      WHERE dedupe_key IS NOT NULL AND status IN ('pending', 'running');
+  `,
 };
 // ── UUID helper ───────────────────────────────────────────────────────────────
 import { randomUUID } from 'node:crypto';
@@ -387,7 +405,9 @@ export const now = () => new Date().toISOString();
 export class MemoryStore {
     db;
     dbPath;
+    ownerAgentId;
     constructor(options) {
+        this.ownerAgentId = options.agentId;
         this.dbPath = dbPathForAgent(options.activationRoot, options.agentId);
         this.db = openDb(this.dbPath);
         this.migrate();
@@ -399,6 +419,9 @@ export class MemoryStore {
             const sql = MIGRATIONS[v];
             if (!sql)
                 continue;
+            if (v === 4 && !tableHasColumn(this.db, 'background_jobs', 'dedupe_key')) {
+                this.db.exec('ALTER TABLE background_jobs ADD COLUMN dedupe_key TEXT;');
+            }
             this.db.exec(sql);
             this.db.pragma(`user_version = ${v}`);
             this.db.prepare('INSERT OR REPLACE INTO schema_meta (version, applied_at) VALUES (?, ?)').run(v, now());
@@ -430,9 +453,9 @@ export class MemoryStore {
     findMemoryByNormalizedKey(agentId, normalizedKey, scopeKind, scopeKey) {
         const row = this.db.prepare(`
       SELECT * FROM memory_nodes
-      WHERE agent_id = ? AND normalized_key = ? AND scope_kind = ? AND scope_key = ? AND deleted_at IS NULL
+      WHERE agent_id = ? AND normalized_key = ? AND scope_kind = ? AND (scope_key = ? OR (scope_key IS NULL AND ? = '')) AND deleted_at IS NULL
       LIMIT 1
-    `).get(agentId, normalizedKey, scopeKind, scopeKey ?? '');
+    `).get(agentId, normalizedKey, scopeKind, scopeKey ?? '', scopeKey ?? '');
         return row ? rowToMemory(row) : null;
     }
     updateMemory(id, updates) {
@@ -461,6 +484,7 @@ export class MemoryStore {
     }
     searchMemories(query, agentId, opts = {}) {
         const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
+        const sqlLimit = opts.scopeContext ? Math.min(500, limit * 10) : limit;
         const offset = opts.offset ?? 0;
         const trimmed = query.trim();
         let rows;
@@ -470,7 +494,7 @@ export class MemoryStore {
         WHERE agent_id = ? AND deleted_at IS NULL AND superseded_by IS NULL
         ORDER BY importance DESC, updated_at DESC
         LIMIT ? OFFSET ?
-      `).all(agentId, limit, offset);
+      `).all(agentId, sqlLimit, offset);
         }
         else {
             try {
@@ -480,7 +504,7 @@ export class MemoryStore {
           WHERE memory_search MATCH ? AND mn.agent_id = ? AND mn.deleted_at IS NULL AND mn.superseded_by IS NULL
           ORDER BY rank
           LIMIT ? OFFSET ?
-        `).all(trimmed, agentId, limit, offset);
+        `).all(trimmed, agentId, sqlLimit, offset);
             }
             catch {
                 const lowerTokens = trimmed.toLowerCase().split(/[^a-z0-9_]+/i).filter(Boolean);
@@ -491,17 +515,18 @@ export class MemoryStore {
         `).all(agentId).filter((row) => {
                     const haystack = `${row.content} ${row.normalized_key ?? ''} ${row.tags_json ?? ''}`.toLowerCase();
                     return lowerTokens.every((token) => haystack.includes(token));
-                }).slice(offset, offset + limit);
+                }).slice(offset, offset + sqlLimit);
             }
         }
-        return filterMemoriesForScope(rows.map(rowToMemory), opts.scopeContext);
+        return filterMemoriesForScope(rows.map(rowToMemory), opts.scopeContext).slice(0, limit);
     }
     listMemories(agentId, opts = {}) {
         const limit = Math.min(200, Math.max(1, opts.limit ?? 50));
+        const sqlLimit = opts.scopeContext ? Math.min(1000, limit * 10) : limit;
         if (opts.type) {
-            return filterMemoriesForScope(this.db.prepare('SELECT * FROM memory_nodes WHERE agent_id = ? AND type = ? AND deleted_at IS NULL ORDER BY importance DESC LIMIT ?').all(agentId, opts.type, limit).map(rowToMemory), opts.scopeContext);
+            return filterMemoriesForScope(this.db.prepare('SELECT * FROM memory_nodes WHERE agent_id = ? AND type = ? AND deleted_at IS NULL ORDER BY importance DESC LIMIT ?').all(agentId, opts.type, sqlLimit).map(rowToMemory), opts.scopeContext).slice(0, limit);
         }
-        return filterMemoriesForScope(this.db.prepare('SELECT * FROM memory_nodes WHERE agent_id = ? AND deleted_at IS NULL ORDER BY importance DESC LIMIT ?').all(agentId, limit).map(rowToMemory), opts.scopeContext);
+        return filterMemoriesForScope(this.db.prepare('SELECT * FROM memory_nodes WHERE agent_id = ? AND deleted_at IS NULL ORDER BY importance DESC LIMIT ?').all(agentId, sqlLimit).map(rowToMemory), opts.scopeContext).slice(0, limit);
     }
     countMemories(agentId, type) {
         if (type) {
@@ -567,8 +592,9 @@ export class MemoryStore {
             clauses.push('session_id = ?');
             params.push(scope.sessionId);
         }
-        this.db.prepare(`UPDATE memory_injections SET outcome = ?, correction_signal = ?, resolved_at = ? WHERE ${clauses.join(' AND ')}`)
+        const info = this.db.prepare(`UPDATE memory_injections SET outcome = ?, correction_signal = ?, resolved_at = ? WHERE ${clauses.join(' AND ')}`)
             .run(outcome, correctionSignal ?? null, now(), ...params);
+        return Number(info?.changes || 0);
     }
     getPendingInjections(agentId) {
         return this.db.prepare('SELECT * FROM memory_injections WHERE agent_id = ? AND outcome = ? ORDER BY injected_at DESC LIMIT 100').all(agentId, 'pending').map(rowToInjection);
@@ -725,32 +751,42 @@ export class MemoryStore {
     }
     // ── Job queue ───────────────────────────────────────────────────────────────
     enqueueJob(job) {
+        if (job.agentId !== this.ownerAgentId)
+            throw new Error(`job_agent_mismatch:${job.agentId}`);
         const id = job.id || uuid();
         const ts = now();
+        const dedupeKey = jobDedupeKey(job.agentId, job.kind, job.payload);
         this.db.prepare(`
-      INSERT INTO background_jobs (id, agent_id, kind, status, priority, payload_json, attempts, max_attempts, available_at, started_at, finished_at, error, created_at, updated_at)
-      VALUES (?, ?, ?, 'pending', ?, ?, 0, ?, ?, NULL, NULL, NULL, ?, ?)
-    `).run(id, job.agentId, job.kind, job.priority, JSON.stringify(job.payload), job.maxAttempts, job.availableAt, ts, ts);
-        return { ...job, id, status: 'pending', attempts: 0, createdAt: ts, updatedAt: ts };
+      INSERT OR IGNORE INTO background_jobs (id, agent_id, kind, status, priority, payload_json, attempts, max_attempts, available_at, started_at, finished_at, error, created_at, updated_at, dedupe_key)
+      VALUES (?, ?, ?, 'pending', ?, ?, 0, ?, ?, NULL, NULL, NULL, ?, ?, ?)
+    `).run(id, job.agentId, job.kind, job.priority, JSON.stringify(job.payload), job.maxAttempts, job.availableAt, ts, ts, dedupeKey);
+        const existing = dedupeKey
+            ? this.db.prepare("SELECT * FROM background_jobs WHERE agent_id = ? AND kind = ? AND dedupe_key = ? AND status IN ('pending', 'running') ORDER BY created_at ASC LIMIT 1").get(job.agentId, job.kind, dedupeKey)
+            : this.db.prepare('SELECT * FROM background_jobs WHERE id = ?').get(id);
+        return existing ? rowToJob(existing) : { ...job, id, status: 'pending', attempts: 0, createdAt: ts, updatedAt: ts };
     }
     claimNextJob(kind, agentId) {
         const ts = now();
-        const filters = ["status = 'pending'", 'available_at <= ?'];
-        const params = [ts];
-        if (kind) {
-            filters.push('kind = ?');
-            params.push(kind);
-        }
-        if (agentId) {
-            filters.push('agent_id = ?');
-            params.push(agentId);
-        }
-        const job = this.db.prepare(`SELECT * FROM background_jobs WHERE ${filters.join(' AND ')} ORDER BY priority DESC, created_at ASC LIMIT 1`).get(...params);
-        if (!job)
-            return null;
-        this.db.prepare("UPDATE background_jobs SET status = 'running', started_at = ?, attempts = attempts + 1, updated_at = ? WHERE id = ?")
-            .run(ts, ts, job.id);
-        return rowToJob(this.db.prepare('SELECT * FROM background_jobs WHERE id = ?').get(job.id));
+        return this.transaction(() => {
+            const filters = ["status = 'pending'", 'available_at <= ?'];
+            const params = [ts];
+            if (kind) {
+                filters.push('kind = ?');
+                params.push(kind);
+            }
+            if (agentId) {
+                filters.push('agent_id = ?');
+                params.push(agentId);
+            }
+            const job = this.db.prepare(`SELECT * FROM background_jobs WHERE ${filters.join(' AND ')} ORDER BY priority DESC, created_at ASC LIMIT 1`).get(...params);
+            if (!job)
+                return null;
+            const info = this.db.prepare("UPDATE background_jobs SET status = 'running', started_at = ?, attempts = attempts + 1, updated_at = ? WHERE id = ? AND status = 'pending'")
+                .run(ts, ts, job.id);
+            if (Number(info?.changes || 0) !== 1)
+                return null;
+            return rowToJob(this.db.prepare('SELECT * FROM background_jobs WHERE id = ?').get(job.id));
+        });
     }
     completeJob(id) {
         const ts = now();
@@ -1080,4 +1116,18 @@ export function openDb(dbPath) {
 }
 function clamp01(value) {
     return Math.max(0, Math.min(1, value));
+}
+function tableHasColumn(db, table, column) {
+    return db.prepare(`PRAGMA table_info(${table})`).all().some((row) => row.name === column);
+}
+function jobDedupeKey(agentId, kind, payload) {
+    if (kind !== 'feedback_distillation' && kind !== 'outcome_classification')
+        return null;
+    const packet = payload?.packet || {};
+    const runId = String(packet.runId || '').trim();
+    const turnId = String(packet.turnId || '').trim();
+    const promptHash = String(packet.metadata?.promptHash || '').trim();
+    if (!runId && !turnId && !promptHash)
+        return null;
+    return [agentId, kind, runId, turnId, promptHash].join(':');
 }

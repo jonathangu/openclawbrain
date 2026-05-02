@@ -51,7 +51,7 @@ export function searchPayload(config, agentId, query, limit = 10) {
         return forbiddenAgentPayload(agentId);
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     try {
-        const memories = store.searchMemories(query, agentId, { limit });
+        const memories = store.searchMemories(query, agentId, { limit, scopeContext: defaultScopeContext(agentId) });
         return {
             ok: true,
             agentId,
@@ -77,9 +77,9 @@ export function graphPayload(config, agentId, limit = 20) {
         return forbiddenAgentPayload(agentId);
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     try {
-        const nodes = store.listMemories(agentId, { limit });
+        const nodes = store.listMemories(agentId, { limit, scopeContext: defaultScopeContext(agentId) });
         const nodeIds = new Set(nodes.map((node) => node.id));
-        const edges = dedupeEdges(nodes.flatMap((node) => store.getEdges(node.id))).filter((edge) => nodeIds.has(edge.fromId) || nodeIds.has(edge.toId));
+        const edges = dedupeEdges(nodes.flatMap((node) => store.getEdges(node.id))).filter((edge) => nodeIds.has(edge.fromId) && nodeIds.has(edge.toId));
         return {
             ok: true,
             agentId,

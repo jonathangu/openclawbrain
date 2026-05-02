@@ -51,7 +51,7 @@ export class ContextSelector {
         omitted.push({ memoryId: item.memory.id, reason: 'would_pollute_prompt' });
         continue;
       }
-      const line = formatMemoryLine(item.memory, item.reason, plan.retrievalIntent?.intent === 'recall_value_request');
+      const line = formatMemoryLine(item.memory, item.reason, plan.retrievalIntent?.intent === 'recall_value_request' && canRevealRecallValue(item.memory, packet));
       if (usedChars + line.length + 1 > plan.injectionPlan.maxChars) {
         omitted.push({ memoryId: item.memory.id, reason: 'budget' });
         continue;
@@ -176,3 +176,14 @@ function formatMemoryLine(memory: MemoryNode, reason: ContextSelection['selected
       return memory.content;
   }
 }
+
+function canRevealRecallValue(memory: MemoryNode, packet: TurnEventPacket) {
+  if (memory.type !== 'recall_rule' || !memory.positive || !memory.scopeKey) return false;
+  const query = packet.latestUserMessageRedacted.toLowerCase();
+  const terms = [memory.scopeKey, memory.normalizedKey, ...(memory.tags || [])]
+    .flatMap((value) => String(value || '').toLowerCase().split(/[^a-z0-9]+/i))
+    .filter((term) => term.length >= 3 && !GENERIC_RECALL_TERMS.has(term));
+  return terms.some((term) => query.includes(term));
+}
+
+const GENERIC_RECALL_TERMS = new Set(['codeword', 'passphrase', 'phrase', 'answer', 'recall', 'rule', 'secret', 'value', 'app', 'project', 'repo']);

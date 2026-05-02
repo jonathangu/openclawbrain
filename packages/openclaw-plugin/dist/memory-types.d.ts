@@ -287,7 +287,7 @@ export interface DistillationRun {
     inputHash: string;
     redactedInputSummary?: string;
     outputJson: string;
-    validationStatus: 'valid' | 'invalid' | 'repaired';
+    validationStatus: 'valid' | 'invalid' | 'repaired' | 'fallback';
     validationError?: string;
     latencyMs?: number;
     createdAt: string;

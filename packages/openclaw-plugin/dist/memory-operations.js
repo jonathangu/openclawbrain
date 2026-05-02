@@ -1,5 +1,6 @@
 import { redactText } from './redact.js';
 import { captureStoreThreshold, classifySensitiveValue } from './capture-intent.js';
+import { scopeContextFromPacket } from './scope.js';
 export class MemoryOperationApplier {
     store;
     config;
@@ -41,14 +42,23 @@ export class MemoryOperationApplier {
                     }
                 }
             }
+            const allowedFeedback = new Set((packet.recentInjections || []).map((item) => `${item.injectionId}:${item.memoryId}`));
+            const hasPreciseCorrelation = Boolean(packet.runId && packet.turnId);
             for (const feedback of distillation.injectionFeedback) {
-                this.store.resolveInjectionOutcome(feedback.injectionId, feedback.outcome, redactText(feedback.evidence, 300), {
+                if (!hasPreciseCorrelation || !allowedFeedback.has(`${feedback.injectionId}:${feedback.memoryId}`)) {
+                    rejectionReasons.push('injection_feedback_scope_mismatch');
+                    continue;
+                }
+                const changed = this.store.resolveInjectionOutcome(feedback.injectionId, feedback.outcome, redactText(feedback.evidence, 300), {
                     agentId: packet.agentId,
                     runId: packet.runId || undefined,
                     turnId: packet.turnId || undefined,
                     sessionId: packet.sessionId || undefined,
                 });
-                resolvedInjections += 1;
+                if (changed > 0)
+                    resolvedInjections += changed;
+                else
+                    rejectionReasons.push('scope_mismatch_or_missing_injection');
             }
             this.store.insertProofEvent({
                 agentId: packet.agentId,
@@ -70,7 +80,7 @@ export class MemoryOperationApplier {
     }
     applyDeleteOrSuppress(packet) {
         const query = deletionQuery(packet.latestUserMessageRedacted || '');
-        const matches = this.store.searchMemories(query, packet.agentId, { limit: 10 });
+        const matches = this.store.searchMemories(query, packet.agentId, { limit: 10, scopeContext: scopeContextFromPacket(packet) });
         for (const memory of matches)
             this.store.softDeleteMemory(memory.id);
         return matches.length;

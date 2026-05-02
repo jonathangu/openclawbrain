@@ -10,6 +10,7 @@ export interface MemoryStoreOptions {
 export declare class MemoryStore {
     private db;
     private dbPath;
+    private ownerAgentId;
     constructor(options: MemoryStoreOptions);
     private migrate;
     close(): void;
@@ -47,7 +48,7 @@ export declare class MemoryStore {
         runId?: string;
         turnId?: string;
         sessionId?: string;
-    }): void;
+    }): number;
     getPendingInjections(agentId: string): InjectionEvent[];
     getInjectionsForRouteDecision(routeDecisionId: string): InjectionEvent[];
     insertRouteDecision(decision: Omit<RouteDecision, 'id' | 'createdAt'> & {

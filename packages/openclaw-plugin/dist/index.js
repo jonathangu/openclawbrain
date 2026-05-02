@@ -16,7 +16,7 @@ import { RouteLearning } from './route-learning.js';
 import { auditPayload, buildMemoryCorpusSupplement, buildMemoryPromptSupplement, explainLastPayload, graphPayload, learnPayload, searchPayload } from './search.js';
 import { buildStatus } from './status.js';
 import { nativeSqliteSmokeTest } from './native-sqlite.js';
-import { clipText, eventId, hashText, latestUserTextFromEvent, redactText, safeString } from './redact.js';
+import { clipText, eventId, hashText, latestUserTextFromEvent, redactJsonValue, redactText, safeString } from './redact.js';
 import { RouteFn } from './route-fn.js';
 import { detectCaptureIntent, detectRetrievalIntent } from './capture-intent.js';
 import { scopeContextFromPacket } from './scope.js';
@@ -549,7 +549,7 @@ async function handleAfterToolCall(event = {}, config = {}, api = {}) {
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     const queue = new JobQueue({ store });
     const packet = new CaptureOrchestrator().fromAfterToolCall(event, config);
-    if (!packet.runId && !packet.turnId) {
+    if (!packet.runId || !packet.turnId) {
         store.close();
         return {};
     }
@@ -584,6 +584,9 @@ async function processBackgroundJobsForAgent(config = {}, api = {}, agentId = 'm
         }
         else if (job?.kind === 'route_learning') {
             learningReport = { ...routeLearning.run(agentId), lastRunAt: new Date().toISOString() };
+        }
+        else if (job) {
+            throw new Error(`unsupported_job_kind:${job.kind}`);
         }
         if (!job) {
             learningReport = learner.runMaintenance(agentId);
@@ -633,7 +636,7 @@ async function runFeedbackDistillation(packet, config, store, context = {}) {
         promptVersion: 'feedback-distiller-v1',
         inputHash: result.audit.inputHash,
         redactedInputSummary: result.audit.redactedInputSummary,
-        outputJson: config.privacy?.storeDistillationOutputs === false ? JSON.stringify({ stored: false, reason: 'storeDistillationOutputs=false' }) : JSON.stringify(result.output),
+        outputJson: config.privacy?.storeDistillationOutputs === false ? JSON.stringify({ stored: false, reason: 'storeDistillationOutputs=false' }) : JSON.stringify(redactJsonValue(result.output)),
         validationStatus: result.audit.validationStatus,
         validationError: result.audit.validationError || result.audit.parseError,
         latencyMs: result.audit.latencyMs,
@@ -654,7 +657,7 @@ async function runFeedbackDistillation(packet, config, store, context = {}) {
         storedCount: applied?.storedCandidates ?? 0,
         rejectedCount: (applied?.rejectedCandidates ?? 0) + (result.output.shouldStore ? 0 : 1),
         rejectionReasons: [...new Set([...(applied?.rejectionReasons ?? []), ...(result.output.audit.rejectionReasons ?? [result.output.audit.modelReasonCode])])],
-        safeCandidatePreview: result.output.audit.safeCandidatePreview,
+        safeCandidatePreview: config.privacy?.storeDistillationOutputs === false ? undefined : redactText(result.output.audit.safeCandidatePreview || '', 500),
         evidenceHash: String(packet.metadata.promptHash || ''),
     });
     return applied;
@@ -784,7 +787,16 @@ function shouldAllowRouting(config) {
 function isLoopbackUrl(value) {
     try {
         const url = new URL(value);
-        return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname);
+        if (!['http:', 'https:'].includes(url.protocol))
+            return false;
+        const host = url.hostname.replace(/\.$/, '').toLowerCase();
+        if (host === 'localhost' || host === '::1' || host === '[::1]')
+            return true;
+        if (/^127(?:\.\d{1,3}){3}$/.test(host))
+            return true;
+        if (host === '::ffff:127.0.0.1' || host === '[::ffff:127.0.0.1]')
+            return true;
+        return false;
     }
     catch {
         return false;

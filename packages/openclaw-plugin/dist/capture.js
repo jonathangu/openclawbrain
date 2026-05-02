@@ -51,6 +51,12 @@ function basePacket(event = {}, config = {}, sourceHook) {
             trigger: safeString(ctx.trigger ?? event.trigger ?? ''),
             channelId: safeString(ctx.channelId ?? event.channelId ?? event.channel_id ?? ''),
             messageProvider: safeString(ctx.messageProvider ?? event.messageProvider ?? event.message_provider ?? ''),
+            repo: safeString(ctx.repo ?? ctx.repository ?? event.repo ?? event.repository ?? ''),
+            project: safeString(ctx.project ?? event.project ?? ''),
+            app: safeString(ctx.app ?? event.app ?? ''),
+            task: safeString(ctx.task ?? ctx.taskId ?? event.task ?? event.taskId ?? event.task_id ?? ''),
+            tool: safeString(ctx.tool ?? event.tool ?? event.toolName ?? event.tool_name ?? ''),
+            person: safeString(ctx.person ?? event.person ?? ''),
         },
     };
 }

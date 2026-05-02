@@ -57,7 +57,7 @@ test('route fn can capture without retrieval for future-facing preferences', () 
 });
 
 test('fallback extracts scoped workflows, routing rules, and user-authorized recall rules', async () => {
-  const config = normalizePluginConfig({ enabled: true, llm: { enabled: true, feedbackModel: 'fake' } });
+  const config = normalizePluginConfig({ enabled: true, llm: { enabled: true, feedbackModel: 'fake', allowedModels: ['fake'] } });
   const distiller = new FeedbackDistiller({ client: new FakeLlmClient({ handler: () => { throw new Error('force fallback'); } }), config });
 
   const workflow = await distiller.distill(packet('Going forward, check plugin logs before guessing.'));
@@ -168,6 +168,10 @@ test('recall rules store narrowly and only reveal values for recall-value reques
     const recallSelection = new ContextSelector(config).select({ packet: packet('What is the CormorantAI app codeword?'), plan: recallPlan, candidates: memories, store });
     assert.equal(recallSelection.shouldInject, true);
     assert.match(recallSelection.distilledContext, /Authorized answer: Blue Heron/);
+
+    const genericPlan = new RouteFn({ config }).plan(packet('What is the codeword?'));
+    const genericSelection = new ContextSelector(config).select({ packet: packet('What is the codeword?'), plan: genericPlan, candidates: memories, store });
+    assert.equal(genericSelection.shouldInject, false);
     store.close();
   } finally {
     await rm(root, { recursive: true, force: true });

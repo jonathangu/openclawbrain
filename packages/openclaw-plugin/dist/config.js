@@ -20,7 +20,7 @@ export const DEFAULT_CONFIG = Object.freeze({
         plannerModel: 'qwen2.5:32b-instruct',
         feedbackModel: 'qwen2.5:32b-instruct',
         learningModel: 'qwen2.5:32b-instruct',
-        baseUrl: 'http://127.0.0.1:11434/v1',
+        baseUrl: 'http://localhost:11434/v1',
         allowRemoteLlm: false,
         allowedModels: Object.freeze(['qwen2.5:32b-instruct', 'qwen3.5:9b', 'qwen3.5:35b-a3b', 'gemma4:31b']),
         temperature: 0,

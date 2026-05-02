@@ -175,6 +175,24 @@ test('list and count memories', async () => {
   }
 });
 
+test('scoped memories fail closed when context is absent', async () => {
+  const root = await tempRoot();
+  try {
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    store.insertMemory({
+      agentId: 'main', type: 'workflow', content: 'CormorantAI release workflow',
+      scopeKind: 'app', scopeKey: 'CormorantAI', normalizedKey: 'app:cormorantai:workflow',
+      tags: ['cormorantai'], importance: 0.8, freshness: 1.0, confidence: 0.9,
+      useCount: 0, usefulCount: 0, captureCount: 1,
+    });
+    assert.equal(store.searchMemories('CormorantAI', 'main', { limit: 10, scopeContext: { agentId: 'main' } }).length, 0);
+    assert.equal(store.searchMemories('CormorantAI', 'main', { limit: 10, scopeContext: { agentId: 'main', app: 'CormorantAI' } }).length, 1);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 // ── Memory edges ──────────────────────────────────────────────────────────────
 
 test('insert and upsert edges', async () => {
@@ -330,6 +348,22 @@ test('enqueue, claim, complete jobs', async () => {
     // no more jobs
     const noJob = store.claimNextJob();
     assert.equal(noJob, null);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('job queue dedupes correlated capture jobs and rejects cross-agent enqueue', async () => {
+  const root = await tempRoot();
+  try {
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const payload = { packet: { runId: 'r1', turnId: 't1', metadata: { promptHash: 'h1' } } };
+    const first = store.enqueueJob({ agentId: 'main', kind: 'feedback_distillation', priority: 5, payload, maxAttempts: 3, availableAt: now() });
+    const second = store.enqueueJob({ agentId: 'main', kind: 'feedback_distillation', priority: 5, payload, maxAttempts: 3, availableAt: now() });
+    assert.equal(first.id, second.id);
+    assert.equal(store.getJobQueueDepth('main'), 1);
+    assert.throws(() => store.enqueueJob({ agentId: 'other', kind: 'route_learning', priority: 1, payload: {}, maxAttempts: 1, availableAt: now() }), /job_agent_mismatch/);
     store.close();
   } finally {
     await rm(root, { recursive: true, force: true });

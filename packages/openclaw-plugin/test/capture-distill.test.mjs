@@ -66,7 +66,7 @@ test("don't forget is treated as explicit memory language, not destructive forge
 });
 
 test('feedback distiller fallback returns no-op distillation', async () => {
-  const config = normalizePluginConfig({ enabled: true, llm: { enabled: true, feedbackModel: 'fake' } });
+  const config = normalizePluginConfig({ enabled: true, llm: { enabled: true, feedbackModel: 'fake', allowedModels: ['fake'] } });
   const distiller = new FeedbackDistiller({
     client: new FakeLlmClient({ handler: () => { throw new Error('boom'); } }),
     config,
@@ -84,7 +84,7 @@ test('feedback distiller fallback returns no-op distillation', async () => {
 });
 
 test('feedback distiller fallback does not store codewords', async () => {
-  const config = normalizePluginConfig({ enabled: true, llm: { enabled: true, feedbackModel: 'fake' } });
+  const config = normalizePluginConfig({ enabled: true, llm: { enabled: true, feedbackModel: 'fake', allowedModels: ['fake'] } });
   const distiller = new FeedbackDistiller({
     client: new FakeLlmClient({ handler: () => { throw new Error('boom'); } }),
     config,
@@ -105,7 +105,7 @@ test('feedback distiller fallback does not store codewords', async () => {
 test('memory operation applier creates and updates memories and resolves injections', async () => {
   const root = await tempRoot();
   try {
-    const config = normalizePluginConfig({ enabled: true, capture: { minConfidence: 0.7 }, llm: { feedbackModel: 'fake' } });
+    const config = normalizePluginConfig({ enabled: true, capture: { minConfidence: 0.7 }, llm: { feedbackModel: 'fake', allowedModels: ['fake'] } });
     const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
     const injectionMemory = store.insertMemory({
       agentId: 'main',
@@ -167,7 +167,7 @@ test('memory operation applier creates and updates memories and resolves injecti
       sourceHook: 'agent_end',
       latestUserMessageRedacted: 'use pnpm',
       toolObservations: [],
-      recentInjections: [],
+      recentInjections: [{ injectionId: injection.id, memoryId: injection.memoryId }],
       metadata: { promptHash: 'h1' },
     });
 

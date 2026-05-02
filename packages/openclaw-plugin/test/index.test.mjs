@@ -30,7 +30,7 @@ test('config defaults on and ignores root openclawbrain config', () => {
   });
   assert.equal(config.enabled, true);
   assert.equal(config.mode, 'balanced');
-  assert.equal(config.llm.baseUrl, 'http://127.0.0.1:11434/v1');
+  assert.equal(config.llm.baseUrl, 'http://localhost:11434/v1');
   assert.equal(config.llm.routeModel, 'qwen2.5:32b-instruct');
   assert.deepEqual(config.scopes.agents, ['main']);
   assert.equal(config.hooks.allowPromptContext, true);

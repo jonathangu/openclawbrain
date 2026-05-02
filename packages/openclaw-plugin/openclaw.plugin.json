@@ -1,7 +1,7 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "description": "Aggressive-but-safe local memory graph for OpenClaw: conservative retrieval, audited capture, strict scoped storage, bounded injection, and SQLite proof surfaces.",
   "activation": {
     "onStartup": true
@@ -124,7 +124,7 @@
           },
           "baseUrl": {
             "type": "string",
-            "default": "http://127.0.0.1:11434/v1"
+            "default": "http://localhost:11434/v1"
           },
           "allowedModels": {
             "type": "array",
@@ -149,6 +149,11 @@
             "minimum": 1,
             "maximum": 100000,
             "default": 1200
+          },
+          "allowRemoteLlm": {
+            "type": "boolean",
+            "default": false,
+            "description": "Allow non-loopback OpenAI-compatible LLM endpoints. Defaults false for privacy."
           }
         },
         "default": {
@@ -157,7 +162,7 @@
           "plannerModel": "qwen2.5:32b-instruct",
           "feedbackModel": "qwen2.5:32b-instruct",
           "learningModel": "qwen2.5:32b-instruct",
-          "baseUrl": "http://127.0.0.1:11434/v1",
+          "baseUrl": "http://localhost:11434/v1",
           "allowedModels": [
             "qwen2.5:32b-instruct",
             "qwen3.5:9b",
@@ -165,7 +170,8 @@
             "gemma4:31b"
           ],
           "temperature": 0,
-          "maxTokens": 1200
+          "maxTokens": 1200,
+          "allowRemoteLlm": false
         }
       },
       "latency": {

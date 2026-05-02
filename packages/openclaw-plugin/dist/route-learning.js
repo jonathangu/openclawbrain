@@ -154,10 +154,14 @@ function maybeBuildPolicySnapshot(store, agentId, config) {
             : `- No strong negative route examples yet.`,
         `- Keep synchronous planner usage bounded; fall back to cached/local routing when confidence is high.`,
     ];
+    const selectedExampleIds = [...positive, ...negative].map((example) => example.id);
+    const policyText = lines.join('\n');
+    if (existing && existing.policyText === policyText && JSON.stringify(existing.examples || []) === JSON.stringify(selectedExampleIds))
+        return existing;
     return store.insertPolicySnapshot({
         agentId,
-        policyText: lines.join('\n'),
-        examples: [...positive, ...negative].map((example) => example.id),
+        policyText,
+        examples: selectedExampleIds,
         model: config.llm?.learningModel || 'deterministic',
         promptVersion: 'route-learning-v1',
         active: true,
