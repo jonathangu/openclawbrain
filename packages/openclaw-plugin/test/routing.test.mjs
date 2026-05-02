@@ -65,6 +65,21 @@ test('route fn plans broader retrieval for implementation planning', () => {
   assert.ok(plan.retrievalPlan.memoryTypes.includes('workflow'));
 });
 
+test('route fn enqueues capture for explicit remember requests', () => {
+  const routeFn = new RouteFn({ config });
+  const plan = routeFn.plan({
+    agentId: 'main',
+    sourceHook: 'before_prompt_build',
+    latestUserMessageRedacted: 'Remember that this project uses pnpm for tests',
+    toolObservations: [],
+    recentInjections: [],
+    metadata: { turnType: 'correction' },
+  });
+  assert.equal(plan.route, 'retrieve_memory');
+  assert.equal(plan.shouldRetrieve, true);
+  assert.equal(plan.enqueueCapture, true);
+});
+
 test('route cache reuses the prior plan for the same fingerprint', () => {
   const cache = new RouteCache();
   const routeFn = new RouteFn({ config, cache });

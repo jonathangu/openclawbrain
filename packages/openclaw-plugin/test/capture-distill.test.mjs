@@ -65,6 +65,25 @@ test('feedback distiller fallback returns no-op distillation', async () => {
   assert.equal(result.audit.fallbackUsed, true);
 });
 
+test('feedback distiller fallback does not store codewords', async () => {
+  const config = normalizePluginConfig({ enabled: true, llm: { enabled: true, feedbackModel: 'fake' } });
+  const distiller = new FeedbackDistiller({
+    client: new FakeLlmClient({ handler: () => { throw new Error('boom'); } }),
+    config,
+  });
+  const result = await distiller.distill({
+    agentId: 'main',
+    sourceHook: 'agent_end',
+    latestUserMessageRedacted: 'Remember that the app has a special codeword: [redacted-secret]',
+    toolObservations: [],
+    recentInjections: [],
+    metadata: {},
+  });
+  assert.equal(result.output.shouldStore, false);
+  assert.equal(result.output.memoryCandidates.length, 0);
+  assert.equal(result.output.audit.modelReasonCode, 'sensitive_codeword_not_stored');
+});
+
 test('memory operation applier creates and updates memories and resolves injections', async () => {
   const root = await tempRoot();
   try {

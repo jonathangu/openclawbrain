@@ -58,7 +58,7 @@ export class RouteFn {
                 retrievalPlan: cached.retrievalPlan,
                 injectionPlan: cached.injectionPlan,
                 shouldRetrieve: cached.route === 'retrieve_memory' || cached.route === 'retrieve_and_distill' || cached.route === 'high_confidence_correction_only',
-                enqueueCapture: fingerprint.explicitCorrectionCue,
+                enqueueCapture: fingerprint.explicitCorrectionCue || fingerprint.explicitMemoryReference,
                 latencyReason: 'cached route plan',
                 policySnapshotId: this.store?.getActivePolicySnapshot?.(packet.agentId)?.id,
             };
@@ -138,7 +138,7 @@ function heuristicRoutePlan(packet, turnFrame, config, policySnapshot) {
         retrievalPlan,
         injectionPlan,
         shouldRetrieve: route !== 'no_memory',
-        enqueueCapture: explicitCorrectionCue,
+        enqueueCapture: explicitCorrectionCue || explicitMemoryReference,
         latencyReason: policySnapshot ? 'heuristic with policy snapshot' : 'heuristic uncached route',
         policySnapshotId: policySnapshot?.id,
     };
@@ -191,7 +191,7 @@ function buildPolicyEnrichedRoute(packet, turnFrame, config, route, confidence, 
             preferredFormat: explicitCorrectionCue ? 'rules' : 'bullets',
         },
         shouldRetrieve: route !== 'no_memory',
-        enqueueCapture: explicitCorrectionCue,
+        enqueueCapture: explicitCorrectionCue || /\b(as before|same as last time|remember|we discussed before)\b/i.test(packet.latestUserMessageRedacted),
         latencyReason: 'heuristic with policy snapshot',
     };
 }

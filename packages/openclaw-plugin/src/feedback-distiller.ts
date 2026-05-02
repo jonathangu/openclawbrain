@@ -16,7 +16,7 @@ Durable feedback includes:
 - user requests to delete/suppress memory
 
 Exclude from storage:
-- secrets, API keys, passwords, credentials
+- secrets, API keys, passwords, credentials, codewords, passphrases, authentication phrases
 - raw transcript text
 - one-off requests
 - assistant claims not supported by user/tool evidence
@@ -141,6 +141,10 @@ function explicitCorrectionFallback(packet: TurnEventPacket): FeedbackDistillati
   const lower = text.toLowerCase();
   if (/\b(delete|suppress|forget|do not remember|don't remember)\b/.test(lower)) {
     return emptyDistillation('delete_or_suppress_requested');
+  }
+
+  if (/\b(codeword|passphrase|password|secret phrase|authentication phrase|auth phrase)\b/i.test(text)) {
+    return emptyDistillation('sensitive_codeword_not_stored');
   }
 
   const correctionCue = /\b(actually|correction|instead|wrong|use\b.+\binstead of\b|remember)\b/i.test(text);
