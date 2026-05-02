@@ -74,6 +74,9 @@ function basePacket(event: any = {}, config: any = {}, sourceHook: string): Turn
       redactedPacket: true,
       turnType: safeString(event.turnType ?? event.turn_type ?? ''),
       profileId: safeString(ctx.profile ?? event.profile ?? ''),
+      trigger: safeString(ctx.trigger ?? event.trigger ?? ''),
+      channelId: safeString(ctx.channelId ?? event.channelId ?? event.channel_id ?? ''),
+      messageProvider: safeString(ctx.messageProvider ?? event.messageProvider ?? event.message_provider ?? ''),
     },
   };
 }

@@ -259,3 +259,51 @@ test('before_prompt_build prompt text is captured for memory routing', async () 
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('registered typed hook preserves OpenClaw ctx and suppresses synthetic heartbeat capture', async () => {
+  const root = await tempRoot();
+  try {
+    const calls = [];
+    plugin.register({
+      pluginConfig: {
+        enabled: true,
+        mode: 'balanced',
+        activationRoot: root,
+        llm: { enabled: false },
+        routing: { enabled: true },
+        learning: { enabled: false },
+      },
+      on: (name, fn) => calls.push([name, fn]),
+      registerHttpRoute() {},
+      registerService() {},
+      supportsHook: () => false,
+      logger: { debug() {}, warn() {} },
+    });
+    const hook = calls.find(([name]) => name === 'before_prompt_build')[1];
+    await hook(
+      { prompt: 'Remember that I prefer concise Telegram replies.' },
+      { agentId: 'main', sessionKey: 'agent:main:abc', sessionId: 'session-abc', runId: 'run-abc', trigger: 'user', messageProvider: 'telegram' },
+    );
+
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    let audit = store.listCaptureAudit('main', 10);
+    assert.equal(audit[0].sessionId, 'session-abc');
+    assert.equal(audit[0].runId, 'run-abc');
+    assert.equal(audit[0].captureIntent.intent, 'explicit_store');
+    assert.equal(audit[0].captureJobCreated, true);
+
+    await hook(
+      { prompt: 'Read HEARTBEAT.md if it exists. Do not infer or repeat old tasks.' },
+      { agentId: 'main', sessionKey: 'agent:main:abc', sessionId: 'session-abc', runId: 'run-heartbeat', trigger: 'heartbeat' },
+    );
+    audit = store.listCaptureAudit('main', 10);
+    assert.equal(audit[0].runId, 'run-heartbeat');
+    assert.equal(audit[0].captureIntent.intent, 'one_off');
+    assert.equal(audit[0].captureIntent.shouldConsiderCapture, false);
+    assert.equal(audit[0].captureJobCreated, false);
+    assert.match(audit[0].rejectionReasons.join(' '), /System-generated heartbeat prompt/);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

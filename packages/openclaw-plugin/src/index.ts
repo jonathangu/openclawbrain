@@ -125,7 +125,7 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
   const packet = new CaptureOrchestrator().fromBeforePromptBuild(event, config);
   const routeFn = new RouteFn({ config, store });
   const contextSelector = new ContextSelector(config);
-  const initialPlan = routeFn.plan(packet);
+  const initialPlan = suppressSyntheticCapture(routeFn.plan(packet), packet);
   const initialCandidates = initialPlan.shouldRetrieve
     ? retrieveCandidates(store, packet.agentId, initialPlan.retrievalPlan.queries, initialPlan.retrievalPlan.memoryTypes, initialPlan.retrievalPlan.maxCandidates)
     : [];
@@ -243,20 +243,20 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
 }
 
 function registerPromptHooks(api: any, resolve: any) {
-  safeRegisterHook(api, 'before_prompt_build', async (event = {}) => handleTurnHook(event, resolve(), api, 'before_prompt_build'));
-  safeRegisterOptionalHook(api, 'agent_turn_prepare', async (event = {}) => handleTurnHook(event, resolve(), api, 'agent_turn_prepare'));
+  safeRegisterHook(api, 'before_prompt_build', async (event = {}, ctx = {}) => handleTurnHook(withHookContext(event, ctx), resolve(), api, 'before_prompt_build'));
+  safeRegisterOptionalHook(api, 'agent_turn_prepare', async (event = {}, ctx = {}) => handleTurnHook(withHookContext(event, ctx), resolve(), api, 'agent_turn_prepare'));
 }
 
 function registerLifecycleHooks(api: any, resolve: any) {
-  safeRegisterHook(api, 'model_call_started', async (event = {}) => writeTelemetryEvent('model_call_started', event, resolve(), api));
-  safeRegisterHook(api, 'model_call_ended', async (event = {}) => writeTelemetryEvent('model_call_ended', event, resolve(), api));
-  safeRegisterHook(api, 'gateway_start', async (event = {}) => writeGatewayStatus('gateway_start', event, resolve(), api));
-  safeRegisterHook(api, 'gateway_stop', async (event = {}) => writeGatewayStatus('gateway_stop', event, resolve(), api));
+  safeRegisterHook(api, 'model_call_started', async (event = {}, ctx = {}) => writeTelemetryEvent('model_call_started', withHookContext(event, ctx), resolve(), api));
+  safeRegisterHook(api, 'model_call_ended', async (event = {}, ctx = {}) => writeTelemetryEvent('model_call_ended', withHookContext(event, ctx), resolve(), api));
+  safeRegisterHook(api, 'gateway_start', async (event = {}, ctx = {}) => writeGatewayStatus('gateway_start', withHookContext(event, ctx), resolve(), api));
+  safeRegisterHook(api, 'gateway_stop', async (event = {}, ctx = {}) => writeGatewayStatus('gateway_stop', withHookContext(event, ctx), resolve(), api));
   if (resolve().hooks.allowConversationAccess === true) {
-    safeRegisterOptionalHook(api, 'agent_end', async (event = {}) => handleAgentEnd(event, resolve(), api));
+    safeRegisterOptionalHook(api, 'agent_end', async (event = {}, ctx = {}) => handleAgentEnd(withHookContext(event, ctx), resolve(), api));
   }
   if (resolve().capture?.enabled === true || resolve().learning?.enabled === true) {
-    safeRegisterOptionalHook(api, 'after_tool_call', async (event = {}) => handleAfterToolCall(event, resolve(), api));
+    safeRegisterOptionalHook(api, 'after_tool_call', async (event = {}, ctx = {}) => handleAfterToolCall(withHookContext(event, ctx), resolve(), api));
   }
 }
 
@@ -702,6 +702,39 @@ function estimateTaskValue(message: string): 'low' | 'medium' | 'high' {
   if (/\b(architecture|implementation|debug|production|repo|build|design|plan)\b/.test(lower)) return 'high';
   if (/\b(install|dependency|test|setup|continue)\b/.test(lower)) return 'medium';
   return 'low';
+}
+
+function withHookContext(event: any = {}, ctx: any = {}) {
+  if (!ctx || typeof ctx !== 'object' || Object.keys(ctx).length === 0) return event || {};
+  const base = event && typeof event === 'object' ? event : {};
+  const existingCtx = base.ctx && typeof base.ctx === 'object' ? base.ctx : {};
+  const mergedCtx = { ...ctx, ...existingCtx };
+  return {
+    ...base,
+    ctx: mergedCtx,
+    agentId: base.agentId ?? base.agent_id ?? mergedCtx.agentId,
+    sessionKey: base.sessionKey ?? base.session_key ?? mergedCtx.sessionKey,
+    sessionId: base.sessionId ?? base.session_id ?? mergedCtx.sessionId,
+    runId: base.runId ?? base.run_id ?? mergedCtx.runId,
+  };
+}
+
+function suppressSyntheticCapture(plan: any, packet: any) {
+  const trigger = String(packet?.metadata?.trigger || '').toLowerCase();
+  if (trigger !== 'heartbeat' && trigger !== 'cron') return plan;
+  return {
+    ...plan,
+    route: plan.route === 'capture_only' ? 'no_memory' : plan.route,
+    enqueueCapture: false,
+    captureIntent: {
+      ...plan.captureIntent,
+      shouldConsiderCapture: false,
+      intent: 'one_off',
+      confidence: Math.max(0.9, Number(plan.captureIntent?.confidence || 0)),
+      reason: `System-generated ${trigger} prompt; capture disabled`,
+      matchedSignals: [],
+    },
+  };
 }
 
 function safeRegisterHook(api: any, name: string, handler: any) {
