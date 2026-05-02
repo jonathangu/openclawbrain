@@ -114,6 +114,21 @@ function rankCandidates(packet: TurnEventPacket, plan: RoutePlan, candidates: Me
       reason = 'tool_guidance';
       useHow = 'consider';
     }
+    if (memory.type === 'agent_assignment') {
+      score += 0.2;
+      reason = 'tool_guidance';
+      useHow = 'must_follow';
+    }
+    if (memory.type === 'project_fact') {
+      score += 0.12;
+      reason = 'supporting_context';
+      useHow = 'consider';
+    }
+    if (memory.type === 'outcome') {
+      score += 0.1;
+      reason = 'supporting_context';
+      useHow = 'consider';
+    }
     if (memory.type === 'recall_rule') {
       if (/\b(codeword|phrase|answer|what is|what's|tell me|give me)\b/.test(lower)) {
         score += 0.35;
@@ -147,10 +162,14 @@ function formatMemoryLine(memory: MemoryNode, reason: ContextSelection['selected
     case 'repo_workflow':
       return `Workflow: ${memory.content}`;
     case 'tool_guidance':
-      return `Tool guidance: ${memory.content}`;
+      if (memory.type === 'routing_rule') return `Routing rule: ${memory.content}`;
+      if (memory.type === 'agent_assignment') return `Agent assignment: ${memory.content}`;
+      return `Tool convention: ${memory.content}`;
     case 'contradiction_resolution':
       return `Latest correction: ${memory.content}`;
     default:
+      if (memory.type === 'project_fact') return `Project fact: ${memory.content}`;
+      if (memory.type === 'outcome') return `Prior outcome: ${memory.content}`;
       return memory.content;
   }
 }

@@ -200,11 +200,17 @@ function explicitFallback(packet: TurnEventPacket, context: Required<DistillCont
   const routing = buildRoutingCandidate(text, captureIntent);
   if (routing) return withCandidate(routing, 0.8, 'standing_instruction', 'fallback_pattern:routing');
 
+  const assignment = buildAgentAssignmentCandidate(text, captureIntent);
+  if (assignment) return withCandidate(assignment, 0.78, 'standing_instruction', 'fallback_pattern:agent_assignment');
+
   const preference = buildPreferenceCandidate(text, captureIntent);
   if (preference) return withCandidate(preference, 0.78, 'preference', 'fallback_pattern:preference');
 
   const workflow = buildWorkflowCandidate(text, captureIntent);
   if (workflow) return withCandidate(workflow, 0.76, 'workflow', 'fallback_pattern:workflow');
+
+  const outcome = buildOutcomeCandidate(text, captureIntent);
+  if (outcome) return withCandidate(outcome, 0.72, 'outcome', 'fallback_pattern:outcome');
 
   const projectFact = buildProjectFactCandidate(text, captureIntent);
   if (projectFact) return withCandidate(projectFact, 0.76, 'context', 'fallback_pattern:project_fact');
@@ -275,6 +281,33 @@ function buildRoutingCandidate(text: string, captureIntent: CaptureIntentResult)
     ? `Use the ${source} agent for ${target}.`
     : `Route ${source} to ${target}.`;
   return candidate('routing_rule', textOut, `${scope.key || source} routing`, scope, `routing:${scope.kind}:${scope.key || slug(source)}:${slug(source + ' to ' + target).slice(0, 64)}`, ['routing_rule', ...extractTags(`${source} ${target}`)], 0.8, 0.86);
+}
+
+function buildAgentAssignmentCandidate(text: string, captureIntent: CaptureIntentResult): MemoryCandidate | null {
+  const match = text.match(/\b(.{2,120}?)\s+(?:agent\s+)?owns\s+(.{2,160}?)(?:[.!?]|$)/i)
+    || text.match(/\b(.{2,120}?)\s+is responsible for\s+(.{2,160}?)(?:[.!?]|$)/i)
+    || text.match(/\b(.{2,120}?)\s+approves\s+(.{2,160}?)(?:[.!?]|$)/i);
+  if (!match) return null;
+  const owner = cleanFragment(match[1]);
+  const responsibility = cleanFragment(match[2]);
+  if (!owner || !responsibility) return null;
+  const scope = captureIntent.proposedScope || { kind: 'agent', key: slug(owner) || 'current_agent' };
+  return candidate('agent_assignment', `${owner} owns/responsible for ${responsibility}.`, `${owner} assignment`, scope, `assignment:${scope.kind}:${scope.key || slug(owner)}:${slug(responsibility).slice(0, 64)}`, ['agent_assignment', ...extractTags(`${owner} ${responsibility}`)], 0.78, 0.78);
+}
+
+function buildOutcomeCandidate(text: string, captureIntent: CaptureIntentResult): MemoryCandidate | null {
+  const match = text.match(/\b(that worked|that fixed it|that failed|that broke|this was the right command|this is the working command)\b(?::|,)?\s*(.{0,220}?)(?:[.!?]|$)/i);
+  if (!match) return null;
+  const signal = cleanFragment(match[1]);
+  const detail = cleanFragment(match[2] || '');
+  const scope = captureIntent.proposedScope || { kind: 'project', key: 'current_project' };
+  const positive = /worked|fixed|right command|working command/i.test(signal);
+  const content = detail ? `${signal}: ${detail}.` : `${signal}.`;
+  return {
+    ...candidate('outcome', content, 'Tool/workflow outcome', scope, `outcome:${scope.kind}:${scope.key || 'current'}:${slug(content).slice(0, 64)}`, ['outcome', positive ? 'positive_outcome' : 'negative_outcome', ...extractTags(content)], 0.72, positive ? 0.72 : 0.68),
+    positive: positive ? detail || signal : undefined,
+    negative: positive ? undefined : detail || signal,
+  };
 }
 
 function buildProjectFactCandidate(text: string, captureIntent: CaptureIntentResult): MemoryCandidate | null {

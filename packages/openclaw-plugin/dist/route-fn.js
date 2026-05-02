@@ -172,7 +172,7 @@ function applyPolicySnapshot(packet, turnFrame, policySnapshot) {
         boost.route = 'no_memory';
         boost.confidence = 0.7;
     }
-    const typeMatches = taskTypeLine.match(/\b(correction|preference|workflow|context|project_fact|tool_convention|routing_rule|recall_rule)\b/gi);
+    const typeMatches = taskTypeLine.match(/\b(correction|preference|workflow|context|project_fact|tool_convention|routing_rule|agent_assignment|recall_rule|outcome)\b/gi);
     if (typeMatches)
         boost.memoryTypes = [...new Set(typeMatches.map(t => t.toLowerCase()))];
     if (/planning/.test(taskType))
@@ -188,7 +188,7 @@ function memoryTypesForTurn(route, retrievalIntent, captureIntent, lower, planni
         return ['correction'];
     const types = new Set(retrievalIntent.memoryTypes);
     if (planningLike)
-        ['correction', 'preference', 'workflow', 'project_fact', 'tool_convention', 'routing_rule', 'context'].forEach((t) => types.add(t));
+        ['correction', 'preference', 'workflow', 'project_fact', 'tool_convention', 'routing_rule', 'agent_assignment', 'outcome', 'context'].forEach((t) => types.add(t));
     if (/\b(install|dependency|dependencies|pnpm|npm|yarn|build|test|setup)\b/.test(lower))
         ['correction', 'workflow', 'tool_convention'].forEach((t) => types.add(t));
     if (captureIntent.intent === 'routing_rule')

@@ -91,6 +91,7 @@ export declare class MemoryStore {
         captureCountDelta?: number;
     }): MemoryNode | null;
     pruneMemories(agentId: string, maxNodes: number): number;
+    consolidateMemories(agentId: string, limit?: number): number;
     decayFreshness(agentId: string, decayPerDay?: number): number;
     getRouteExamplesByPolarity(agentId: string, polarity: 'positive' | 'negative', limit?: number): any[];
     getConnectedMemories(memoryId: string, maxDepth?: number): MemoryNode[];

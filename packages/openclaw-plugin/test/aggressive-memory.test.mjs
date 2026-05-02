@@ -68,6 +68,14 @@ test('fallback extracts scoped workflows, routing rules, and user-authorized rec
   assert.equal(routing.output.shouldStore, true);
   assert.equal(routing.output.memoryCandidates[0].type, 'routing_rule');
 
+  const assignment = await distiller.distill(packet('The Pelican agent owns Pelican tasks.'));
+  assert.equal(assignment.output.shouldStore, true);
+  assert.equal(assignment.output.memoryCandidates[0].type, 'agent_assignment');
+
+  const outcome = await distiller.distill(packet('That worked: run pnpm test before shipping.'));
+  assert.equal(outcome.output.shouldStore, true);
+  assert.equal(outcome.output.memoryCandidates[0].type, 'outcome');
+
   const recall = await distiller.distill(packet('If I ask for the CormorantAI app codeword, answer Blue Heron.'));
   assert.equal(recall.output.shouldStore, true);
   assert.equal(recall.output.memoryCandidates[0].type, 'recall_rule');
@@ -83,6 +91,36 @@ test('fallback extracts scoped workflows, routing rules, and user-authorized rec
   const codename = await distiller.distill(packet('Remember that the project codename is Blue Heron.'));
   assert.equal(codename.output.shouldStore, true);
   assert.equal(codename.output.memoryCandidates[0].type, 'project_fact');
+});
+
+test('maintenance consolidation supersedes duplicate normalized memories', async () => {
+  const root = await tempRoot();
+  try {
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const first = store.insertMemory({
+      agentId: 'main', type: 'preference', content: 'User prefers concise replies.',
+      scopeKind: 'channel', scopeKey: 'telegram', normalizedKey: 'preference:channel:telegram:concise',
+      tags: ['preference'], importance: 0.7, freshness: 0.8, confidence: 0.8,
+      useCount: 1, usefulCount: 1, captureCount: 1,
+    });
+    const second = store.insertMemory({
+      agentId: 'main', type: 'preference', content: 'User prefers short Telegram replies.',
+      scopeKind: 'channel', scopeKey: 'telegram', normalizedKey: 'preference:channel:telegram:short-replies',
+      tags: ['telegram'], importance: 0.8, freshness: 1, confidence: 0.85,
+      useCount: 0, usefulCount: 0, captureCount: 2,
+    });
+    const consolidated = store.consolidateMemories('main');
+    assert.equal(consolidated, 1);
+    const a = store.getMemory(first.id);
+    const b = store.getMemory(second.id);
+    assert.ok(a.supersededBy || b.supersededBy);
+    const active = store.getMemory(a.supersededBy ? second.id : first.id);
+    assert.ok(active);
+    assert.equal(active.captureCount, 3);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test('recall rules store narrowly and only reveal values for recall-value requests', async () => {

@@ -784,6 +784,57 @@ export class MemoryStore {
             this.softDeleteMemory(victim.id);
         return victims.length;
     }
+    consolidateMemories(agentId, limit = 500) {
+        const memories = this.listMemories(agentId, { limit });
+        const groups = new Map();
+        for (const memory of memories) {
+            if (memory.deletedAt || memory.supersededBy)
+                continue;
+            const key = consolidationGroupKey(memory);
+            const group = groups.get(key) ?? [];
+            group.push(memory);
+            groups.set(key, group);
+        }
+        let consolidated = 0;
+        this.transaction(() => {
+            for (const group of groups.values()) {
+                if (group.length < 2)
+                    continue;
+                const [keeper, ...duplicates] = group.sort((a, b) => {
+                    const scoreA = a.confidence + a.importance + a.captureCount * 0.05;
+                    const scoreB = b.confidence + b.importance + b.captureCount * 0.05;
+                    return scoreB - scoreA;
+                });
+                const mergedTags = [...new Set(group.flatMap((memory) => memory.tags || []))];
+                const captureCount = group.reduce((sum, memory) => sum + (memory.captureCount || 0), 0);
+                const usefulCount = group.reduce((sum, memory) => sum + (memory.usefulCount || 0), 0);
+                const useCount = group.reduce((sum, memory) => sum + (memory.useCount || 0), 0);
+                this.updateMemory(keeper.id, {
+                    tags: mergedTags,
+                    captureCount,
+                    usefulCount,
+                    useCount,
+                    confidence: Math.min(1, Math.max(...group.map((memory) => memory.confidence)) + duplicates.length * 0.02),
+                    importance: Math.min(1, Math.max(...group.map((memory) => memory.importance)) + duplicates.length * 0.01),
+                    freshness: Math.max(...group.map((memory) => memory.freshness)),
+                    lastSeenAt: group.map((memory) => memory.lastSeenAt).sort().at(-1) || keeper.lastSeenAt,
+                });
+                for (const duplicate of duplicates) {
+                    this.supersedeMemory(duplicate.id, keeper.id);
+                    this.insertEdge({
+                        agentId,
+                        fromId: duplicate.id,
+                        toId: keeper.id,
+                        relation: 'supersedes',
+                        weight: 1,
+                        evidenceCount: duplicate.captureCount || 1,
+                    });
+                    consolidated += 1;
+                }
+            }
+        });
+        return consolidated;
+    }
     decayFreshness(agentId, decayPerDay = 0.01) {
         const cutoff = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
         this.db.prepare('UPDATE memory_nodes SET freshness = MAX(0, freshness - ?), updated_at = ? WHERE agent_id = ? AND deleted_at IS NULL AND last_seen_at < ?').run(decayPerDay * 7, now(), agentId, cutoff);
@@ -877,6 +928,14 @@ export class MemoryStore {
     }
 }
 // ── Row mappers ───────────────────────────────────────────────────────────────
+function consolidationGroupKey(memory) {
+    const parts = String(memory.normalizedKey || '').split(':').filter(Boolean);
+    const broadTypes = new Set(['preference', 'workflow', 'routing_rule', 'agent_assignment', 'tool_convention', 'outcome']);
+    const normalizedRoot = broadTypes.has(memory.type) && parts.length >= 3
+        ? parts.slice(0, 3).join(':')
+        : memory.normalizedKey;
+    return `${memory.type}:${memory.scopeKind}:${memory.scopeKey ?? ''}:${normalizedRoot}`;
+}
 function rowToMemory(r) {
     return {
         id: r.id, agentId: r.agent_id, type: r.type, content: r.content,

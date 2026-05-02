@@ -8,6 +8,7 @@ export interface BackgroundLearningReport {
   routeExamplesCreated: number;
   memoryUpdates: number;
   snapshotId?: string;
+  consolidatedMemories?: number;
   prunedMemories: number;
   lastRunAt: string;
 }
@@ -86,6 +87,7 @@ export class BackgroundLearner {
 
   runMaintenance(agentId: string): BackgroundLearningReport {
     const learned = new RouteLearning({ store: this.store, config: this.config }).run(agentId);
+    const consolidatedMemories = this.store.consolidateMemories(agentId);
     this.store.decayFreshness(agentId);
     const prunedMemories = this.store.pruneMemories(agentId, this.config.learning.maxMemoryNodesPerAgent);
     return {
@@ -94,6 +96,7 @@ export class BackgroundLearner {
       routeExamplesCreated: learned.examplesCreated,
       memoryUpdates: learned.memoryUpdates,
       snapshotId: learned.snapshotId,
+      consolidatedMemories,
       prunedMemories,
       lastRunAt: new Date().toISOString(),
     };

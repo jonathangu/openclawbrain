@@ -74,6 +74,29 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
         storeDistillationInputs: boolean;
         storeDistillationOutputs: boolean;
     };
+    memory: {
+        captureMode: any;
+        explicitRememberMode: any;
+        futureFacingLanguage: any;
+        sensitiveRecall: {
+            allowUserAuthorizedRecallRules: boolean;
+            neverStoreCredentialPlaintext: boolean;
+            requireNarrowScope: boolean;
+            preventProactiveDisclosure: boolean;
+            preferSecureStoreForSensitiveValues: boolean;
+        };
+        scope: {
+            preferNarrowestScope: boolean;
+            allowCurrentRepoInference: boolean;
+            allowGlobalPreferenceInference: boolean;
+        };
+        audit: {
+            recordSkippedCapture: boolean;
+            recordRejectedCandidates: boolean;
+            safePreviewOnly: boolean;
+            enableMemoryPostmortem: boolean;
+        };
+    };
 };
 export declare function livePluginEntry(api?: any): any;
 export declare function normalizePluginConfig(input?: any): {
@@ -148,6 +171,29 @@ export declare function normalizePluginConfig(input?: any): {
         redactBeforeLlm: boolean;
         storeDistillationInputs: boolean;
         storeDistillationOutputs: boolean;
+    };
+    memory: {
+        captureMode: any;
+        explicitRememberMode: any;
+        futureFacingLanguage: any;
+        sensitiveRecall: {
+            allowUserAuthorizedRecallRules: boolean;
+            neverStoreCredentialPlaintext: boolean;
+            requireNarrowScope: boolean;
+            preventProactiveDisclosure: boolean;
+            preferSecureStoreForSensitiveValues: boolean;
+        };
+        scope: {
+            preferNarrowestScope: boolean;
+            allowCurrentRepoInference: boolean;
+            allowGlobalPreferenceInference: boolean;
+        };
+        audit: {
+            recordSkippedCapture: boolean;
+            recordRejectedCandidates: boolean;
+            safePreviewOnly: boolean;
+            enableMemoryPostmortem: boolean;
+        };
     };
 };
 export declare function normalizeScopes(scopes?: any): {

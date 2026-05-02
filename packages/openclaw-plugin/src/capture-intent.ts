@@ -88,6 +88,10 @@ export function detectCaptureIntent(input: { latestUserMessageRedacted: string; 
     return result(true, 'routing_rule', 0.78, 'User stated a routing or delegation rule', ['routing'], riskHintsForText(raw, 'routing_rule'), scope);
   }
 
+  if (matchesAgentAssignment(text)) {
+    return result(true, 'agent_assignment', 0.74, 'User stated an ownership or responsibility assignment', ['agent_assignment'], riskHintsForText(raw, 'agent_assignment'), scope);
+  }
+
   if (matchesExplicitStore(text)) {
     const intent: CaptureIntent = /\b(codeword|passphrase|auth phrase|authentication phrase)\b/i.test(raw) && !/\b(project\s+code\s*name|project\s+codename|codename|code\s*name)\b/i.test(raw)
       ? 'ambiguous'
@@ -146,7 +150,7 @@ export function detectRetrievalIntent(input: { latestUserMessageRedacted: string
     return retrieval(true, 'may_need_memory', 0.65, query, scopeHints, false, ['correction']);
   }
   if (/\b(plan|design|architecture|implementation|install|dependency|dependencies|pnpm|npm|yarn|build|test|setup|repo|project)\b/i.test(raw)) {
-    return retrieval(true, 'may_need_memory', 0.62, query, scopeHints, false, ['correction', 'preference', 'workflow', 'tool_convention', 'project_fact', 'context']);
+    return retrieval(true, 'may_need_memory', 0.62, query, scopeHints, false, ['correction', 'preference', 'workflow', 'tool_convention', 'project_fact', 'agent_assignment', 'outcome', 'context']);
   }
   return retrieval(false, 'no_retrieval', 0.7, query, scopeHints, false, []);
 }
@@ -216,6 +220,10 @@ function matchesWorkflow(text: string) {
 
 function matchesRouting(text: string) {
   return /\b(route .+ to|send .+ to|assign .+ to|use the .+ agent|delegate .+ to)\b/.test(text);
+}
+
+function matchesAgentAssignment(text: string) {
+  return /\b(.+ agent owns|.+ owns .+ tasks|.+ is responsible for|.+ approves .+ policy|.+ live install host)\b/.test(text);
 }
 
 function matchesToolConvention(text: string) {

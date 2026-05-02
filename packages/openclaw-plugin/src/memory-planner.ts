@@ -90,8 +90,9 @@ export class MemoryPlanner {
     if (routePlan.enqueueCapture && this.distiller) {
       const result = await this.distiller.distill(packet, { captureIntent: routePlan.captureIntent, retrievalIntent: routePlan.retrievalIntent });
       feedbackDistillation = result.output;
+      let applied: any = null;
       if (feedbackDistillation.shouldStore || feedbackDistillation.injectionFeedback.length > 0) {
-        new MemoryOperationApplier({ store: this.store, config: this.config }).applyDistillation(feedbackDistillation, packet, { captureIntent: routePlan.captureIntent });
+        applied = new MemoryOperationApplier({ store: this.store, config: this.config }).applyDistillation(feedbackDistillation, packet, { captureIntent: routePlan.captureIntent });
       }
       this.store.insertCaptureAudit({
         agentId: packet.agentId,
@@ -106,9 +107,9 @@ export class MemoryPlanner {
         distillerLatencyMs: result.audit.latencyMs,
         fallbackRan: result.audit.validationStatus === 'fallback',
         candidateCount: feedbackDistillation.memoryCandidates.length,
-        storedCount: feedbackDistillation.shouldStore ? feedbackDistillation.memoryCandidates.length : 0,
-        rejectedCount: feedbackDistillation.shouldStore ? 0 : 1,
-        rejectionReasons: feedbackDistillation.audit.rejectionReasons ?? [feedbackDistillation.audit.modelReasonCode],
+        storedCount: applied?.storedCandidates ?? 0,
+        rejectedCount: (applied?.rejectedCandidates ?? 0) + (feedbackDistillation.shouldStore ? 0 : 1),
+        rejectionReasons: [...new Set([...(applied?.rejectionReasons ?? []), ...(feedbackDistillation.audit.rejectionReasons ?? [feedbackDistillation.audit.modelReasonCode])])],
         safeCandidatePreview: feedbackDistillation.audit.safeCandidatePreview,
         evidenceHash: String(packet.metadata.promptHash || ''),
       });

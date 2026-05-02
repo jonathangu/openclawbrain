@@ -499,6 +499,26 @@ async function handleAgentEnd(event = {}, config = {}, api = {}) {
     catch (error) {
         api.logger?.warn?.({ error }, 'OpenClawBrain agent_end outcome learning failed');
     }
+    if (!captureIntent.shouldConsiderCapture && packet.recentInjections.length === 0) {
+        store.insertCaptureAudit({
+            agentId: packet.agentId,
+            sessionId: packet.sessionId,
+            turnId: packet.turnId,
+            runId: packet.runId,
+            retrievalIntent,
+            captureIntent,
+            captureJobCreated: false,
+            distillerRan: false,
+            fallbackRan: false,
+            candidateCount: 0,
+            storedCount: 0,
+            rejectedCount: 1,
+            rejectionReasons: [captureIntent.intent === 'one_off' ? 'one_off_request' : captureIntent.reason || 'no_capture_signal'],
+            evidenceHash: String(packet.metadata.promptHash || ''),
+        });
+        store.close();
+        return {};
+    }
     if (config.capture.agentEndMode === 'best_effort_async' && config.llm.enabled === true) {
         try {
             await runFeedbackDistillation(packet, config, store, { captureIntent, retrievalIntent });
@@ -613,8 +633,8 @@ async function runFeedbackDistillation(packet, config, store, context = {}) {
         fallbackRan: result.audit.validationStatus === 'fallback',
         candidateCount: result.output.memoryCandidates.length,
         storedCount: applied?.storedCandidates ?? 0,
-        rejectedCount: Math.max(0, result.output.memoryCandidates.length - (applied?.storedCandidates ?? 0)) + (result.output.shouldStore ? 0 : 1),
-        rejectionReasons: result.output.audit.rejectionReasons ?? [result.output.audit.modelReasonCode],
+        rejectedCount: (applied?.rejectedCandidates ?? 0) + (result.output.shouldStore ? 0 : 1),
+        rejectionReasons: [...new Set([...(applied?.rejectionReasons ?? []), ...(result.output.audit.rejectionReasons ?? [result.output.audit.modelReasonCode])])],
         safeCandidatePreview: result.output.audit.safeCandidatePreview,
         evidenceHash: String(packet.metadata.promptHash || ''),
     });

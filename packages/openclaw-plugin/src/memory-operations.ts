@@ -7,7 +7,10 @@ import { captureStoreThreshold, classifySensitiveValue, type CaptureIntentResult
 export interface ApplyFeedbackResult {
   memoryIds: string[];
   storedCandidates: number;
+  rejectedCandidates: number;
+  rejectionReasons: string[];
   resolvedInjections: number;
+  deletedOrSuppressed: number;
 }
 
 export class MemoryOperationApplier {
@@ -21,12 +24,14 @@ export class MemoryOperationApplier {
 
   applyDistillation(distillation: FeedbackDistillation, packet: TurnEventPacket, context: { captureIntent?: CaptureIntentResult } = {}): ApplyFeedbackResult {
     if (!distillation.shouldStore && distillation.injectionFeedback.length === 0) {
-      if (distillation.feedbackType === 'delete_or_suppress') this.applyDeleteOrSuppress(packet);
-      return { memoryIds: [], storedCandidates: 0, resolvedInjections: 0 };
+      const deletedOrSuppressed = distillation.feedbackType === 'delete_or_suppress' ? this.applyDeleteOrSuppress(packet) : 0;
+      return { memoryIds: [], storedCandidates: 0, rejectedCandidates: 0, rejectionReasons: distillation.audit.rejectionReasons ?? [], resolvedInjections: 0, deletedOrSuppressed };
     }
 
     const memoryIds: string[] = [];
     let storedCandidates = 0;
+    let rejectedCandidates = 0;
+    const rejectionReasons: string[] = [];
     let resolvedInjections = 0;
 
     this.store.transaction(() => {
@@ -34,8 +39,16 @@ export class MemoryOperationApplier {
         const minConfidence = context.captureIntent
           ? captureStoreThreshold(context.captureIntent.intent)
           : this.config.capture.minConfidence;
-        if (candidate.confidence < minConfidence) continue;
-        if (!this.isSafeToStore(candidate)) continue;
+        if (candidate.confidence < minConfidence) {
+          rejectedCandidates += 1;
+          rejectionReasons.push('distiller_low_confidence');
+          continue;
+        }
+        if (!this.isSafeToStore(candidate)) {
+          rejectedCandidates += 1;
+          rejectionReasons.push(candidate.type === 'recall_rule' ? 'recall_rule_missing_explicit_authorization' : 'sensitive_secret_blocked');
+          continue;
+        }
         const node = this.upsertCandidate(candidate, packet);
         memoryIds.push(node.id);
         storedCandidates += 1;
@@ -68,13 +81,14 @@ export class MemoryOperationApplier {
       });
     });
 
-    return { memoryIds, storedCandidates, resolvedInjections };
+    return { memoryIds, storedCandidates, rejectedCandidates, rejectionReasons: [...new Set(rejectionReasons)], resolvedInjections, deletedOrSuppressed: 0 };
   }
 
   private applyDeleteOrSuppress(packet: TurnEventPacket) {
-    const query = packet.latestUserMessageRedacted || '';
+    const query = deletionQuery(packet.latestUserMessageRedacted || '');
     const matches = this.store.searchMemories(query, packet.agentId, { limit: 10 });
     for (const memory of matches) this.store.softDeleteMemory(memory.id);
+    return matches.length;
   }
 
   private isSafeToStore(candidate: MemoryCandidate) {
@@ -141,6 +155,14 @@ export class MemoryOperationApplier {
       sourceSessionId: packet.sessionId,
     });
   }
+}
+
+function deletionQuery(text: string) {
+  return text
+    .replace(/\b(forget|delete|remove|do not remember|don't remember|do not store|don't store|stop using|suppress)\b/ig, ' ')
+    .replace(/\b(memory|rule|old|that|this|the)\b/ig, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() || text;
 }
 
 function clamp01(value: number): number {

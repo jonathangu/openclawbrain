@@ -6,6 +6,7 @@ export interface BackgroundLearningReport {
     routeExamplesCreated: number;
     memoryUpdates: number;
     snapshotId?: string;
+    consolidatedMemories?: number;
     prunedMemories: number;
     lastRunAt: string;
 }

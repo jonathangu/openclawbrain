@@ -9,22 +9,29 @@ export class MemoryOperationApplier {
     }
     applyDistillation(distillation, packet, context = {}) {
         if (!distillation.shouldStore && distillation.injectionFeedback.length === 0) {
-            if (distillation.feedbackType === 'delete_or_suppress')
-                this.applyDeleteOrSuppress(packet);
-            return { memoryIds: [], storedCandidates: 0, resolvedInjections: 0 };
+            const deletedOrSuppressed = distillation.feedbackType === 'delete_or_suppress' ? this.applyDeleteOrSuppress(packet) : 0;
+            return { memoryIds: [], storedCandidates: 0, rejectedCandidates: 0, rejectionReasons: distillation.audit.rejectionReasons ?? [], resolvedInjections: 0, deletedOrSuppressed };
         }
         const memoryIds = [];
         let storedCandidates = 0;
+        let rejectedCandidates = 0;
+        const rejectionReasons = [];
         let resolvedInjections = 0;
         this.store.transaction(() => {
             for (const candidate of distillation.memoryCandidates) {
                 const minConfidence = context.captureIntent
                     ? captureStoreThreshold(context.captureIntent.intent)
                     : this.config.capture.minConfidence;
-                if (candidate.confidence < minConfidence)
+                if (candidate.confidence < minConfidence) {
+                    rejectedCandidates += 1;
+                    rejectionReasons.push('distiller_low_confidence');
                     continue;
-                if (!this.isSafeToStore(candidate))
+                }
+                if (!this.isSafeToStore(candidate)) {
+                    rejectedCandidates += 1;
+                    rejectionReasons.push(candidate.type === 'recall_rule' ? 'recall_rule_missing_explicit_authorization' : 'sensitive_secret_blocked');
                     continue;
+                }
                 const node = this.upsertCandidate(candidate, packet);
                 memoryIds.push(node.id);
                 storedCandidates += 1;
@@ -54,13 +61,14 @@ export class MemoryOperationApplier {
                 },
             });
         });
-        return { memoryIds, storedCandidates, resolvedInjections };
+        return { memoryIds, storedCandidates, rejectedCandidates, rejectionReasons: [...new Set(rejectionReasons)], resolvedInjections, deletedOrSuppressed: 0 };
     }
     applyDeleteOrSuppress(packet) {
-        const query = packet.latestUserMessageRedacted || '';
+        const query = deletionQuery(packet.latestUserMessageRedacted || '');
         const matches = this.store.searchMemories(query, packet.agentId, { limit: 10 });
         for (const memory of matches)
             this.store.softDeleteMemory(memory.id);
+        return matches.length;
     }
     isSafeToStore(candidate) {
         const risk = classifySensitiveValue(`${candidate.distilledText} ${candidate.positive ?? ''}`, candidate.type === 'recall_rule' ? 'recall_rule' : undefined);
@@ -120,6 +128,13 @@ export class MemoryOperationApplier {
             sourceSessionId: packet.sessionId,
         });
     }
+}
+function deletionQuery(text) {
+    return text
+        .replace(/\b(forget|delete|remove|do not remember|don't remember|do not store|don't store|stop using|suppress)\b/ig, ' ')
+        .replace(/\b(memory|rule|old|that|this|the)\b/ig, ' ')
+        .replace(/\s+/g, ' ')
+        .trim() || text;
 }
 function clamp01(value) {
     if (!Number.isFinite(value))

@@ -37,7 +37,7 @@ export const DEFAULT_CONFIG: any = Object.freeze({
   }),
   capture: Object.freeze({
     enabled: true,
-    mode: 'hybrid',
+    mode: 'aggressive',
     minConfidence: 0.7,
     feedbackTimeoutMs: 60000,
     immediateCorrectionCapture: true,
@@ -50,8 +50,8 @@ export const DEFAULT_CONFIG: any = Object.freeze({
     mode: 'hybrid_llm_on_cache_miss',
     minRouteConfidence: 0.7,
     maxCandidateMemories: 40,
-    maxInjectedMemories: 5,
-    maxInjectedChars: 1200,
+    maxInjectedMemories: 8,
+    maxInjectedChars: 2500,
     learnFromOutcomes: true,
   }),
   learning: Object.freeze({
@@ -69,6 +69,29 @@ export const DEFAULT_CONFIG: any = Object.freeze({
     redactBeforeLlm: true,
     storeDistillationInputs: false,
     storeDistillationOutputs: true,
+  }),
+  memory: Object.freeze({
+    captureMode: 'aggressive',
+    explicitRememberMode: 'always_consider',
+    futureFacingLanguage: 'enqueue_async_capture',
+    sensitiveRecall: Object.freeze({
+      allowUserAuthorizedRecallRules: true,
+      neverStoreCredentialPlaintext: true,
+      requireNarrowScope: true,
+      preventProactiveDisclosure: true,
+      preferSecureStoreForSensitiveValues: true,
+    }),
+    scope: Object.freeze({
+      preferNarrowestScope: true,
+      allowCurrentRepoInference: true,
+      allowGlobalPreferenceInference: false,
+    }),
+    audit: Object.freeze({
+      recordSkippedCapture: true,
+      recordRejectedCandidates: true,
+      safePreviewOnly: true,
+      enableMemoryPostmortem: true,
+    }),
   }),
 });
 
@@ -144,7 +167,7 @@ export function normalizePluginConfig(input: any = {}) {
     },
     capture: {
       enabled: source.capture?.enabled !== false,
-      mode: nonEmptyString(source.capture?.mode) || DEFAULT_CONFIG.capture.mode,
+      mode: nonEmptyString(source.memory?.captureMode) || nonEmptyString(source.capture?.mode) || DEFAULT_CONFIG.capture.mode,
       minConfidence: clampNumber(source.capture?.minConfidence, DEFAULT_CONFIG.capture.minConfidence, 0, 1),
       feedbackTimeoutMs: clampInteger(source.capture?.feedbackTimeoutMs, DEFAULT_CONFIG.capture.feedbackTimeoutMs, 1000, 300000),
       immediateCorrectionCapture: source.capture?.immediateCorrectionCapture !== false,
@@ -176,6 +199,34 @@ export function normalizePluginConfig(input: any = {}) {
       redactBeforeLlm: source.privacy?.redactBeforeLlm !== false,
       storeDistillationInputs: source.privacy?.storeDistillationInputs === true,
       storeDistillationOutputs: source.privacy?.storeDistillationOutputs !== false,
+    },
+    memory: normalizeMemoryPolicy(source.memory),
+  };
+}
+
+function normalizeMemoryPolicy(memory: any = {}) {
+  const source = memory && typeof memory === 'object' ? memory : {};
+  return {
+    captureMode: nonEmptyString(source.captureMode) || DEFAULT_CONFIG.memory.captureMode,
+    explicitRememberMode: nonEmptyString(source.explicitRememberMode) || DEFAULT_CONFIG.memory.explicitRememberMode,
+    futureFacingLanguage: nonEmptyString(source.futureFacingLanguage) || DEFAULT_CONFIG.memory.futureFacingLanguage,
+    sensitiveRecall: {
+      allowUserAuthorizedRecallRules: source.sensitiveRecall?.allowUserAuthorizedRecallRules !== false,
+      neverStoreCredentialPlaintext: source.sensitiveRecall?.neverStoreCredentialPlaintext !== false,
+      requireNarrowScope: source.sensitiveRecall?.requireNarrowScope !== false,
+      preventProactiveDisclosure: source.sensitiveRecall?.preventProactiveDisclosure !== false,
+      preferSecureStoreForSensitiveValues: source.sensitiveRecall?.preferSecureStoreForSensitiveValues !== false,
+    },
+    scope: {
+      preferNarrowestScope: source.scope?.preferNarrowestScope !== false,
+      allowCurrentRepoInference: source.scope?.allowCurrentRepoInference !== false,
+      allowGlobalPreferenceInference: source.scope?.allowGlobalPreferenceInference === true,
+    },
+    audit: {
+      recordSkippedCapture: source.audit?.recordSkippedCapture !== false,
+      recordRejectedCandidates: source.audit?.recordRejectedCandidates !== false,
+      safePreviewOnly: source.audit?.safePreviewOnly !== false,
+      enableMemoryPostmortem: source.audit?.enableMemoryPostmortem !== false,
     },
   };
 }

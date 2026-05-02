@@ -5,7 +5,10 @@ import { type CaptureIntentResult } from './capture-intent.js';
 export interface ApplyFeedbackResult {
     memoryIds: string[];
     storedCandidates: number;
+    rejectedCandidates: number;
+    rejectionReasons: string[];
     resolvedInjections: number;
+    deletedOrSuppressed: number;
 }
 export declare class MemoryOperationApplier {
     private store;
