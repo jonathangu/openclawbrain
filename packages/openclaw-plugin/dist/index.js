@@ -137,7 +137,9 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
     const client = llmClientFromConfig(config);
     let plan = initialPlan;
     let selection = initialPlan.shouldRetrieve ? contextSelector.select({ packet, plan, candidates: initialCandidates, store }) : emptySelection();
+    let syncPlannerUsed = false;
     if (latency.kind === 'sync_memory_planner' && client) {
+        syncPlannerUsed = true;
         const planner = new MemoryPlanner({ config, routeFn, store, client });
         const planned = await planner.run(packet);
         plan = planned.routePlan;
@@ -154,7 +156,7 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
         route: plan.route,
         confidence: plan.confidence,
         latencyTier: latency.kind,
-        syncLlmUsed: latency.kind === 'sync_memory_planner' && Boolean(client),
+        syncLlmUsed: syncPlannerUsed,
         syncLatencyMs: latency.maxSyncMs || undefined,
         fallbackUsed: latency.kind === 'sync_memory_planner' && !client,
         turnFrame: plan.turnFrame,
@@ -174,7 +176,7 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
         runId: packet.runId,
         retrievalIntent: plan.retrievalIntent,
         captureIntent: plan.captureIntent,
-        captureJobCreated: plan.enqueueCapture && latency.kind !== 'sync_memory_planner',
+        captureJobCreated: plan.enqueueCapture && !syncPlannerUsed,
         distillerRan: false,
         fallbackRan: false,
         candidateCount: 0,

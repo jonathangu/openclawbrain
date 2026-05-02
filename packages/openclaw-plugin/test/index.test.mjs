@@ -16,6 +16,7 @@ import plugin, {
   redactedTurnFromPromptEvent,
   resolveOpenClawBrainConfig
 } from '../dist/index.js';
+import { MemoryStore } from '../dist/memory-store.js';
 
 async function tempRoot() {
   const root = path.join(tmpdir(), `ocb-plugin-${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -233,4 +234,28 @@ test('redacted turn hashes raw user text without storing it', () => {
   assert.match(turn.sessionKeyHash, /^sha256:/);
   assert.match(turn.summary, /\[redacted-email\]/);
   assert.doesNotMatch(JSON.stringify(turn), /user@example.com|session-secret/);
+});
+
+test('before_prompt_build prompt text is captured for memory routing', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      llm: { enabled: false },
+      routing: { enabled: true },
+    });
+    const result = await handleTurnHook({ agentId: 'main', prompt: 'Remember that I prefer concise Telegram replies.' }, config, {}, 'before_prompt_build');
+    assert.deepEqual(result, {});
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const audit = store.listCaptureAudit('main', 10);
+    assert.equal(audit.length, 1);
+    assert.equal(audit[0].captureIntent.intent, 'explicit_store');
+    assert.equal(audit[0].captureJobCreated, true);
+    assert.equal(store.countMemories('main', 'preference'), 0);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });

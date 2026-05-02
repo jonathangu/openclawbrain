@@ -34,7 +34,7 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.13`
+- **Current package release:** `0.2.14`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.4.29` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection

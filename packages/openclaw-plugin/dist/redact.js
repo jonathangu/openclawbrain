@@ -46,12 +46,38 @@ export function latestUserTextFromEvent(event = {}) {
         return event.input;
     if (Array.isArray(event.messages)) {
         const latest = [...event.messages].reverse().find((message) => message?.role === 'user');
-        if (typeof latest?.content === 'string')
-            return latest.content;
-        if (typeof latest?.redactedText === 'string')
-            return latest.redactedText;
+        const extracted = textFromMessageContent(latest?.content) || safeString(latest?.redactedText ?? '');
+        if (extracted)
+            return extracted;
     }
+    // OpenClaw's typed `before_prompt_build` hook exposes the active user turn as
+    // `prompt` plus prepared session messages. Use it only after explicit
+    // user-message fields / messages so tests and future richer hook payloads can
+    // override it with already-redacted text.
+    if (typeof event.prompt === 'string')
+        return event.prompt;
     return safeString(event.summary ?? '');
+}
+function textFromMessageContent(content) {
+    if (typeof content === 'string')
+        return content;
+    if (!Array.isArray(content))
+        return '';
+    return content
+        .map((part) => {
+        if (typeof part === 'string')
+            return part;
+        if (!part || typeof part !== 'object')
+            return '';
+        if (typeof part.text === 'string')
+            return part.text;
+        if (typeof part.content === 'string')
+            return part.content;
+        return '';
+    })
+        .filter(Boolean)
+        .join('\n')
+        .trim();
 }
 export function sanitizeForProof(value) {
     if (Array.isArray(value))
