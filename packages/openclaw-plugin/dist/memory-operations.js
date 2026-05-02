@@ -57,8 +57,8 @@ export class MemoryOperationApplier {
                 positive: candidate.positive ? redactText(candidate.positive, 500) : undefined,
                 negative: candidate.negative ? redactText(candidate.negative, 500) : undefined,
                 tags: mergedTags,
-                importance: Math.max(existing.importance, candidate.importanceHint),
-                confidence: Math.max(existing.confidence, candidate.confidence),
+                importance: Math.max(existing.importance, clamp01(candidate.importanceHint)),
+                confidence: Math.max(existing.confidence, clamp01(candidate.confidence)),
                 captureCount: existing.captureCount + 1,
                 lastSeenAt: new Date().toISOString(),
                 sourceHook: packet.sourceHook,
@@ -76,15 +76,15 @@ export class MemoryOperationApplier {
             scopeKey: candidate.scope.key,
             normalizedKey: candidate.normalizedKey,
             tags: candidate.tags,
-            importance: candidate.importanceHint,
+            importance: clamp01(candidate.importanceHint),
             freshness: 1,
-            confidence: candidate.confidence,
+            confidence: clamp01(candidate.confidence),
             useCount: 0,
             usefulCount: 0,
             captureCount: 1,
             distilledByModel: this.config.llm.feedbackModel || this.config.llm.plannerModel || undefined,
             distillerPromptVersion: 'feedback-distiller-v1',
-            distillationConfidence: candidate.confidence,
+            distillationConfidence: clamp01(candidate.confidence),
             evidenceKind: packet.sourceHook,
             evidenceHash: String(packet.metadata.promptHash || ''),
             sourceHook: packet.sourceHook,
@@ -92,4 +92,9 @@ export class MemoryOperationApplier {
             sourceSessionId: packet.sessionId,
         });
     }
+}
+function clamp01(value) {
+    if (!Number.isFinite(value))
+        return 0;
+    return Math.max(0, Math.min(1, value));
 }

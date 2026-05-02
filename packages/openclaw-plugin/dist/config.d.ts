@@ -43,6 +43,7 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
         enabled: boolean;
         mode: any;
         minConfidence: number;
+        feedbackTimeoutMs: number;
         immediateCorrectionCapture: boolean;
         postRunWorkflowCapture: boolean;
         storeCandidates: boolean;
@@ -117,6 +118,7 @@ export declare function normalizePluginConfig(input?: any): {
         enabled: boolean;
         mode: any;
         minConfidence: number;
+        feedbackTimeoutMs: number;
         immediateCorrectionCapture: boolean;
         postRunWorkflowCapture: boolean;
         storeCandidates: boolean;
