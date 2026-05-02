@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>OpenClawBrain — Memory for OpenClaw agents that should stop repeating themselves</title>
+  <title>OpenClawBrain — Evidence, not vibes, for agent memory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="OpenClawBrain helps OpenClaw agents remember useful corrections, preferences, and prior work without stuffing your whole history into every prompt.">
-  <meta property="og:title" content="OpenClawBrain — Memory for OpenClaw agents that should stop repeating themselves">
-  <meta property="og:description" content="A native OpenClaw plugin that keeps memory local, retrieves only a small useful slice, and gives you proof instead of hand-waving.">
+  <meta name="description" content="OpenClawBrain is a local memory layer for OpenClaw agents: SQLite stores the graph and evidence, Ollama proposes, and code disposes.">
+  <meta property="og:title" content="OpenClawBrain — Evidence, not vibes, for agent memory">
+  <meta property="og:description" content="A native OpenClaw plugin for accountable local agent memory: bounded retrieval, SQLite evidence, local Ollama semantics, and proof you can inspect.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://openclawbrain.ai/">
   <meta name="twitter:card" content="summary_large_image">
@@ -37,10 +37,10 @@
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .wrap { max-width: 980px; margin: 0 auto; padding: 24px 20px 72px; }
-    .topbar { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+    .topbar, .nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
     .brand { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
-    .nav { display: flex; gap: 10px; flex-wrap: wrap; }
-    .nav a, .btn {
+    .navlinks { display: flex; gap: 10px; flex-wrap: wrap; }
+    .nav a, .navlinks a, .btn {
       border: 1px solid var(--line);
       border-radius: 999px;
       padding: 10px 14px;
@@ -51,17 +51,21 @@
       text-decoration: none;
       background: rgba(255,255,255,0.02);
     }
-    .hero, .section {
+    .hero, .section, .panel {
       background: linear-gradient(180deg, rgba(19,33,49,0.96), rgba(14,24,36,0.96));
       border: 1px solid var(--line);
       border-radius: 22px;
       box-shadow: var(--shadow);
     }
     .hero { padding: 40px 34px; margin-bottom: 18px; }
+    .section, .panel { padding: 28px; margin-top: 18px; }
     .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px; font-weight: 800; margin-bottom: 12px; }
     h1 { font-size: clamp(34px, 5vw, 56px); line-height: 1.05; margin: 0 0 16px; }
-    .lead { font-size: 20px; color: var(--muted); max-width: 760px; margin: 0 0 20px; }
-    .sublead { max-width: 760px; margin: 0 0 24px; color: var(--text); }
+    h2 { margin: 0 0 10px; font-size: 28px; }
+    h3 { margin: 0 0 8px; font-size: 18px; }
+    p { margin: 0 0 14px; }
+    .lead { font-size: 20px; color: var(--muted); max-width: 780px; margin: 0 0 20px; }
+    .sublead { max-width: 780px; margin: 0 0 24px; color: var(--text); }
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
     .btn-primary { background: linear-gradient(135deg, var(--accent), #b6ebff); color: #051018; font-weight: 700; }
     .chips { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -74,12 +78,6 @@
       font-size: 13px;
     }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-    .section { padding: 28px; margin-top: 18px; }
-    h2 { margin: 0 0 10px; font-size: 28px; }
-    h3 { margin: 0 0 8px; font-size: 18px; }
-    p { margin: 0 0 14px; }
-    ul { margin: 0; padding-left: 20px; }
-    li { margin-bottom: 8px; }
     .card {
       background: rgba(255,255,255,0.03);
       border: 1px solid var(--line);
@@ -87,7 +85,7 @@
       padding: 18px;
     }
     pre {
-      margin: 0;
+      margin: 0 0 14px;
       overflow: auto;
       background: #08111b;
       border: 1px solid var(--line);
@@ -98,19 +96,23 @@
       line-height: 1.65;
     }
     code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .fine { color: var(--muted); font-size: 14px; }
+    blockquote { margin: 0 0 18px; padding: 14px 18px; border-left: 3px solid var(--accent-2); background: rgba(159,245,192,0.06); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; }
+    th, td { border: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top; }
+    ul, ol { margin: 0 0 14px; padding-left: 20px; }
+    li { margin-bottom: 8px; }
+    .fine, .muted { color: var(--muted); font-size: 14px; }
     .footer { color: var(--muted); text-align: center; margin-top: 28px; font-size: 14px; }
-    @media (max-width: 640px) {
-      .hero, .section { padding: 22px; }
-      .lead { font-size: 18px; }
-    }
-  </style>
+    @media (max-width: 640px) { .hero, .section, .panel { padding: 22px; } .lead { font-size: 18px; } }
+</style>
 </head>
 <body>
   <div class="wrap">
     <div class="topbar">
       <div class="brand">OpenClawBrain</div>
-      <div class="nav">
+      <div class="navlinks">
+        <a href="/">Home</a>
+        <a href="/how-it-works/">How it works</a>
         <a href="/install/">Install</a>
         <a href="/proof/">Proof</a>
         <a href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">GitHub</a>
@@ -119,19 +121,20 @@
 
     <section class="hero">
       <div class="eyebrow">Memory for OpenClaw</div>
-      <h1>Your agent should not need the same correction twice.</h1>
-      <p class="lead">OpenClawBrain helps OpenClaw agents remember useful corrections, preferences, and prior work — without stuffing your full history into every prompt.</p>
-      <p class="sublead">It keeps memory local, searches it fast, brings back only a small useful slice, and gives you proof you can inspect. The result is simple: less repetition, fewer avoidable mistakes, and a system you can actually trust.</p>
+      <h1>Evidence, not vibes, for agent memory.</h1>
+      <p class="lead">OpenClawBrain helps OpenClaw agents understand that “close it out” means evidence, not vibes — and that the same correction should not have to be taught twice.</p>
+      <p class="sublead">It is the difference between magic memory and an accountable local system: selective routing, SQLite search, bounded XML prompt injection, and proof surfaces you can inspect. The spine is simple: <strong>LLM decides semantic meaning. Code enforces trust boundaries. SQLite stores the graph and evidence.</strong></p>
+      <blockquote><strong>Ollama proposes; code disposes.</strong> Local models propose structured JSON. Code validates, redacts, scopes, thresholds, and decides what gets stored or injected.</blockquote>
       <div class="actions">
         <a class="btn btn-primary" href="/install/">Install OpenClawBrain</a>
-        <a class="btn" href="/proof/">See how to verify it</a>
-        <a class="btn" href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">Read the repo</a>
+        <a class="btn" href="/how-it-works/">Read how it works</a>
+        <a class="btn" href="/proof/">Verify it locally</a>
       </div>
       <div class="chips">
         <span class="chip">Current release: v0.2.10</span>
         <span class="chip">Native OpenClaw plugin</span>
-        <span class="chip">Local SQLite memory</span>
-        <span class="chip">Inspectable status, proof, graph, and search</span>
+        <span class="chip">Local SQLite + FTS graph</span>
+        <span class="chip">157/158 dogfood turns: zero sync model latency</span>
       </div>
     </section>
 
@@ -139,57 +142,55 @@
       <h2>What it actually does</h2>
       <div class="grid">
         <div class="card">
-          <h3>Remembers the useful stuff</h3>
-          <p>When you teach your agent something practical — like which package manager to use, how you want tests run, or what matters in a repo — OpenClawBrain helps that lesson stick.</p>
+          <h3>Remembers durable lessons</h3>
+          <p>Corrections, preferences, workflows, and context become scoped memory nodes — not raw transcript dumps.</p>
         </div>
         <div class="card">
           <h3>Keeps prompts small</h3>
-          <p>It does not dump your whole history into every turn. It retrieves candidates locally and injects only a few memories when they are likely to help.</p>
+          <p>Most memories stay silent. When a turn needs help, OpenClawBrain retrieves and injects only the small slice that matters now.</p>
         </div>
         <div class="card">
           <h3>Shows its work</h3>
-          <p>You can inspect status, run a health check, look at proof events, search memory, and inspect the graph instead of guessing what the plugin is doing.</p>
+          <p>Status, doctor, proof, graph, search, route decisions, and injection records make memory inspectable instead of mystical.</p>
         </div>
       </div>
     </section>
 
     <section class="section">
-      <h2>Why this beats prompt bloat</h2>
-      <p>The usual workaround for forgetful agents is to keep adding more text to the prompt. That is expensive, messy, and hard to trust.</p>
-      <p>OpenClawBrain takes a cleaner path:</p>
-      <ul>
-        <li>store memory locally</li>
-        <li>search it quickly</li>
-        <li>bring back only what matters now</li>
-        <li>keep the whole thing inspectable</li>
-      </ul>
+      <h2>One worked turn</h2>
+      <p>You correct the agent: <strong>“Actually, use pnpm in this repo.”</strong></p>
+      <p>OpenClawBrain distills that into a scoped correction. Later, when you say <strong>“Run the tests,”</strong> SQLite FTS retrieves the correction, ContextSelector ranks it, and the prompt receives a bounded block:</p>
+      <pre><code>&lt;openclawbrain_context&gt;
+Relevant memory:
+- Must follow: Use pnpm in this repo.
+&lt;/openclawbrain_context&gt;</code></pre>
+      <p>The agent runs <code>pnpm test</code> without you re-teaching the convention. Afterward, OpenClawBrain records whether the memory helped, failed, was ignored, or got corrected.</p>
     </section>
 
     <section class="section">
       <h2>What is live today</h2>
-      <p>OpenClawBrain is a real plugin today, not a concept page. The current release is <strong>v0.2.10</strong>. It supports a local memory graph, local search, health checks, proof routes, and a default local learning path aimed at Ollama out of the box.</p>
-      <p class="fine">If you deliberately turn automatic learning off, the plugin still loads and stays useful. You still get local memory surfaces and verification tools; you just do not get automatic distillation of new corrections.</p>
+      <p>OpenClawBrain is a real plugin today, not a concept page. The current release is <strong>v0.2.10</strong>. The core live loop has been verified end to end: temporary correction → SQLite memory → FTS retrieval → XML prompt injection → cleanup.</p>
+      <p>That does not mean every edge case is done. It is best described as production-dogfood beta: the core capture/store/retrieve/inject path works, while route-learning quality, status polish, and long-term organic runtime still deserve more miles.</p>
+    </section>
+
+    <section class="section">
+      <h2>Latency shape</h2>
+      <p>In the dogfood snapshot used for the explainer, <strong>157 of 158 turns — 99.4% — added zero synchronous model latency</strong>.</p>
+      <pre><code>route decisions: 158
+no_extra_llm: 157
+enqueue_async_only: 1
+sync_memory_planner: 0</code></pre>
+      <p class="fine">Feedback distillation can take longer because it runs off the prompt path. A live local <code>qwen2.5:32b-instruct</code> verification took about 29 seconds without blocking the user turn.</p>
     </section>
 
     <section class="section">
       <h2>Install in a minute</h2>
       <pre><code>openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
-
-openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
-openclaw config set plugins.entries.openclawbrain.config.mode '"balanced"' --strict-json
-openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
-openclaw config set plugins.entries.openclawbrain.config.hooks.allowConversationAccess true --strict-json
-openclaw config validate
 openclaw gateway restart</code></pre>
-      <p class="fine">Want the full setup path and optional learning config? Go to <a href="/install/">the install page</a>.</p>
-    </section>
-
-    <section class="section">
-      <h2>Do not take the claim on faith</h2>
-      <p>OpenClawBrain ships with routes you can inspect yourself. If you care about reliability, that matters.</p>
       <div class="actions">
-        <a class="btn" href="/proof/">See the proof and verification commands</a>
+        <a class="btn" href="/install/">Full install path</a>
+        <a class="btn" href="/proof/">Proof commands</a>
       </div>
     </section>
 

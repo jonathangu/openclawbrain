@@ -1,59 +1,70 @@
 # OpenClawBrain
 
-**OpenClawBrain helps OpenClaw agents stop repeating themselves.**
+**Evidence, not vibes, for agent memory.**
 
-It is a native [OpenClaw](https://docs.openclaw.ai) plugin that remembers useful corrections, preferences, and past wins, then brings back only the small piece that matters for the current turn.
+OpenClawBrain is a native [OpenClaw](https://docs.openclaw.ai) plugin for agents that should not need the same correction twice. It remembers durable corrections, preferences, workflows, and context, then brings back only the small slice that matters for the current turn.
 
-In plain English: if you already taught your agent "use pnpm here," "run the tests first," or "this is how I want this project handled," OpenClawBrain helps that lesson stick.
+Imagine an agent that understands “close it out” means evidence, not vibes. That is the product shape: less magic memory, more accountable local system.
+
+> **LLM decides semantic meaning. Code enforces trust boundaries. SQLite stores the graph and evidence.**
+>
+> **Ollama proposes; code disposes.**
 
 ## What it does
 
-- **Remembers the useful stuff.** Corrections, preferences, and prior work can become local memory instead of disappearing at the end of the session.
-- **Keeps prompts small.** It does not dump your whole history into every turn. It retrieves a few likely memories and injects only a bounded slice.
-- **Stays local-first.** Memory is stored in local SQLite, with redaction and proof surfaces built in.
-- **Lets you inspect it.** You can check status, run health checks, inspect proof events, search memory, and view the graph.
-- **Learns on the standard local path.** OpenClawBrain points at local Ollama by default, so corrections can turn into structured memory automatically. If you deliberately turn that path off, the plugin is still live and inspectable, but automatic learning is not active.
+- **Remembers durable lessons.** Corrections, preferences, workflows, and context become scoped local memory nodes instead of disappearing at the end of a session.
+- **Keeps prompts small.** It does not dump your whole history into every turn. It retrieves candidates locally and injects only a bounded XML slice when memory is likely to help.
+- **Stays local-first.** SQLite stores the graph and evidence. FTS5 powers local search. Raw transcript upload is hard-disabled.
+- **Shows its work.** You can check status, run health checks, inspect proof events, search memory, view the graph, and review route decisions.
+- **Learns on the standard local path.** OpenClawBrain points at local Ollama by default. Local models propose structured JSON; code validates, redacts, scopes, thresholds, and writes.
 
 ## Why it exists
 
 Most agents are smart but forgetful. They can do good work inside one turn, then make the same mistake again tomorrow.
 
-The usual fix is to keep stuffing more text into the prompt. That works badly. Prompts get bloated, latency goes up, and the agent still lacks a real memory system.
+The usual fix is to keep stuffing more text into the prompt. That works badly. Prompts get bloated, latency goes up, and the agent still lacks accountable memory.
 
 OpenClawBrain takes a different approach:
 
-1. keep memory local
-2. retrieve candidates fast
-3. inject only a small useful slice
-4. show proof instead of asking for blind trust
+1. route first: should memory participate?
+2. search SQLite FTS locally
+3. rank and inject only a small bounded block
+4. record outcomes so memory can improve
+5. show proof instead of asking for blind trust
 
 ## Current release
 
 - **Current package release:** `0.2.10`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.4.29` or later
+- **Live E2E proof:** temporary correction → SQLite memory → FTS retrieval → XML prompt injection → cleanup
+- **Dogfood latency snapshot:** `157` of `158` turns — `99.4%` — added zero synchronous model latency
 
 ## Install
 
 ```bash
 openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
+openclaw gateway restart
 ```
 
 ## Default local setup
 
-The default OpenClawBrain setup is already aimed at the full local path: balanced mode, conversation/tool hooks on, and local Ollama on `127.0.0.1`.
+The default OpenClawBrain setup is aimed at the full local path: balanced mode, conversation/tool hooks, local SQLite, and local Ollama on `127.0.0.1`.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain
-openclaw plugins enable openclawbrain
+openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.mode '"balanced"' --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowPromptContext true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowConversationAccess true --strict-json
+openclaw config set plugins.entries.openclawbrain.config.hooks.allowToolObservation true --strict-json
 openclaw config validate
 openclaw gateway restart
 ```
 
 ## Default local learning models
 
-The default local learning path uses a local OpenAI-compatible endpoint such as local Ollama.
+The default route/planner/feedback/learning model is `qwen2.5:32b-instruct`, reached through a local OpenAI-compatible endpoint such as Ollama.
 
 ```bash
 ollama list
@@ -70,9 +81,11 @@ openclaw config validate
 openclaw gateway restart
 ```
 
-If you deliberately disable this path, OpenClawBrain still runs its local memory, search, proof, and health surfaces. It just will not auto-distill fresh corrections.
+If local model calls are unavailable, the main agent keeps working. Known memories can still be searched and injected; background learning simply gets quieter or retries later.
 
 ## Check that it is live
+
+Use `inspect` for runtime truth.
 
 ```bash
 openclaw plugins inspect openclawbrain --json
@@ -88,21 +101,23 @@ curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
 |---|---|
 | `/plugins/openclawbrain/status` | whether the plugin is enabled, loaded, and how the runtime is behaving |
 | `/plugins/openclawbrain/doctor` | SQLite + FTS health under the current Node runtime |
-| `/plugins/openclawbrain/proof?limit=20` | recent redacted proof and route events |
-| `/plugins/openclawbrain/graph?limit=50` | redacted memory nodes and edges |
+| `/plugins/openclawbrain/proof?limit=20` | recent redacted proof, route, and injection events |
+| `/plugins/openclawbrain/graph?limit=50` | redacted memory nodes and memory edges |
 | `/plugins/openclawbrain/learn?limit=50` | route examples and current learning state |
 | `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
 
 ## Privacy and safety
 
-- Local learning defaults to on when local Ollama is available
+- Local learning defaults to the local Ollama path
 - Raw transcript upload is hard-disabled
 - Redaction happens before storage and before model use
+- The model does not write directly to memory
 - Plugin failure does not block the main agent
 - Local-first by default
 
 ## More
 
+- [How it works](https://openclawbrain.ai/how-it-works/)
 - [Getting started](docs/GETTING_STARTED.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Vision](VISION.md)

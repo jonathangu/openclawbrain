@@ -4,40 +4,121 @@
   <meta charset="utf-8">
   <title>OpenClawBrain Proof</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="How to verify that OpenClawBrain is loaded and what it is doing.">
+  <meta name="description" content="Verify OpenClawBrain with plugin inspection, SQLite health checks, proof events, memory search, graph inspection, and route decisions.">
   <link rel="canonical" href="https://openclawbrain.ai/proof/">
   <style>
-    :root { --bg:#09111a; --panel:#111c2a; --text:#ebf2fb; --muted:#a9b7c8; --line:rgba(126,214,255,0.22); --accent:#7ed6ff; }
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.7; }
-    .wrap { max-width:900px; margin:0 auto; padding:24px 20px 64px; }
-    a { color:var(--accent); text-decoration:none; }
-    a:hover { text-decoration:underline; }
-    .nav { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
-    .nav a { border:1px solid var(--line); border-radius:999px; padding:9px 13px; }
-    .panel { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:28px; margin-bottom:18px; }
-    h1 { font-size:clamp(32px,5vw,48px); line-height:1.08; margin:0 0 12px; }
-    h2 { margin:0 0 10px; font-size:26px; }
-    p { margin:0 0 14px; }
-    pre { margin:0; overflow:auto; background:#08111b; border:1px solid var(--line); border-radius:16px; padding:16px; font-size:14px; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top; }
-    th { color:var(--text); }
-    .muted { color:var(--muted); }
-  </style>
+    :root {
+      --bg: #071019;
+      --panel: #0e1824;
+      --panel-2: #132131;
+      --text: #eaf2fb;
+      --muted: #a8b6c8;
+      --line: rgba(132, 179, 230, 0.22);
+      --accent: #7ed6ff;
+      --accent-2: #9ff5c0;
+      --shadow: 0 16px 40px rgba(0,0,0,0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(126,214,255,0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(159,245,192,0.12), transparent 26%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 20px 72px; }
+    .topbar, .nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+    .brand { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .navlinks { display: flex; gap: 10px; flex-wrap: wrap; }
+    .nav a, .navlinks a, .btn {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 10px 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      text-decoration: none;
+      background: rgba(255,255,255,0.02);
+    }
+    .hero, .section, .panel {
+      background: linear-gradient(180deg, rgba(19,33,49,0.96), rgba(14,24,36,0.96));
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+    .hero { padding: 40px 34px; margin-bottom: 18px; }
+    .section, .panel { padding: 28px; margin-top: 18px; }
+    .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px; font-weight: 800; margin-bottom: 12px; }
+    h1 { font-size: clamp(34px, 5vw, 56px); line-height: 1.05; margin: 0 0 16px; }
+    h2 { margin: 0 0 10px; font-size: 28px; }
+    h3 { margin: 0 0 8px; font-size: 18px; }
+    p { margin: 0 0 14px; }
+    .lead { font-size: 20px; color: var(--muted); max-width: 780px; margin: 0 0 20px; }
+    .sublead { max-width: 780px; margin: 0 0 24px; color: var(--text); }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #b6ebff); color: #051018; font-weight: 700; }
+    .chips { display: flex; gap: 10px; flex-wrap: wrap; }
+    .chip {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+    }
+    pre {
+      margin: 0 0 14px;
+      overflow: auto;
+      background: #08111b;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      color: #d8e8f8;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    blockquote { margin: 0 0 18px; padding: 14px 18px; border-left: 3px solid var(--accent-2); background: rgba(159,245,192,0.06); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; }
+    th, td { border: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top; }
+    ul, ol { margin: 0 0 14px; padding-left: 20px; }
+    li { margin-bottom: 8px; }
+    .fine, .muted { color: var(--muted); font-size: 14px; }
+    .footer { color: var(--muted); text-align: center; margin-top: 28px; font-size: 14px; }
+    @media (max-width: 640px) { .hero, .section, .panel { padding: 22px; } .lead { font-size: 18px; } }
+</style>
 </head>
 <body>
   <div class="wrap">
-    <div class="nav">
-      <a href="/">Home</a>
-      <a href="/install/">Install</a>
-      <a href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">GitHub</a>
+    <div class="topbar">
+      <div class="brand">OpenClawBrain</div>
+      <div class="navlinks">
+        <a href="/">Home</a>
+        <a href="/how-it-works/">How it works</a>
+        <a href="/install/">Install</a>
+        <a href="/proof/">Proof</a>
+        <a href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">GitHub</a>
+      </div>
     </div>
 
-    <section class="panel">
-      <h1>Proof, not hand-waving</h1>
-      <p>OpenClawBrain is built so you can inspect what it is doing. You should not have to trust a vague claim that an agent “has memory now.”</p>
-      <p class="muted">These commands let you verify that the plugin is loaded, healthy, and doing real work.</p>
+    <section class="hero">
+      <div class="eyebrow">Proof</div>
+      <h1>Proof, not hand-waving.</h1>
+      <p class="lead">Close it out means evidence, not vibes. OpenClawBrain is built so you can inspect what it is doing instead of trusting a vague claim that an agent “has memory now.”</p>
+      <p class="sublead">These commands verify the accountable local system: plugin load, SQLite + FTS health, runtime status, proof events, graph state, local search, and learning surfaces.</p>
     </section>
 
     <section class="panel">
@@ -45,20 +126,31 @@
       <pre><code>openclaw plugins inspect openclawbrain --json
 curl http://127.0.0.1:18789/plugins/openclawbrain/status
 curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
-      <p>You want to see the plugin enabled, activated, loaded, and able to pass its SQLite + FTS health check.</p>
+      <p>You want to see the plugin loaded, runtime routes and hooks present, and SQLite + FTS healthy.</p>
+      <p class="muted">Use <code>inspect</code> for runtime truth. A plugin list view can look like “zero plugins/routes/hooks” when it is only showing metadata snapshot fields.</p>
     </section>
 
     <section class="panel">
       <h2>Inspect the runtime surfaces</h2>
       <table>
         <tr><th>Endpoint</th><th>What it shows</th></tr>
-        <tr><td><code>/plugins/openclawbrain/status</code></td><td>Whether the plugin is on, how it is configured, and how the runtime is behaving.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/status</code></td><td>Whether the plugin is on, how it is configured, recent decision kind, and runtime behavior.</td></tr>
         <tr><td><code>/plugins/openclawbrain/doctor</code></td><td>Whether SQLite and FTS are healthy under the current Node runtime.</td></tr>
-        <tr><td><code>/plugins/openclawbrain/proof?limit=20</code></td><td>Recent redacted proof and route events.</td></tr>
-        <tr><td><code>/plugins/openclawbrain/graph?limit=50</code></td><td>Redacted memory nodes and edges.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/proof?limit=20</code></td><td>Recent redacted proof, route, and injection events.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/graph?limit=50</code></td><td>Redacted memory nodes and memory edges.</td></tr>
         <tr><td><code>/plugins/openclawbrain/learn?limit=50</code></td><td>Route examples and current learning state.</td></tr>
-        <tr><td><code>/plugins/openclawbrain/search?query=...&limit=20</code></td><td>Local memory search.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/search?query=...&amp;limit=20</code></td><td>Local SQLite FTS memory search.</td></tr>
       </table>
+    </section>
+
+    <section class="panel">
+      <h2>End-to-end proof shape</h2>
+      <p>The installed live loop was verified with a temporary memory: <strong>temporary correction → SQLite memory → FTS retrieval → XML prompt injection → cleanup</strong>.</p>
+      <pre><code>&lt;openclawbrain_context&gt;
+Relevant memory:
+- Must follow: Use pnpm in this repo.
+&lt;/openclawbrain_context&gt;</code></pre>
+      <p>That is the product claim: not perfect magical memory, but an accountable local system that can capture a durable correction, retrieve it later, inject it within budget, and leave proof behind.</p>
     </section>
 
     <section class="panel">
@@ -66,7 +158,7 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
       <pre><code>curl http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10
 curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?limit=10'
 curl 'http://127.0.0.1:18789/plugins/openclawbrain/learn?limit=10'
-curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'</code></pre>
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&amp;limit=10'</code></pre>
       <p>These are the surfaces that let you tell the difference between “we say it works” and “you can inspect what it is doing right now.”</p>
     </section>
 
@@ -75,10 +167,12 @@ curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'</
       <p>OpenClawBrain is not claiming that every agent suddenly has perfect memory. The claim is tighter and more useful:</p>
       <ul>
         <li>keep memory local</li>
-        <li>retrieve likely candidates quickly</li>
-        <li>inject only a small useful slice</li>
+        <li>let the LLM decide semantic meaning without letting it write directly</li>
+        <li>retrieve likely candidates quickly with SQLite FTS</li>
+        <li>inject only a small useful XML block</li>
         <li>show proof and health surfaces you can inspect</li>
       </ul>
+      <p><strong>LLM decides semantic meaning. Code enforces trust boundaries. SQLite stores the graph and evidence.</strong></p>
     </section>
   </div>
 </body>

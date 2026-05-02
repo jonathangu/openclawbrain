@@ -4,38 +4,121 @@
   <meta charset="utf-8">
   <title>Install OpenClawBrain</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Install OpenClawBrain, turn it on, and verify that it is live.">
+  <meta name="description" content="Install OpenClawBrain, turn it on, and verify local SQLite memory with proof instead of vibes.">
   <link rel="canonical" href="https://openclawbrain.ai/install/">
   <style>
-    :root { --bg:#09111a; --panel:#111c2a; --text:#ebf2fb; --muted:#a9b7c8; --line:rgba(126,214,255,0.22); --accent:#7ed6ff; }
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:Inter,ui-sans-serif,system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.7; }
-    .wrap { max-width:900px; margin:0 auto; padding:24px 20px 64px; }
-    a { color:var(--accent); text-decoration:none; }
-    a:hover { text-decoration:underline; }
-    .nav { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
-    .nav a { border:1px solid var(--line); border-radius:999px; padding:9px 13px; }
-    .panel { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:28px; margin-bottom:18px; }
-    h1 { font-size:clamp(32px,5vw,48px); line-height:1.08; margin:0 0 12px; }
-    h2 { margin:0 0 10px; font-size:26px; }
-    p { margin:0 0 14px; }
-    pre { margin:0; overflow:auto; background:#08111b; border:1px solid var(--line); border-radius:16px; padding:16px; font-size:14px; }
-    ul, ol { margin:0; padding-left:20px; }
-    li { margin-bottom:8px; }
-    .muted { color:var(--muted); }
-  </style>
+    :root {
+      --bg: #071019;
+      --panel: #0e1824;
+      --panel-2: #132131;
+      --text: #eaf2fb;
+      --muted: #a8b6c8;
+      --line: rgba(132, 179, 230, 0.22);
+      --accent: #7ed6ff;
+      --accent-2: #9ff5c0;
+      --shadow: 0 16px 40px rgba(0,0,0,0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(126,214,255,0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(159,245,192,0.12), transparent 26%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 24px 20px 72px; }
+    .topbar, .nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+    .brand { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+    .navlinks { display: flex; gap: 10px; flex-wrap: wrap; }
+    .nav a, .navlinks a, .btn {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 10px 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      text-decoration: none;
+      background: rgba(255,255,255,0.02);
+    }
+    .hero, .section, .panel {
+      background: linear-gradient(180deg, rgba(19,33,49,0.96), rgba(14,24,36,0.96));
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+    }
+    .hero { padding: 40px 34px; margin-bottom: 18px; }
+    .section, .panel { padding: 28px; margin-top: 18px; }
+    .eyebrow { color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px; font-weight: 800; margin-bottom: 12px; }
+    h1 { font-size: clamp(34px, 5vw, 56px); line-height: 1.05; margin: 0 0 16px; }
+    h2 { margin: 0 0 10px; font-size: 28px; }
+    h3 { margin: 0 0 8px; font-size: 18px; }
+    p { margin: 0 0 14px; }
+    .lead { font-size: 20px; color: var(--muted); max-width: 780px; margin: 0 0 20px; }
+    .sublead { max-width: 780px; margin: 0 0 24px; color: var(--text); }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #b6ebff); color: #051018; font-weight: 700; }
+    .chips { display: flex; gap: 10px; flex-wrap: wrap; }
+    .chip {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+    }
+    pre {
+      margin: 0 0 14px;
+      overflow: auto;
+      background: #08111b;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      color: #d8e8f8;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    blockquote { margin: 0 0 18px; padding: 14px 18px; border-left: 3px solid var(--accent-2); background: rgba(159,245,192,0.06); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; }
+    th, td { border: 1px solid var(--line); padding: 10px 12px; text-align: left; vertical-align: top; }
+    ul, ol { margin: 0 0 14px; padding-left: 20px; }
+    li { margin-bottom: 8px; }
+    .fine, .muted { color: var(--muted); font-size: 14px; }
+    .footer { color: var(--muted); text-align: center; margin-top: 28px; font-size: 14px; }
+    @media (max-width: 640px) { .hero, .section, .panel { padding: 22px; } .lead { font-size: 18px; } }
+</style>
 </head>
 <body>
   <div class="wrap">
-    <div class="nav">
-      <a href="/">Home</a>
-      <a href="/proof/">Proof</a>
-      <a href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">GitHub</a>
+    <div class="topbar">
+      <div class="brand">OpenClawBrain</div>
+      <div class="navlinks">
+        <a href="/">Home</a>
+        <a href="/how-it-works/">How it works</a>
+        <a href="/install/">Install</a>
+        <a href="/proof/">Proof</a>
+        <a href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">GitHub</a>
+      </div>
     </div>
 
-    <section class="panel">
+    <section class="hero">
+      <div class="eyebrow">Install</div>
       <h1>Install OpenClawBrain</h1>
-      <p>Here is the fast honest path: install the plugin, turn it on, and make sure it is really loaded before you trust it.</p>
+      <p class="lead">Fast honest path: install the plugin, turn it on, and verify that memory is really loaded before you trust it.</p>
+      <p class="sublead">The goal is evidence, not vibes. You should be able to prove plugin load, SQLite + FTS health, local Ollama config, route events, search, graph, and prompt injection.</p>
       <p class="muted">Requires OpenClaw <strong>2026.4.29</strong> or later.</p>
     </section>
 
@@ -58,8 +141,8 @@ openclaw gateway restart</code></pre>
     </section>
 
     <section class="panel">
-      <h2>3) Default automatic learning path</h2>
-      <p>OpenClawBrain now aims at the local Ollama path by default. If you want to set it explicitly, point it at a local OpenAI-compatible endpoint.</p>
+      <h2>3) Local Ollama learning path</h2>
+      <p>The default route/planner/feedback/learning model is <code>qwen2.5:32b-instruct</code>. OpenClawBrain aims at the local OpenAI-compatible Ollama endpoint by default; set it explicitly if you want the config to be self-documenting.</p>
       <pre><code>ollama list
 
 openclaw config set plugins.entries.openclawbrain.config.llm '{
@@ -72,7 +155,7 @@ openclaw config set plugins.entries.openclawbrain.config.llm '{
 }' --strict-json
 openclaw config validate
 openclaw gateway restart</code></pre>
-      <p class="muted">If you deliberately disable this step, the plugin still loads and exposes local proof, graph, health, and search surfaces. Automatic learning just stays off.</p>
+      <p class="muted">Ollama proposes; code disposes. If local model calls are unavailable, the main agent keeps working and memory gets quieter rather than becoming a single point of failure.</p>
     </section>
 
     <section class="panel">
@@ -81,11 +164,11 @@ openclaw gateway restart</code></pre>
 curl http://127.0.0.1:18789/plugins/openclawbrain/status
 curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
       <ol>
-        <li>Make sure the plugin is <code>enabled</code>.</li>
-        <li>Make sure it is <code>activated</code>.</li>
-        <li>Make sure its status is <code>loaded</code>.</li>
-        <li>Make sure the doctor route succeeds.</li>
+        <li>Make sure the plugin status is <code>loaded</code>.</li>
+        <li>Make sure runtime routes and hooks are present.</li>
+        <li>Make sure the doctor route passes its SQLite + FTS health check.</li>
       </ol>
+      <p class="muted">Use <code>openclaw plugins inspect openclawbrain --json</code> for runtime truth. A list view can under-report route and hook counts if it is showing only install metadata.</p>
     </section>
 
     <section class="panel">
@@ -94,8 +177,9 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
       <pre><code>Use pnpm instead of npm in this repo.</code></pre>
       <p>Then inspect what happened:</p>
       <pre><code>curl 'http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10'
-curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&amp;limit=10'
 curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?limit=10'</code></pre>
+      <p>If the system is doing its job, the win should feel almost invisible: you stop repeating yourself, and the agent quietly does the right thing.</p>
     </section>
   </div>
 </body>
