@@ -126,7 +126,7 @@
     <section class="section">
       <h2>TL;DR</h2>
       <p>OpenClawBrain is a local memory layer for OpenClaw agents: it learns durable corrections, preferences, workflows, and context, then retrieves only the small slice that matters right now. It uses selective routing, SQLite search, bounded prompt injection, and outcome learning instead of stuffing history into every prompt.</p>
-      <p>In v0.2.12, retrieval and capture are separate decisions. Retrieval stays conservative, while aggressive capture evaluates durable instructions, corrections, workflows, routing rules, outcomes, and explicit recall rules. The installed live loop is verified end to end: <strong>turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection</strong>.</p>
+      <p>In v0.2.13, retrieval and capture are separate decisions. Retrieval stays conservative, while aggressive capture evaluates durable instructions, corrections, workflows, routing rules, outcomes, and explicit recall rules. The installed live loop is verified end to end: <strong>turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection</strong>.</p>
     </section>
 
     <section class="section">
@@ -192,7 +192,7 @@ inject a small block, or stay silent</code></pre>
 
     <section class="section">
       <h2>Latency</h2>
-      <p>The headline: v0.2.12 keeps prompt-time retrieval disciplined while moving more memory formation into audited capture and background distillation.</p>
+      <p>The headline: v0.2.13 keeps prompt-time retrieval disciplined while moving more memory formation into audited capture and background distillation.</p>
       <pre><code>retrieval: conservative and bounded
 capture: aggressive and audited
 storage: strict, scoped, local
