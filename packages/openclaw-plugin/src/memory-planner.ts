@@ -62,6 +62,8 @@ export class MemoryPlanner {
           confidence: planner.output.confidence,
           shouldRetrieve: planner.output.shouldRetrieve,
           enqueueCapture: baseRoutePlan.enqueueCapture || planner.output.likelyFeedbackType === 'correction',
+          retrievalIntent: baseRoutePlan.retrievalIntent,
+          captureIntent: baseRoutePlan.captureIntent,
           latencyReason: 'llm memory planner',
         }
       : baseRoutePlan;
@@ -86,11 +88,30 @@ export class MemoryPlanner {
 
     let feedbackDistillation: FeedbackDistillation | undefined;
     if (routePlan.enqueueCapture && this.distiller) {
-      const result = await this.distiller.distill(packet);
+      const result = await this.distiller.distill(packet, { captureIntent: routePlan.captureIntent, retrievalIntent: routePlan.retrievalIntent });
       feedbackDistillation = result.output;
       if (feedbackDistillation.shouldStore || feedbackDistillation.injectionFeedback.length > 0) {
-        new MemoryOperationApplier({ store: this.store, config: this.config }).applyDistillation(feedbackDistillation, packet);
+        new MemoryOperationApplier({ store: this.store, config: this.config }).applyDistillation(feedbackDistillation, packet, { captureIntent: routePlan.captureIntent });
       }
+      this.store.insertCaptureAudit({
+        agentId: packet.agentId,
+        sessionId: packet.sessionId,
+        turnId: packet.turnId,
+        runId: packet.runId,
+        retrievalIntent: routePlan.retrievalIntent,
+        captureIntent: routePlan.captureIntent,
+        captureJobCreated: false,
+        distillerRan: true,
+        distillerModel: result.audit.model,
+        distillerLatencyMs: result.audit.latencyMs,
+        fallbackRan: result.audit.validationStatus === 'fallback',
+        candidateCount: feedbackDistillation.memoryCandidates.length,
+        storedCount: feedbackDistillation.shouldStore ? feedbackDistillation.memoryCandidates.length : 0,
+        rejectedCount: feedbackDistillation.shouldStore ? 0 : 1,
+        rejectionReasons: feedbackDistillation.audit.rejectionReasons ?? [feedbackDistillation.audit.modelReasonCode],
+        safeCandidatePreview: feedbackDistillation.audit.safeCandidatePreview,
+        evidenceHash: String(packet.metadata.promptHash || ''),
+      });
     }
     if (!routePlan.shouldRetrieve) return { routePlan, feedbackDistillation };
     const plannedIds = planner?.output.selectedMemoryIds ?? [];

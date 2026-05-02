@@ -13,11 +13,12 @@ import { MemoryStore } from './memory-store.js';
 import { decidePolicy } from './policy.js';
 import { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 import { RouteLearning } from './route-learning.js';
-import { buildMemoryCorpusSupplement, buildMemoryPromptSupplement, graphPayload, learnPayload, searchPayload } from './search.js';
+import { auditPayload, buildMemoryCorpusSupplement, buildMemoryPromptSupplement, explainLastPayload, graphPayload, learnPayload, searchPayload } from './search.js';
 import { buildStatus } from './status.js';
 import { nativeSqliteSmokeTest } from './native-sqlite.js';
 import { clipText, eventId, hashText, latestUserTextFromEvent, redactText, safeString } from './redact.js';
 import { RouteFn } from './route-fn.js';
+import { detectCaptureIntent, detectRetrievalIntent } from './capture-intent.js';
 export { normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 export { redactText, hashText } from './redact.js';
 export { decidePolicy, classifyTurn } from './policy.js';
@@ -32,12 +33,13 @@ export { MemoryOperationApplier } from './memory-operations.js';
 export { JobQueue } from './job-queue.js';
 export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
+export { detectCaptureIntent, detectRetrievalIntent, classifySensitiveValue } from './capture-intent.js';
 export { ContextSelector } from './context-selector.js';
 export { MemoryPlanner } from './memory-planner.js';
 export { nativeSqliteSmokeTest } from './native-sqlite.js';
 export { BackgroundLearner } from './learning.js';
 export { RouteLearning } from './route-learning.js';
-export { buildMemoryCorpusSupplement, buildMemoryPromptSupplement, graphPayload, learnPayload, searchPayload } from './search.js';
+export { auditPayload, buildMemoryCorpusSupplement, buildMemoryPromptSupplement, explainLastPayload, graphPayload, learnPayload, searchPayload } from './search.js';
 export const openClawBrainPluginEntry = {
     id: PLUGIN_ID,
     name: 'OpenClawBrain',
@@ -142,7 +144,7 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
         selection = planned.contextSelection ?? emptySelection();
     }
     else if (plan.enqueueCapture) {
-        queue.enqueueFeedbackDistillation(agentId, { packet }, { priority: 10 });
+        queue.enqueueFeedbackDistillation(agentId, { packet, captureIntent: plan.captureIntent, retrievalIntent: plan.retrievalIntent }, { priority: 10 });
     }
     const routeDecision = store.insertRouteDecision({
         agentId: packet.agentId,
@@ -164,6 +166,22 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
         promptVersion: latency.kind === 'sync_memory_planner' ? 'memory-planner-v1' : 'route-fn-v1',
         policySnapshotId: plan.policySnapshotId,
         reward: 0,
+    });
+    store.insertCaptureAudit({
+        agentId: packet.agentId,
+        sessionId: packet.sessionId,
+        turnId: packet.turnId,
+        runId: packet.runId,
+        retrievalIntent: plan.retrievalIntent,
+        captureIntent: plan.captureIntent,
+        captureJobCreated: plan.enqueueCapture && latency.kind !== 'sync_memory_planner',
+        distillerRan: false,
+        fallbackRan: false,
+        candidateCount: 0,
+        storedCount: 0,
+        rejectedCount: plan.captureIntent.shouldConsiderCapture ? 0 : 1,
+        rejectionReasons: plan.captureIntent.shouldConsiderCapture ? [] : [plan.captureIntent.reason || 'no_capture_signal'],
+        evidenceHash: String(packet.metadata.promptHash || ''),
     });
     await appendProofEvent({
         kind: latency.kind === 'sync_memory_planner' ? 'llm_route_decision' : 'route_decision',
@@ -285,6 +303,20 @@ function registerFirstClassSurfaces(api, resolve) {
         replaceExisting: true,
         handler: async (req, res) => writeJson(res, searchPayload(resolve(), agentIdFromRequest(req, resolve()), queryFromRequest(req), limitFromRequest(req)))
     });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/audit',
+        auth: 'gateway',
+        match: 'prefix',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, auditPayload(resolve(), agentIdFromRequest(req, resolve()), limitFromRequest(req)))
+    });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/explain-last',
+        auth: 'gateway',
+        match: 'prefix',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, explainLastPayload(resolve(), agentIdFromRequest(req, resolve()), turnIdFromRequest(req)))
+    });
     try {
         api.registerMemoryPromptSupplement?.(buildMemoryPromptSupplement());
         api.registerMemoryCorpusSupplement?.(buildMemoryCorpusSupplement(resolve()));
@@ -314,6 +346,11 @@ async function statusPayload(config, req = {}) {
                 preferences: store.countMemories(agentId, 'preference'),
                 workflows: store.countMemories(agentId, 'workflow'),
                 context: store.countMemories(agentId, 'context'),
+                projectFacts: store.countMemories(agentId, 'project_fact'),
+                toolConventions: store.countMemories(agentId, 'tool_convention'),
+                routingRules: store.countMemories(agentId, 'routing_rule'),
+                recallRules: store.countMemories(agentId, 'recall_rule'),
+                captureAuditRows: store.countCaptureAudit(agentId),
             },
             routing: {
                 activePolicySnapshotId: store.getActivePolicySnapshot(agentId)?.id || null,
@@ -453,6 +490,8 @@ async function handleAgentEnd(event = {}, config = {}, api = {}) {
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     const queue = new JobQueue({ store });
     const packet = new CaptureOrchestrator().fromAgentEnd(event, config);
+    const captureIntent = detectCaptureIntent(packet);
+    const retrievalIntent = detectRetrievalIntent(packet);
     const learner = new BackgroundLearner({ store, config });
     try {
         learner.processAgentEnd(agentId, packet);
@@ -462,7 +501,7 @@ async function handleAgentEnd(event = {}, config = {}, api = {}) {
     }
     if (config.capture.agentEndMode === 'best_effort_async' && config.llm.enabled === true) {
         try {
-            await runFeedbackDistillation(packet, config, store);
+            await runFeedbackDistillation(packet, config, store, { captureIntent, retrievalIntent });
         }
         catch (error) {
             api.logger?.warn?.({ error }, 'OpenClawBrain best-effort agent_end distillation failed');
@@ -472,7 +511,7 @@ async function handleAgentEnd(event = {}, config = {}, api = {}) {
         }
         return {};
     }
-    queue.enqueueFeedbackDistillation(agentId, { packet }, { priority: 10 });
+    queue.enqueueFeedbackDistillation(agentId, { packet, captureIntent, retrievalIntent }, { priority: 10 });
     store.close();
     return {};
 }
@@ -497,7 +536,10 @@ async function processBackgroundJobs(config = {}, api = {}) {
     try {
         let learningReport = null;
         if (job?.kind === 'feedback_distillation') {
-            await runFeedbackDistillation(job.payload?.packet, config, store);
+            await runFeedbackDistillation(job.payload?.packet, config, store, {
+                captureIntent: job.payload?.captureIntent,
+                retrievalIntent: job.payload?.retrievalIntent,
+            });
             queue.enqueueRouteLearning(agentId, { cause: 'feedback_distillation', turnId: job.payload?.packet?.turnId || '' }, { priority: 4 });
         }
         else if (job?.kind === 'outcome_classification') {
@@ -533,13 +575,15 @@ async function processBackgroundJobs(config = {}, api = {}) {
         store.close();
     }
 }
-async function runFeedbackDistillation(packet, config, store) {
+async function runFeedbackDistillation(packet, config, store, context = {}) {
     const client = llmClientFromConfig(config);
     if (!client)
         return null;
     const distiller = new FeedbackDistiller({ client, config });
-    const result = await distiller.distill(packet);
-    const applied = new MemoryOperationApplier({ store, config }).applyDistillation(result.output, packet);
+    const captureIntent = context.captureIntent ?? detectCaptureIntent(packet);
+    const retrievalIntent = context.retrievalIntent ?? detectRetrievalIntent(packet);
+    const result = await distiller.distill(packet, { captureIntent, retrievalIntent });
+    const applied = new MemoryOperationApplier({ store, config }).applyDistillation(result.output, packet, { captureIntent });
     store.insertDistillationRun({
         agentId: packet.agentId,
         sessionId: packet.sessionId,
@@ -554,6 +598,25 @@ async function runFeedbackDistillation(packet, config, store) {
         validationStatus: result.audit.validationStatus,
         validationError: result.audit.validationError || result.audit.parseError,
         latencyMs: result.audit.latencyMs,
+    });
+    store.insertCaptureAudit({
+        agentId: packet.agentId,
+        sessionId: packet.sessionId,
+        turnId: packet.turnId,
+        runId: packet.runId,
+        retrievalIntent,
+        captureIntent,
+        captureJobCreated: true,
+        distillerRan: true,
+        distillerModel: result.audit.model,
+        distillerLatencyMs: result.audit.latencyMs,
+        fallbackRan: result.audit.validationStatus === 'fallback',
+        candidateCount: result.output.memoryCandidates.length,
+        storedCount: applied?.storedCandidates ?? 0,
+        rejectedCount: Math.max(0, result.output.memoryCandidates.length - (applied?.storedCandidates ?? 0)) + (result.output.shouldStore ? 0 : 1),
+        rejectionReasons: result.output.audit.rejectionReasons ?? [result.output.audit.modelReasonCode],
+        safeCandidatePreview: result.output.audit.safeCandidatePreview,
+        evidenceHash: String(packet.metadata.promptHash || ''),
     });
     return applied;
 }
@@ -648,6 +711,19 @@ function queryFromRequest(req = {}) {
     try {
         const url = new URL(req.url || 'http://local/plugins/openclawbrain/search', 'http://local');
         return url.searchParams.get('query') || '';
+    }
+    catch {
+        return '';
+    }
+}
+function turnIdFromRequest(req = {}) {
+    if (req.query?.turnId)
+        return safeString(req.query.turnId);
+    if (req.query?.turn)
+        return safeString(req.query.turn);
+    try {
+        const url = new URL(req.url || 'http://local/plugins/openclawbrain/explain-last', 'http://local');
+        return safeString(url.searchParams.get('turnId') || url.searchParams.get('turn') || '');
     }
     catch {
         return '';

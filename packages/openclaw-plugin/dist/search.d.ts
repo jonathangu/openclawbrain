@@ -77,3 +77,73 @@ export declare function learnPayload(config: any, agentId: string, limit?: numbe
     examples: import("./memory-types.js").RouteExample[];
     policySnapshots: import("./memory-types.js").RoutePolicySnapshot[];
 };
+export declare function auditPayload(config: any, agentId: string, limit?: number): {
+    ok: boolean;
+    agentId: string;
+    limit: number;
+    captureOpportunityRate: number;
+    storageAcceptanceRate: number;
+    rejectionDistribution: Record<string, number>;
+    rows: {
+        id: any;
+        turnId: any;
+        sessionId: any;
+        createdAt: any;
+        retrievalIntent: any;
+        shouldRetrieve: boolean;
+        captureIntent: any;
+        shouldConsiderCapture: boolean;
+        captureJobCreated: any;
+        distillerRan: any;
+        fallbackRan: any;
+        candidateCount: any;
+        storedCount: any;
+        rejectedCount: any;
+        rejectionReasons: any;
+        safeCandidatePreview: any;
+    }[];
+};
+export declare function explainLastPayload(config: any, agentId: string, turnId?: string): {
+    ok: boolean;
+    agentId: string;
+    reason: string;
+    turnId?: undefined;
+    createdAt?: undefined;
+    summary?: undefined;
+    retrieval?: undefined;
+    capture?: undefined;
+    distiller?: undefined;
+    storage?: undefined;
+} | {
+    ok: boolean;
+    agentId: string;
+    turnId: string | null;
+    createdAt: string;
+    summary: string;
+    retrieval: {
+        intent: any;
+        shouldRetrieve: boolean;
+        includeRecallRules: boolean;
+    };
+    capture: {
+        signalFound: boolean;
+        intent: any;
+        confidence: any;
+        reason: any;
+        matchedSignals: any;
+    };
+    distiller: {
+        ran: boolean;
+        model: string | null;
+        latencyMs: number | null;
+        fallbackRan: boolean;
+    };
+    storage: {
+        candidateCount: number;
+        storedCount: number;
+        rejectedCount: number;
+        reasons: string[];
+        safeCandidatePreview: string | null;
+    };
+    reason?: undefined;
+};

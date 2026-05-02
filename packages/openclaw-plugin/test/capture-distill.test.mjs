@@ -81,7 +81,7 @@ test('feedback distiller fallback does not store codewords', async () => {
   });
   assert.equal(result.output.shouldStore, false);
   assert.equal(result.output.memoryCandidates.length, 0);
-  assert.equal(result.output.audit.modelReasonCode, 'sensitive_codeword_not_stored');
+  assert.equal(result.output.audit.modelReasonCode, 'ambiguous_sensitive_recall');
 });
 
 test('memory operation applier creates and updates memories and resolves injections', async () => {

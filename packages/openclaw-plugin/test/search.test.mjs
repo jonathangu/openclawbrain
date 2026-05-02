@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import plugin, { graphPayload, learnPayload, normalizePluginConfig, searchPayload } from '../dist/index.js';
+import plugin, { auditPayload, explainLastPayload, graphPayload, learnPayload, normalizePluginConfig, searchPayload } from '../dist/index.js';
 import { MemoryStore } from '../dist/memory-store.js';
 
 async function tempRoot() {
@@ -30,6 +30,8 @@ test('plugin registers additive memory supplements and inspectable routes', () =
   assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/graph'));
   assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/learn'));
   assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/search'));
+  assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/audit'));
+  assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/explain-last'));
   assert.equal(promptSupplements.length, 1);
   assert.equal(corpusSupplements.length, 1);
   assert.ok(promptSupplements[0]({ availableTools: new Set(), citationsMode: 'auto' }).length >= 1);
@@ -62,6 +64,24 @@ test('search, graph, learn payloads and corpus supplement expose stored memories
       promptVersion: 'route-learning-v1',
       active: true,
     });
+    store.insertCaptureAudit({
+      agentId: 'main',
+      turnId: 'turn-1',
+      sessionId: 'session-1',
+      retrievalIntent: { intent: 'no_retrieval', shouldRetrieve: false, includeRecallRules: false },
+      captureIntent: { intent: 'standing_preference', shouldConsiderCapture: true, confidence: 0.75, reason: 'User stated preference', matchedSignals: ['I prefer'] },
+      captureJobCreated: true,
+      distillerRan: true,
+      distillerModel: 'fake',
+      distillerLatencyMs: 12,
+      fallbackRan: false,
+      candidateCount: 1,
+      storedCount: 1,
+      rejectedCount: 0,
+      rejectionReasons: ['stored'],
+      safeCandidatePreview: 'For implementation feedback, give concrete file-by-file details.',
+      evidenceHash: 'h1',
+    });
     store.close();
 
     const search = searchPayload(config, 'main', 'file-by-file', 10);
@@ -76,6 +96,16 @@ test('search, graph, learn payloads and corpus supplement expose stored memories
     const learn = learnPayload(config, 'main', 10);
     assert.ok(learn.activePolicySnapshot);
     assert.equal(learn.policySnapshots.length, 1);
+
+    const audit = auditPayload(config, 'main', 10);
+    assert.equal(audit.rows.length, 1);
+    assert.equal(audit.rows[0].captureIntent, 'standing_preference');
+    assert.equal(audit.captureOpportunityRate, 1);
+
+    const explain = explainLastPayload(config, 'main');
+    assert.equal(explain.ok, true);
+    assert.match(explain.summary, /stored/);
+    assert.equal(explain.capture.intent, 'standing_preference');
 
     const supplements = [];
     plugin.register({

@@ -113,6 +113,73 @@ export function learnPayload(config: any, agentId: string, limit = 20) {
   }
 }
 
+export function auditPayload(config: any, agentId: string, limit = 20) {
+  const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+  try {
+    const rows = store.listCaptureAudit(agentId, limit);
+    return {
+      ok: true,
+      agentId,
+      limit: Math.min(200, Math.max(1, Number(limit || 20))),
+      captureOpportunityRate: rows.length ? Number((rows.filter((row) => row.captureIntent?.shouldConsiderCapture).length / rows.length).toFixed(3)) : 0,
+      storageAcceptanceRate: rows.length ? Number((rows.reduce((sum, row) => sum + row.storedCount, 0) / Math.max(1, rows.reduce((sum, row) => sum + row.candidateCount, 0))).toFixed(3)) : 0,
+      rejectionDistribution: rejectionDistribution(rows),
+      rows: rows.map(renderCaptureAuditRow),
+    };
+  } finally {
+    store.close();
+  }
+}
+
+export function explainLastPayload(config: any, agentId: string, turnId?: string) {
+  const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+  try {
+    const rows = store.listCaptureAudit(agentId, 200);
+    const row = turnId ? rows.find((candidate) => candidate.turnId === turnId) : rows[0];
+    if (!row) return { ok: false, agentId, reason: 'no_capture_audit_rows' };
+    const considered = row.captureIntent?.shouldConsiderCapture === true;
+    const stored = row.storedCount > 0;
+    return {
+      ok: true,
+      agentId,
+      turnId: row.turnId || null,
+      createdAt: row.createdAt,
+      summary: stored
+        ? 'I considered it for memory and stored at least one distilled candidate.'
+        : considered
+          ? 'I considered it for memory, but did not store it.'
+          : 'I did not consider it for durable memory.',
+      retrieval: {
+        intent: row.retrievalIntent?.intent || 'unknown',
+        shouldRetrieve: row.retrievalIntent?.shouldRetrieve === true,
+        includeRecallRules: row.retrievalIntent?.includeRecallRules === true,
+      },
+      capture: {
+        signalFound: considered,
+        intent: row.captureIntent?.intent || 'unknown',
+        confidence: row.captureIntent?.confidence ?? null,
+        reason: row.captureIntent?.reason || null,
+        matchedSignals: row.captureIntent?.matchedSignals || [],
+      },
+      distiller: {
+        ran: row.distillerRan,
+        model: row.distillerModel || null,
+        latencyMs: row.distillerLatencyMs || null,
+        fallbackRan: row.fallbackRan,
+      },
+      storage: {
+        candidateCount: row.candidateCount,
+        storedCount: row.storedCount,
+        rejectedCount: row.rejectedCount,
+        reasons: row.rejectionReasons,
+        safeCandidatePreview: row.safeCandidatePreview || null,
+      },
+    };
+  } finally {
+    store.close();
+  }
+}
+
 function defaultAgentId(config: any) {
   return safeString(config?.scopes?.agents?.[0] ?? 'main') || 'main';
 }
@@ -152,6 +219,37 @@ function renderMemory(memory: MemoryNode) {
     `- confidence: ${memory.confidence}`,
     `- importance: ${memory.importance}`,
   ].join('\n');
+}
+
+function renderCaptureAuditRow(row: any) {
+  return {
+    id: row.id,
+    turnId: row.turnId || null,
+    sessionId: row.sessionId || null,
+    createdAt: row.createdAt,
+    retrievalIntent: row.retrievalIntent?.intent || 'unknown',
+    shouldRetrieve: row.retrievalIntent?.shouldRetrieve === true,
+    captureIntent: row.captureIntent?.intent || 'unknown',
+    shouldConsiderCapture: row.captureIntent?.shouldConsiderCapture === true,
+    captureJobCreated: row.captureJobCreated,
+    distillerRan: row.distillerRan,
+    fallbackRan: row.fallbackRan,
+    candidateCount: row.candidateCount,
+    storedCount: row.storedCount,
+    rejectedCount: row.rejectedCount,
+    rejectionReasons: row.rejectionReasons,
+    safeCandidatePreview: row.safeCandidatePreview || null,
+  };
+}
+
+function rejectionDistribution(rows: any[]) {
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    for (const reason of row.rejectionReasons || []) {
+      counts[reason] = (counts[reason] || 0) + 1;
+    }
+  }
+  return counts;
 }
 
 function memoryPath(memory: MemoryNode) {

@@ -1,4 +1,5 @@
 import { redactText } from './redact.js';
+import { captureStoreThreshold, classifySensitiveValue } from './capture-intent.js';
 export class MemoryOperationApplier {
     store;
     config;
@@ -6,8 +7,10 @@ export class MemoryOperationApplier {
         this.store = options.store;
         this.config = options.config;
     }
-    applyDistillation(distillation, packet) {
+    applyDistillation(distillation, packet, context = {}) {
         if (!distillation.shouldStore && distillation.injectionFeedback.length === 0) {
+            if (distillation.feedbackType === 'delete_or_suppress')
+                this.applyDeleteOrSuppress(packet);
             return { memoryIds: [], storedCandidates: 0, resolvedInjections: 0 };
         }
         const memoryIds = [];
@@ -15,7 +18,12 @@ export class MemoryOperationApplier {
         let resolvedInjections = 0;
         this.store.transaction(() => {
             for (const candidate of distillation.memoryCandidates) {
-                if (candidate.confidence < this.config.capture.minConfidence)
+                const minConfidence = context.captureIntent
+                    ? captureStoreThreshold(context.captureIntent.intent)
+                    : this.config.capture.minConfidence;
+                if (candidate.confidence < minConfidence)
+                    continue;
+                if (!this.isSafeToStore(candidate))
                     continue;
                 const node = this.upsertCandidate(candidate, packet);
                 memoryIds.push(node.id);
@@ -47,6 +55,26 @@ export class MemoryOperationApplier {
             });
         });
         return { memoryIds, storedCandidates, resolvedInjections };
+    }
+    applyDeleteOrSuppress(packet) {
+        const query = packet.latestUserMessageRedacted || '';
+        const matches = this.store.searchMemories(query, packet.agentId, { limit: 10 });
+        for (const memory of matches)
+            this.store.softDeleteMemory(memory.id);
+    }
+    isSafeToStore(candidate) {
+        const risk = classifySensitiveValue(`${candidate.distilledText} ${candidate.positive ?? ''}`, candidate.type === 'recall_rule' ? 'recall_rule' : undefined);
+        if (risk.kind === 'credential_secret')
+            return false;
+        if (candidate.type === 'recall_rule') {
+            return candidate.disclosure === 'on_explicit_user_request_only'
+                && candidate.proactiveInjectionAllowed === false
+                && candidate.scope.kind !== 'global_user'
+                && Boolean(candidate.scope.key);
+        }
+        if (risk.kind === 'ambiguous_codeword')
+            return false;
+        return true;
     }
     upsertCandidate(candidate, packet) {
         const existing = this.store.findMemoryByNormalizedKey(packet.agentId, candidate.normalizedKey, candidate.scope.kind, candidate.scope.key);

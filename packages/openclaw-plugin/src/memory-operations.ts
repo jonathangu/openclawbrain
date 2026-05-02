@@ -2,6 +2,7 @@ import type { FeedbackDistillation, MemoryCandidate, MemoryNode } from './memory
 import type { TurnEventPacket } from './capture.js';
 import { MemoryStore } from './memory-store.js';
 import { redactText } from './redact.js';
+import { captureStoreThreshold, classifySensitiveValue, type CaptureIntentResult } from './capture-intent.js';
 
 export interface ApplyFeedbackResult {
   memoryIds: string[];
@@ -18,8 +19,9 @@ export class MemoryOperationApplier {
     this.config = options.config;
   }
 
-  applyDistillation(distillation: FeedbackDistillation, packet: TurnEventPacket): ApplyFeedbackResult {
+  applyDistillation(distillation: FeedbackDistillation, packet: TurnEventPacket, context: { captureIntent?: CaptureIntentResult } = {}): ApplyFeedbackResult {
     if (!distillation.shouldStore && distillation.injectionFeedback.length === 0) {
+      if (distillation.feedbackType === 'delete_or_suppress') this.applyDeleteOrSuppress(packet);
       return { memoryIds: [], storedCandidates: 0, resolvedInjections: 0 };
     }
 
@@ -29,7 +31,11 @@ export class MemoryOperationApplier {
 
     this.store.transaction(() => {
       for (const candidate of distillation.memoryCandidates) {
-        if (candidate.confidence < this.config.capture.minConfidence) continue;
+        const minConfidence = context.captureIntent
+          ? captureStoreThreshold(context.captureIntent.intent)
+          : this.config.capture.minConfidence;
+        if (candidate.confidence < minConfidence) continue;
+        if (!this.isSafeToStore(candidate)) continue;
         const node = this.upsertCandidate(candidate, packet);
         memoryIds.push(node.id);
         storedCandidates += 1;
@@ -63,6 +69,25 @@ export class MemoryOperationApplier {
     });
 
     return { memoryIds, storedCandidates, resolvedInjections };
+  }
+
+  private applyDeleteOrSuppress(packet: TurnEventPacket) {
+    const query = packet.latestUserMessageRedacted || '';
+    const matches = this.store.searchMemories(query, packet.agentId, { limit: 10 });
+    for (const memory of matches) this.store.softDeleteMemory(memory.id);
+  }
+
+  private isSafeToStore(candidate: MemoryCandidate) {
+    const risk = classifySensitiveValue(`${candidate.distilledText} ${candidate.positive ?? ''}`, candidate.type === 'recall_rule' ? 'recall_rule' : undefined);
+    if (risk.kind === 'credential_secret') return false;
+    if (candidate.type === 'recall_rule') {
+      return candidate.disclosure === 'on_explicit_user_request_only'
+        && candidate.proactiveInjectionAllowed === false
+        && candidate.scope.kind !== 'global_user'
+        && Boolean(candidate.scope.key);
+    }
+    if (risk.kind === 'ambiguous_codeword') return false;
+    return true;
   }
 
   private upsertCandidate(candidate: MemoryCandidate, packet: TurnEventPacket): MemoryNode {

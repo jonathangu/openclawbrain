@@ -1,5 +1,5 @@
 import { type DatabaseLike } from './sqlite-driver.js';
-import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot } from './memory-types.js';
+import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, CaptureAuditRow } from './memory-types.js';
 export declare const uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 export declare const now: () => string;
 export interface MemoryStoreOptions {
@@ -69,6 +69,12 @@ export declare class MemoryStore {
     insertDistillationRun(run: Omit<DistillationRun, 'id' | 'createdAt'> & {
         id?: string;
     }): DistillationRun;
+    insertCaptureAudit(row: Omit<CaptureAuditRow, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): CaptureAuditRow;
+    listCaptureAudit(agentId: string, limit?: number): CaptureAuditRow[];
+    countCaptureAudit(agentId: string): number;
     enqueueJob(job: Omit<BackgroundJob, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'attempts' | 'startedAt' | 'finishedAt' | 'error'> & {
         id?: string;
     }): BackgroundJob;

@@ -1,4 +1,4 @@
-export type MemoryType = 'correction' | 'preference' | 'workflow' | 'context';
+export type MemoryType = 'correction' | 'preference' | 'workflow' | 'project_fact' | 'tool_convention' | 'routing_rule' | 'agent_assignment' | 'recall_rule' | 'outcome' | 'context';
 export interface MemoryNode {
     id: string;
     agentId: string;
@@ -6,7 +6,7 @@ export interface MemoryNode {
     content: string;
     positive?: string;
     negative?: string;
-    scopeKind: 'global_user' | 'agent' | 'repo' | 'project' | 'session' | 'tool';
+    scopeKind: 'global_user' | 'agent' | 'repo' | 'project' | 'app' | 'person' | 'channel' | 'session' | 'task' | 'tool';
     scopeKey?: string;
     normalizedKey: string;
     tags: string[];
@@ -101,6 +101,8 @@ export interface RouteDecision {
     turnFrame: TurnFrame;
     retrievalPlan: RetrievalPlan;
     injectionPlan: InjectionPlan;
+    retrievalIntent?: any;
+    captureIntent?: any;
     selectedMemoryIds: string[];
     omittedMemoryIds: string[];
     model?: string;
@@ -155,7 +157,7 @@ export interface ContradictionAction {
     action: 'supersede_existing' | 'merge' | 'keep_both';
 }
 export interface MemoryCandidate {
-    type: 'correction' | 'preference' | 'workflow' | 'context';
+    type: MemoryType;
     distilledText: string;
     subject: string;
     scope: {
@@ -169,6 +171,9 @@ export interface MemoryCandidate {
     confidence: number;
     importanceHint: number;
     retention: 'durable' | 'medium_term' | 'short_term' | 'ephemeral';
+    riskClass?: 'ordinary' | 'private' | 'sensitive_recall' | 'credential_secret' | 'unsafe';
+    disclosure?: 'normal' | 'on_explicit_user_request_only' | 'never';
+    proactiveInjectionAllowed?: boolean;
     contradictions: ContradictionAction[];
 }
 export interface InjectionFeedback {
@@ -198,7 +203,30 @@ export interface FeedbackDistillation {
         modelReasonCode: string;
         storeRawTranscript: false;
         redactionNeeded: boolean;
+        rejectionReasons?: string[];
+        safeCandidatePreview?: string;
     };
+}
+export interface CaptureAuditRow {
+    id: string;
+    agentId: string;
+    turnId?: string;
+    sessionId?: string;
+    runId?: string;
+    createdAt: string;
+    retrievalIntent: any;
+    captureIntent: any;
+    captureJobCreated: boolean;
+    distillerRan: boolean;
+    distillerModel?: string;
+    distillerLatencyMs?: number;
+    fallbackRan: boolean;
+    candidateCount: number;
+    storedCount: number;
+    rejectedCount: number;
+    rejectionReasons: string[];
+    safeCandidatePreview?: string;
+    evidenceHash?: string;
 }
 export type MemoryOperationKind = 'create' | 'update' | 'supersede' | 'reinforce' | 'delete_or_suppress' | 'ignore';
 export interface MemoryOperation {

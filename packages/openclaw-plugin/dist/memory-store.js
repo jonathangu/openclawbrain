@@ -6,7 +6,7 @@ import os from 'node:os';
 import { mkdirSync } from 'node:fs';
 import { openDatabase } from './sqlite-driver.js';
 // ── Schema version ────────────────────────────────────────────────────────────
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 const MIGRATIONS = {
     1: `
@@ -20,7 +20,7 @@ const MIGRATIONS = {
       rowid INTEGER PRIMARY KEY,
       id TEXT NOT NULL UNIQUE,
       agent_id TEXT NOT NULL,
-      type TEXT NOT NULL CHECK (type IN ('correction', 'preference', 'workflow', 'context')),
+      type TEXT NOT NULL CHECK (type IN ('correction', 'preference', 'workflow', 'project_fact', 'tool_convention', 'routing_rule', 'agent_assignment', 'recall_rule', 'outcome', 'context')),
       content TEXT NOT NULL,
       positive TEXT,
       negative TEXT,
@@ -253,6 +253,130 @@ const MIGRATIONS = {
       status_json TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+  `,
+    3: `
+    DROP TRIGGER IF EXISTS memory_nodes_ai;
+    DROP TRIGGER IF EXISTS memory_nodes_ad;
+    DROP TRIGGER IF EXISTS memory_nodes_au;
+    DROP TABLE IF EXISTS memory_search;
+
+    CREATE TABLE IF NOT EXISTS memory_nodes_v3 (
+      rowid INTEGER PRIMARY KEY,
+      id TEXT NOT NULL UNIQUE,
+      agent_id TEXT NOT NULL,
+      type TEXT NOT NULL CHECK (type IN ('correction', 'preference', 'workflow', 'project_fact', 'tool_convention', 'routing_rule', 'agent_assignment', 'recall_rule', 'outcome', 'context')),
+      content TEXT NOT NULL,
+      positive TEXT,
+      negative TEXT,
+      scope_kind TEXT NOT NULL DEFAULT 'agent',
+      scope_key TEXT,
+      normalized_key TEXT,
+      tags_json TEXT NOT NULL DEFAULT '[]',
+      importance REAL NOT NULL DEFAULT 0.25,
+      freshness REAL NOT NULL DEFAULT 1.0,
+      confidence REAL NOT NULL DEFAULT 0.5,
+      use_count INTEGER NOT NULL DEFAULT 0,
+      useful_count INTEGER NOT NULL DEFAULT 0,
+      capture_count INTEGER NOT NULL DEFAULT 1,
+      distilled_by_model TEXT,
+      distiller_prompt_version TEXT,
+      distillation_confidence REAL,
+      evidence_kind TEXT,
+      evidence_hash TEXT,
+      source_hook TEXT,
+      source_turn_id TEXT,
+      source_session_id TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      last_seen_at TEXT NOT NULL,
+      last_used_at TEXT,
+      superseded_by TEXT,
+      deleted_at TEXT,
+      UNIQUE(agent_id, type, normalized_key, scope_kind, scope_key)
+    );
+
+    INSERT OR IGNORE INTO memory_nodes_v3 (
+      rowid, id, agent_id, type, content, positive, negative,
+      scope_kind, scope_key, normalized_key, tags_json,
+      importance, freshness, confidence, use_count, useful_count, capture_count,
+      distilled_by_model, distiller_prompt_version, distillation_confidence,
+      evidence_kind, evidence_hash, source_hook, source_turn_id, source_session_id,
+      created_at, updated_at, last_seen_at, last_used_at, superseded_by, deleted_at
+    )
+    SELECT rowid, id, agent_id, type, content, positive, negative,
+      scope_kind, scope_key, normalized_key, tags_json,
+      importance, freshness, confidence, use_count, useful_count, capture_count,
+      distilled_by_model, distiller_prompt_version, distillation_confidence,
+      evidence_kind, evidence_hash, source_hook, source_turn_id, source_session_id,
+      created_at, updated_at, last_seen_at, last_used_at, superseded_by, deleted_at
+    FROM memory_nodes;
+
+    DROP TABLE IF EXISTS memory_nodes;
+    ALTER TABLE memory_nodes_v3 RENAME TO memory_nodes;
+
+    CREATE INDEX IF NOT EXISTS idx_memory_nodes_agent ON memory_nodes(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_memory_nodes_type ON memory_nodes(type);
+    CREATE INDEX IF NOT EXISTS idx_memory_nodes_key ON memory_nodes(normalized_key);
+    CREATE INDEX IF NOT EXISTS idx_memory_nodes_active ON memory_nodes(agent_id, deleted_at);
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS memory_search USING fts5(
+      content, tags, normalized_key,
+      content='memory_nodes',
+      content_rowid='rowid',
+      tokenize='porter unicode61'
+    );
+
+    CREATE TRIGGER IF NOT EXISTS memory_nodes_ai AFTER INSERT ON memory_nodes
+    WHEN new.deleted_at IS NULL
+    BEGIN
+      INSERT INTO memory_search(rowid, content, tags, normalized_key)
+      VALUES (new.rowid, new.content, new.tags_json, COALESCE(new.normalized_key, ''));
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS memory_nodes_ad AFTER DELETE ON memory_nodes
+    BEGIN
+      INSERT INTO memory_search(memory_search, rowid, content, tags, normalized_key)
+      VALUES ('delete', old.rowid, old.content, old.tags_json, COALESCE(old.normalized_key, ''));
+    END;
+
+    CREATE TRIGGER IF NOT EXISTS memory_nodes_au AFTER UPDATE ON memory_nodes
+    BEGIN
+      INSERT INTO memory_search(memory_search, rowid, content, tags, normalized_key)
+      VALUES ('delete', old.rowid, old.content, old.tags_json, COALESCE(old.normalized_key, ''));
+      INSERT INTO memory_search(rowid, content, tags, normalized_key)
+      SELECT new.rowid, new.content, new.tags_json, COALESCE(new.normalized_key, '')
+      WHERE new.deleted_at IS NULL;
+    END;
+
+    INSERT INTO memory_search(rowid, content, tags, normalized_key)
+    SELECT rowid, content, tags_json, COALESCE(normalized_key, '')
+    FROM memory_nodes
+    WHERE deleted_at IS NULL;
+
+    CREATE TABLE IF NOT EXISTS capture_audit (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      turn_id TEXT,
+      session_id TEXT,
+      run_id TEXT,
+      created_at TEXT NOT NULL,
+      retrieval_intent_json TEXT NOT NULL,
+      capture_intent_json TEXT NOT NULL,
+      capture_job_created INTEGER NOT NULL DEFAULT 0,
+      distiller_ran INTEGER NOT NULL DEFAULT 0,
+      distiller_model TEXT,
+      distiller_latency_ms INTEGER,
+      fallback_ran INTEGER NOT NULL DEFAULT 0,
+      candidate_count INTEGER NOT NULL DEFAULT 0,
+      stored_count INTEGER NOT NULL DEFAULT 0,
+      rejected_count INTEGER NOT NULL DEFAULT 0,
+      rejection_reasons_json TEXT NOT NULL DEFAULT '[]',
+      safe_candidate_preview TEXT,
+      evidence_hash TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_capture_audit_agent ON capture_audit(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_capture_audit_turn ON capture_audit(turn_id);
   `,
 };
 // ── UUID helper ───────────────────────────────────────────────────────────────
@@ -557,6 +681,28 @@ export class MemoryStore {
     `).run(id, run.agentId, run.sessionId ?? null, run.turnId ?? null, run.runId ?? null, run.phase, run.model, run.promptVersion, run.inputHash, run.redactedInputSummary ?? null, run.outputJson, run.validationStatus, run.validationError ?? null, run.latencyMs ?? null, ts);
         return { ...run, id, createdAt: ts };
     }
+    // ── Capture audit ──────────────────────────────────────────────────────────
+    insertCaptureAudit(row) {
+        const id = row.id || uuid();
+        const ts = row.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO capture_audit (
+        id, agent_id, turn_id, session_id, run_id, created_at,
+        retrieval_intent_json, capture_intent_json,
+        capture_job_created, distiller_ran, distiller_model, distiller_latency_ms,
+        fallback_ran, candidate_count, stored_count, rejected_count,
+        rejection_reasons_json, safe_candidate_preview, evidence_hash
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, row.agentId, row.turnId ?? null, row.sessionId ?? null, row.runId ?? null, ts, JSON.stringify(row.retrievalIntent ?? null), JSON.stringify(row.captureIntent ?? null), row.captureJobCreated ? 1 : 0, row.distillerRan ? 1 : 0, row.distillerModel ?? null, row.distillerLatencyMs ?? null, row.fallbackRan ? 1 : 0, row.candidateCount, row.storedCount, row.rejectedCount, JSON.stringify(row.rejectionReasons ?? []), row.safeCandidatePreview ?? null, row.evidenceHash ?? null);
+        return { ...row, id, createdAt: ts };
+    }
+    listCaptureAudit(agentId, limit = 20) {
+        return this.db.prepare('SELECT * FROM capture_audit WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, Math.min(200, Math.max(1, limit))).map(rowToCaptureAudit);
+    }
+    countCaptureAudit(agentId) {
+        const row = this.db.prepare('SELECT COUNT(*) as cnt FROM capture_audit WHERE agent_id = ?').get(agentId);
+        return row?.cnt ?? 0;
+    }
     // ── Job queue ───────────────────────────────────────────────────────────────
     enqueueJob(job) {
         const id = job.id || uuid();
@@ -796,6 +942,29 @@ function rowToJob(r) {
         availableAt: r.available_at, startedAt: r.started_at,
         finishedAt: r.finished_at, error: r.error,
         createdAt: r.created_at, updatedAt: r.updated_at,
+    };
+}
+function rowToCaptureAudit(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        turnId: r.turn_id,
+        sessionId: r.session_id,
+        runId: r.run_id,
+        createdAt: r.created_at,
+        retrievalIntent: JSON.parse(r.retrieval_intent_json ?? 'null'),
+        captureIntent: JSON.parse(r.capture_intent_json ?? 'null'),
+        captureJobCreated: r.capture_job_created === 1,
+        distillerRan: r.distiller_ran === 1,
+        distillerModel: r.distiller_model,
+        distillerLatencyMs: r.distiller_latency_ms,
+        fallbackRan: r.fallback_ran === 1,
+        candidateCount: r.candidate_count,
+        storedCount: r.stored_count,
+        rejectedCount: r.rejected_count,
+        rejectionReasons: JSON.parse(r.rejection_reasons_json ?? '[]'),
+        safeCandidatePreview: r.safe_candidate_preview,
+        evidenceHash: r.evidence_hash,
     };
 }
 // ── DB helpers ────────────────────────────────────────────────────────────────

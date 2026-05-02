@@ -1,5 +1,6 @@
 import type { InjectionPlan, RetrievalPlan, RouteKind, TurnFrame } from './memory-types.js';
 import type { TurnEventPacket } from './capture.js';
+import { type CaptureIntentResult, type RetrievalIntentResult } from './capture-intent.js';
 export interface RouteFingerprint {
     agentId: string;
     scopeKey?: string;
@@ -7,6 +8,8 @@ export interface RouteFingerprint {
     topicKeys: string[];
     explicitMemoryReference: boolean;
     explicitCorrectionCue: boolean;
+    captureIntent?: string;
+    retrievalIntent?: string;
 }
 export interface CachedRoutePlan {
     route: RouteKind;
@@ -15,6 +18,8 @@ export interface CachedRoutePlan {
     confidence: number;
     expiresAt: string;
     sourceRouteDecisionId?: string;
+    retrievalIntent?: RetrievalIntentResult;
+    captureIntent?: CaptureIntentResult;
 }
 export interface RoutePlan {
     route: RouteKind;
@@ -24,6 +29,8 @@ export interface RoutePlan {
     injectionPlan: InjectionPlan;
     shouldRetrieve: boolean;
     enqueueCapture: boolean;
+    retrievalIntent: RetrievalIntentResult;
+    captureIntent: CaptureIntentResult;
     latencyReason: string;
     policySnapshotId?: string;
 }

@@ -75,9 +75,10 @@ test('route fn enqueues capture for explicit remember requests', () => {
     recentInjections: [],
     metadata: { turnType: 'correction' },
   });
-  assert.equal(plan.route, 'retrieve_memory');
+  assert.equal(plan.route, 'retrieve_and_distill');
   assert.equal(plan.shouldRetrieve, true);
   assert.equal(plan.enqueueCapture, true);
+  assert.equal(plan.captureIntent.intent, 'explicit_store');
 });
 
 test('route cache reuses the prior plan for the same fingerprint', () => {

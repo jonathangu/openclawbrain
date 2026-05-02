@@ -44,7 +44,11 @@ export class ContextSelector {
         omitted.push({ memoryId: item.memory.id, reason: 'low_confidence' });
         continue;
       }
-      const line = formatMemoryLine(item.memory, item.reason);
+      if (item.memory.type === 'recall_rule' && plan.retrievalIntent?.intent !== 'recall_value_request') {
+        omitted.push({ memoryId: item.memory.id, reason: 'would_pollute_prompt' });
+        continue;
+      }
+      const line = formatMemoryLine(item.memory, item.reason, plan.retrievalIntent?.intent === 'recall_value_request');
       if (usedChars + line.length + 1 > plan.injectionPlan.maxChars) {
         omitted.push({ memoryId: item.memory.id, reason: 'budget' });
         continue;
@@ -100,6 +104,25 @@ function rankCandidates(packet: TurnEventPacket, plan: RoutePlan, candidates: Me
       reason = 'repo_workflow';
       useHow = 'consider';
     }
+    if (memory.type === 'routing_rule') {
+      score += 0.22;
+      reason = 'tool_guidance';
+      useHow = 'must_follow';
+    }
+    if (memory.type === 'tool_convention') {
+      score += 0.18;
+      reason = 'tool_guidance';
+      useHow = 'consider';
+    }
+    if (memory.type === 'recall_rule') {
+      if (/\b(codeword|phrase|answer|what is|what's|tell me|give me)\b/.test(lower)) {
+        score += 0.35;
+        reason = 'directly_relevant_correction';
+        useHow = 'must_follow';
+      } else {
+        score -= 1;
+      }
+    }
     if (/\b(pnpm|npm|yarn|install|dependency|dependencies|build|test)\b/.test(lower) && /pnpm|npm|yarn|install|dependency|build|test/i.test(memory.content)) {
       score += 0.25;
     }
@@ -111,7 +134,11 @@ function rankCandidates(packet: TurnEventPacket, plan: RoutePlan, candidates: Me
   }).sort((a, b) => b.score - a.score);
 }
 
-function formatMemoryLine(memory: MemoryNode, reason: ContextSelection['selected'][number]['reason']) {
+function formatMemoryLine(memory: MemoryNode, reason: ContextSelection['selected'][number]['reason'], allowRecallValue = false) {
+  if (memory.type === 'recall_rule') {
+    if (allowRecallValue && memory.positive) return `Recall rule: ${memory.content} Authorized answer: ${memory.positive}`;
+    return `Recall rule: ${memory.content}`;
+  }
   switch (reason) {
     case 'directly_relevant_correction':
       return `Must follow: ${memory.content}`;
