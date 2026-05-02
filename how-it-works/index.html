@@ -126,7 +126,7 @@
     <section class="section">
       <h2>TL;DR</h2>
       <p>OpenClawBrain is a local memory layer for OpenClaw agents: it learns durable corrections, preferences, workflows, and context, then retrieves only the small slice that matters right now. It uses selective routing, SQLite search, bounded prompt injection, and outcome learning instead of stuffing history into every prompt.</p>
-      <p>In the local dogfood snapshot for this page, <strong>157 of 158 turns — 99.4% — added zero synchronous model latency</strong>. The installed live loop was verified end to end: <strong>temporary correction → SQLite memory → FTS retrieval → XML prompt injection → cleanup</strong>.</p>
+      <p>In v0.2.11, retrieval and capture are separate decisions. Retrieval stays conservative, while aggressive capture evaluates durable instructions, corrections, workflows, routing rules, outcomes, and explicit recall rules. The installed live loop is verified end to end: <strong>turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection</strong>.</p>
     </section>
 
     <section class="section">
@@ -192,11 +192,11 @@ inject a small block, or stay silent</code></pre>
 
     <section class="section">
       <h2>Latency</h2>
-      <p>The headline: in the local dogfood snapshot for this page, <strong>99.4% of turns added zero synchronous model latency</strong>.</p>
-      <pre><code>route decisions: 158
-no_extra_llm: 157
-enqueue_async_only: 1
-sync_memory_planner: 0</code></pre>
+      <p>The headline: v0.2.11 keeps prompt-time retrieval disciplined while moving more memory formation into audited capture and background distillation.</p>
+      <pre><code>retrieval: conservative and bounded
+capture: aggressive and audited
+storage: strict, scoped, local
+injection: sparse and relevance-gated</code></pre>
       <table>
         <tr><th>Tier</th><th>What happens</th><th>Turn-blocking model call?</th></tr>
         <tr><td>Tier 0</td><td>local route decision only</td><td>no</td></tr>

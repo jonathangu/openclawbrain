@@ -34,11 +34,11 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.10`
+- **Current package release:** `0.2.11`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.4.29` or later
-- **Live E2E proof:** temporary correction → SQLite memory → FTS retrieval → XML prompt injection → cleanup
-- **Dogfood latency snapshot:** `157` of `158` turns — `99.4%` — added zero synchronous model latency
+- **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection
+- **Current loop:** conservative retrieval, aggressive audited capture, strict scoped storage, sparse injection
 
 ## Install
 
@@ -105,6 +105,8 @@ curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
 | `/plugins/openclawbrain/graph?limit=50` | redacted memory nodes and memory edges |
 | `/plugins/openclawbrain/learn?limit=50` | route examples and current learning state |
 | `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
+| `/plugins/openclawbrain/audit?limit=20` | recent capture/store/reject decisions and rejection distribution |
+| `/plugins/openclawbrain/explain-last` | compact postmortem for the latest memory decision |
 
 ## Privacy and safety
 

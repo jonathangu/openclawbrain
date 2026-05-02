@@ -131,10 +131,10 @@
         <a class="btn" href="/proof/">Verify it locally</a>
       </div>
       <div class="chips">
-        <span class="chip">Current release: v0.2.10</span>
+        <span class="chip">Current release: v0.2.11</span>
         <span class="chip">Native OpenClaw plugin</span>
         <span class="chip">Local SQLite + FTS graph</span>
-        <span class="chip">157/158 dogfood turns: zero sync model latency</span>
+        <span class="chip">Aggressive capture; conservative injection</span>
       </div>
     </section>
 
@@ -169,18 +169,18 @@ Relevant memory:
 
     <section class="section">
       <h2>What is live today</h2>
-      <p>OpenClawBrain is a real plugin today, not a concept page. The current release is <strong>v0.2.10</strong>. The core live loop has been verified end to end: temporary correction → SQLite memory → FTS retrieval → XML prompt injection → cleanup.</p>
+      <p>OpenClawBrain is a real plugin today, not a concept page. The current release is <strong>v0.2.11</strong>. The core live loop now separates retrieval from aggressive capture: durable instructions, corrections, workflows, routing rules, outcomes, and explicit recall rules get evaluated, while strict validators still block raw secrets and junk memory.</p>
       <p>That does not mean every edge case is done. It is best described as production-dogfood beta: the core capture/store/retrieve/inject path works, while route-learning quality, status polish, and long-term organic runtime still deserve more miles.</p>
     </section>
 
     <section class="section">
       <h2>Latency shape</h2>
-      <p>In the dogfood snapshot used for the explainer, <strong>157 of 158 turns — 99.4% — added zero synchronous model latency</strong>.</p>
-      <pre><code>route decisions: 158
-no_extra_llm: 157
-enqueue_async_only: 1
-sync_memory_planner: 0</code></pre>
-      <p class="fine">Feedback distillation can take longer because it runs off the prompt path. A live local <code>qwen2.5:32b-instruct</code> verification took about 29 seconds without blocking the user turn.</p>
+      <p>The current loop keeps retrieval conservative while making capture hungry: memory-worthy turns are audited and distilled off the prompt path, then only the few relevant memories are injected later.</p>
+      <pre><code>retrieval: conservative and bounded
+capture: aggressive and audited
+storage: strict, scoped, local
+injection: sparse and relevance-gated</code></pre>
+      <p class="fine">Feedback distillation can take longer because it runs off the prompt path. Audit and explain-last surfaces show whether capture was skipped, rejected, stored, or blocked by safety policy.</p>
     </section>
 
     <section class="section">

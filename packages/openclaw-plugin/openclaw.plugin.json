@@ -2,31 +2,75 @@
   "id": "openclawbrain",
   "name": "OpenClawBrain",
   "version": "0.2.11",
-  "description": "Reliability-hardened local memory graph for OpenClaw with local auditability, bounded memory augmentation, and SQLite self-checks/fallback.",
-  "activation": { "onStartup": true },
+  "description": "Aggressive-but-safe local memory graph for OpenClaw: conservative retrieval, audited capture, strict scoped storage, bounded injection, and SQLite proof surfaces.",
+  "activation": {
+    "onStartup": true
+  },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
     "properties": {
-      "enabled": { "type": "boolean", "default": true },
+      "enabled": {
+        "type": "boolean",
+        "default": true
+      },
       "mode": {
         "type": "string",
-        "enum": ["off", "proof-only", "conservative", "active", "balanced", "aggressive"],
+        "enum": [
+          "off",
+          "proof-only",
+          "conservative",
+          "active",
+          "balanced",
+          "aggressive"
+        ],
         "default": "balanced"
       },
-      "activationRoot": { "type": "string", "default": "~/.openclawbrain/activation/${agentId}" },
-      "proofEvents": { "type": "boolean", "default": true },
-      "proofRetentionEvents": { "type": "integer", "minimum": 50, "maximum": 50000, "default": 1000 },
-      "maxContextChars": { "type": "integer", "minimum": 500, "maximum": 20000, "default": 3000 },
-      "includeActivationContext": { "type": "boolean", "default": true },
-      "rawTranscriptUpload": { "type": "boolean", "const": false, "default": false },
+      "activationRoot": {
+        "type": "string",
+        "default": "~/.openclawbrain/activation/${agentId}"
+      },
+      "proofEvents": {
+        "type": "boolean",
+        "default": true
+      },
+      "proofRetentionEvents": {
+        "type": "integer",
+        "minimum": 50,
+        "maximum": 50000,
+        "default": 1000
+      },
+      "maxContextChars": {
+        "type": "integer",
+        "minimum": 500,
+        "maximum": 20000,
+        "default": 3000
+      },
+      "includeActivationContext": {
+        "type": "boolean",
+        "default": true
+      },
+      "rawTranscriptUpload": {
+        "type": "boolean",
+        "const": false,
+        "default": false
+      },
       "hooks": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "allowPromptContext": { "type": "boolean", "default": true },
-          "allowConversationAccess": { "type": "boolean", "default": true },
-          "allowToolObservation": { "type": "boolean", "default": true }
+          "allowPromptContext": {
+            "type": "boolean",
+            "default": true
+          },
+          "allowConversationAccess": {
+            "type": "boolean",
+            "default": true
+          },
+          "allowToolObservation": {
+            "type": "boolean",
+            "default": true
+          }
         },
         "default": {
           "allowPromptContext": true,
@@ -40,29 +84,72 @@
         "properties": {
           "agents": {
             "type": "array",
-            "items": { "type": "string" },
-            "default": ["main"]
+            "items": {
+              "type": "string"
+            },
+            "default": [
+              "main"
+            ]
           }
         },
-        "default": { "agents": ["main"] }
+        "default": {
+          "agents": [
+            "main"
+          ]
+        }
       },
       "llm": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "enabled": { "type": "boolean", "default": true },
-          "routeModel": { "type": "string", "default": "qwen2.5:32b-instruct" },
-          "plannerModel": { "type": "string", "default": "qwen2.5:32b-instruct" },
-          "feedbackModel": { "type": "string", "default": "qwen2.5:32b-instruct" },
-          "learningModel": { "type": "string", "default": "qwen2.5:32b-instruct" },
-          "baseUrl": { "type": "string", "default": "http://127.0.0.1:11434/v1" },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "routeModel": {
+            "type": "string",
+            "default": "qwen2.5:32b-instruct"
+          },
+          "plannerModel": {
+            "type": "string",
+            "default": "qwen2.5:32b-instruct"
+          },
+          "feedbackModel": {
+            "type": "string",
+            "default": "qwen2.5:32b-instruct"
+          },
+          "learningModel": {
+            "type": "string",
+            "default": "qwen2.5:32b-instruct"
+          },
+          "baseUrl": {
+            "type": "string",
+            "default": "http://127.0.0.1:11434/v1"
+          },
           "allowedModels": {
             "type": "array",
-            "items": { "type": "string" },
-            "default": ["qwen2.5:32b-instruct", "qwen3.5:9b", "qwen3.5:35b-a3b", "gemma4:31b"]
+            "items": {
+              "type": "string"
+            },
+            "default": [
+              "qwen2.5:32b-instruct",
+              "qwen3.5:9b",
+              "qwen3.5:35b-a3b",
+              "gemma4:31b"
+            ]
           },
-          "temperature": { "type": "number", "minimum": 0, "maximum": 2, "default": 0 },
-          "maxTokens": { "type": "integer", "minimum": 1, "maximum": 100000, "default": 1200 }
+          "temperature": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2,
+            "default": 0
+          },
+          "maxTokens": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000,
+            "default": 1200
+          }
         },
         "default": {
           "enabled": true,
@@ -71,7 +158,12 @@
           "feedbackModel": "qwen2.5:32b-instruct",
           "learningModel": "qwen2.5:32b-instruct",
           "baseUrl": "http://127.0.0.1:11434/v1",
-          "allowedModels": ["qwen2.5:32b-instruct", "qwen3.5:9b", "qwen3.5:35b-a3b", "gemma4:31b"],
+          "allowedModels": [
+            "qwen2.5:32b-instruct",
+            "qwen3.5:9b",
+            "qwen3.5:35b-a3b",
+            "gemma4:31b"
+          ],
           "temperature": 0,
           "maxTokens": 1200
         }
@@ -80,15 +172,45 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "noSynchronousLlmByDefault": { "type": "boolean", "default": true },
-          "syncPlannerEnabled": { "type": "boolean", "default": true },
-          "syncPlannerSoftTimeoutMs": { "type": "integer", "minimum": 100, "maximum": 10000, "default": 900 },
-          "syncPlannerHardTimeoutMs": { "type": "integer", "minimum": 100, "maximum": 30000, "default": 1800 },
-          "maxSyncPlannerCallsPerSession": { "type": "integer", "minimum": 0, "maximum": 1000, "default": 5 },
-          "maxSyncPlannerCallsPerHour": { "type": "integer", "minimum": 0, "maximum": 10000, "default": 30 },
+          "noSynchronousLlmByDefault": {
+            "type": "boolean",
+            "default": true
+          },
+          "syncPlannerEnabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "syncPlannerSoftTimeoutMs": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 10000,
+            "default": 900
+          },
+          "syncPlannerHardTimeoutMs": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 30000,
+            "default": 1800
+          },
+          "maxSyncPlannerCallsPerSession": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "default": 5
+          },
+          "maxSyncPlannerCallsPerHour": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000,
+            "default": 30
+          },
           "fallbackOnTimeout": {
             "type": "string",
-            "enum": ["no_memory", "cached_route", "high_confidence_corrections_only"],
+            "enum": [
+              "no_memory",
+              "cached_route",
+              "high_confidence_corrections_only"
+            ],
             "default": "cached_route"
           }
         }
@@ -97,69 +219,339 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "enabled": { "type": "boolean", "default": true },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
           "mode": {
             "type": "string",
-            "enum": ["off", "async_only", "hybrid", "sync_for_high_signal"],
-            "default": "hybrid"
+            "enum": [
+              "off",
+              "async_only",
+              "hybrid",
+              "sync_for_high_signal",
+              "aggressive"
+            ],
+            "default": "aggressive"
           },
-          "minConfidence": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.7 },
-          "feedbackTimeoutMs": { "type": "integer", "minimum": 1000, "maximum": 300000, "default": 60000 },
-          "immediateCorrectionCapture": { "type": "boolean", "default": true },
-          "postRunWorkflowCapture": { "type": "boolean", "default": true },
-          "storeCandidates": { "type": "boolean", "default": true },
+          "minConfidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.7
+          },
+          "feedbackTimeoutMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 300000,
+            "default": 60000
+          },
+          "immediateCorrectionCapture": {
+            "type": "boolean",
+            "default": true
+          },
+          "postRunWorkflowCapture": {
+            "type": "boolean",
+            "default": true
+          },
+          "storeCandidates": {
+            "type": "boolean",
+            "default": true
+          },
           "agentEndMode": {
             "type": "string",
-            "enum": ["enqueue", "best_effort_async"],
+            "enum": [
+              "enqueue",
+              "best_effort_async"
+            ],
             "default": "enqueue"
           }
+        },
+        "default": {
+          "enabled": true,
+          "mode": "aggressive",
+          "immediateCorrectionCapture": true,
+          "postRunWorkflowCapture": true,
+          "storeCandidates": true,
+          "agentEndMode": "enqueue"
         }
       },
       "routing": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "enabled": { "type": "boolean", "default": true },
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
           "mode": {
             "type": "string",
-            "enum": ["off", "cached_policy_only", "hybrid_llm_on_cache_miss", "aggressive_llm"],
+            "enum": [
+              "off",
+              "cached_policy_only",
+              "hybrid_llm_on_cache_miss",
+              "aggressive_llm"
+            ],
             "default": "hybrid_llm_on_cache_miss"
           },
-          "minRouteConfidence": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.7 },
-          "maxCandidateMemories": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 40 },
-          "maxInjectedMemories": { "type": "integer", "minimum": 0, "maximum": 100, "default": 5 },
-          "maxInjectedChars": { "type": "integer", "minimum": 0, "maximum": 20000, "default": 1200 },
-          "learnFromOutcomes": { "type": "boolean", "default": true }
+          "minRouteConfidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.7
+          },
+          "maxCandidateMemories": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 40
+          },
+          "maxInjectedMemories": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 8
+          },
+          "maxInjectedChars": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 20000,
+            "default": 2500
+          },
+          "learnFromOutcomes": {
+            "type": "boolean",
+            "default": true
+          }
+        },
+        "default": {
+          "enabled": true,
+          "mode": "hybrid_llm_on_cache_miss",
+          "minRouteConfidence": 0.7,
+          "maxCandidateMemories": 40,
+          "maxInjectedMemories": 8,
+          "maxInjectedChars": 2500,
+          "learnFromOutcomes": true
         }
       },
       "learning": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "enabled": { "type": "boolean", "default": true },
-          "intervalMs": { "type": "integer", "minimum": 1000, "maximum": 86400000, "default": 60000 },
-          "minExamplesForPolicyUpdate": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 5 },
-          "maxPositiveExamples": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 25 },
-          "maxNegativeExamples": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 25 },
-          "pruneIntervalMs": { "type": "integer", "minimum": 1000, "maximum": 86400000, "default": 3600000 },
-          "maxMemoryNodesPerAgent": { "type": "integer", "minimum": 1, "maximum": 1000000, "default": 5000 }
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "intervalMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 86400000,
+            "default": 60000
+          },
+          "minExamplesForPolicyUpdate": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 5
+          },
+          "maxPositiveExamples": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 25
+          },
+          "maxNegativeExamples": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 25
+          },
+          "pruneIntervalMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 86400000,
+            "default": 3600000
+          },
+          "maxMemoryNodesPerAgent": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000,
+            "default": 5000
+          }
         }
       },
       "privacy": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "storeRawTranscript": { "type": "boolean", "const": false, "default": false },
-          "redactBeforeStore": { "type": "boolean", "default": true },
-          "redactBeforeLlm": { "type": "boolean", "default": true },
-          "storeDistillationInputs": { "type": "boolean", "default": false },
-          "storeDistillationOutputs": { "type": "boolean", "default": true }
+          "storeRawTranscript": {
+            "type": "boolean",
+            "const": false,
+            "default": false
+          },
+          "redactBeforeStore": {
+            "type": "boolean",
+            "default": true
+          },
+          "redactBeforeLlm": {
+            "type": "boolean",
+            "default": true
+          },
+          "storeDistillationInputs": {
+            "type": "boolean",
+            "default": false
+          },
+          "storeDistillationOutputs": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "memory": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "captureMode": {
+            "type": "string",
+            "enum": [
+              "off",
+              "async_only",
+              "hybrid",
+              "sync_for_high_signal",
+              "aggressive"
+            ],
+            "default": "aggressive"
+          },
+          "explicitRememberMode": {
+            "type": "string",
+            "enum": [
+              "always_consider",
+              "normal"
+            ],
+            "default": "always_consider"
+          },
+          "futureFacingLanguage": {
+            "type": "string",
+            "enum": [
+              "enqueue_async_capture",
+              "normal"
+            ],
+            "default": "enqueue_async_capture"
+          },
+          "sensitiveRecall": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "allowUserAuthorizedRecallRules": {
+                "type": "boolean",
+                "default": true
+              },
+              "neverStoreCredentialPlaintext": {
+                "type": "boolean",
+                "default": true
+              },
+              "requireNarrowScope": {
+                "type": "boolean",
+                "default": true
+              },
+              "preventProactiveDisclosure": {
+                "type": "boolean",
+                "default": true
+              },
+              "preferSecureStoreForSensitiveValues": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "default": {
+              "allowUserAuthorizedRecallRules": true,
+              "neverStoreCredentialPlaintext": true,
+              "requireNarrowScope": true,
+              "preventProactiveDisclosure": true,
+              "preferSecureStoreForSensitiveValues": true
+            }
+          },
+          "scope": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "preferNarrowestScope": {
+                "type": "boolean",
+                "default": true
+              },
+              "allowCurrentRepoInference": {
+                "type": "boolean",
+                "default": true
+              },
+              "allowGlobalPreferenceInference": {
+                "type": "boolean",
+                "default": false
+              }
+            },
+            "default": {
+              "preferNarrowestScope": true,
+              "allowCurrentRepoInference": true,
+              "allowGlobalPreferenceInference": false
+            }
+          },
+          "audit": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "recordSkippedCapture": {
+                "type": "boolean",
+                "default": true
+              },
+              "recordRejectedCandidates": {
+                "type": "boolean",
+                "default": true
+              },
+              "safePreviewOnly": {
+                "type": "boolean",
+                "default": true
+              },
+              "enableMemoryPostmortem": {
+                "type": "boolean",
+                "default": true
+              }
+            },
+            "default": {
+              "recordSkippedCapture": true,
+              "recordRejectedCandidates": true,
+              "safePreviewOnly": true,
+              "enableMemoryPostmortem": true
+            }
+          }
+        },
+        "default": {
+          "captureMode": "aggressive",
+          "explicitRememberMode": "always_consider",
+          "futureFacingLanguage": "enqueue_async_capture",
+          "sensitiveRecall": {
+            "allowUserAuthorizedRecallRules": true,
+            "neverStoreCredentialPlaintext": true,
+            "requireNarrowScope": true,
+            "preventProactiveDisclosure": true,
+            "preferSecureStoreForSensitiveValues": true
+          },
+          "scope": {
+            "preferNarrowestScope": true,
+            "allowCurrentRepoInference": true,
+            "allowGlobalPreferenceInference": false
+          },
+          "audit": {
+            "recordSkippedCapture": true,
+            "recordRejectedCandidates": true,
+            "safePreviewOnly": true,
+            "enableMemoryPostmortem": true
+          }
         }
       }
     }
   },
   "hooks": {
-    "before_prompt_build": { "allowPromptContext": false },
+    "before_prompt_build": {
+      "allowPromptContext": false
+    },
     "agent_end": {},
     "after_tool_call": {},
     "model_call_started": {},
@@ -168,12 +560,53 @@
     "gateway_stop": {}
   },
   "configUiHints": {
-    "enabled": { "label": "Enabled", "help": "Defaults on for the standard local OpenClawBrain path." },
-    "mode": { "label": "Runtime Mode", "help": "balanced enables the v0.2 latency-safe memory graph path; conservative/active retain legacy file-backed compatibility modes." },
-    "activationRoot": { "label": "Activation Root", "help": "Local agent-scoped root for SQLite state, proof mirrors, and optional compatibility files." },
-    "llm": { "label": "Local LLM Distillation", "help": "Defaults to a local Ollama-style OpenAI-compatible JSON endpoint on loopback so the full local brain works out of the box when Ollama is available. Queued packets and planner inputs use redacted user-message summaries only." },
-    "llm.baseUrl": { "label": "Local LLM Base URL", "help": "Default loopback OpenAI-compatible endpoint for local semantic distillation. Set a different local endpoint only if you want to override Ollama." },
-    "privacy": { "label": "Privacy Defaults", "help": "Raw transcript storage stays hard-disabled. Background packets store redacted summaries and hashes, not raw user-message text." },
-    "rawTranscriptUpload": { "label": "Raw Transcript Upload", "help": "Must remain false; true fails closed." }
+    "enabled": {
+      "label": "Enabled",
+      "help": "Defaults on for the standard local OpenClawBrain path."
+    },
+    "mode": {
+      "label": "Runtime Mode",
+      "help": "balanced enables the v0.2 latency-safe memory graph path; conservative/active retain legacy file-backed compatibility modes."
+    },
+    "activationRoot": {
+      "label": "Activation Root",
+      "help": "Local agent-scoped root for SQLite state, proof mirrors, and optional compatibility files."
+    },
+    "llm": {
+      "label": "Local LLM Distillation",
+      "help": "Defaults to a local Ollama-style OpenAI-compatible JSON endpoint on loopback so the full local brain works out of the box when Ollama is available. Queued packets and planner inputs use redacted user-message summaries only."
+    },
+    "llm.baseUrl": {
+      "label": "Local LLM Base URL",
+      "help": "Default loopback OpenAI-compatible endpoint for local semantic distillation. Set a different local endpoint only if you want to override Ollama."
+    },
+    "privacy": {
+      "label": "Privacy Defaults",
+      "help": "Raw transcript storage stays hard-disabled. Background packets store redacted summaries and hashes, not raw user-message text."
+    },
+    "rawTranscriptUpload": {
+      "label": "Raw Transcript Upload",
+      "help": "Must remain false; true fails closed."
+    },
+    "capture.mode": {
+      "label": "Capture Mode",
+      "help": "v0.2.11 defaults to aggressive capture consideration. This evaluates durable instructions broadly while strict validators still decide what can be stored."
+    },
+    "routing.maxInjectedMemories": {
+      "label": "Max Injected Memories",
+      "help": "Default 8: retrieval stays bounded even when capture is aggressive."
+    },
+    "routing.maxInjectedChars": {
+      "label": "Max Injected Characters",
+      "help": "Default 2500: injected context remains sparse and relevance-gated."
+    },
+    "memory": {
+      "label": "Aggressive Memory Policy",
+      "help": "Separates retrieval from capture; stores only distilled, scoped, safe memories; recall values disclose only on explicit request."
+    },
+    "memory.sensitiveRecall": {
+      "label": "Sensitive Recall Rules",
+      "help": "Allows user-authorized benign recall rules while blocking credential plaintext and proactive disclosure."
+    }
   }
 }
