@@ -1,4 +1,5 @@
 import { clipText } from './redact.js';
+import { filterMemoriesForScope, scopeContextFromPacket } from './scope.js';
 export class ContextSelector {
     config;
     constructor(config) {
@@ -6,11 +7,14 @@ export class ContextSelector {
     }
     select(input) {
         const { packet, plan, store } = input;
-        let candidates = [...input.candidates];
+        const scopeContext = scopeContextFromPacket(packet);
+        let candidates = filterMemoriesForScope([...input.candidates], scopeContext);
         if (plan.retrievalPlan.graphDepth > 0 && store) {
             const expanded = new Set(candidates.map(c => c.id));
             for (const candidate of candidates.slice(0, 5)) {
-                for (const connected of store.getConnectedMemories(candidate.id)) {
+                for (const connected of store.getConnectedMemories(candidate.id, plan.retrievalPlan.graphDepth, packet.agentId, scopeContext)) {
+                    if (!filterMemoriesForScope([connected], scopeContext).length)
+                        continue;
                     if (!expanded.has(connected.id)) {
                         expanded.add(connected.id);
                         candidates.push(connected);

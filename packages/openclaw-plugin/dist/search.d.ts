@@ -40,6 +40,10 @@ export declare function buildMemoryCorpusSupplement(config: any): {
 export declare function searchPayload(config: any, agentId: string, query: string, limit?: number): {
     ok: boolean;
     agentId: string;
+    reason: string;
+} | {
+    ok: boolean;
+    agentId: string;
     query: string;
     limit: number;
     results: {
@@ -53,6 +57,10 @@ export declare function searchPayload(config: any, agentId: string, query: strin
     }[];
 };
 export declare function graphPayload(config: any, agentId: string, limit?: number): {
+    ok: boolean;
+    agentId: string;
+    reason: string;
+} | {
     ok: boolean;
     agentId: string;
     counts: {
@@ -73,11 +81,19 @@ export declare function graphPayload(config: any, agentId: string, limit?: numbe
 export declare function learnPayload(config: any, agentId: string, limit?: number): {
     ok: boolean;
     agentId: string;
+    reason: string;
+} | {
+    ok: boolean;
+    agentId: string;
     activePolicySnapshot: import("./memory-types.js").RoutePolicySnapshot | null;
     examples: import("./memory-types.js").RouteExample[];
     policySnapshots: import("./memory-types.js").RoutePolicySnapshot[];
 };
 export declare function auditPayload(config: any, agentId: string, limit?: number): {
+    ok: boolean;
+    agentId: string;
+    reason: string;
+} | {
     ok: boolean;
     agentId: string;
     limit: number;
@@ -107,13 +123,6 @@ export declare function explainLastPayload(config: any, agentId: string, turnId?
     ok: boolean;
     agentId: string;
     reason: string;
-    turnId?: undefined;
-    createdAt?: undefined;
-    summary?: undefined;
-    retrieval?: undefined;
-    capture?: undefined;
-    distiller?: undefined;
-    storage?: undefined;
 } | {
     ok: boolean;
     agentId: string;
@@ -145,5 +154,4 @@ export declare function explainLastPayload(config: any, agentId: string, turnId?
         reasons: string[];
         safeCandidatePreview: string | null;
     };
-    reason?: undefined;
 };

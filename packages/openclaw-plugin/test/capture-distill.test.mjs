@@ -5,6 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { CaptureOrchestrator, sanitizeToolEvent } from '../dist/capture.js';
+import { detectCaptureIntent } from '../dist/capture-intent.js';
 import { normalizePluginConfig } from '../dist/config.js';
 import { FeedbackDistiller } from '../dist/feedback-distiller.js';
 import { FakeLlmClient } from '../dist/llm-client.js';
@@ -45,6 +46,23 @@ test('sanitizeToolEvent redacts args and results', () => {
   assert.equal(item.durationMs, 123);
   assert.match(item.argsSummary, /\[redacted-secret\]/);
   assert.match(item.resultSummary, /\[redacted-url\]/);
+});
+
+test('redaction is key-aware for JSON secrets', () => {
+  const config = normalizePluginConfig({ maxContextChars: 500 });
+  const item = sanitizeToolEvent({
+    toolName: 'exec',
+    args: { password: 'hunter2', apiKey: 'shortkey', nested: { clientSecret: 'topsecret' } },
+    result: { ok: true },
+  }, config);
+  assert.doesNotMatch(item.argsSummary, /hunter2|shortkey|topsecret/);
+  assert.match(item.argsSummary, /\[redacted-secret\]/);
+});
+
+test("don't forget is treated as explicit memory language, not destructive forget", () => {
+  const intent = detectCaptureIntent({ latestUserMessageRedacted: "Don't forget that I prefer pnpm." });
+  assert.equal(intent.intent, 'explicit_store');
+  assert.equal(intent.shouldConsiderCapture, true);
 });
 
 test('feedback distiller fallback returns no-op distillation', async () => {
@@ -106,6 +124,9 @@ test('memory operation applier creates and updates memories and resolves injecti
     const injection = store.insertInjection({
       agentId: 'main',
       memoryId: injectionMemory.id,
+      runId: 'r1',
+      turnId: 't1',
+      sessionId: 's1',
       query: 'install deps',
       rank: 1,
       score: 0.5,

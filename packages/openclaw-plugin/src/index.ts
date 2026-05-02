@@ -19,6 +19,7 @@ import { nativeSqliteSmokeTest } from './native-sqlite.js';
 import { clipText, eventId, hashText, latestUserTextFromEvent, redactText, safeString, shortHash } from './redact.js';
 import { RouteFn } from './route-fn.js';
 import { detectCaptureIntent, detectRetrievalIntent } from './capture-intent.js';
+import { scopeContextFromPacket } from './scope.js';
 
 export { normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 export { redactText, hashText } from './redact.js';
@@ -83,7 +84,7 @@ export async function handleTurnHook(event: any = {}, config: any = normalizePlu
   if (!config.enabled || config.mode === 'off') return {};
   if (!isAgentAllowed(config, agentId)) return {};
 
-  if (phase === 'before_prompt_build' && config.routing?.enabled === true && (config.mode === 'balanced' || config.mode === 'aggressive')) {
+  if (phase === 'before_prompt_build' && shouldAllowRouting(config) && (config.mode === 'balanced' || config.mode === 'aggressive')) {
     return handleV2PromptHook(event, config, api, phase);
   }
 
@@ -126,8 +127,9 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
   const routeFn = new RouteFn({ config, store });
   const contextSelector = new ContextSelector(config);
   const initialPlan = suppressSyntheticCapture(routeFn.plan(packet), packet);
+  if (!shouldAllowCapture(config)) initialPlan.enqueueCapture = false;
   const initialCandidates = initialPlan.shouldRetrieve
-    ? retrieveCandidates(store, packet.agentId, initialPlan.retrievalPlan.queries, initialPlan.retrievalPlan.memoryTypes, initialPlan.retrievalPlan.maxCandidates)
+    ? retrieveCandidates(store, packet, initialPlan.retrievalPlan.queries, initialPlan.retrievalPlan.memoryTypes, initialPlan.retrievalPlan.maxCandidates)
     : [];
   const latency = new LatencyController(config).chooseTier({
     agentId: packet.agentId,
@@ -154,7 +156,7 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
     const planned = await planner.run(packet);
     plan = planned.routePlan;
     selection = planned.contextSelection ?? emptySelection();
-  } else if (plan.enqueueCapture) {
+  } else if (plan.enqueueCapture && shouldAllowCapture(config)) {
     queue.enqueueFeedbackDistillation(agentId, { packet, captureIntent: plan.captureIntent, retrievalIntent: plan.retrievalIntent }, { priority: 10 });
   }
 
@@ -187,7 +189,7 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
     runId: packet.runId,
     retrievalIntent: plan.retrievalIntent,
     captureIntent: plan.captureIntent,
-    captureJobCreated: plan.enqueueCapture && !syncPlannerUsed,
+    captureJobCreated: plan.enqueueCapture && !syncPlannerUsed && shouldAllowCapture(config),
     distillerRan: false,
     fallbackRan: false,
     candidateCount: 0,
@@ -346,6 +348,7 @@ function registerFirstClassSurfaces(api: any, resolve: any) {
 
 async function statusPayload(config: any, req: any = {}) {
   const agentId = safeString(req.query?.agentId ?? req.query?.agent ?? config.scopes.agents[0] ?? 'main') || 'main';
+  if (!isAgentAllowed(config, agentId)) return { ok: false, agentId, reason: 'agent_not_allowed' };
   const nativeSqlite = nativeSqliteSmokeTest();
   let persisted = null;
   let details: any = { nativeSqlite };
@@ -503,12 +506,12 @@ async function writeDecisionStatus(config: any, redactedTurn: any, decision: any
 
 async function handleAgentEnd(event: any = {}, config: any = {}, api: any = {}) {
   await writeTelemetryEvent('agent_end', event, config, api);
-  if (!config.capture?.enabled || config.hooks.allowConversationAccess !== true) return {};
+  if (!shouldAllowCapture(config) || config.hooks.allowConversationAccess !== true) return {};
   const agentId = agentIdFromEvent(event);
   const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
   const queue = new JobQueue({ store });
   const packet = new CaptureOrchestrator().fromAgentEnd(event, config);
-  const captureIntent = detectCaptureIntent(packet);
+  const captureIntent = suppressSyntheticCaptureIntent(detectCaptureIntent(packet), packet);
   const retrievalIntent = detectRetrievalIntent(packet);
   const learner = new BackgroundLearner({ store, config });
 
@@ -518,7 +521,7 @@ async function handleAgentEnd(event: any = {}, config: any = {}, api: any = {}) 
     api.logger?.warn?.({ error }, 'OpenClawBrain agent_end outcome learning failed');
   }
 
-  if (!captureIntent.shouldConsiderCapture && packet.recentInjections.length === 0) {
+  if (!captureIntent.shouldConsiderCapture && (packet.recentInjections.length === 0 || shouldSuppressCapture(packet))) {
     store.insertCaptureAudit({
       agentId: packet.agentId,
       sessionId: packet.sessionId,
@@ -556,10 +559,15 @@ async function handleAgentEnd(event: any = {}, config: any = {}, api: any = {}) 
 }
 
 async function handleAfterToolCall(event: any = {}, config: any = {}, api: any = {}) {
+  if (config.learning?.enabled !== true || config.hooks.allowToolObservation !== true) return {};
   const agentId = agentIdFromEvent(event);
   const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
   const queue = new JobQueue({ store });
   const packet = new CaptureOrchestrator().fromAfterToolCall(event, config);
+  if (!packet.runId && !packet.turnId) {
+    store.close();
+    return {};
+  }
   queue.enqueueOutcomeClassification(agentId, { packet }, { priority: 5 });
   store.close();
   return {};
@@ -567,10 +575,14 @@ async function handleAfterToolCall(event: any = {}, config: any = {}, api: any =
 
 async function processBackgroundJobs(config: any = {}, api: any = {}) {
   if (config.capture?.enabled !== true && config.learning?.enabled !== true) return;
-  const agentId = config.scopes.agents[0] || 'main';
+  const agents = Array.isArray(config.scopes?.agents) && config.scopes.agents.length ? config.scopes.agents : ['main'];
+  for (const agentId of agents) await processBackgroundJobsForAgent(config, api, agentId);
+}
+
+async function processBackgroundJobsForAgent(config: any = {}, api: any = {}, agentId = 'main') {
   const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
   const queue = new JobQueue({ store });
-  const job = queue.claimNext();
+  const job = queue.claimNext(undefined, agentId);
   const learner = new BackgroundLearner({ store, config });
   const routeLearning = new RouteLearning({ store, config });
   try {
@@ -611,6 +623,7 @@ async function processBackgroundJobs(config: any = {}, api: any = {}) {
 }
 
 async function runFeedbackDistillation(packet: any, config: any, store: MemoryStore, context: any = {}) {
+  if (!shouldAllowCapture(config) || shouldSuppressCapture(packet)) return null;
   const client = llmClientFromConfig(config);
   if (!client) return null;
   const distiller = new FeedbackDistiller({ client, config });
@@ -628,7 +641,7 @@ async function runFeedbackDistillation(packet: any, config: any, store: MemorySt
     promptVersion: 'feedback-distiller-v1',
     inputHash: result.audit.inputHash,
     redactedInputSummary: result.audit.redactedInputSummary,
-    outputJson: JSON.stringify(result.output),
+    outputJson: config.privacy?.storeDistillationOutputs === false ? JSON.stringify({ stored: false, reason: 'storeDistillationOutputs=false' }) : JSON.stringify(result.output),
     validationStatus: result.audit.validationStatus,
     validationError: result.audit.validationError || result.audit.parseError,
     latencyMs: result.audit.latencyMs,
@@ -657,15 +670,21 @@ async function runFeedbackDistillation(packet: any, config: any, store: MemorySt
 
 function llmClientFromConfig(config: any) {
   if (config.llm?.enabled !== true) return null;
+  const models = [config.llm.plannerModel, config.llm.routeModel, config.llm.feedbackModel, config.llm.learningModel].filter(Boolean);
+  const allowed = new Set(Array.isArray(config.llm.allowedModels) ? config.llm.allowedModels : []);
+  if (allowed.size > 0 && models.some((model) => !allowed.has(model))) return null;
+  if (config.llm.baseUrl && !isLoopbackUrl(config.llm.baseUrl) && config.llm.allowRemoteLlm !== true) return null;
   if (config.llm.baseUrl) return new OpenAICompatibleLlmClient({ baseUrl: config.llm.baseUrl });
   return null;
 }
 
-function retrieveCandidates(store: MemoryStore, agentId: string, queries: string[], memoryTypes: string[], maxCandidates: number) {
+function retrieveCandidates(store: MemoryStore, packet: any, queries: string[], memoryTypes: string[], maxCandidates: number) {
+  const agentId = packet.agentId;
+  const scopeContext = scopeContextFromPacket(packet);
   const seen = new Set<string>();
   const results: any[] = [];
   for (const query of queries) {
-    const hits = store.searchMemories(query, agentId, { limit: maxCandidates });
+    const hits = store.searchMemories(query, agentId, { limit: maxCandidates, scopeContext });
     for (const hit of hits) {
       if (seen.has(hit.id)) continue;
       seen.add(hit.id);
@@ -674,7 +693,7 @@ function retrieveCandidates(store: MemoryStore, agentId: string, queries: string
     }
   }
   for (const memoryType of memoryTypes) {
-    const hits = store.listMemories(agentId, { type: memoryType as any, limit: maxCandidates });
+    const hits = store.listMemories(agentId, { type: memoryType as any, limit: maxCandidates, scopeContext });
     for (const hit of hits) {
       if (seen.has(hit.id)) continue;
       seen.add(hit.id);
@@ -721,7 +740,7 @@ function withHookContext(event: any = {}, ctx: any = {}) {
 
 function suppressSyntheticCapture(plan: any, packet: any) {
   const trigger = String(packet?.metadata?.trigger || '').toLowerCase();
-  if (trigger !== 'heartbeat' && trigger !== 'cron') return plan;
+  if (!shouldSuppressCapture(packet)) return plan;
   return {
     ...plan,
     route: plan.route === 'capture_only' ? 'no_memory' : plan.route,
@@ -731,10 +750,48 @@ function suppressSyntheticCapture(plan: any, packet: any) {
       shouldConsiderCapture: false,
       intent: 'one_off',
       confidence: Math.max(0.9, Number(plan.captureIntent?.confidence || 0)),
-      reason: `System-generated ${trigger} prompt; capture disabled`,
+      reason: `System-generated ${trigger || 'non-user'} prompt; capture disabled`,
       matchedSignals: [],
     },
   };
+}
+
+function suppressSyntheticCaptureIntent(captureIntent: any, packet: any) {
+  if (!shouldSuppressCapture(packet)) return captureIntent;
+  const trigger = String(packet?.metadata?.trigger || '').toLowerCase();
+  return {
+    ...captureIntent,
+    shouldConsiderCapture: false,
+    intent: 'one_off',
+    confidence: Math.max(0.9, Number(captureIntent?.confidence || 0)),
+    reason: `System-generated ${trigger || 'non-user'} prompt; capture disabled`,
+    matchedSignals: [],
+  };
+}
+
+function shouldSuppressCapture(packet: any) {
+  const trigger = String(packet?.metadata?.trigger || '').toLowerCase();
+  const sourceHook = String(packet?.sourceHook || '').toLowerCase();
+  if (['heartbeat', 'cron', 'system', 'subagent'].includes(trigger)) return true;
+  if (sourceHook === 'after_tool_call') return true;
+  return false;
+}
+
+function shouldAllowCapture(config: any) {
+  return config.capture?.enabled === true && config.capture?.mode !== 'off' && config.memory?.captureMode !== 'off';
+}
+
+function shouldAllowRouting(config: any) {
+  return config.routing?.enabled === true && config.routing?.mode !== 'off';
+}
+
+function isLoopbackUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname);
+  } catch {
+    return false;
+  }
 }
 
 function safeRegisterHook(api: any, name: string, handler: any) {

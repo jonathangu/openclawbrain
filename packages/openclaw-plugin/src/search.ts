@@ -1,6 +1,8 @@
 import type { MemoryNode } from './memory-types.js';
 import { MemoryStore } from './memory-store.js';
 import { safeString } from './redact.js';
+import { isAgentAllowed } from './config.js';
+import { defaultScopeContext, memoryInScope } from './scope.js';
 
 export function buildMemoryPromptSupplement() {
   return () => [
@@ -14,7 +16,7 @@ export function buildMemoryCorpusSupplement(config: any) {
       const agentId = defaultAgentId(config);
       const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
       try {
-        return store.searchMemories(query, agentId, { limit: maxResults ?? 10 }).map((memory) => searchResultFromMemory(memory));
+        return store.searchMemories(query, agentId, { limit: maxResults ?? 10, scopeContext: defaultScopeContext(agentId) }).map((memory) => searchResultFromMemory(memory));
       } finally {
         store.close();
       }
@@ -25,7 +27,7 @@ export function buildMemoryCorpusSupplement(config: any) {
       const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
       try {
         const memory = store.getMemory(memoryId);
-        if (!memory) return null;
+        if (!memory || memory.deletedAt || memory.supersededBy || !memoryInScope(memory, defaultScopeContext(agentId))) return null;
         return {
           corpus: 'openclawbrain',
           path: memoryPath(memory),
@@ -46,6 +48,7 @@ export function buildMemoryCorpusSupplement(config: any) {
 }
 
 export function searchPayload(config: any, agentId: string, query: string, limit = 10) {
+  if (!isAgentAllowed(config, agentId)) return forbiddenAgentPayload(agentId);
   const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
   try {
     const memories = store.searchMemories(query, agentId, { limit });
@@ -70,6 +73,7 @@ export function searchPayload(config: any, agentId: string, query: string, limit
 }
 
 export function graphPayload(config: any, agentId: string, limit = 20) {
+  if (!isAgentAllowed(config, agentId)) return forbiddenAgentPayload(agentId);
   const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
   try {
     const nodes = store.listMemories(agentId, { limit });
@@ -99,6 +103,7 @@ export function graphPayload(config: any, agentId: string, limit = 20) {
 }
 
 export function learnPayload(config: any, agentId: string, limit = 20) {
+  if (!isAgentAllowed(config, agentId)) return forbiddenAgentPayload(agentId);
   const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
   try {
     return {
@@ -114,6 +119,7 @@ export function learnPayload(config: any, agentId: string, limit = 20) {
 }
 
 export function auditPayload(config: any, agentId: string, limit = 20) {
+  if (!isAgentAllowed(config, agentId)) return forbiddenAgentPayload(agentId);
   const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
   try {
     const rows = store.listCaptureAudit(agentId, limit);
@@ -132,6 +138,7 @@ export function auditPayload(config: any, agentId: string, limit = 20) {
 }
 
 export function explainLastPayload(config: any, agentId: string, turnId?: string) {
+  if (!isAgentAllowed(config, agentId)) return forbiddenAgentPayload(agentId);
   const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
   try {
     const rows = store.listCaptureAudit(agentId, 200);
@@ -182,6 +189,10 @@ export function explainLastPayload(config: any, agentId: string, turnId?: string
 
 function defaultAgentId(config: any) {
   return safeString(config?.scopes?.agents?.[0] ?? 'main') || 'main';
+}
+
+function forbiddenAgentPayload(agentId: string) {
+  return { ok: false, agentId, reason: 'agent_not_allowed' };
 }
 
 function extractMemoryId(lookup: string) {

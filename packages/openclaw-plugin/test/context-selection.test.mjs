@@ -61,3 +61,41 @@ test('context selector prioritizes corrections and formats prompt block', () => 
   assert.match(selection.distilledContext, /Must follow: Use pnpm instead of npm/);
   assert.match(selection.distilledContext, /Workflow: Run tests after install/);
 });
+
+test('context selector honors graph depth and packet scope', () => {
+  const selector = new ContextSelector(config);
+  const scopedPacket = { ...packet, sessionId: 'session-b', sessionKey: 'session-b' };
+  const planWithGraph = { ...plan, retrievalPlan: { ...plan.retrievalPlan, graphDepth: 2 } };
+  const baseMemory = {
+    id: 'a', agentId: 'main', type: 'workflow', content: 'Use the base workflow',
+    scopeKind: 'agent', normalizedKey: 'wf:base', tags: [], importance: 0.8, freshness: 1, confidence: 0.9,
+    useCount: 0, usefulCount: 0, captureCount: 1, createdAt: '', updatedAt: '', lastSeenAt: '',
+  };
+  const connected = {
+    ...baseMemory,
+    id: 'c',
+    content: 'Second-hop workflow detail',
+    normalizedKey: 'wf:second-hop',
+  };
+  const wrongScope = {
+    ...baseMemory,
+    id: 'secret',
+    content: 'Session-A secret should not appear',
+    scopeKind: 'session',
+    scopeKey: 'session-a',
+    normalizedKey: 'session:secret',
+  };
+  const store = {
+    getConnectedMemories(memoryId, depth, agentId) {
+      assert.equal(memoryId, 'a');
+      assert.equal(depth, 2);
+      assert.equal(agentId, 'main');
+      return [connected, wrongScope];
+    },
+  };
+  const selection = selector.select({ packet: scopedPacket, plan: planWithGraph, candidates: [baseMemory], store });
+  assert.ok(selection.selectedMemoryIds.includes('c'));
+  assert.ok(!selection.selectedMemoryIds.includes('secret'));
+  assert.match(selection.distilledContext, /Second-hop workflow detail/);
+  assert.doesNotMatch(selection.distilledContext, /Session-A secret/);
+});

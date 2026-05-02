@@ -307,3 +307,88 @@ test('registered typed hook preserves OpenClaw ctx and suppresses synthetic hear
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('capture and routing off modes are authoritative', async () => {
+  const root = await tempRoot();
+  try {
+    const captureOff = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      llm: { enabled: false },
+      capture: { mode: 'off' },
+      routing: { enabled: true },
+    });
+    await handleTurnHook({ agentId: 'main', prompt: 'Remember that I prefer pnpm.' }, captureOff, {}, 'before_prompt_build');
+    let store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    let audit = store.listCaptureAudit('main', 10);
+    assert.equal(audit.length, 1);
+    assert.equal(audit[0].captureJobCreated, false);
+    assert.equal(store.getJobQueueDepth('main'), 0);
+    store.close();
+
+    const routingOffRoot = await tempRoot();
+    const routingOff = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: routingOffRoot,
+      llm: { enabled: false },
+      routing: { enabled: true, mode: 'off' },
+    });
+    const result = await handleTurnHook({ agentId: 'main', prompt: 'Use my prior package-manager preference.' }, routingOff, {}, 'before_prompt_build');
+    assert.deepEqual(result, {});
+    store = new MemoryStore({ activationRoot: routingOffRoot, agentId: 'main' });
+    audit = store.listCaptureAudit('main', 10);
+    assert.equal(audit.length, 0);
+    store.close();
+    await rm(routingOffRoot, { recursive: true, force: true });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('agent_end synthetic capture and tool outcomes without correlation ids do not enqueue or resolve unrelated work', async () => {
+  const root = await tempRoot();
+  try {
+    const calls = [];
+    plugin.register({
+      pluginConfig: {
+        enabled: true,
+        mode: 'balanced',
+        activationRoot: root,
+        llm: { enabled: false },
+        learning: { enabled: true },
+        hooks: { allowConversationAccess: true, allowToolObservation: true },
+      },
+      on: (name, fn) => calls.push([name, fn]),
+      supportsHook: (name) => name === 'agent_end' || name === 'after_tool_call',
+      registerHttpRoute() {},
+      registerService() {},
+      logger: { debug() {}, warn() {} },
+    });
+    const agentEnd = calls.find(([name]) => name === 'agent_end')[1];
+    const afterTool = calls.find(([name]) => name === 'after_tool_call')[1];
+
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const mem = store.insertMemory({
+      agentId: 'main', type: 'preference', content: 'Use pnpm',
+      scopeKind: 'agent', normalizedKey: 'pref:pnpm', tags: [], importance: 0.8, freshness: 1, confidence: 0.9,
+      useCount: 0, usefulCount: 0, captureCount: 1,
+    });
+    store.insertInjection({ agentId: 'main', memoryId: mem.id, runId: 'real-run', turnId: 'real-turn', query: 'deps', rank: 1, score: 0.8 });
+    store.close();
+
+    await agentEnd({ userMessage: 'Going forward, always use pnpm.' }, { agentId: 'main', trigger: 'heartbeat', runId: 'heartbeat-run', sessionId: 's1' });
+    await afterTool({ toolName: 'exec', ok: true, args: { password: 'hunter2' } }, { agentId: 'main' });
+
+    const verify = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const audit = verify.listCaptureAudit('main', 10);
+    assert.equal(audit[0].captureIntent.intent, 'one_off');
+    assert.equal(audit[0].captureJobCreated, false);
+    assert.equal(verify.getJobQueueDepth('main'), 0);
+    assert.equal(verify.getPendingInjections('main').length, 1);
+    verify.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

@@ -42,8 +42,8 @@ export class JobQueue {
     return this.enqueue(agentId, 'consolidation', payload, { priority: options.priority ?? 1, delayMs: options.delayMs });
   }
 
-  claimNext(kind?: JobKind) {
-    return this.store.claimNextJob(kind);
+  claimNext(kind?: JobKind, agentId?: string) {
+    return this.store.claimNextJob(kind, agentId);
   }
 
   complete(jobId: string) {

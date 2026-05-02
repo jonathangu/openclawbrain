@@ -3,6 +3,7 @@ import type { TurnEventPacket } from './capture.js';
 import type { RoutePlan } from './route-fn.js';
 import { clipText } from './redact.js';
 import type { MemoryStore } from './memory-store.js';
+import { filterMemoriesForScope, scopeContextFromPacket } from './scope.js';
 
 export class ContextSelector {
   private config: any;
@@ -13,11 +14,13 @@ export class ContextSelector {
 
   select(input: { packet: TurnEventPacket; plan: RoutePlan; candidates: MemoryNode[]; store?: MemoryStore }): ContextSelection {
     const { packet, plan, store } = input;
-    let candidates = [...input.candidates];
+    const scopeContext = scopeContextFromPacket(packet);
+    let candidates = filterMemoriesForScope([...input.candidates], scopeContext);
     if (plan.retrievalPlan.graphDepth > 0 && store) {
       const expanded = new Set(candidates.map(c => c.id));
       for (const candidate of candidates.slice(0, 5)) {
-        for (const connected of store.getConnectedMemories(candidate.id)) {
+        for (const connected of store.getConnectedMemories(candidate.id, plan.retrievalPlan.graphDepth, packet.agentId, scopeContext)) {
+          if (!filterMemoriesForScope([connected], scopeContext).length) continue;
           if (!expanded.has(connected.id)) {
             expanded.add(connected.id);
             candidates.push(connected);

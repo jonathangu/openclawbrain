@@ -1,5 +1,5 @@
 export declare const PLUGIN_ID = "openclawbrain";
-export declare const PLUGIN_VERSION = "0.2.14";
+export declare const PLUGIN_VERSION = "0.2.15";
 export declare const DEFAULT_CONFIG: any;
 export declare function resolveOpenClawBrainConfig(api?: any): {
     enabled: boolean;
@@ -26,6 +26,7 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
         feedbackModel: any;
         learningModel: any;
         baseUrl: any;
+        allowRemoteLlm: boolean;
         allowedModels: any;
         temperature: number;
         maxTokens: number;
@@ -124,6 +125,7 @@ export declare function normalizePluginConfig(input?: any): {
         feedbackModel: any;
         learningModel: any;
         baseUrl: any;
+        allowRemoteLlm: boolean;
         allowedModels: any;
         temperature: number;
         maxTokens: number;

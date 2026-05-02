@@ -3,7 +3,7 @@ import path from 'node:path';
 import { safeString } from './redact.js';
 
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.14';
+export const PLUGIN_VERSION = '0.2.15';
 export const DEFAULT_CONFIG: any = Object.freeze({
   enabled: true,
   mode: 'balanced',
@@ -22,6 +22,7 @@ export const DEFAULT_CONFIG: any = Object.freeze({
     feedbackModel: 'qwen2.5:32b-instruct',
     learningModel: 'qwen2.5:32b-instruct',
     baseUrl: 'http://127.0.0.1:11434/v1',
+    allowRemoteLlm: false,
     allowedModels: Object.freeze(['qwen2.5:32b-instruct', 'qwen3.5:9b', 'qwen3.5:35b-a3b', 'gemma4:31b']),
     temperature: 0,
     maxTokens: 1200,
@@ -152,6 +153,7 @@ export function normalizePluginConfig(input: any = {}) {
       feedbackModel: nonEmptyString(source.llm?.feedbackModel) || DEFAULT_CONFIG.llm.feedbackModel,
       learningModel: nonEmptyString(source.llm?.learningModel) || DEFAULT_CONFIG.llm.learningModel,
       baseUrl: nonEmptyString(source.llm?.baseUrl) || DEFAULT_CONFIG.llm.baseUrl,
+      allowRemoteLlm: source.llm?.allowRemoteLlm === true,
       allowedModels: Array.isArray(source.llm?.allowedModels) ? source.llm.allowedModels.map((v: any) => safeString(v)).filter(Boolean) : [...DEFAULT_CONFIG.llm.allowedModels],
       temperature: clampNumber(source.llm?.temperature, DEFAULT_CONFIG.llm.temperature, 0, 2),
       maxTokens: clampInteger(source.llm?.maxTokens, DEFAULT_CONFIG.llm.maxTokens, 1, 100000),

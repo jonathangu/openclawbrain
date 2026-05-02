@@ -1,5 +1,7 @@
 import { MemoryStore } from './memory-store.js';
 import { safeString } from './redact.js';
+import { isAgentAllowed } from './config.js';
+import { defaultScopeContext, memoryInScope } from './scope.js';
 export function buildMemoryPromptSupplement() {
     return () => [
         'OpenClawBrain local memory supplement is available for scoped corrections, preferences, workflows, and context when prior decisions matter.',
@@ -11,7 +13,7 @@ export function buildMemoryCorpusSupplement(config) {
             const agentId = defaultAgentId(config);
             const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
             try {
-                return store.searchMemories(query, agentId, { limit: maxResults ?? 10 }).map((memory) => searchResultFromMemory(memory));
+                return store.searchMemories(query, agentId, { limit: maxResults ?? 10, scopeContext: defaultScopeContext(agentId) }).map((memory) => searchResultFromMemory(memory));
             }
             finally {
                 store.close();
@@ -23,7 +25,7 @@ export function buildMemoryCorpusSupplement(config) {
             const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
             try {
                 const memory = store.getMemory(memoryId);
-                if (!memory)
+                if (!memory || memory.deletedAt || memory.supersededBy || !memoryInScope(memory, defaultScopeContext(agentId)))
                     return null;
                 return {
                     corpus: 'openclawbrain',
@@ -45,6 +47,8 @@ export function buildMemoryCorpusSupplement(config) {
     };
 }
 export function searchPayload(config, agentId, query, limit = 10) {
+    if (!isAgentAllowed(config, agentId))
+        return forbiddenAgentPayload(agentId);
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     try {
         const memories = store.searchMemories(query, agentId, { limit });
@@ -69,6 +73,8 @@ export function searchPayload(config, agentId, query, limit = 10) {
     }
 }
 export function graphPayload(config, agentId, limit = 20) {
+    if (!isAgentAllowed(config, agentId))
+        return forbiddenAgentPayload(agentId);
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     try {
         const nodes = store.listMemories(agentId, { limit });
@@ -98,6 +104,8 @@ export function graphPayload(config, agentId, limit = 20) {
     }
 }
 export function learnPayload(config, agentId, limit = 20) {
+    if (!isAgentAllowed(config, agentId))
+        return forbiddenAgentPayload(agentId);
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     try {
         return {
@@ -113,6 +121,8 @@ export function learnPayload(config, agentId, limit = 20) {
     }
 }
 export function auditPayload(config, agentId, limit = 20) {
+    if (!isAgentAllowed(config, agentId))
+        return forbiddenAgentPayload(agentId);
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     try {
         const rows = store.listCaptureAudit(agentId, limit);
@@ -131,6 +141,8 @@ export function auditPayload(config, agentId, limit = 20) {
     }
 }
 export function explainLastPayload(config, agentId, turnId) {
+    if (!isAgentAllowed(config, agentId))
+        return forbiddenAgentPayload(agentId);
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
     try {
         const rows = store.listCaptureAudit(agentId, 200);
@@ -182,6 +194,9 @@ export function explainLastPayload(config, agentId, turnId) {
 }
 function defaultAgentId(config) {
     return safeString(config?.scopes?.agents?.[0] ?? 'main') || 'main';
+}
+function forbiddenAgentPayload(agentId) {
+    return { ok: false, agentId, reason: 'agent_not_allowed' };
 }
 function extractMemoryId(lookup) {
     const value = safeString(lookup);

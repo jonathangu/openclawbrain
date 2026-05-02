@@ -63,6 +63,23 @@ test('find memory by normalized key', async () => {
   }
 });
 
+test('missing scopeKey participates in uniqueness', async () => {
+  const root = await tempRoot();
+  try {
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const base = {
+      agentId: 'main', type: 'preference', content: 'User prefers concise replies',
+      scopeKind: 'agent', normalizedKey: 'preference:concise', tags: [], importance: 0.6, freshness: 1, confidence: 0.8,
+      useCount: 0, usefulCount: 0, captureCount: 1,
+    };
+    store.insertMemory(base);
+    assert.throws(() => store.insertMemory({ ...base, content: 'Duplicate concise replies' }));
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('update memory node', async () => {
   const root = await tempRoot();
   try {

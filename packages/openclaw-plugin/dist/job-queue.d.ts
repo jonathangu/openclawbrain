@@ -27,7 +27,7 @@ export declare class JobQueue {
         priority?: number;
         delayMs?: number;
     }): BackgroundJob;
-    claimNext(kind?: JobKind): BackgroundJob | null;
+    claimNext(kind?: JobKind, agentId?: string): BackgroundJob | null;
     complete(jobId: string): void;
     fail(jobId: string, error: string, retryAfterMs?: number): void;
     depth(agentId?: string): number;

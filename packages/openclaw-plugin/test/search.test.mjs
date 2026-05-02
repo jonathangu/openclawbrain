@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import plugin, { auditPayload, explainLastPayload, graphPayload, learnPayload, normalizePluginConfig, searchPayload } from '../dist/index.js';
+import plugin, { auditPayload, buildMemoryCorpusSupplement, explainLastPayload, graphPayload, learnPayload, normalizePluginConfig, searchPayload } from '../dist/index.js';
 import { MemoryStore } from '../dist/memory-store.js';
 
 async function tempRoot() {
@@ -122,6 +122,54 @@ test('search, graph, learn payloads and corpus supplement expose stored memories
     assert.equal(results.length, 1);
     const fetched = await corpus.get({ lookup: memory.id });
     assert.match(fetched.content, /file-by-file details/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('corpus get does not expose deleted or narrow session memories', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({ enabled: true, activationRoot: root, mode: 'balanced' });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const deleted = store.insertMemory({
+      agentId: 'main', type: 'preference', content: 'Deleted preference should not appear',
+      scopeKind: 'agent', normalizedKey: 'deleted:pref', tags: [], importance: 0.9, freshness: 1, confidence: 0.9,
+      useCount: 0, usefulCount: 0, captureCount: 1,
+    });
+    const sessionOnly = store.insertMemory({
+      agentId: 'main', type: 'preference', content: 'Session codeword blue heron',
+      scopeKind: 'session', scopeKey: 'session-a', normalizedKey: 'session:secret', tags: [], importance: 0.9, freshness: 1, confidence: 0.9,
+      useCount: 0, usefulCount: 0, captureCount: 1,
+    });
+    store.softDeleteMemory(deleted.id);
+    store.close();
+
+    const corpus = buildMemoryCorpusSupplement(config);
+    assert.equal(await corpus.get({ lookup: deleted.id }), null);
+    assert.equal(await corpus.get({ lookup: sessionOnly.id }), null);
+    const results = await corpus.search({ query: 'blue heron', maxResults: 10 });
+    assert.equal(results.length, 0);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('HTTP payload helpers reject disallowed agent ids', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({ enabled: true, activationRoot: root, scopes: { agents: ['main'] } });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'victim' });
+    store.insertMemory({
+      agentId: 'victim', type: 'preference', content: 'Victim-only memory',
+      scopeKind: 'agent', normalizedKey: 'victim:pref', tags: [], importance: 0.9, freshness: 1, confidence: 0.9,
+      useCount: 0, usefulCount: 0, captureCount: 1,
+    });
+    store.close();
+    const payload = searchPayload(config, 'victim', 'Victim-only', 10);
+    assert.equal(payload.ok, false);
+    assert.equal(payload.reason, 'agent_not_allowed');
+    assert.equal('results' in payload, false);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

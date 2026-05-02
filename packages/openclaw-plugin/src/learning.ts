@@ -25,14 +25,16 @@ export class BackgroundLearner {
   processOutcomeClassification(agentId: string, packet: TurnEventPacket): BackgroundLearningReport {
     let outcomeResolutions = 0;
     const observation = packet.toolObservations[0];
-    const pending = this.store.getPendingInjections(agentId)
-      .filter((injection) => (packet.runId ? injection.runId === packet.runId : true))
-      .filter((injection) => (packet.turnId ? injection.turnId === packet.turnId : true))
-      .slice(0, 10);
+    const pending = hasCorrelationId(packet)
+      ? this.store.getPendingInjections(agentId)
+        .filter((injection) => (packet.runId ? injection.runId === packet.runId : true))
+        .filter((injection) => (packet.turnId ? injection.turnId === packet.turnId : true))
+        .slice(0, 10)
+      : [];
 
     if (observation) {
       for (const injection of pending) {
-        this.store.resolveInjectionOutcome(injection.id, observation.ok ? 'tool_success' : 'tool_failure', observation.errorClass);
+        this.store.resolveInjectionOutcome(injection.id, observation.ok ? 'tool_success' : 'tool_failure', observation.errorClass, scopeForPacket(agentId, packet));
         outcomeResolutions += 1;
       }
     }
@@ -53,20 +55,22 @@ export class BackgroundLearner {
 
   processAgentEnd(agentId: string, packet: TurnEventPacket): BackgroundLearningReport {
     let outcomeResolutions = 0;
-    const pending = this.store.getPendingInjections(agentId)
-      .filter((injection) => (packet.runId ? injection.runId === packet.runId : true))
-      .filter((injection) => (packet.turnId ? injection.turnId === packet.turnId : true))
-      .slice(0, 10);
+    const pending = hasCorrelationId(packet)
+      ? this.store.getPendingInjections(agentId)
+        .filter((injection) => (packet.runId ? injection.runId === packet.runId : true))
+        .filter((injection) => (packet.turnId ? injection.turnId === packet.turnId : true))
+        .slice(0, 10)
+      : [];
 
     const correctionSignal = isCorrectionAfterInjection(packet.latestUserMessageRedacted);
     if (correctionSignal) {
       for (const injection of pending) {
-        this.store.resolveInjectionOutcome(injection.id, 'user_corrected', correctionSignal);
+        this.store.resolveInjectionOutcome(injection.id, 'user_corrected', correctionSignal, scopeForPacket(agentId, packet));
         outcomeResolutions += 1;
       }
     } else if (pending.length > 0) {
       for (const injection of pending) {
-        this.store.resolveInjectionOutcome(injection.id, 'accepted');
+        this.store.resolveInjectionOutcome(injection.id, 'accepted', undefined, scopeForPacket(agentId, packet));
         outcomeResolutions += 1;
       }
     }
@@ -101,6 +105,19 @@ export class BackgroundLearner {
       lastRunAt: new Date().toISOString(),
     };
   }
+}
+
+function hasCorrelationId(packet: TurnEventPacket) {
+  return Boolean(packet.runId || packet.turnId);
+}
+
+function scopeForPacket(agentId: string, packet: TurnEventPacket) {
+  return {
+    agentId,
+    runId: packet.runId || undefined,
+    turnId: packet.turnId || undefined,
+    sessionId: packet.sessionId || undefined,
+  };
 }
 
 function isCorrectionAfterInjection(message: string): string | null {

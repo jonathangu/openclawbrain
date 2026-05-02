@@ -24,10 +24,12 @@ export function eventId(prefix = 'evt') {
 }
 
 export function redactText(value: any, maxChars = 3000) {
-  let text = safeString(value);
+  const redactedValue = redactStructuredValue(value);
+  let text = typeof redactedValue === 'string' ? safeString(redactedValue) : safeString(JSON.stringify(redactedValue));
   text = text.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[redacted-email]');
   text = text.replace(/\b(?:https?|ftp):\/\/[^\s<>()]+/gi, '[redacted-url]');
   text = text.replace(/\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}\b/g, '[redacted-phone]');
+  text = text.replace(/(["']?\b(?:api[_-]?key|token|secret|password|passwd|authorization|bearer|client[_-]?secret|access[_-]?token|refresh[_-]?token|session[_-]?cookie|private[_-]?key|secret[_-]?key)\b["']?\s*:\s*)["'][^"']{1,4096}["']/gi, '$1"[redacted-secret]"');
   text = text.replace(/\b(?:api[_-]?key|token|secret|password|passwd|authorization|bearer)\b\s*[:=]\s*['"]?[^'"\s,;]+/gi, (match) => {
     const key = match.split(/[:=]/)[0]?.trim() || 'secret';
     return `${key}=[redacted-secret]`;
@@ -36,6 +38,32 @@ export function redactText(value: any, maxChars = 3000) {
   text = text.replace(/\b[A-Fa-f0-9]{32,}\b/g, '[redacted-blob]');
   text = text.replace(/\b[A-Za-z0-9+/]{40,}={0,2}\b/g, '[redacted-blob]');
   return clipText(text, maxChars);
+}
+
+function redactStructuredValue(value: any): any {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      try {
+        return JSON.stringify(redactStructuredValue(JSON.parse(trimmed)));
+      } catch {
+        return value;
+      }
+    }
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(redactStructuredValue);
+  if (!value || typeof value !== 'object') return value;
+  const result: Record<string, any> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    result[key] = isSensitiveKey(key) ? '[redacted-secret]' : redactStructuredValue(entry);
+  }
+  return result;
+}
+
+function isSensitiveKey(key: string) {
+  return /^(?:api[_-]?key|token|secret|password|passwd|authorization|bearer|client[_-]?secret|access[_-]?token|refresh[_-]?token|session[_-]?cookie|private[_-]?key|secret[_-]?key)$/i.test(key)
+    || /(?:api[_-]?key|client[_-]?secret|access[_-]?token|refresh[_-]?token|session[_-]?cookie|private[_-]?key|secret[_-]?key)$/i.test(key);
 }
 
 export function latestUserTextFromEvent(event: any = {}) {
@@ -54,7 +82,7 @@ export function latestUserTextFromEvent(event: any = {}) {
   // user-message fields / messages so tests and future richer hook payloads can
   // override it with already-redacted text.
   if (typeof event.prompt === 'string') return event.prompt;
-  return safeString(event.summary ?? '');
+  return '';
 }
 
 function textFromMessageContent(content: any): string {

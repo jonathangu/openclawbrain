@@ -68,10 +68,6 @@ export function detectCaptureIntent(input: { latestUserMessageRedacted: string; 
 
   if (!text) return result(false, 'one_off', 0.5, 'No user text to evaluate', [], [], scope);
 
-  if (matchesForget(text)) {
-    return result(true, 'delete_or_suppress', 0.92, 'User asked to forget, delete, suppress, or stop using memory', ['forget/delete'], ['delete_requested'], scope);
-  }
-
   if (matchesCredentialSecret(raw)) {
     return result(true, 'sensitive_secret', 0.96, 'User text contains credential-like secret storage language', ['credential_secret'], ['credential_like_secret'], scope);
   }
@@ -84,14 +80,6 @@ export function detectCaptureIntent(input: { latestUserMessageRedacted: string; 
     return result(false, 'retrieval_question', 0.78, 'User is asking for existing memory rather than defining new memory', ['retrieval_question'], riskHintsForText(raw, 'retrieval_question'), scope);
   }
 
-  if (matchesRouting(text)) {
-    return result(true, 'routing_rule', 0.78, 'User stated a routing or delegation rule', ['routing'], riskHintsForText(raw, 'routing_rule'), scope);
-  }
-
-  if (matchesAgentAssignment(text)) {
-    return result(true, 'agent_assignment', 0.74, 'User stated an ownership or responsibility assignment', ['agent_assignment'], riskHintsForText(raw, 'agent_assignment'), scope);
-  }
-
   if (matchesExplicitStore(text)) {
     const intent: CaptureIntent = /\b(codeword|passphrase|auth phrase|authentication phrase)\b/i.test(raw) && !/\b(project\s+code\s*name|project\s+codename|codename|code\s*name)\b/i.test(raw)
       ? 'ambiguous'
@@ -100,12 +88,28 @@ export function detectCaptureIntent(input: { latestUserMessageRedacted: string; 
     return result(true, intent, confidence, intent === 'ambiguous' ? 'User used explicit memory language around a codeword-like value without a recall trigger' : 'User explicitly asked to remember or store durable information', ['explicit_memory_language'], riskHintsForText(raw, intent), scope);
   }
 
+  if (matchesForget(text)) {
+    return result(true, 'delete_or_suppress', 0.92, 'User asked to forget, delete, suppress, or stop using memory', ['forget/delete'], ['delete_requested'], scope);
+  }
+
+  if (matchesRouting(text)) {
+    return result(true, 'routing_rule', 0.78, 'User stated a routing or delegation rule', ['routing'], riskHintsForText(raw, 'routing_rule'), scope);
+  }
+
+  if (matchesAgentAssignment(text)) {
+    return result(true, 'agent_assignment', 0.74, 'User stated an ownership or responsibility assignment', ['agent_assignment'], riskHintsForText(raw, 'agent_assignment'), scope);
+  }
+
   if (matchesCorrection(text)) {
     return result(true, 'explicit_update', 0.78, 'User corrected or updated prior behavior/facts', ['correction'], riskHintsForText(raw, 'explicit_update'), scope);
   }
 
   if (matchesPreference(text)) {
     return result(true, 'standing_preference', 0.72, 'User stated a durable preference', ['preference'], riskHintsForText(raw, 'standing_preference'), scope);
+  }
+
+  if (looksOneOff(text)) {
+    return result(false, 'one_off', 0.72, 'Message looks like a one-off task, not durable memory', ['one_off'], riskHintsForText(raw, 'one_off'), scope);
   }
 
   if (matchesWorkflow(text)) {
@@ -122,10 +126,6 @@ export function detectCaptureIntent(input: { latestUserMessageRedacted: string; 
 
   if (matchesOutcome(text)) {
     return result(true, 'standing_workflow', 0.66, 'User reported a tool/workflow outcome worth evaluating', ['outcome'], riskHintsForText(raw, 'standing_workflow'), scope);
-  }
-
-  if (looksOneOff(text)) {
-    return result(false, 'one_off', 0.72, 'Message looks like a one-off task, not durable memory', ['one_off'], riskHintsForText(raw, 'one_off'), scope);
   }
 
   return result(false, 'ambiguous', 0.3, 'No durable capture signal found', [], riskHintsForText(raw, 'ambiguous'), scope);
@@ -240,7 +240,8 @@ function matchesRecallRule(text: string) {
 }
 
 function matchesForget(text: string) {
-  return /\b(forget|delete|remove|don't remember|do not remember|do not store|don't store|stop using|suppress)\b/.test(text);
+  return /\b(delete|remove|don't remember|do not remember|do not store|don't store|stop using|suppress)\b/.test(text)
+    || /\bforget\b/.test(text) && !/\b(don't|do not) forget\b/.test(text);
 }
 
 function matchesCredentialSecret(text: string) {

@@ -17,8 +17,8 @@ export function sanitizeToolEvent(event = {}, config = {}) {
         toolName: safeString(event.toolName ?? event.tool_name ?? event.name ?? 'unknown_tool') || 'unknown_tool',
         ok: event.ok !== false && event.success !== false,
         durationMs: Number.isFinite(Number(event.durationMs ?? event.duration_ms)) ? Number(event.durationMs ?? event.duration_ms) : undefined,
-        argsSummary: redactText(JSON.stringify(event.args ?? event.arguments ?? null), config.maxContextChars || 3000),
-        resultSummary: redactText(JSON.stringify(event.result ?? event.output ?? null), config.maxContextChars || 3000),
+        argsSummary: redactText(event.args ?? event.arguments ?? null, config.maxContextChars || 3000),
+        resultSummary: redactText(event.result ?? event.output ?? null, config.maxContextChars || 3000),
         errorClass: safeString(event.error?.name ?? event.errorClass ?? event.error_class ?? ''),
     };
 }

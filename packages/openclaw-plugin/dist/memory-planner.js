@@ -2,6 +2,7 @@ import { ContextSelector } from './context-selector.js';
 import { FeedbackDistiller } from './feedback-distiller.js';
 import { runJsonWithValidation } from './llm-json.js';
 import { MemoryOperationApplier } from './memory-operations.js';
+import { scopeContextFromPacket } from './scope.js';
 export class MemoryPlanner {
     config;
     routeFn;
@@ -30,7 +31,7 @@ export class MemoryPlanner {
     async runInner(packet) {
         const baseRoutePlan = this.routeFn.plan(packet);
         const baseCandidates = baseRoutePlan.shouldRetrieve
-            ? retrieveCandidates(this.store, packet.agentId, baseRoutePlan.retrievalPlan.queries, baseRoutePlan.retrievalPlan.memoryTypes, baseRoutePlan.retrievalPlan.maxCandidates)
+            ? retrieveCandidates(this.store, packet, baseRoutePlan.retrievalPlan.queries, baseRoutePlan.retrievalPlan.memoryTypes, baseRoutePlan.retrievalPlan.maxCandidates)
             : [];
         const planner = this.client ? await this.planWithLlm(packet, baseRoutePlan, baseCandidates) : null;
         const routePlan = planner
@@ -56,14 +57,14 @@ export class MemoryPlanner {
                 promptVersion: 'memory-planner-v1',
                 inputHash: planner.audit.inputHash,
                 redactedInputSummary: planner.audit.redactedInputSummary,
-                outputJson: JSON.stringify(planner.output),
+                outputJson: this.config.privacy?.storeDistillationOutputs === false ? JSON.stringify({ stored: false, reason: 'storeDistillationOutputs=false' }) : JSON.stringify(planner.output),
                 validationStatus: planner.audit.validationStatus === 'fallback' ? 'repaired' : planner.audit.validationStatus,
                 validationError: planner.audit.validationError || planner.audit.parseError,
                 latencyMs: planner.audit.latencyMs,
             });
         }
         let feedbackDistillation;
-        if (routePlan.enqueueCapture && this.distiller) {
+        if (routePlan.enqueueCapture && this.distiller && this.config.capture?.enabled === true && this.config.capture?.mode !== 'off' && this.config.memory?.captureMode !== 'off') {
             const result = await this.distiller.distill(packet, { captureIntent: routePlan.captureIntent, retrievalIntent: routePlan.retrievalIntent });
             feedbackDistillation = result.output;
             let applied = null;
@@ -95,7 +96,7 @@ export class MemoryPlanner {
         const plannedIds = planner?.output.selectedMemoryIds ?? [];
         const candidates = baseCandidates.length > 0
             ? orderCandidates(baseCandidates, plannedIds)
-            : retrieveCandidates(this.store, packet.agentId, routePlan.retrievalPlan.queries, routePlan.retrievalPlan.memoryTypes, routePlan.retrievalPlan.maxCandidates);
+            : retrieveCandidates(this.store, packet, routePlan.retrievalPlan.queries, routePlan.retrievalPlan.memoryTypes, routePlan.retrievalPlan.maxCandidates);
         const contextSelection = this.contextSelector.select({ packet, plan: routePlan, candidates, store: this.store });
         return { routePlan, feedbackDistillation, contextSelection };
     }
@@ -103,7 +104,7 @@ export class MemoryPlanner {
         const routePlan = fallback();
         if (!routePlan.shouldRetrieve)
             return { routePlan };
-        const candidates = retrieveCandidates(this.store, packet.agentId, routePlan.retrievalPlan.queries, routePlan.retrievalPlan.memoryTypes, routePlan.retrievalPlan.maxCandidates);
+        const candidates = retrieveCandidates(this.store, packet, routePlan.retrievalPlan.queries, routePlan.retrievalPlan.memoryTypes, routePlan.retrievalPlan.maxCandidates);
         const contextSelection = this.contextSelector.select({ packet, plan: routePlan, candidates, store: this.store });
         return { routePlan, contextSelection };
     }
@@ -192,11 +193,13 @@ async function runWithTimeout(taskFn, timeoutMs, fallbackFn) {
         return fallbackFn();
     }
 }
-function retrieveCandidates(store, agentId, queries, memoryTypes, maxCandidates) {
+function retrieveCandidates(store, packet, queries, memoryTypes, maxCandidates) {
+    const agentId = packet.agentId;
+    const scopeContext = scopeContextFromPacket(packet);
     const seen = new Set();
     const results = [];
     for (const query of queries) {
-        for (const candidate of store.searchMemories(query, agentId, { limit: maxCandidates })) {
+        for (const candidate of store.searchMemories(query, agentId, { limit: maxCandidates, scopeContext })) {
             if (seen.has(candidate.id))
                 continue;
             seen.add(candidate.id);
@@ -206,7 +209,7 @@ function retrieveCandidates(store, agentId, queries, memoryTypes, maxCandidates)
         }
     }
     for (const memoryType of memoryTypes) {
-        for (const candidate of store.listMemories(agentId, { type: memoryType, limit: maxCandidates })) {
+        for (const candidate of store.listMemories(agentId, { type: memoryType, limit: maxCandidates, scopeContext })) {
             if (seen.has(candidate.id))
                 continue;
             seen.add(candidate.id);

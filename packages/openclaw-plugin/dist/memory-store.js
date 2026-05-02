@@ -5,6 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { mkdirSync } from 'node:fs';
 import { openDatabase } from './sqlite-driver.js';
+import { filterMemoriesForScope } from './scope.js';
 // ── Schema version ────────────────────────────────────────────────────────────
 const SCHEMA_VERSION = 3;
 // ── Schema SQL ────────────────────────────────────────────────────────────────
@@ -419,7 +420,7 @@ export class MemoryStore {
         evidence_kind, evidence_hash, source_hook, source_turn_id, source_session_id,
         created_at, updated_at, last_seen_at, last_used_at, superseded_by, deleted_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, node.agentId, node.type, node.content, node.positive ?? null, node.negative ?? null, node.scopeKind, node.scopeKey ?? null, node.normalizedKey, JSON.stringify(node.tags), node.importance, node.freshness, node.confidence, node.useCount, node.usefulCount, node.captureCount, node.distilledByModel ?? null, node.distillerPromptVersion ?? null, node.distillationConfidence ?? null, node.evidenceKind ?? null, node.evidenceHash ?? null, node.sourceHook ?? null, node.sourceTurnId ?? null, node.sourceSessionId ?? null, ts, ts, ts, null, null, null);
+    `).run(id, node.agentId, node.type, node.content, node.positive ?? null, node.negative ?? null, node.scopeKind, node.scopeKey ?? '', node.normalizedKey, JSON.stringify(node.tags), node.importance, node.freshness, node.confidence, node.useCount, node.usefulCount, node.captureCount, node.distilledByModel ?? null, node.distillerPromptVersion ?? null, node.distillationConfidence ?? null, node.evidenceKind ?? null, node.evidenceHash ?? null, node.sourceHook ?? null, node.sourceTurnId ?? null, node.sourceSessionId ?? null, ts, ts, ts, null, null, null);
         return this.getMemory(id);
     }
     getMemory(id) {
@@ -429,9 +430,9 @@ export class MemoryStore {
     findMemoryByNormalizedKey(agentId, normalizedKey, scopeKind, scopeKey) {
         const row = this.db.prepare(`
       SELECT * FROM memory_nodes
-      WHERE agent_id = ? AND normalized_key = ? AND scope_kind = ? AND scope_key IS ? AND deleted_at IS NULL
+      WHERE agent_id = ? AND normalized_key = ? AND scope_kind = ? AND scope_key = ? AND deleted_at IS NULL
       LIMIT 1
-    `).get(agentId, normalizedKey, scopeKind, scopeKey ?? null);
+    `).get(agentId, normalizedKey, scopeKind, scopeKey ?? '');
         return row ? rowToMemory(row) : null;
     }
     updateMemory(id, updates) {
@@ -445,10 +446,11 @@ export class MemoryStore {
         tags_json = ?, importance = ?, freshness = ?, confidence = ?,
         use_count = ?, useful_count = ?, capture_count = ?,
         distilled_by_model = ?, distiller_prompt_version = ?, distillation_confidence = ?,
+        evidence_kind = ?, evidence_hash = ?, source_hook = ?, source_turn_id = ?, source_session_id = ?,
         updated_at = ?, last_seen_at = ?, last_used_at = ?,
         superseded_by = ?, deleted_at = ?
       WHERE id = ?
-    `).run(merged.content, merged.positive ?? null, merged.negative ?? null, JSON.stringify(merged.tags), merged.importance, merged.freshness, merged.confidence, merged.useCount, merged.usefulCount, merged.captureCount, merged.distilledByModel ?? null, merged.distillerPromptVersion ?? null, merged.distillationConfidence ?? null, merged.updatedAt, merged.lastSeenAt, merged.lastUsedAt ?? null, merged.supersededBy ?? null, merged.deletedAt ?? null, id);
+    `).run(merged.content, merged.positive ?? null, merged.negative ?? null, JSON.stringify(merged.tags), merged.importance, merged.freshness, merged.confidence, merged.useCount, merged.usefulCount, merged.captureCount, merged.distilledByModel ?? null, merged.distillerPromptVersion ?? null, merged.distillationConfidence ?? null, merged.evidenceKind ?? null, merged.evidenceHash ?? null, merged.sourceHook ?? null, merged.sourceTurnId ?? null, merged.sourceSessionId ?? null, merged.updatedAt, merged.lastSeenAt, merged.lastUsedAt ?? null, merged.supersededBy ?? null, merged.deletedAt ?? null, id);
         return this.getMemory(id);
     }
     supersedeMemory(existingId, supersededById) {
@@ -492,14 +494,14 @@ export class MemoryStore {
                 }).slice(offset, offset + limit);
             }
         }
-        return rows.map(rowToMemory);
+        return filterMemoriesForScope(rows.map(rowToMemory), opts.scopeContext);
     }
     listMemories(agentId, opts = {}) {
         const limit = Math.min(200, Math.max(1, opts.limit ?? 50));
         if (opts.type) {
-            return this.db.prepare('SELECT * FROM memory_nodes WHERE agent_id = ? AND type = ? AND deleted_at IS NULL ORDER BY importance DESC LIMIT ?').all(agentId, opts.type, limit).map(rowToMemory);
+            return filterMemoriesForScope(this.db.prepare('SELECT * FROM memory_nodes WHERE agent_id = ? AND type = ? AND deleted_at IS NULL ORDER BY importance DESC LIMIT ?').all(agentId, opts.type, limit).map(rowToMemory), opts.scopeContext);
         }
-        return this.db.prepare('SELECT * FROM memory_nodes WHERE agent_id = ? AND deleted_at IS NULL ORDER BY importance DESC LIMIT ?').all(agentId, limit).map(rowToMemory);
+        return filterMemoriesForScope(this.db.prepare('SELECT * FROM memory_nodes WHERE agent_id = ? AND deleted_at IS NULL ORDER BY importance DESC LIMIT ?').all(agentId, limit).map(rowToMemory), opts.scopeContext);
     }
     countMemories(agentId, type) {
         if (type) {
@@ -546,9 +548,27 @@ export class MemoryStore {
     `).run(id, inj.agentId, inj.memoryId, inj.routeDecisionId ?? null, inj.runId ?? null, inj.turnId ?? null, inj.sessionId ?? null, inj.query, inj.rank, inj.score, ts, null, outcome, inj.correctionSignal ?? null);
         return { ...inj, id, injectedAt: ts, outcome };
     }
-    resolveInjectionOutcome(injectionId, outcome, correctionSignal) {
-        this.db.prepare('UPDATE memory_injections SET outcome = ?, correction_signal = ?, resolved_at = ? WHERE id = ?')
-            .run(outcome, correctionSignal ?? null, now(), injectionId);
+    resolveInjectionOutcome(injectionId, outcome, correctionSignal, scope = {}) {
+        const clauses = ['id = ?'];
+        const params = [injectionId];
+        if (scope.agentId) {
+            clauses.push('agent_id = ?');
+            params.push(scope.agentId);
+        }
+        if (scope.runId) {
+            clauses.push('run_id = ?');
+            params.push(scope.runId);
+        }
+        if (scope.turnId) {
+            clauses.push('turn_id = ?');
+            params.push(scope.turnId);
+        }
+        if (scope.sessionId) {
+            clauses.push('session_id = ?');
+            params.push(scope.sessionId);
+        }
+        this.db.prepare(`UPDATE memory_injections SET outcome = ?, correction_signal = ?, resolved_at = ? WHERE ${clauses.join(' AND ')}`)
+            .run(outcome, correctionSignal ?? null, now(), ...params);
     }
     getPendingInjections(agentId) {
         return this.db.prepare('SELECT * FROM memory_injections WHERE agent_id = ? AND outcome = ? ORDER BY injected_at DESC LIMIT 100').all(agentId, 'pending').map(rowToInjection);
@@ -713,11 +733,19 @@ export class MemoryStore {
     `).run(id, job.agentId, job.kind, job.priority, JSON.stringify(job.payload), job.maxAttempts, job.availableAt, ts, ts);
         return { ...job, id, status: 'pending', attempts: 0, createdAt: ts, updatedAt: ts };
     }
-    claimNextJob(kind) {
+    claimNextJob(kind, agentId) {
         const ts = now();
-        const job = kind
-            ? this.db.prepare("SELECT * FROM background_jobs WHERE kind = ? AND status = 'pending' AND available_at <= ? ORDER BY priority DESC, created_at ASC LIMIT 1").get(kind, ts)
-            : this.db.prepare("SELECT * FROM background_jobs WHERE status = 'pending' AND available_at <= ? ORDER BY priority DESC, created_at ASC LIMIT 1").get(ts);
+        const filters = ["status = 'pending'", 'available_at <= ?'];
+        const params = [ts];
+        if (kind) {
+            filters.push('kind = ?');
+            params.push(kind);
+        }
+        if (agentId) {
+            filters.push('agent_id = ?');
+            params.push(agentId);
+        }
+        const job = this.db.prepare(`SELECT * FROM background_jobs WHERE ${filters.join(' AND ')} ORDER BY priority DESC, created_at ASC LIMIT 1`).get(...params);
         if (!job)
             return null;
         this.db.prepare("UPDATE background_jobs SET status = 'running', started_at = ?, attempts = attempts + 1, updated_at = ? WHERE id = ?")
@@ -847,13 +875,15 @@ export class MemoryStore {
         }
         return this.db.prepare('SELECT * FROM route_examples WHERE agent_id = ? AND reward < 0 ORDER BY reward ASC, created_at DESC LIMIT ?').all(agentId, limit);
     }
-    getConnectedMemories(memoryId, maxDepth = 1) {
+    getConnectedMemories(memoryId, maxDepth = 1, agentId, scopeContext) {
         const seen = new Set([memoryId]);
         let frontier = [memoryId];
         for (let depth = 0; depth < Math.max(1, maxDepth); depth += 1) {
             const next = new Set();
             for (const current of frontier) {
-                const edges = this.db.prepare('SELECT from_id, to_id FROM memory_edges WHERE from_id = ? OR to_id = ?').all(current, current);
+                const edges = agentId
+                    ? this.db.prepare('SELECT from_id, to_id FROM memory_edges WHERE agent_id = ? AND (from_id = ? OR to_id = ?)').all(agentId, current, current)
+                    : this.db.prepare('SELECT from_id, to_id FROM memory_edges WHERE from_id = ? OR to_id = ?').all(current, current);
                 for (const edge of edges) {
                     const neighbor = edge.from_id === current ? edge.to_id : edge.from_id;
                     if (!neighbor || seen.has(neighbor))
@@ -870,7 +900,10 @@ export class MemoryStore {
         if (nodeIds.length === 0)
             return [];
         const placeholders = nodeIds.map(() => '?').join(',');
-        return this.db.prepare(`SELECT * FROM memory_nodes WHERE id IN (${placeholders}) AND deleted_at IS NULL AND superseded_by IS NULL ORDER BY importance DESC`).all(...nodeIds).map(rowToMemory);
+        const rows = agentId
+            ? this.db.prepare(`SELECT * FROM memory_nodes WHERE id IN (${placeholders}) AND agent_id = ? AND deleted_at IS NULL AND superseded_by IS NULL ORDER BY importance DESC`).all(...nodeIds, agentId)
+            : this.db.prepare(`SELECT * FROM memory_nodes WHERE id IN (${placeholders}) AND deleted_at IS NULL AND superseded_by IS NULL ORDER BY importance DESC`).all(...nodeIds);
+        return filterMemoriesForScope(rows.map(rowToMemory), scopeContext);
     }
     countEdgesForAgent(agentId) {
         const row = this.db.prepare('SELECT COUNT(*) as cnt FROM memory_edges WHERE agent_id = ?').get(agentId);

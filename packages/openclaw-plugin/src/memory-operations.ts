@@ -60,7 +60,12 @@ export class MemoryOperationApplier {
       }
 
       for (const feedback of distillation.injectionFeedback) {
-        this.store.resolveInjectionOutcome(feedback.injectionId, feedback.outcome, redactText(feedback.evidence, 300));
+        this.store.resolveInjectionOutcome(feedback.injectionId, feedback.outcome, redactText(feedback.evidence, 300), {
+          agentId: packet.agentId,
+          runId: packet.runId || undefined,
+          turnId: packet.turnId || undefined,
+          sessionId: packet.sessionId || undefined,
+        });
         resolvedInjections += 1;
       }
 

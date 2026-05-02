@@ -1,4 +1,5 @@
 import { type DatabaseLike } from './sqlite-driver.js';
+import { type ScopeContext } from './scope.js';
 import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, CaptureAuditRow } from './memory-types.js';
 export declare const uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 export declare const now: () => string;
@@ -23,10 +24,12 @@ export declare class MemoryStore {
     searchMemories(query: string, agentId: string, opts?: {
         limit?: number;
         offset?: number;
+        scopeContext?: ScopeContext;
     }): MemoryNode[];
     listMemories(agentId: string, opts?: {
         type?: MemoryType;
         limit?: number;
+        scopeContext?: ScopeContext;
     }): MemoryNode[];
     countMemories(agentId: string, type?: MemoryType): number;
     insertEdge(edge: Omit<MemoryEdge, 'id' | 'createdAt' | 'updatedAt'> & {
@@ -39,7 +42,12 @@ export declare class MemoryStore {
         injectedAt?: string;
         outcome?: InjectionOutcome;
     }): InjectionEvent;
-    resolveInjectionOutcome(injectionId: string, outcome: InjectionOutcome, correctionSignal?: string): void;
+    resolveInjectionOutcome(injectionId: string, outcome: InjectionOutcome, correctionSignal?: string, scope?: {
+        agentId?: string;
+        runId?: string;
+        turnId?: string;
+        sessionId?: string;
+    }): void;
     getPendingInjections(agentId: string): InjectionEvent[];
     getInjectionsForRouteDecision(routeDecisionId: string): InjectionEvent[];
     insertRouteDecision(decision: Omit<RouteDecision, 'id' | 'createdAt'> & {
@@ -78,7 +86,7 @@ export declare class MemoryStore {
     enqueueJob(job: Omit<BackgroundJob, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'attempts' | 'startedAt' | 'finishedAt' | 'error'> & {
         id?: string;
     }): BackgroundJob;
-    claimNextJob(kind?: JobKind): BackgroundJob | null;
+    claimNextJob(kind?: JobKind, agentId?: string): BackgroundJob | null;
     completeJob(id: string): void;
     failJob(id: string, error: string, retryAfterMs?: number): void;
     getJobQueueDepth(agentId?: string): number;
@@ -94,7 +102,7 @@ export declare class MemoryStore {
     consolidateMemories(agentId: string, limit?: number): number;
     decayFreshness(agentId: string, decayPerDay?: number): number;
     getRouteExamplesByPolarity(agentId: string, polarity: 'positive' | 'negative', limit?: number): any[];
-    getConnectedMemories(memoryId: string, maxDepth?: number): MemoryNode[];
+    getConnectedMemories(memoryId: string, maxDepth?: number, agentId?: string, scopeContext?: ScopeContext): MemoryNode[];
     countEdgesForAgent(agentId: string): number;
     insertProofEvent(event: Omit<ProofEvent, 'id' | 'createdAt'> & {
         id?: string;
