@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { FakeLlmClient } from '../dist/llm-client.js';
+import { FakeLlmClient, OllamaNativeLlmClient, isOllamaLoopbackBaseUrl } from '../dist/llm-client.js';
 import {
   JsonParseError,
   JsonTimeoutError,
@@ -149,4 +149,37 @@ test('runJsonWithValidation retries before fallback', async () => {
 
   assert.equal(result.output.route, 'retrieve_memory');
   assert.equal(result.audit.attempts, 2);
+});
+
+test('isOllamaLoopbackBaseUrl detects local Ollama endpoints', () => {
+  assert.equal(isOllamaLoopbackBaseUrl('http://127.0.0.1:11434/v1'), true);
+  assert.equal(isOllamaLoopbackBaseUrl('http://localhost:11434'), true);
+  assert.equal(isOllamaLoopbackBaseUrl('https://api.example.com/v1'), false);
+});
+
+test('OllamaNativeLlmClient uses native chat with think disabled', async () => {
+  let request;
+  const client = new OllamaNativeLlmClient({
+    baseUrl: 'http://127.0.0.1:11434/v1',
+    fetchImpl: async (url, init) => {
+      request = { url: String(url), body: JSON.parse(init.body) };
+      return new Response(JSON.stringify({ message: { content: '{"route":"no_memory","confidence":0.7}' } }), { status: 200 });
+    },
+  });
+
+  const raw = await client.runJson({
+    task: 'route decision',
+    model: 'qwen3.5:35b-a3b-coding-nvfp4',
+    systemPrompt: 'Return JSON',
+    input: { userMessage: 'thanks' },
+    maxTokens: 1200,
+    temperature: 0,
+  });
+
+  assert.equal(raw, '{"route":"no_memory","confidence":0.7}');
+  assert.equal(request.url, 'http://127.0.0.1:11434/api/chat');
+  assert.equal(request.body.think, false);
+  assert.equal(request.body.stream, false);
+  assert.equal(request.body.format, 'json');
+  assert.equal(request.body.options.num_predict, 1200);
 });

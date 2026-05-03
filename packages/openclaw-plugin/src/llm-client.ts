@@ -44,6 +44,12 @@ export interface OpenAICompatibleLlmClientOptions {
   headers?: Record<string, string>;
 }
 
+export interface OllamaNativeLlmClientOptions {
+  baseUrl: string;
+  fetchImpl?: typeof fetch;
+  think?: boolean;
+}
+
 export class OpenAICompatibleLlmClient implements LlmClient {
   private baseUrl: string;
   private path: string;
@@ -95,4 +101,76 @@ export class OpenAICompatibleLlmClient implements LlmClient {
     }
     return content;
   }
+}
+
+export class OllamaNativeLlmClient implements LlmClient {
+  private baseUrl: string;
+  private fetchImpl: typeof fetch;
+  private think: boolean;
+
+  constructor(options: OllamaNativeLlmClientOptions) {
+    this.baseUrl = ollamaNativeBaseUrl(options.baseUrl);
+    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.think = options.think ?? false;
+  }
+
+  async runJson<TOutput = unknown>(call: JsonLlmCall<TOutput>): Promise<unknown> {
+    const response = await this.fetchImpl(`${this.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: call.model,
+        stream: false,
+        think: this.think,
+        format: 'json',
+        options: {
+          temperature: call.temperature,
+          num_predict: call.maxTokens,
+        },
+        messages: [
+          { role: 'system', content: call.systemPrompt },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              task: call.task,
+              input: call.input,
+              schema: call.schema ?? null,
+            }),
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`Ollama native JSON call failed: ${response.status} ${response.statusText} ${text}`.trim());
+    }
+
+    const payload = await response.json();
+    const content = payload?.message?.content;
+    if (typeof content !== 'string') {
+      throw new Error('Ollama native JSON call returned no message content');
+    }
+    return content;
+  }
+}
+
+export function isOllamaLoopbackBaseUrl(baseUrl: string): boolean {
+  try {
+    const parsed = new URL(baseUrl);
+    const hostname = parsed.hostname.toLowerCase();
+    return (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') && parsed.port === '11434';
+  } catch {
+    return false;
+  }
+}
+
+function ollamaNativeBaseUrl(baseUrl: string): string {
+  const parsed = new URL(baseUrl);
+  parsed.pathname = '';
+  parsed.search = '';
+  parsed.hash = '';
+  return parsed.toString().replace(/\/$/, '');
 }

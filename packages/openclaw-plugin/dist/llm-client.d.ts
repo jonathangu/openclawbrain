@@ -29,6 +29,11 @@ export interface OpenAICompatibleLlmClientOptions {
     fetchImpl?: typeof fetch;
     headers?: Record<string, string>;
 }
+export interface OllamaNativeLlmClientOptions {
+    baseUrl: string;
+    fetchImpl?: typeof fetch;
+    think?: boolean;
+}
 export declare class OpenAICompatibleLlmClient implements LlmClient {
     private baseUrl;
     private path;
@@ -37,3 +42,11 @@ export declare class OpenAICompatibleLlmClient implements LlmClient {
     constructor(options: OpenAICompatibleLlmClientOptions);
     runJson<TOutput = unknown>(call: JsonLlmCall<TOutput>): Promise<unknown>;
 }
+export declare class OllamaNativeLlmClient implements LlmClient {
+    private baseUrl;
+    private fetchImpl;
+    private think;
+    constructor(options: OllamaNativeLlmClientOptions);
+    runJson<TOutput = unknown>(call: JsonLlmCall<TOutput>): Promise<unknown>;
+}
+export declare function isOllamaLoopbackBaseUrl(baseUrl: string): boolean;

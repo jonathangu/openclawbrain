@@ -6,7 +6,7 @@ import { FeedbackDistiller } from './feedback-distiller.js';
 import { BackgroundLearner } from './learning.js';
 import { JobQueue } from './job-queue.js';
 import { LatencyController } from './latency-controller.js';
-import { FakeLlmClient, OpenAICompatibleLlmClient } from './llm-client.js';
+import { FakeLlmClient, OllamaNativeLlmClient, OpenAICompatibleLlmClient, isOllamaLoopbackBaseUrl } from './llm-client.js';
 import { MemoryPlanner } from './memory-planner.js';
 import { MemoryOperationApplier } from './memory-operations.js';
 import { MemoryStore } from './memory-store.js';
@@ -27,7 +27,7 @@ export { decidePolicy, classifyTurn } from './policy.js';
 export { readActivationContext } from './context-files.js';
 export { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 export { buildStatus } from './status.js';
-export { FakeLlmClient, OpenAICompatibleLlmClient } from './llm-client.js';
+export { FakeLlmClient, OllamaNativeLlmClient, OpenAICompatibleLlmClient, isOllamaLoopbackBaseUrl } from './llm-client.js';
 export { JsonParseError, JsonTimeoutError, JsonValidationError, runJsonWithValidation, validateWithGuard, withTimeout } from './llm-json.js';
 export { CaptureOrchestrator, sanitizeToolEvent } from './capture.js';
 export { FeedbackDistiller, validateFeedbackDistillation } from './feedback-distiller.js';
@@ -782,6 +782,7 @@ function llmClientFromConfig(config: any) {
   const allowed = new Set(Array.isArray(config.llm.allowedModels) ? config.llm.allowedModels : []);
   if (allowed.size > 0 && models.some((model) => !allowed.has(model))) return null;
   if (config.llm.baseUrl && !isLoopbackUrl(config.llm.baseUrl) && config.llm.allowRemoteLlm !== true) return null;
+  if (config.llm.baseUrl && isOllamaLoopbackBaseUrl(config.llm.baseUrl)) return new OllamaNativeLlmClient({ baseUrl: config.llm.baseUrl });
   if (config.llm.baseUrl) return new OpenAICompatibleLlmClient({ baseUrl: config.llm.baseUrl });
   return null;
 }
