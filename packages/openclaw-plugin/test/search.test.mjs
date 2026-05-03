@@ -17,11 +17,13 @@ test('plugin registers additive memory supplements and inspectable routes', () =
   const routes = [];
   const promptSupplements = [];
   const corpusSupplements = [];
+  const memoryCapabilities = [];
   plugin.register({
     pluginConfig: { enabled: true },
     on() {},
     registerService() {},
     registerHttpRoute(route) { routes.push(route); },
+    registerMemoryCapability(capability) { memoryCapabilities.push(capability); },
     registerMemoryPromptSupplement(builder) { promptSupplements.push(builder); },
     registerMemoryCorpusSupplement(supplement) { corpusSupplements.push(supplement); },
     logger: { debug() {}, warn() {} },
@@ -32,6 +34,9 @@ test('plugin registers additive memory supplements and inspectable routes', () =
   assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/search'));
   assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/audit'));
   assert.ok(routes.some((route) => route.path === '/plugins/openclawbrain/explain-last'));
+  assert.equal(memoryCapabilities.length, 1);
+  assert.equal(typeof memoryCapabilities[0].runtime.getMemorySearchManager, 'function');
+  assert.deepEqual(memoryCapabilities[0].runtime.resolveMemoryBackendConfig(), { backend: 'builtin' });
   assert.equal(promptSupplements.length, 1);
   assert.equal(corpusSupplements.length, 1);
   assert.ok(promptSupplements[0]({ availableTools: new Set(), citationsMode: 'auto' }).length >= 1);
@@ -87,6 +92,26 @@ test('search, graph, learn payloads and corpus supplement expose stored memories
     const search = searchPayload(config, 'main', 'file-by-file', 10);
     assert.equal(search.results.length, 1);
     assert.equal(search.results[0].id, memory.id);
+
+    const routes = [];
+    plugin.register({
+      pluginConfig: { enabled: true, activationRoot: root, mode: 'balanced' },
+      on() {},
+      registerService() {},
+      registerHttpRoute(route) { routes.push(route); },
+      registerMemoryPromptSupplement() {},
+      registerMemoryCorpusSupplement() {},
+      logger: { debug() {}, warn() {} },
+    });
+    const searchRoute = routes.find((route) => route.path === '/plugins/openclawbrain/search');
+    let routePayload;
+    const res = {
+      setHeader() {},
+      end(body) { routePayload = JSON.parse(body); },
+    };
+    await searchRoute.handler({ url: 'http://local/plugins/openclawbrain/search?agent=main&q=file-by-file&limit=3' }, res);
+    assert.equal(routePayload.query, 'file-by-file');
+    assert.equal(routePayload.results.length, 1);
 
     const graph = graphPayload(config, 'main', 10);
     assert.equal(graph.nodes.length, 1);

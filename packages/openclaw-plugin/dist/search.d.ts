@@ -1,3 +1,4 @@
+import type { MemoryNode } from './memory-types.js';
 export declare function buildMemoryPromptSupplement(): () => string[];
 export declare function buildMemoryCorpusSupplement(config: any): {
     search: ({ query, maxResults }: {
@@ -155,3 +156,6 @@ export declare function explainLastPayload(config: any, agentId: string, turnId?
         safeCandidatePreview: string | null;
     };
 };
+export declare function extractMemoryId(lookup: string): string;
+export declare function renderMemory(memory: MemoryNode): string;
+export declare function memoryPath(memory: MemoryNode): string;

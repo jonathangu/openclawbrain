@@ -13,13 +13,13 @@ import { MemoryStore } from './memory-store.js';
 import { decidePolicy } from './policy.js';
 import { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 import { RouteLearning } from './route-learning.js';
-import { auditPayload, buildMemoryCorpusSupplement, buildMemoryPromptSupplement, explainLastPayload, graphPayload, learnPayload, searchPayload } from './search.js';
+import { auditPayload, buildMemoryCorpusSupplement, buildMemoryPromptSupplement, explainLastPayload, extractMemoryId, graphPayload, learnPayload, memoryPath, renderMemory, searchPayload } from './search.js';
 import { buildStatus } from './status.js';
 import { nativeSqliteSmokeTest } from './native-sqlite.js';
 import { clipText, eventId, hashText, latestUserTextFromEvent, redactJsonValue, redactText, safeString, shortHash } from './redact.js';
 import { RouteFn } from './route-fn.js';
 import { detectCaptureIntent, detectRetrievalIntent } from './capture-intent.js';
-import { scopeContextFromPacket } from './scope.js';
+import { defaultScopeContext, memoryInScope, scopeContextFromPacket } from './scope.js';
 
 export { normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 export { redactText, hashText } from './redact.js';
@@ -41,12 +41,13 @@ export { MemoryPlanner } from './memory-planner.js';
 export { nativeSqliteSmokeTest } from './native-sqlite.js';
 export { BackgroundLearner } from './learning.js';
 export { RouteLearning } from './route-learning.js';
-export { auditPayload, buildMemoryCorpusSupplement, buildMemoryPromptSupplement, explainLastPayload, graphPayload, learnPayload, searchPayload } from './search.js';
+export { auditPayload, buildMemoryCorpusSupplement, buildMemoryPromptSupplement, explainLastPayload, extractMemoryId, graphPayload, learnPayload, memoryPath, renderMemory, searchPayload } from './search.js';
 
 export const openClawBrainPluginEntry = {
   id: PLUGIN_ID,
   name: 'OpenClawBrain',
   version: PLUGIN_VERSION,
+  kind: 'memory',
   register(api: any = {}) {
     const resolve = () => resolveOpenClawBrainConfig(api);
     registerFirstClassSurfaces(api, resolve);
@@ -339,11 +340,116 @@ function registerFirstClassSurfaces(api: any, resolve: any) {
     handler: async (req: any, res: any) => writeJson(res, explainLastPayload(resolve(), agentIdFromRequest(req, resolve()), turnIdFromRequest(req)))
   });
   try {
+    api.registerMemoryCapability?.(buildMemoryCapability(resolve));
     api.registerMemoryPromptSupplement?.(buildMemoryPromptSupplement());
     api.registerMemoryCorpusSupplement?.(buildMemoryCorpusSupplement(resolve()));
   } catch (error: any) {
-    api.logger?.debug?.({ error }, 'OpenClawBrain memory supplements unavailable; skipping');
+    api.logger?.debug?.({ error }, 'OpenClawBrain memory capability/supplements unavailable; skipping');
   }
+}
+
+export function buildMemoryCapability(resolve: any) {
+  return {
+    promptBuilder: buildMemoryPromptSupplement(),
+    runtime: {
+      async getMemorySearchManager({ agentId }: { cfg?: any; agentId: string; purpose?: string }) {
+        const config = resolve();
+        const normalizedAgentId = safeString(agentId || config.scopes?.agents?.[0] || 'main') || 'main';
+        if (!isAgentAllowed(config, normalizedAgentId)) {
+          return { manager: null, error: `agent not allowed for OpenClawBrain memory: ${normalizedAgentId}` };
+        }
+        return { manager: createOpenClawBrainMemorySearchManager(config, normalizedAgentId) };
+      },
+      resolveMemoryBackendConfig() {
+        return { backend: 'builtin' as const };
+      },
+      async closeAllMemorySearchManagers() {
+        return undefined;
+      },
+    },
+  };
+}
+
+function createOpenClawBrainMemorySearchManager(config: any, agentId: string) {
+  const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+  const renderReadResult = (memory: any, from = 1, lines?: number) => {
+    const allLines = renderMemory(memory).split(/\n/);
+    const safeFrom = Math.max(1, Number(from || 1));
+    const start = safeFrom - 1;
+    const count = Math.max(1, Number(lines || allLines.length));
+    const selected = allLines.slice(start, start + count);
+    const nextFrom = start + count < allLines.length ? start + count + 1 : undefined;
+    return {
+      text: selected.join('\n'),
+      path: memoryPath(memory),
+      from: safeFrom,
+      lines: selected.length,
+      truncated: nextFrom !== undefined,
+      ...(nextFrom ? { nextFrom } : {}),
+    };
+  };
+  return {
+    async search(query: string, opts: any = {}) {
+      const memories = store.searchMemories(safeString(query), agentId, {
+        limit: opts.maxResults ?? 10,
+        scopeContext: defaultScopeContext(agentId),
+      });
+      return memories.map((memory) => ({
+        path: memoryPath(memory),
+        startLine: 1,
+        endLine: renderMemory(memory).split(/\n/).length,
+        score: Number((memory.importance * memory.confidence).toFixed(3)),
+        textScore: Number((memory.importance * memory.confidence).toFixed(3)),
+        snippet: memory.content,
+        source: 'memory' as const,
+        citation: `${memoryPath(memory)}#L1-L${renderMemory(memory).split(/\n/).length}`,
+      }));
+    },
+    async readFile({ relPath, from, lines }: { relPath: string; from?: number; lines?: number }) {
+      const memory = store.getMemory(extractMemoryId(relPath));
+      if (!memory || memory.deletedAt || memory.supersededBy || !memoryInScope(memory, defaultScopeContext(agentId))) {
+        return { text: '', path: relPath, from: Math.max(1, Number(from || 1)), lines: 0, truncated: false };
+      }
+      return renderReadResult(memory, from, lines);
+    },
+    status() {
+      const nodes = store.countMemories(agentId);
+      const edges = store.countEdgesForAgent(agentId);
+      return {
+        backend: 'builtin' as const,
+        provider: 'openclawbrain',
+        files: nodes,
+        chunks: nodes,
+        dirty: false,
+        sources: ['memory' as const],
+        sourceCounts: [{ source: 'memory' as const, files: nodes, chunks: nodes }],
+        custom: {
+          agentId,
+          plugin: PLUGIN_ID,
+          pluginVersion: PLUGIN_VERSION,
+          nodes,
+          edges,
+          captureAuditRows: store.countCaptureAudit(agentId),
+          routeDecisions: store.countRouteDecisions(agentId),
+        },
+      };
+    },
+    async sync() {
+      return undefined;
+    },
+    getCachedEmbeddingAvailability() {
+      return { ok: true, checked: true, cached: true };
+    },
+    async probeEmbeddingAvailability() {
+      return { ok: true, checked: true };
+    },
+    async probeVectorAvailability() {
+      return false;
+    },
+    async close() {
+      store.close();
+    },
+  };
 }
 
 async function statusPayload(config: any, req: any = {}) {
@@ -834,9 +940,10 @@ function limitFromRequest(req: any = {}) {
 
 function queryFromRequest(req: any = {}) {
   if (req.query?.query) return String(req.query.query);
+  if (req.query?.q) return String(req.query.q);
   try {
     const url = new URL(req.url || 'http://local/plugins/openclawbrain/search', 'http://local');
-    return url.searchParams.get('query') || '';
+    return url.searchParams.get('query') || url.searchParams.get('q') || '';
   } catch {
     return '';
   }

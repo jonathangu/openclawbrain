@@ -18,11 +18,12 @@ export { MemoryPlanner } from './memory-planner.js';
 export { nativeSqliteSmokeTest } from './native-sqlite.js';
 export { BackgroundLearner } from './learning.js';
 export { RouteLearning } from './route-learning.js';
-export { auditPayload, buildMemoryCorpusSupplement, buildMemoryPromptSupplement, explainLastPayload, graphPayload, learnPayload, searchPayload } from './search.js';
+export { auditPayload, buildMemoryCorpusSupplement, buildMemoryPromptSupplement, explainLastPayload, extractMemoryId, graphPayload, learnPayload, memoryPath, renderMemory, searchPayload } from './search.js';
 export declare const openClawBrainPluginEntry: {
     id: string;
     name: string;
     version: string;
+    kind: string;
     register(api?: any): void;
 };
 export default openClawBrainPluginEntry;
@@ -42,3 +43,80 @@ export declare function handleTurnHook(event?: any, config?: any, api?: any, pha
 } | {
     prependContext: string;
 }>;
+export declare function buildMemoryCapability(resolve: any): {
+    promptBuilder: () => string[];
+    runtime: {
+        getMemorySearchManager({ agentId }: {
+            cfg?: any;
+            agentId: string;
+            purpose?: string;
+        }): Promise<{
+            manager: null;
+            error: string;
+        } | {
+            manager: {
+                search(query: string, opts?: any): Promise<{
+                    path: string;
+                    startLine: number;
+                    endLine: number;
+                    score: number;
+                    textScore: number;
+                    snippet: string;
+                    source: "memory";
+                    citation: string;
+                }[]>;
+                readFile({ relPath, from, lines }: {
+                    relPath: string;
+                    from?: number;
+                    lines?: number;
+                }): Promise<{
+                    nextFrom?: number | undefined;
+                    text: string;
+                    path: string;
+                    from: number;
+                    lines: number;
+                    truncated: boolean;
+                }>;
+                status(): {
+                    backend: "builtin";
+                    provider: string;
+                    files: number;
+                    chunks: number;
+                    dirty: boolean;
+                    sources: "memory"[];
+                    sourceCounts: {
+                        source: "memory";
+                        files: number;
+                        chunks: number;
+                    }[];
+                    custom: {
+                        agentId: string;
+                        plugin: string;
+                        pluginVersion: string;
+                        nodes: number;
+                        edges: number;
+                        captureAuditRows: number;
+                        routeDecisions: number;
+                    };
+                };
+                sync(): Promise<undefined>;
+                getCachedEmbeddingAvailability(): {
+                    ok: boolean;
+                    checked: boolean;
+                    cached: boolean;
+                };
+                probeEmbeddingAvailability(): Promise<{
+                    ok: boolean;
+                    checked: boolean;
+                }>;
+                probeVectorAvailability(): Promise<boolean>;
+                close(): Promise<void>;
+            };
+            error?: undefined;
+        }>;
+        resolveMemoryBackendConfig(): {
+            backend: "builtin";
+        };
+        closeAllMemorySearchManagers(): Promise<undefined>;
+    };
+};

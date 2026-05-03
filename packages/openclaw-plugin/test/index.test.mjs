@@ -197,16 +197,19 @@ test('proof store skips malformed JSONL mirror records', async () => {
   }
 });
 
-test('plugin registers native surfaces, primary hook, optional hook safely, and default agent_end', async () => {
+test('plugin registers native surfaces, primary hook, optional hook safely, memory capability, and default agent_end', async () => {
   const calls = [];
   const routes = [];
   const services = [];
+  const memoryCapabilities = [];
+  assert.equal(plugin.kind, 'memory');
   plugin.register({
     pluginConfig: { enabled: true },
     supportsHook: (name) => name !== 'agent_turn_prepare',
     on: (name, fn) => calls.push([name, fn]),
     registerHttpRoute: (route) => routes.push(route),
     registerService: (service) => services.push(service),
+    registerMemoryCapability: (capability) => memoryCapabilities.push(capability),
     logger: { debug() {}, warn() {} }
   });
   assert.ok(calls.map(([name]) => name).includes('before_prompt_build'));
@@ -217,6 +220,10 @@ test('plugin registers native surfaces, primary hook, optional hook safely, and 
   assert.equal(services[0].id, 'openclawbrain');
   assert.equal(typeof services[0].start, 'function');
   assert.equal(typeof services[0].stop, 'function');
+  assert.equal(memoryCapabilities.length, 1);
+  assert.equal(typeof memoryCapabilities[0].promptBuilder, 'function');
+  assert.equal(typeof memoryCapabilities[0].runtime.getMemorySearchManager, 'function');
+  assert.deepEqual(memoryCapabilities[0].runtime.resolveMemoryBackendConfig({}), { backend: 'builtin' });
 
   const withoutHookDiscovery = [];
   plugin.register({ pluginConfig: { enabled: true }, on: (name, fn) => withoutHookDiscovery.push([name, fn]) });

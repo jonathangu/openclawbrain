@@ -195,7 +195,7 @@ function forbiddenAgentPayload(agentId: string) {
   return { ok: false, agentId, reason: 'agent_not_allowed' };
 }
 
-function extractMemoryId(lookup: string) {
+export function extractMemoryId(lookup: string) {
   const value = safeString(lookup);
   const match = value.match(/([0-9a-f]{8}-[0-9a-f-]{27,})/i);
   return match ? match[1] : value.replace(/^memory\//, '').replace(/\.md$/, '');
@@ -219,7 +219,7 @@ function searchResultFromMemory(memory: MemoryNode) {
   };
 }
 
-function renderMemory(memory: MemoryNode) {
+export function renderMemory(memory: MemoryNode) {
   return [
     `# ${memory.type}: ${memory.normalizedKey}`,
     '',
@@ -263,7 +263,7 @@ function rejectionDistribution(rows: any[]) {
   return counts;
 }
 
-function memoryPath(memory: MemoryNode) {
+export function memoryPath(memory: MemoryNode) {
   return `memory/${memory.id}.md`;
 }
 
