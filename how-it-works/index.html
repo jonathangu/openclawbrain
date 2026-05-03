@@ -126,13 +126,13 @@
     <section class="section">
       <h2>TL;DR</h2>
       <p>OpenClawBrain is a local memory layer for OpenClaw agents: it learns durable corrections, preferences, workflows, and context, then retrieves only the small slice that matters right now. It uses selective routing, SQLite search, bounded prompt injection, and outcome learning instead of stuffing history into every prompt.</p>
-      <p>In v0.2.14, retrieval and capture are separate decisions. Retrieval stays conservative, while aggressive capture evaluates durable instructions, corrections, workflows, routing rules, outcomes, and explicit recall rules. The installed live loop is verified end to end: <strong>turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection</strong>.</p>
+      <p>In v0.2.15, retrieval and capture are separate decisions. Retrieval stays conservative, while aggressive capture evaluates durable instructions, corrections, workflows, routing rules, outcomes, explicit recall rules, and multi-agent scoped activation. The installed live loop is verified end to end: <strong>turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection</strong>.</p>
     </section>
 
     <section class="section">
       <h2>What it is not</h2>
       <p>It is <strong>not</strong> a vector database that blindly injects nearest-neighbor chunks. It is <strong>not</strong> raw transcript storage. It is <strong>not</strong> an always-on extra model call before every turn. It is <strong>not</strong> a remote SaaS memory service by default. And it is <strong>not</strong> a replacement for the main agent model.</p>
-      <p>It is a local reliability layer around the normal OpenClaw run: route, retrieve, inject a bounded memory block when useful, then learn whether that memory helped.</p>
+      <p>It is a local reliability layer around the normal OpenClaw run: route, retrieve, inject a bounded memory block when useful, then learn whether that memory helped. In multi-agent OpenClaw homes, each scoped agent gets its own activation root and graph instead of sharing one global brain.</p>
     </section>
 
     <section class="section">
@@ -192,7 +192,7 @@ inject a small block, or stay silent</code></pre>
 
     <section class="section">
       <h2>Latency</h2>
-      <p>The headline: v0.2.14 keeps prompt-time retrieval disciplined while moving more memory formation into audited capture and background distillation.</p>
+      <p>The headline: v0.2.15 keeps prompt-time retrieval disciplined while moving more memory formation into audited capture and background distillation.</p>
       <pre><code>retrieval: conservative and bounded
 capture: aggressive and audited
 storage: strict, scoped, local

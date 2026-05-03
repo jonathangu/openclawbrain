@@ -55,6 +55,13 @@ If you deliberately disable this step, the plugin still loads and exposes its lo
 
 ## 4) Check that it is live
 
+If you have multiple agents, add each configured agent id to `scopes.agents`; each agent gets its own activation root and memory graph.
+
+```bash
+openclaw config set plugins.entries.openclawbrain.config.scopes.agents '["main","pelican","bountiful"]' --strict-json
+openclaw gateway restart
+```
+
 ```bash
 openclaw plugins inspect openclawbrain --json
 curl http://127.0.0.1:18789/plugins/openclawbrain/status
@@ -81,7 +88,7 @@ Then inspect the plugin:
 ```bash
 curl 'http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10'
 curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
-curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?limit=10'
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?agentId=main&limit=10'
 ```
 
 ## Compatibility note

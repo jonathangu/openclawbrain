@@ -141,7 +141,15 @@ openclaw gateway restart</code></pre>
     </section>
 
     <section class="panel">
-      <h2>3) Local Ollama learning path</h2>
+      <h2>3) Optional: enable multiple agents/profiles</h2>
+      <p>If your OpenClaw home has multiple named agents, list them explicitly. Each scoped agent gets its own activation root and local memory graph.</p>
+      <pre><code>openclaw config set plugins.entries.openclawbrain.config.scopes.agents '["main","pelican","bountiful"]' --strict-json
+openclaw gateway restart</code></pre>
+      <p class="muted">Use your real agent ids. A single-agent install can skip this step.</p>
+    </section>
+
+    <section class="panel">
+      <h2>4) Local Ollama learning path</h2>
       <p>The default route/planner/feedback/learning model is <code>qwen2.5:32b-instruct</code>. OpenClawBrain aims at the local OpenAI-compatible Ollama endpoint by default; set it explicitly if you want the config to be self-documenting.</p>
       <pre><code>ollama list
 
@@ -159,7 +167,7 @@ openclaw gateway restart</code></pre>
     </section>
 
     <section class="panel">
-      <h2>4) Check that it is really live</h2>
+      <h2>5) Check that it is really live</h2>
       <pre><code>openclaw plugins inspect openclawbrain --json
 curl http://127.0.0.1:18789/plugins/openclawbrain/status
 curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
@@ -172,13 +180,13 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
     </section>
 
     <section class="panel">
-      <h2>5) Teach it something small</h2>
+      <h2>6) Teach it something small</h2>
       <p>For example:</p>
       <pre><code>Use pnpm instead of npm in this repo.</code></pre>
       <p>Then inspect what happened:</p>
       <pre><code>curl 'http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10'
 curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&amp;limit=10'
-curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?limit=10'</code></pre>
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?agentId=main&amp;limit=10'</code></pre>
       <p>If the system is doing its job, the win should feel almost invisible: you stop repeating yourself, and the agent quietly does the right thing.</p>
     </section>
   </div>

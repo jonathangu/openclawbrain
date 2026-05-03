@@ -34,7 +34,7 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.14`
+- **Current package release:** `0.2.15`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.4.29` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection
@@ -45,6 +45,13 @@ OpenClawBrain takes a different approach:
 ```bash
 openclaw plugins install clawhub:openclawbrain
 openclaw plugins enable openclawbrain
+openclaw gateway restart
+```
+
+If you run multiple named agents/profiles, scope OpenClawBrain to all of them so each gets its own local graph:
+
+```bash
+openclaw config set plugins.entries.openclawbrain.config.scopes.agents '["main","pelican","bountiful"]' --strict-json
 openclaw gateway restart
 ```
 
@@ -92,6 +99,7 @@ openclaw plugins inspect openclawbrain --json
 curl http://127.0.0.1:18789/plugins/openclawbrain/status
 curl http://127.0.0.1:18789/plugins/openclawbrain/doctor
 curl http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10
+curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?agentId=main&limit=10'
 curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
 ```
 
@@ -121,6 +129,7 @@ curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
 
 - [How it works](https://openclawbrain.ai/how-it-works/)
 - [Getting started](docs/GETTING_STARTED.md)
+- [Copy-paste install note](docs/FRIEND_INSTALL.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Vision](VISION.md)
 - [Final plan](FINAL_PLAN.md)
