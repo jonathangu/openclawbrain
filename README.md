@@ -48,6 +48,16 @@ openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
 
+If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
+
+```bash
+curl -L -o /tmp/openclawbrain-0.2.16.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.16/openclawbrain-0.2.16.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.16.tgz --force
+openclaw plugins enable openclawbrain
+openclaw gateway restart
+```
+
 If you run multiple named agents/profiles, scope OpenClawBrain to all of them so each gets its own local graph:
 
 ```bash

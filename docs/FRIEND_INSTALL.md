@@ -13,6 +13,14 @@ openclaw plugins install clawhub:openclawbrain@0.2.16
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 
+If ClawHub is still rate-limited or metadata is propagating, use the release archive fallback:
+
+curl -L -o /tmp/openclawbrain-0.2.16.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.16/openclawbrain-0.2.16.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.16.tgz --force
+openclaw plugins enable openclawbrain
+openclaw gateway restart
+
 Verify:
 
 openclaw --version
