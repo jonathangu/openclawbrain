@@ -34,16 +34,16 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.15`
+- **Current package release:** `0.2.16`
 - **Recommended mode:** `balanced`
-- **Requires:** OpenClaw `2026.4.29` or later
+- **Requires:** OpenClaw `2026.5.2` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection
-- **Current loop:** conservative retrieval, aggressive audited capture, strict scoped storage, sparse injection
+- **Current loop:** first-class OpenClaw memory registration, conservative retrieval, aggressive audited capture, strict scoped storage, sparse injection
 
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain
+openclaw plugins install clawhub:openclawbrain@0.2.16
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -92,14 +92,17 @@ If local model calls are unavailable, the main agent keeps working. Known memori
 
 ## Check that it is live
 
-Use `inspect` for runtime truth.
+Use `inspect` and `doctor` for runtime truth. The HTTP routes use gateway auth on normal OpenClaw installs, so access them through your authenticated dashboard/client or pass your gateway auth header when using curl.
 
 ```bash
-openclaw plugins inspect openclawbrain --json
-curl http://127.0.0.1:18789/plugins/openclawbrain/status
-curl http://127.0.0.1:18789/plugins/openclawbrain/doctor
-curl http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10
-curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&limit=10'
+openclaw plugins inspect openclawbrain --runtime
+openclaw doctor
+
+# Authenticated plugin routes:
+# /plugins/openclawbrain/status
+# /plugins/openclawbrain/doctor
+# /plugins/openclawbrain/proof?limit=10
+# /plugins/openclawbrain/search?query=pnpm&limit=10
 ```
 
 ## What you can inspect

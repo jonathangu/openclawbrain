@@ -119,7 +119,7 @@
       <h1>Install OpenClawBrain</h1>
       <p class="lead">Fast honest path: install the plugin, turn it on, and verify that memory is really loaded before you trust it.</p>
       <p class="sublead">The goal is evidence, not vibes. You should be able to prove plugin load, SQLite + FTS health, local Ollama config, route events, search, graph, and prompt injection.</p>
-      <p class="muted">Requires OpenClaw <strong>2026.4.29</strong> or later.</p>
+      <p class="muted">Requires OpenClaw <strong>2026.5.2</strong> or later.</p>
     </section>
 
     <section class="panel">
@@ -168,15 +168,15 @@ openclaw gateway restart</code></pre>
 
     <section class="panel">
       <h2>5) Check that it is really live</h2>
-      <pre><code>openclaw plugins inspect openclawbrain --json
-curl http://127.0.0.1:18789/plugins/openclawbrain/status
-curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
+      <pre><code>openclaw plugins inspect openclawbrain --runtime
+# authenticated route: /plugins/openclawbrain/status
+# authenticated route: /plugins/openclawbrain/doctor</code></pre>
       <ol>
         <li>Make sure the plugin status is <code>loaded</code>.</li>
-        <li>Make sure runtime routes and hooks are present.</li>
-        <li>Make sure the doctor route passes its SQLite + FTS health check.</li>
+        <li>Make sure runtime routes, hooks, and service are present.</li>
+        <li>Make sure the doctor route passes its SQLite + FTS health check; HTTP routes use gateway auth on normal installs.</li>
       </ol>
-      <p class="muted">Use <code>openclaw plugins inspect openclawbrain --json</code> for runtime truth. A list view can under-report route and hook counts if it is showing only install metadata.</p>
+      <p class="muted">Use <code>openclaw plugins inspect openclawbrain --runtime</code> for runtime truth. A list view can under-report route and hook counts if it is showing only install metadata.</p>
     </section>
 
     <section class="panel">
@@ -184,9 +184,9 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
       <p>For example:</p>
       <pre><code>Use pnpm instead of npm in this repo.</code></pre>
       <p>Then inspect what happened:</p>
-      <pre><code>curl 'http://127.0.0.1:18789/plugins/openclawbrain/proof?limit=10'
-curl 'http://127.0.0.1:18789/plugins/openclawbrain/search?query=pnpm&amp;limit=10'
-curl 'http://127.0.0.1:18789/plugins/openclawbrain/graph?agentId=main&amp;limit=10'</code></pre>
+      <pre><code># authenticated route: /plugins/openclawbrain/proof?limit=10
+# authenticated route: /plugins/openclawbrain/search?query=pnpm&amp;limit=10
+# authenticated route: /plugins/openclawbrain/graph?agentId=main&amp;limit=10</code></pre>
       <p>If the system is doing its job, the win should feel almost invisible: you stop repeating yourself, and the agent quietly does the right thing.</p>
     </section>
   </div>
