@@ -6,6 +6,8 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 > **LLM decides semantic meaning. Code enforces trust boundaries. SQLite stores the graph and evidence.**
 
+![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and injected context.](docs/assets/openclawbrain-memory-graph.jpg)
+
 Core capture/store/retrieve/inject works today. Route-learning quality, status polish, and long-term organic runtime still need more mileage.
 
 ## Install
@@ -176,6 +178,7 @@ The graph stores scoped memory nodes and edges: corrections, preferences, workfl
 - [Architecture](docs/ARCHITECTURE.md)
 - [Vision](VISION.md)
 - [Final plan](FINAL_PLAN.md)
+- [Memory graph image](docs/assets/openclawbrain-memory-graph.jpg)
 - [Getting started](docs/GETTING_STARTED.md)
 - [Copy-paste install note](docs/FRIEND_INSTALL.md)
 
