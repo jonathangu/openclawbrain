@@ -176,6 +176,7 @@ The graph stores scoped memory nodes and edges: corrections, preferences, workfl
 - [Proof](https://openclawbrain.ai/proof/)
 - [How it works](https://openclawbrain.ai/how-it-works/)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Route teacher master plan](docs/ROUTE_TEACHER_MASTER_PLAN.md)
 - [Vision](VISION.md)
 - [Final plan](FINAL_PLAN.md)
 - [Memory graph image](docs/assets/openclawbrain-memory-graph.jpg)
