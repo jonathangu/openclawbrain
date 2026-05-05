@@ -2,45 +2,15 @@
 
 **Evidence, not vibes, for agent memory.**
 
-OpenClawBrain is a native [OpenClaw](https://docs.openclaw.ai) plugin for agents that should not need the same correction twice. It remembers durable corrections, preferences, workflows, and context, then brings back only the small slice that matters for the current turn.
-
-Imagine an agent that understands “close it out” means evidence, not vibes. That is the product shape: less magic memory, more accountable local system.
+OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.ai) agents. It remembers durable corrections, preferences, workflows, and context, then retrieves only the small slice that matters for the current turn.
 
 > **LLM decides semantic meaning. Code enforces trust boundaries. SQLite stores the graph and evidence.**
->
-> **Ollama proposes; code disposes.**
 
-## What it does
-
-- **Remembers durable lessons.** Corrections, preferences, workflows, and context become scoped local memory nodes instead of disappearing at the end of a session.
-- **Keeps prompts small.** It does not dump your whole history into every turn. It retrieves candidates locally and injects only a bounded XML slice when memory is likely to help.
-- **Stays local-first.** SQLite stores the graph and evidence. FTS5 powers local search. Raw transcript upload is hard-disabled.
-- **Shows its work.** You can check status, run health checks, inspect proof events, search memory, view the graph, and review route decisions.
-- **Learns on the standard local path.** OpenClawBrain points at local Ollama by default. Local models propose structured JSON; code validates, redacts, scopes, thresholds, and writes.
-
-## Why it exists
-
-Most agents are smart but forgetful. They can do good work inside one turn, then make the same mistake again tomorrow.
-
-The usual fix is to keep stuffing more text into the prompt. That works badly. Prompts get bloated, latency goes up, and the agent still lacks accountable memory.
-
-OpenClawBrain takes a different approach:
-
-1. route first: should memory participate?
-2. search SQLite FTS locally
-3. rank and inject only a small bounded block
-4. record outcomes so memory can improve
-5. show proof instead of asking for blind trust
-
-## Current release
-
-- **Current package release:** `0.2.16`
-- **Recommended mode:** `balanced`
-- **Requires:** OpenClaw `2026.5.2` or later
-- **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection
-- **Current loop:** first-class OpenClaw memory registration, conservative retrieval, aggressive audited capture, strict scoped storage, sparse injection
+Core capture/store/retrieve/inject works today. Route-learning quality, status polish, and long-term organic runtime still need more mileage.
 
 ## Install
+
+Requires OpenClaw `2026.5.2` or later.
 
 ```bash
 openclaw plugins install clawhub:openclawbrain@0.2.16
@@ -58,16 +28,59 @@ openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
 
-If you run multiple named agents/profiles, scope OpenClawBrain to all of them so each gets its own local graph:
+## Verify it is live
+
+Use runtime inspection, not just package metadata.
 
 ```bash
-openclaw config set plugins.entries.openclawbrain.config.scopes.agents '["main","pelican","bountiful"]' --strict-json
-openclaw gateway restart
+openclaw plugins inspect openclawbrain --runtime
+openclaw doctor
+# /plugins/openclawbrain/proof?limit=10
+# /plugins/openclawbrain/search?query=pnpm&limit=10
 ```
 
-## Default local setup
+You want to see:
 
-The default OpenClawBrain setup is aimed at the full local path: balanced mode, conversation/tool hooks, local SQLite, and local Ollama on `127.0.0.1`.
+- plugin loaded
+- hooks and routes registered
+- SQLite + FTS healthy
+- no `No active memory plugin` warning from `openclaw doctor`
+
+HTTP plugin routes are authenticated on normal OpenClaw installs. Use the authenticated dashboard/client, or pass your gateway auth header when using curl.
+
+## Five-minute proof example
+
+Teach one small repo rule:
+
+```text
+Use pnpm instead of npm in this repo.
+```
+
+Then check whether memory captured and can retrieve it:
+
+```bash
+openclaw plugins inspect openclawbrain --runtime
+openclaw doctor
+# /plugins/openclawbrain/proof?limit=10
+# /plugins/openclawbrain/search?query=pnpm&limit=10
+# /plugins/openclawbrain/graph?agentId=main&limit=10
+# /plugins/openclawbrain/explain-last
+```
+
+A later test/build turn should receive a small bounded context block, not a transcript dump:
+
+```xml
+<openclawbrain_context>
+Relevant memory:
+- Must follow: Use pnpm instead of npm in this repo.
+</openclawbrain_context>
+```
+
+That is the product claim: capture a durable correction, retrieve it later, inject it inside budget, and leave proof behind.
+
+## Configuration
+
+Recommended default mode is `balanced`.
 
 ```bash
 openclaw config set plugins.entries.openclawbrain.config.enabled true --strict-json
@@ -79,9 +92,11 @@ openclaw config validate
 openclaw gateway restart
 ```
 
-## Default local learning models
+### Local learning model
 
-The default route/planner/feedback/learning model is `qwen2.5:32b-instruct`, reached through a local OpenAI-compatible endpoint such as Ollama.
+OpenClawBrain uses the local LLM path for semantic updates: feedback distillation, route examples, and learning. The model proposes structured JSON. Code validates, redacts, scopes, dedupes, thresholds, and writes.
+
+Default local path is Ollama through an OpenAI-compatible endpoint:
 
 ```bash
 ollama list
@@ -98,36 +113,51 @@ openclaw config validate
 openclaw gateway restart
 ```
 
-If local model calls are unavailable, the main agent keeps working. Known memories can still be searched and injected; background learning simply gets quieter or retries later.
+If local model calls are unavailable, the main agent keeps working. Known memories can still be searched and injected; background learning gets quieter or retries later.
 
-## Check that it is live
+### Multiple agents
 
-Use `inspect` and `doctor` for runtime truth. The HTTP routes use gateway auth on normal OpenClaw installs, so access them through your authenticated dashboard/client or pass your gateway auth header when using curl.
+If you run multiple named agents/profiles, scope OpenClawBrain to all of them so each gets its own local graph:
 
 ```bash
-openclaw plugins inspect openclawbrain --runtime
-openclaw doctor
-
-# Authenticated plugin routes:
-# /plugins/openclawbrain/status
-# /plugins/openclawbrain/doctor
-# /plugins/openclawbrain/proof?limit=10
-# /plugins/openclawbrain/graph?agentId=main&limit=10
-# /plugins/openclawbrain/search?query=pnpm&limit=10
+openclaw config set plugins.entries.openclawbrain.config.scopes.agents '["main","pelican","bountiful"]' --strict-json
+openclaw gateway restart
 ```
 
-## What you can inspect
+Use your real agent ids. Single-agent installs can skip this.
+
+## Inspectable endpoints
 
 | Endpoint | What it shows |
 |---|---|
 | `/plugins/openclawbrain/status` | whether the plugin is enabled, loaded, and how the runtime is behaving |
 | `/plugins/openclawbrain/doctor` | SQLite + FTS health under the current Node runtime |
 | `/plugins/openclawbrain/proof?limit=20` | recent redacted proof, route, and injection events |
+| `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
 | `/plugins/openclawbrain/graph?limit=50` | redacted memory nodes and memory edges |
 | `/plugins/openclawbrain/learn?limit=50` | route examples and current learning state |
-| `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
 | `/plugins/openclawbrain/audit?limit=20` | recent capture/store/reject decisions and rejection distribution |
 | `/plugins/openclawbrain/explain-last` | compact postmortem for the latest memory decision |
+
+## How it works
+
+OpenClawBrain sits beside the normal OpenClaw run. It does not replace the main model; it gives the model better working memory.
+
+```text
+before_prompt_build
+  → redact current turn
+  → route_fn decides whether memory should participate
+  → SQLite FTS + graph search finds candidates
+  → context selector chooses a small set
+  → inject bounded prompt context
+
+agent_end / after_tool_call
+  → distill durable feedback
+  → validate and store memory updates
+  → update outcomes and learned route pointers
+```
+
+The graph stores scoped memory nodes and edges: corrections, preferences, workflows, context, route examples, outcomes, and superseded facts.
 
 ## Privacy and safety
 
@@ -135,17 +165,19 @@ openclaw doctor
 - Raw transcript upload is hard-disabled
 - Redaction happens before storage and before model use
 - The model does not write directly to memory
-- Plugin failure does not block the main agent
-- Local-first by default
+- SQLite stores the graph and evidence locally
+- Plugin failure should not block the main agent
 
-## More
+## Links
 
+- [Install](https://openclawbrain.ai/install/)
+- [Proof](https://openclawbrain.ai/proof/)
 - [How it works](https://openclawbrain.ai/how-it-works/)
-- [Getting started](docs/GETTING_STARTED.md)
-- [Copy-paste install note](docs/FRIEND_INSTALL.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Vision](VISION.md)
 - [Final plan](FINAL_PLAN.md)
+- [Getting started](docs/GETTING_STARTED.md)
+- [Copy-paste install note](docs/FRIEND_INSTALL.md)
 
 ## License
 
