@@ -23,6 +23,9 @@ export class JobQueue {
     enqueueRouteLearning(agentId, payload, options = {}) {
         return this.enqueue(agentId, 'route_learning', payload, { priority: options.priority ?? 5, delayMs: options.delayMs });
     }
+    enqueueRouteTeacher(agentId, payload, options = {}) {
+        return this.enqueue(agentId, 'route_teacher', payload, { priority: options.priority ?? 4, delayMs: options.delayMs, maxAttempts: 2 });
+    }
     enqueueOutcomeClassification(agentId, payload, options = {}) {
         return this.enqueue(agentId, 'outcome_classification', payload, { priority: options.priority ?? 5, delayMs: options.delayMs });
     }

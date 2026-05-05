@@ -13,6 +13,7 @@ import { MemoryStore } from './memory-store.js';
 import { decidePolicy } from './policy.js';
 import { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 import { RouteLearning } from './route-learning.js';
+import { RouteTeacher, buildRouteGraphSnapshot } from './route-teacher.js';
 import { auditPayload, buildMemoryCorpusSupplement, buildMemoryPromptSupplement, explainLastPayload, extractMemoryId, graphPayload, learnPayload, memoryPath, renderMemory, searchPayload } from './search.js';
 import { buildStatus } from './status.js';
 import { nativeSqliteSmokeTest } from './native-sqlite.js';
@@ -34,6 +35,7 @@ export { MemoryOperationApplier } from './memory-operations.js';
 export { JobQueue } from './job-queue.js';
 export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
+export { RouteTeacher, buildRouteGraphSnapshot } from './route-teacher.js';
 export { detectCaptureIntent, detectRetrievalIntent, classifySensitiveValue } from './capture-intent.js';
 export { ContextSelector } from './context-selector.js';
 export { MemoryPlanner } from './memory-planner.js';
@@ -173,6 +175,7 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
         policySnapshotId: plan.policySnapshotId,
         reward: 0,
     });
+    buildRouteGraphSnapshot(store, packet.agentId, routeDecision.id, plan.retrievalPlan.queries, initialCandidates, plan.retrievalPlan.graphDepth);
     store.insertCaptureAudit({
         agentId: packet.agentId,
         sessionId: packet.sessionId,
@@ -323,6 +326,27 @@ function registerFirstClassSurfaces(api, resolve) {
         replaceExisting: true,
         handler: async (req, res) => writeJson(res, explainLastPayload(resolve(), agentIdFromRequest(req, resolve()), turnIdFromRequest(req)))
     });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/route-teacher',
+        auth: 'gateway',
+        match: 'prefix',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, routeTeacherPayload(resolve(), agentIdFromRequest(req, resolve()), limitFromRequest(req)))
+    });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/route-counterfactuals',
+        auth: 'gateway',
+        match: 'prefix',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, routeCounterfactualPayload(resolve(), agentIdFromRequest(req, resolve()), decisionIdFromRequest(req), limitFromRequest(req)))
+    });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/route-policy',
+        auth: 'gateway',
+        match: 'prefix',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, routePolicyPayload(resolve(), agentIdFromRequest(req, resolve()), limitFromRequest(req)))
+    });
     try {
         api.registerMemoryCapability?.(buildMemoryCapability(resolve));
         api.registerMemoryPromptSupplement?.(buildMemoryPromptSupplement());
@@ -469,6 +493,9 @@ async function statusPayload(config, req = {}) {
                 pendingOutcomes: store.getUnresolvedRouteDecisions(agentId).length,
                 positiveExamples: store.countRouteExamples(agentId, 'positive'),
                 negativeExamples: store.countRouteExamples(agentId, 'negative'),
+                routeTeacherRuns: store.listRouteTeacherRuns(agentId, 100).length,
+                routeTrainingExamplesV2: store.countRouteTrainingExamplesV2(agentId),
+                activePolicySnapshotV2Id: store.getActivePolicySnapshotV2(agentId)?.id || null,
             },
             learning: {
                 enabled: config.learning.enabled === true,
@@ -662,7 +689,7 @@ async function handleAfterToolCall(event = {}, config = {}, api = {}) {
     return {};
 }
 async function processBackgroundJobs(config = {}, api = {}) {
-    if (config.capture?.enabled !== true && config.learning?.enabled !== true)
+    if (config.capture?.enabled !== true && config.learning?.enabled !== true && config.routeLearning?.enabled !== true)
         return;
     const agents = Array.isArray(config.scopes?.agents) && config.scopes.agents.length ? config.scopes.agents : ['main'];
     for (const agentId of agents)
@@ -674,6 +701,7 @@ async function processBackgroundJobsForAgent(config = {}, api = {}, agentId = 'm
     const job = queue.claimNext(undefined, agentId);
     const learner = new BackgroundLearner({ store, config });
     const routeLearning = new RouteLearning({ store, config });
+    const routeTeacher = new RouteTeacher({ store, config, client: llmClientFromConfig(config) });
     try {
         let learningReport = null;
         if (job?.kind === 'feedback_distillation') {
@@ -688,18 +716,27 @@ async function processBackgroundJobsForAgent(config = {}, api = {}, agentId = 'm
         }
         else if (job?.kind === 'route_learning') {
             learningReport = { ...routeLearning.run(agentId), lastRunAt: new Date().toISOString() };
+            queue.enqueueRouteTeacher(agentId, { cause: 'route_learning', at: new Date().toISOString() }, { priority: 3, delayMs: 0 });
+        }
+        else if (job?.kind === 'route_teacher') {
+            learningReport = { ...(await routeTeacher.run(agentId)), lastRunAt: new Date().toISOString() };
         }
         else if (job) {
             throw new Error(`unsupported_job_kind:${job.kind}`);
         }
         if (!job) {
             learningReport = learner.runMaintenance(agentId);
+            if (config.routeLearning?.teacher?.enabled !== false) {
+                const teacherReport = await routeTeacher.run(agentId);
+                learningReport = { ...learningReport, routeTeacher: teacherReport, lastRunAt: new Date().toISOString() };
+            }
         }
         if (learningReport) {
             await writeStatus(buildStatus(config, {
                 agentId,
                 lastDecisionKind: 'learning_cycle',
                 routing: { activePolicySnapshotId: store.getActivePolicySnapshot(agentId)?.id || null },
+                routeLearning: { activePolicySnapshotV2Id: store.getActivePolicySnapshotV2(agentId)?.id || null },
                 learning: {
                     enabled: config.learning.enabled === true,
                     queueDepth: store.getJobQueueDepth(agentId),
@@ -938,6 +975,87 @@ function limitFromRequest(req = {}) {
     }
     catch {
         return 20;
+    }
+}
+function decisionIdFromRequest(req = {}) {
+    if (req.query?.decisionId)
+        return safeString(req.query.decisionId);
+    if (req.query?.routeDecisionId)
+        return safeString(req.query.routeDecisionId);
+    try {
+        const url = new URL(req.url || 'http://local/plugins/openclawbrain/route-counterfactuals', 'http://local');
+        return safeString(url.searchParams.get('decisionId') || url.searchParams.get('routeDecisionId') || '');
+    }
+    catch {
+        return '';
+    }
+}
+function routeTeacherPayload(config = {}, agentId = 'main', limit = 20) {
+    const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+    try {
+        const runs = store.listRouteTeacherRuns(agentId, Number(limit) || 20);
+        return {
+            ok: true,
+            agentId,
+            count: runs.length,
+            runs: runs.map((run) => ({
+                id: run.id,
+                routeDecisionId: run.routeDecisionId,
+                verdict: run.verdict,
+                teacherRoute: run.teacherRoute,
+                teacherMemoryIds: run.teacherMemoryIds,
+                teacherQueries: run.teacherQueries,
+                teacherGraphDepth: run.teacherGraphDepth,
+                syncPlannerWorthIt: run.syncPlannerWorthIt,
+                confidence: run.confidence,
+                rationale: run.rationale,
+                validated: run.validated,
+                rejectionReason: run.rejectionReason,
+                model: run.model,
+                createdAt: run.createdAt,
+            })),
+        };
+    }
+    finally {
+        store.close();
+    }
+}
+function routeCounterfactualPayload(config = {}, agentId = 'main', decisionId = '', limit = 50) {
+    const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+    try {
+        const counterfactuals = store.listRouteCounterfactuals(agentId, decisionId || undefined, Number(limit) || 50);
+        return { ok: true, agentId, routeDecisionId: decisionId || null, count: counterfactuals.length, counterfactuals };
+    }
+    finally {
+        store.close();
+    }
+}
+function routePolicyPayload(config = {}, agentId = 'main', limit = 20) {
+    const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+    try {
+        const active = store.getActivePolicySnapshotV2(agentId);
+        const snapshots = store.listPolicySnapshotsV2(agentId, Number(limit) || 20);
+        const examples = store.listRouteTrainingExamplesV2(agentId, 50);
+        return {
+            ok: true,
+            agentId,
+            active,
+            snapshotCount: snapshots.length,
+            snapshots: snapshots.map((snapshot) => ({
+                id: snapshot.id,
+                version: snapshot.version,
+                status: snapshot.status,
+                ruleCount: snapshot.rules.length,
+                globalBudgets: snapshot.globalBudgets,
+                evalSummary: snapshot.evalSummary,
+                createdAt: snapshot.createdAt,
+            })),
+            exampleCount: examples.length,
+            examples: examples.slice(0, 20),
+        };
+    }
+    finally {
+        store.close();
     }
 }
 function queryFromRequest(req = {}) {

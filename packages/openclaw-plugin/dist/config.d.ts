@@ -1,5 +1,5 @@
 export declare const PLUGIN_ID = "openclawbrain";
-export declare const PLUGIN_VERSION = "0.2.16";
+export declare const PLUGIN_VERSION = "0.2.17";
 export declare const DEFAULT_CONFIG: any;
 export declare function resolveOpenClawBrainConfig(api?: any): {
     enabled: boolean;
@@ -67,6 +67,27 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
         maxNegativeExamples: number;
         pruneIntervalMs: number;
         maxMemoryNodesPerAgent: number;
+    };
+    routeLearning: {
+        enabled: boolean;
+        teacher: {
+            enabled: boolean;
+            mode: any;
+            maxRunsPerCycle: number;
+            minResolvedRewardMagnitude: number;
+        };
+        counterfactuals: {
+            enabled: boolean;
+            topK: number;
+            maxGraphDepth: number;
+        };
+        policyV2: {
+            enabled: boolean;
+            shadowBeforeActivate: boolean;
+            minExamples: number;
+            maxSyncPlannerRate: number;
+            maxNoisyInjectionRate: number;
+        };
     };
     privacy: {
         storeRawTranscript: boolean;
@@ -166,6 +187,27 @@ export declare function normalizePluginConfig(input?: any): {
         maxNegativeExamples: number;
         pruneIntervalMs: number;
         maxMemoryNodesPerAgent: number;
+    };
+    routeLearning: {
+        enabled: boolean;
+        teacher: {
+            enabled: boolean;
+            mode: any;
+            maxRunsPerCycle: number;
+            minResolvedRewardMagnitude: number;
+        };
+        counterfactuals: {
+            enabled: boolean;
+            topK: number;
+            maxGraphDepth: number;
+        };
+        policyV2: {
+            enabled: boolean;
+            shadowBeforeActivate: boolean;
+            minExamples: number;
+            maxSyncPlannerRate: number;
+            maxNoisyInjectionRate: number;
+        };
     };
     privacy: {
         storeRawTranscript: boolean;

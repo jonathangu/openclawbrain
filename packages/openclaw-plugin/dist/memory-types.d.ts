@@ -236,7 +236,7 @@ export interface MemoryOperation {
     reason?: string;
 }
 export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'dead';
-export type JobKind = 'feedback_distillation' | 'route_learning' | 'outcome_classification' | 'consolidation' | 'pruning' | 'score_update';
+export type JobKind = 'feedback_distillation' | 'route_learning' | 'route_teacher' | 'outcome_classification' | 'consolidation' | 'pruning' | 'score_update';
 export interface BackgroundJob {
     id: string;
     agentId: string;
@@ -274,7 +274,130 @@ export interface RoutePolicySnapshot {
     createdAt: string;
     active: boolean;
 }
-export type DistillationPhase = 'immediate_feedback' | 'agent_end_feedback' | 'route_turn_frame' | 'context_selection' | 'memory_planner' | 'route_learning' | 'outcome_classification';
+export type RouteTeacherVerdict = 'correct_route' | 'missed_recall' | 'over_injected' | 'should_stay_silent' | 'wrong_memory_type' | 'latency_waste' | 'unsafe' | 'unknown';
+export type RouteCounterfactualKind = 'no_memory' | 'actual_injection' | 'top_k_alternate' | 'broader_graph' | 'correction_only' | 'workflow_only' | 'preference_only' | 'context_only' | 'stay_silent' | 'sync_planner';
+export type RouteCounterfactualOutcome = 'likely_helpful' | 'likely_neutral' | 'likely_noise' | 'likely_harmful' | 'likely_missed' | 'unknown';
+export type RouteTrainingExampleKind = 'prefer_route' | 'avoid_route' | 'missed_recall' | 'correct_silence' | 'avoid_sync_planner' | 'prefer_sync_planner' | 'prefer_memory_type' | 'avoid_memory_type' | 'prefer_graph_depth' | 'avoid_graph_depth';
+export interface RouteGraphSnapshot {
+    id: string;
+    agentId: string;
+    routeDecisionId: string;
+    querySet: string[];
+    candidateMemoryIds: string[];
+    candidateSummaries: Array<{
+        id: string;
+        type: MemoryType;
+        scope: string;
+        redactedContent: string;
+        score: number;
+        freshness: number;
+        graphDistance: number;
+        linkedMemoryIds: string[];
+    }>;
+    graphStats: {
+        nodeCountSeen: number;
+        edgeCountSeen: number;
+        maxDepth: number;
+    };
+    createdAt: string;
+}
+export interface RouteTeacherRun {
+    id: string;
+    agentId: string;
+    routeDecisionId: string;
+    model: string;
+    promptVersion: string;
+    inputHash: string;
+    outputHash: string;
+    verdict: RouteTeacherVerdict;
+    teacherRoute: RouteKind;
+    teacherMemoryIds: string[];
+    teacherQueries: string[];
+    teacherGraphDepth: 0 | 1 | 2;
+    syncPlannerWorthIt: boolean;
+    confidence: number;
+    rationale: string;
+    validated: boolean;
+    rejectionReason?: string;
+    createdAt: string;
+}
+export interface RouteCounterfactual {
+    id: string;
+    agentId: string;
+    routeTeacherRunId: string;
+    routeDecisionId: string;
+    kind: RouteCounterfactualKind;
+    memoryIds: string[];
+    memoryTypes: MemoryType[];
+    graphDepth: 0 | 1 | 2;
+    estimatedOutcome: RouteCounterfactualOutcome;
+    confidence: number;
+    rationale: string;
+    createdAt: string;
+}
+export interface RouteTrainingExampleV2 {
+    id: string;
+    agentId: string;
+    routeDecisionId: string;
+    routeTeacherRunId?: string;
+    exampleKind: RouteTrainingExampleKind;
+    taskType: TaskType;
+    turnSignals: string[];
+    route: RouteKind;
+    memoryTypes: MemoryType[];
+    queryTemplates: string[];
+    graphDepth: 0 | 1 | 2;
+    confidence: number;
+    supportCount: number;
+    harmCount: number;
+    source: 'actual_outcome' | 'teacher' | 'counterfactual' | 'manual_eval';
+    evidenceIds: string[];
+    createdAt: string;
+}
+export interface RoutePolicyRuleV2 {
+    id: string;
+    match: {
+        taskType?: TaskType | string;
+        turnSignals?: string[];
+        projectHint?: string;
+        repoHintPresent?: boolean;
+        safetySignalsAbsent?: string[];
+    };
+    route: RouteKind;
+    memoryTypes: MemoryType[];
+    queries: string[];
+    graphDepth: 0 | 1 | 2;
+    syncPlanner: 'no' | 'never_unless_ambiguous' | 'allowed' | 'prefer';
+    confidence: number;
+    evidenceIds: string[];
+}
+export interface RoutePolicySnapshotV2 {
+    id: string;
+    agentId: string;
+    version: 'route-policy-v2';
+    status: 'candidate' | 'active' | 'rejected' | 'shadow';
+    rules: RoutePolicyRuleV2[];
+    globalBudgets: {
+        maxSyncPlannerRate: number;
+        maxInjectedMemories: number;
+        maxInjectedChars: number;
+        defaultGraphDepth: 0 | 1 | 2;
+    };
+    evalSummary?: {
+        cases: number;
+        wins: number;
+        ties: number;
+        misses: number;
+        noisyInjections: number;
+        harms: number;
+        p95LatencyMs: number;
+    };
+    exampleIds: string[];
+    model?: string;
+    promptVersion?: string;
+    createdAt: string;
+}
+export type DistillationPhase = 'immediate_feedback' | 'agent_end_feedback' | 'route_turn_frame' | 'context_selection' | 'memory_planner' | 'route_learning' | 'outcome_classification' | 'route_teacher';
 export interface DistillationRun {
     id: string;
     agentId: string;

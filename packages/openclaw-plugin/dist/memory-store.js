@@ -7,7 +7,7 @@ import { mkdirSync } from 'node:fs';
 import { openDatabase } from './sqlite-driver.js';
 import { filterMemoriesForScope } from './scope.js';
 // ── Schema version ────────────────────────────────────────────────────────────
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 const MIGRATIONS = {
     1: `
@@ -396,6 +396,101 @@ const MIGRATIONS = {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_active_dedupe
       ON background_jobs(agent_id, kind, dedupe_key)
       WHERE dedupe_key IS NOT NULL AND status IN ('pending', 'running');
+  `,
+    5: `
+    CREATE TABLE IF NOT EXISTS route_graph_snapshots (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      route_decision_id TEXT NOT NULL UNIQUE,
+      query_set_json TEXT NOT NULL DEFAULT '[]',
+      candidate_memory_ids_json TEXT NOT NULL DEFAULT '[]',
+      candidate_summaries_json TEXT NOT NULL DEFAULT '[]',
+      graph_stats_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_route_graph_agent ON route_graph_snapshots(agent_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS route_teacher_runs (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      route_decision_id TEXT NOT NULL,
+      model TEXT NOT NULL,
+      prompt_version TEXT NOT NULL,
+      input_hash TEXT NOT NULL,
+      output_hash TEXT NOT NULL,
+      verdict TEXT NOT NULL,
+      teacher_route TEXT NOT NULL,
+      teacher_memory_ids_json TEXT NOT NULL DEFAULT '[]',
+      teacher_queries_json TEXT NOT NULL DEFAULT '[]',
+      teacher_graph_depth INTEGER NOT NULL DEFAULT 0,
+      sync_planner_worth_it INTEGER NOT NULL DEFAULT 0,
+      confidence REAL NOT NULL DEFAULT 0,
+      rationale TEXT NOT NULL DEFAULT '',
+      validated INTEGER NOT NULL DEFAULT 0,
+      rejection_reason TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_route_teacher_agent ON route_teacher_runs(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_route_teacher_decision ON route_teacher_runs(route_decision_id);
+
+    CREATE TABLE IF NOT EXISTS route_counterfactuals (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      route_teacher_run_id TEXT NOT NULL,
+      route_decision_id TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      memory_ids_json TEXT NOT NULL DEFAULT '[]',
+      memory_types_json TEXT NOT NULL DEFAULT '[]',
+      graph_depth INTEGER NOT NULL DEFAULT 0,
+      estimated_outcome TEXT NOT NULL,
+      confidence REAL NOT NULL DEFAULT 0,
+      rationale TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_route_counterfactuals_decision ON route_counterfactuals(route_decision_id);
+    CREATE INDEX IF NOT EXISTS idx_route_counterfactuals_teacher ON route_counterfactuals(route_teacher_run_id);
+
+    CREATE TABLE IF NOT EXISTS route_training_examples_v2 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      route_decision_id TEXT NOT NULL,
+      route_teacher_run_id TEXT,
+      example_kind TEXT NOT NULL,
+      task_type TEXT NOT NULL,
+      turn_signals_json TEXT NOT NULL DEFAULT '[]',
+      route TEXT NOT NULL,
+      memory_types_json TEXT NOT NULL DEFAULT '[]',
+      query_templates_json TEXT NOT NULL DEFAULT '[]',
+      graph_depth INTEGER NOT NULL DEFAULT 0,
+      confidence REAL NOT NULL DEFAULT 0,
+      support_count INTEGER NOT NULL DEFAULT 1,
+      harm_count INTEGER NOT NULL DEFAULT 0,
+      source TEXT NOT NULL,
+      evidence_ids_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_route_examples_v2_agent ON route_training_examples_v2(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_route_examples_v2_decision ON route_training_examples_v2(route_decision_id);
+
+    CREATE TABLE IF NOT EXISTS route_policy_snapshots_v2 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      version TEXT NOT NULL DEFAULT 'route-policy-v2',
+      status TEXT NOT NULL DEFAULT 'candidate',
+      rules_json TEXT NOT NULL DEFAULT '[]',
+      global_budgets_json TEXT NOT NULL DEFAULT '{}',
+      eval_summary_json TEXT,
+      example_ids_json TEXT NOT NULL DEFAULT '[]',
+      model TEXT,
+      prompt_version TEXT,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_policy_v2_active ON route_policy_snapshots_v2(agent_id, status, created_at);
   `,
 };
 // ── UUID helper ───────────────────────────────────────────────────────────────
@@ -945,6 +1040,114 @@ export class MemoryStore {
         const row = this.db.prepare('SELECT COUNT(*) as cnt FROM memory_edges WHERE agent_id = ?').get(agentId);
         return row?.cnt ?? 0;
     }
+    // ── Route teacher, counterfactuals, and policy v2 ─────────────────────────
+    insertRouteGraphSnapshot(snapshot) {
+        const id = snapshot.id || uuid();
+        const ts = snapshot.createdAt || now();
+        this.db.prepare(`
+      INSERT OR REPLACE INTO route_graph_snapshots (
+        id, agent_id, route_decision_id, query_set_json, candidate_memory_ids_json,
+        candidate_summaries_json, graph_stats_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, snapshot.agentId, snapshot.routeDecisionId, JSON.stringify(snapshot.querySet ?? []), JSON.stringify(snapshot.candidateMemoryIds ?? []), JSON.stringify(snapshot.candidateSummaries ?? []), JSON.stringify(snapshot.graphStats ?? {}), ts);
+        return { ...snapshot, id, createdAt: ts };
+    }
+    getRouteGraphSnapshot(routeDecisionId) {
+        const row = this.db.prepare('SELECT * FROM route_graph_snapshots WHERE route_decision_id = ? LIMIT 1').get(routeDecisionId);
+        return row ? rowToRouteGraphSnapshot(row) : null;
+    }
+    insertRouteTeacherRun(run) {
+        const id = run.id || uuid();
+        const ts = run.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO route_teacher_runs (
+        id, agent_id, route_decision_id, model, prompt_version, input_hash, output_hash,
+        verdict, teacher_route, teacher_memory_ids_json, teacher_queries_json,
+        teacher_graph_depth, sync_planner_worth_it, confidence, rationale, validated,
+        rejection_reason, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, run.agentId, run.routeDecisionId, run.model, run.promptVersion, run.inputHash, run.outputHash, run.verdict, run.teacherRoute, JSON.stringify(run.teacherMemoryIds ?? []), JSON.stringify(run.teacherQueries ?? []), run.teacherGraphDepth, run.syncPlannerWorthIt ? 1 : 0, run.confidence, run.rationale, run.validated ? 1 : 0, run.rejectionReason ?? null, ts);
+        return { ...run, id, createdAt: ts };
+    }
+    hasRouteTeacherRunForDecision(routeDecisionId) {
+        const row = this.db.prepare('SELECT id FROM route_teacher_runs WHERE route_decision_id = ? LIMIT 1').get(routeDecisionId);
+        return Boolean(row?.id);
+    }
+    listRouteTeacherRuns(agentId, limit = 20) {
+        return this.db.prepare('SELECT * FROM route_teacher_runs WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, Math.min(200, Math.max(1, limit))).map(rowToRouteTeacherRun);
+    }
+    insertRouteCounterfactual(counterfactual) {
+        const id = counterfactual.id || uuid();
+        const ts = counterfactual.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO route_counterfactuals (
+        id, agent_id, route_teacher_run_id, route_decision_id, kind, memory_ids_json,
+        memory_types_json, graph_depth, estimated_outcome, confidence, rationale, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, counterfactual.agentId, counterfactual.routeTeacherRunId, counterfactual.routeDecisionId, counterfactual.kind, JSON.stringify(counterfactual.memoryIds ?? []), JSON.stringify(counterfactual.memoryTypes ?? []), counterfactual.graphDepth, counterfactual.estimatedOutcome, counterfactual.confidence, counterfactual.rationale, ts);
+        return { ...counterfactual, id, createdAt: ts };
+    }
+    listRouteCounterfactuals(agentId, routeDecisionId, limit = 50) {
+        const safeLimit = Math.min(200, Math.max(1, limit));
+        const rows = routeDecisionId
+            ? this.db.prepare('SELECT * FROM route_counterfactuals WHERE agent_id = ? AND route_decision_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, routeDecisionId, safeLimit)
+            : this.db.prepare('SELECT * FROM route_counterfactuals WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, safeLimit);
+        return rows.map(rowToRouteCounterfactual);
+    }
+    insertRouteTrainingExampleV2(example) {
+        const existing = this.db.prepare(`
+      SELECT * FROM route_training_examples_v2
+      WHERE agent_id = ? AND example_kind = ? AND task_type = ? AND route = ?
+        AND memory_types_json = ? AND query_templates_json = ? AND graph_depth = ?
+      LIMIT 1
+    `).get(example.agentId, example.exampleKind, example.taskType, example.route, JSON.stringify(example.memoryTypes ?? []), JSON.stringify(example.queryTemplates ?? []), example.graphDepth);
+        if (existing) {
+            this.db.prepare(`
+        UPDATE route_training_examples_v2
+        SET support_count = support_count + ?, harm_count = harm_count + ?, confidence = MAX(confidence, ?), evidence_ids_json = ?, created_at = ?
+        WHERE id = ?
+      `).run(example.supportCount ?? 1, example.harmCount ?? 0, example.confidence, JSON.stringify([...new Set([...JSON.parse(existing.evidence_ids_json ?? '[]'), ...(example.evidenceIds ?? [])])]), now(), existing.id);
+            return rowToRouteTrainingExampleV2(this.db.prepare('SELECT * FROM route_training_examples_v2 WHERE id = ?').get(existing.id));
+        }
+        const id = example.id || uuid();
+        const ts = example.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO route_training_examples_v2 (
+        id, agent_id, route_decision_id, route_teacher_run_id, example_kind, task_type,
+        turn_signals_json, route, memory_types_json, query_templates_json, graph_depth,
+        confidence, support_count, harm_count, source, evidence_ids_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, example.agentId, example.routeDecisionId, example.routeTeacherRunId ?? null, example.exampleKind, example.taskType, JSON.stringify(example.turnSignals ?? []), example.route, JSON.stringify(example.memoryTypes ?? []), JSON.stringify(example.queryTemplates ?? []), example.graphDepth, example.confidence, example.supportCount ?? 1, example.harmCount ?? 0, example.source, JSON.stringify(example.evidenceIds ?? []), ts);
+        return { ...example, id, createdAt: ts };
+    }
+    listRouteTrainingExamplesV2(agentId, limit = 100) {
+        return this.db.prepare('SELECT * FROM route_training_examples_v2 WHERE agent_id = ? ORDER BY confidence DESC, support_count DESC, created_at DESC LIMIT ?').all(agentId, Math.min(500, Math.max(1, limit))).map(rowToRouteTrainingExampleV2);
+    }
+    countRouteTrainingExamplesV2(agentId) {
+        const row = this.db.prepare('SELECT COUNT(*) as cnt FROM route_training_examples_v2 WHERE agent_id = ?').get(agentId);
+        return row?.cnt ?? 0;
+    }
+    insertPolicySnapshotV2(snapshot) {
+        const id = snapshot.id || uuid();
+        const ts = snapshot.createdAt || now();
+        if (snapshot.status === 'active') {
+            this.db.prepare("UPDATE route_policy_snapshots_v2 SET status = 'shadow' WHERE agent_id = ? AND status = 'active'").run(snapshot.agentId);
+        }
+        this.db.prepare(`
+      INSERT INTO route_policy_snapshots_v2 (
+        id, agent_id, version, status, rules_json, global_budgets_json, eval_summary_json,
+        example_ids_json, model, prompt_version, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, snapshot.agentId, snapshot.version, snapshot.status, JSON.stringify(snapshot.rules ?? []), JSON.stringify(snapshot.globalBudgets ?? {}), snapshot.evalSummary ? JSON.stringify(snapshot.evalSummary) : null, JSON.stringify(snapshot.exampleIds ?? []), snapshot.model ?? null, snapshot.promptVersion ?? null, ts);
+        return { ...snapshot, id, createdAt: ts };
+    }
+    getActivePolicySnapshotV2(agentId) {
+        const row = this.db.prepare("SELECT * FROM route_policy_snapshots_v2 WHERE agent_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1").get(agentId);
+        return row ? rowToRoutePolicySnapshotV2(row) : null;
+    }
+    listPolicySnapshotsV2(agentId, limit = 20) {
+        return this.db.prepare('SELECT * FROM route_policy_snapshots_v2 WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, Math.min(200, Math.max(1, limit))).map(rowToRoutePolicySnapshotV2);
+    }
     // ── Proof events ────────────────────────────────────────────────────────────
     insertProofEvent(event) {
         const id = event.id || uuid();
@@ -1093,6 +1296,92 @@ function rowToCaptureAudit(r) {
         rejectionReasons: JSON.parse(r.rejection_reasons_json ?? '[]'),
         safeCandidatePreview: r.safe_candidate_preview,
         evidenceHash: r.evidence_hash,
+    };
+}
+function rowToRouteGraphSnapshot(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        routeDecisionId: r.route_decision_id,
+        querySet: JSON.parse(r.query_set_json ?? '[]'),
+        candidateMemoryIds: JSON.parse(r.candidate_memory_ids_json ?? '[]'),
+        candidateSummaries: JSON.parse(r.candidate_summaries_json ?? '[]'),
+        graphStats: JSON.parse(r.graph_stats_json ?? '{}'),
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteTeacherRun(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        routeDecisionId: r.route_decision_id,
+        model: r.model,
+        promptVersion: r.prompt_version,
+        inputHash: r.input_hash,
+        outputHash: r.output_hash,
+        verdict: r.verdict,
+        teacherRoute: r.teacher_route,
+        teacherMemoryIds: JSON.parse(r.teacher_memory_ids_json ?? '[]'),
+        teacherQueries: JSON.parse(r.teacher_queries_json ?? '[]'),
+        teacherGraphDepth: r.teacher_graph_depth,
+        syncPlannerWorthIt: r.sync_planner_worth_it === 1,
+        confidence: r.confidence,
+        rationale: r.rationale,
+        validated: r.validated === 1,
+        rejectionReason: r.rejection_reason,
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteCounterfactual(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        routeTeacherRunId: r.route_teacher_run_id,
+        routeDecisionId: r.route_decision_id,
+        kind: r.kind,
+        memoryIds: JSON.parse(r.memory_ids_json ?? '[]'),
+        memoryTypes: JSON.parse(r.memory_types_json ?? '[]'),
+        graphDepth: r.graph_depth,
+        estimatedOutcome: r.estimated_outcome,
+        confidence: r.confidence,
+        rationale: r.rationale,
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteTrainingExampleV2(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        routeDecisionId: r.route_decision_id,
+        routeTeacherRunId: r.route_teacher_run_id,
+        exampleKind: r.example_kind,
+        taskType: r.task_type,
+        turnSignals: JSON.parse(r.turn_signals_json ?? '[]'),
+        route: r.route,
+        memoryTypes: JSON.parse(r.memory_types_json ?? '[]'),
+        queryTemplates: JSON.parse(r.query_templates_json ?? '[]'),
+        graphDepth: r.graph_depth,
+        confidence: r.confidence,
+        supportCount: r.support_count,
+        harmCount: r.harm_count,
+        source: r.source,
+        evidenceIds: JSON.parse(r.evidence_ids_json ?? '[]'),
+        createdAt: r.created_at,
+    };
+}
+function rowToRoutePolicySnapshotV2(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        version: 'route-policy-v2',
+        status: r.status,
+        rules: JSON.parse(r.rules_json ?? '[]'),
+        globalBudgets: JSON.parse(r.global_budgets_json ?? '{}'),
+        evalSummary: r.eval_summary_json ? JSON.parse(r.eval_summary_json) : undefined,
+        exampleIds: JSON.parse(r.example_ids_json ?? '[]'),
+        model: r.model,
+        promptVersion: r.prompt_version,
+        createdAt: r.created_at,
     };
 }
 // ── DB helpers ────────────────────────────────────────────────────────────────

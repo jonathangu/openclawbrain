@@ -15,7 +15,7 @@ Core capture/store/retrieve/inject works today. Route-learning quality, status p
 Requires OpenClaw `2026.5.2` or later.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.16
+openclaw plugins install clawhub:openclawbrain@0.2.17
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -23,9 +23,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.16.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.16/openclawbrain-0.2.16.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.16.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.17.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.17/openclawbrain-0.2.17.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.17.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -138,6 +138,9 @@ Use your real agent ids. Single-agent installs can skip this.
 | `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
 | `/plugins/openclawbrain/graph?limit=50` | redacted memory nodes and memory edges |
 | `/plugins/openclawbrain/learn?limit=50` | route examples and current learning state |
+| `/plugins/openclawbrain/route-teacher?limit=20` | LLM/deterministic route teacher critiques of actual route decisions |
+| `/plugins/openclawbrain/route-counterfactuals?decisionId=...` | no-memory, alternate-memory, graph-depth, memory-type, stay-silent, and latency counterfactuals |
+| `/plugins/openclawbrain/route-policy` | active structured `route-policy-v2` snapshot and route training examples |
 | `/plugins/openclawbrain/audit?limit=20` | recent capture/store/reject decisions and rejection distribution |
 | `/plugins/openclawbrain/explain-last` | compact postmortem for the latest memory decision |
 
@@ -156,7 +159,10 @@ before_prompt_build
 agent_end / after_tool_call
   → distill durable feedback
   → validate and store memory updates
-  → update outcomes and learned route pointers
+  → resolve outcomes
+  → route teacher critiques actual route vs graph-grounded alternatives
+  → counterfactuals become route training examples
+  → structured route-policy-v2 snapshots update deterministic route_fn
 ```
 
 The graph stores scoped memory nodes and edges: corrections, preferences, workflows, context, route examples, outcomes, and superseded facts.

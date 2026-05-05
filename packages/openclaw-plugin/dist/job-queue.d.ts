@@ -19,6 +19,10 @@ export declare class JobQueue {
         priority?: number;
         delayMs?: number;
     }): BackgroundJob;
+    enqueueRouteTeacher(agentId: string, payload: Record<string, unknown>, options?: {
+        priority?: number;
+        delayMs?: number;
+    }): BackgroundJob;
     enqueueOutcomeClassification(agentId: string, payload: Record<string, unknown>, options?: {
         priority?: number;
         delayMs?: number;

@@ -1,6 +1,6 @@
 import { type DatabaseLike } from './sqlite-driver.js';
 import { type ScopeContext } from './scope.js';
-import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, CaptureAuditRow } from './memory-types.js';
+import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, CaptureAuditRow } from './memory-types.js';
 export declare const uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 export declare const now: () => string;
 export interface MemoryStoreOptions {
@@ -105,6 +105,34 @@ export declare class MemoryStore {
     getRouteExamplesByPolarity(agentId: string, polarity: 'positive' | 'negative', limit?: number): any[];
     getConnectedMemories(memoryId: string, maxDepth?: number, agentId?: string, scopeContext?: ScopeContext): MemoryNode[];
     countEdgesForAgent(agentId: string): number;
+    insertRouteGraphSnapshot(snapshot: Omit<RouteGraphSnapshot, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RouteGraphSnapshot;
+    getRouteGraphSnapshot(routeDecisionId: string): RouteGraphSnapshot | null;
+    insertRouteTeacherRun(run: Omit<RouteTeacherRun, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RouteTeacherRun;
+    hasRouteTeacherRunForDecision(routeDecisionId: string): boolean;
+    listRouteTeacherRuns(agentId: string, limit?: number): RouteTeacherRun[];
+    insertRouteCounterfactual(counterfactual: Omit<RouteCounterfactual, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RouteCounterfactual;
+    listRouteCounterfactuals(agentId: string, routeDecisionId?: string, limit?: number): RouteCounterfactual[];
+    insertRouteTrainingExampleV2(example: Omit<RouteTrainingExampleV2, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RouteTrainingExampleV2;
+    listRouteTrainingExamplesV2(agentId: string, limit?: number): RouteTrainingExampleV2[];
+    countRouteTrainingExamplesV2(agentId: string): number;
+    insertPolicySnapshotV2(snapshot: Omit<RoutePolicySnapshotV2, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RoutePolicySnapshotV2;
+    getActivePolicySnapshotV2(agentId: string): RoutePolicySnapshotV2 | null;
+    listPolicySnapshotsV2(agentId: string, limit?: number): RoutePolicySnapshotV2[];
     insertProofEvent(event: Omit<ProofEvent, 'id' | 'createdAt'> & {
         id?: string;
     }): ProofEvent;

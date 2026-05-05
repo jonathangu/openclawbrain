@@ -2,7 +2,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { safeString } from './redact.js';
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.16';
+export const PLUGIN_VERSION = '0.2.17';
 export const DEFAULT_CONFIG = Object.freeze({
     enabled: true,
     mode: 'balanced',
@@ -62,6 +62,12 @@ export const DEFAULT_CONFIG = Object.freeze({
         maxNegativeExamples: 25,
         pruneIntervalMs: 3600000,
         maxMemoryNodesPerAgent: 5000,
+    }),
+    routeLearning: Object.freeze({
+        enabled: true,
+        teacher: Object.freeze({ enabled: true, mode: 'background', maxRunsPerCycle: 5, minResolvedRewardMagnitude: 0 }),
+        counterfactuals: Object.freeze({ enabled: true, topK: 5, maxGraphDepth: 2 }),
+        policyV2: Object.freeze({ enabled: true, shadowBeforeActivate: false, minExamples: 3, maxSyncPlannerRate: 0.05, maxNoisyInjectionRate: 0.05 }),
     }),
     privacy: Object.freeze({
         storeRawTranscript: false,
@@ -190,6 +196,27 @@ export function normalizePluginConfig(input = {}) {
             maxNegativeExamples: clampInteger(source.learning?.maxNegativeExamples, DEFAULT_CONFIG.learning.maxNegativeExamples, 1, 1000),
             pruneIntervalMs: clampInteger(source.learning?.pruneIntervalMs, DEFAULT_CONFIG.learning.pruneIntervalMs, 1000, 86400000),
             maxMemoryNodesPerAgent: clampInteger(source.learning?.maxMemoryNodesPerAgent, DEFAULT_CONFIG.learning.maxMemoryNodesPerAgent, 1, 1000000),
+        },
+        routeLearning: {
+            enabled: source.routeLearning?.enabled !== false,
+            teacher: {
+                enabled: source.routeLearning?.teacher?.enabled !== false,
+                mode: nonEmptyString(source.routeLearning?.teacher?.mode) || DEFAULT_CONFIG.routeLearning.teacher.mode,
+                maxRunsPerCycle: clampInteger(source.routeLearning?.teacher?.maxRunsPerCycle, DEFAULT_CONFIG.routeLearning.teacher.maxRunsPerCycle, 0, 100),
+                minResolvedRewardMagnitude: clampNumber(source.routeLearning?.teacher?.minResolvedRewardMagnitude, DEFAULT_CONFIG.routeLearning.teacher.minResolvedRewardMagnitude, 0, 1),
+            },
+            counterfactuals: {
+                enabled: source.routeLearning?.counterfactuals?.enabled !== false,
+                topK: clampInteger(source.routeLearning?.counterfactuals?.topK, DEFAULT_CONFIG.routeLearning.counterfactuals.topK, 1, 50),
+                maxGraphDepth: clampInteger(source.routeLearning?.counterfactuals?.maxGraphDepth, DEFAULT_CONFIG.routeLearning.counterfactuals.maxGraphDepth, 0, 2),
+            },
+            policyV2: {
+                enabled: source.routeLearning?.policyV2?.enabled !== false,
+                shadowBeforeActivate: source.routeLearning?.policyV2?.shadowBeforeActivate === true,
+                minExamples: clampInteger(source.routeLearning?.policyV2?.minExamples, DEFAULT_CONFIG.routeLearning.policyV2.minExamples, 1, 1000),
+                maxSyncPlannerRate: clampNumber(source.routeLearning?.policyV2?.maxSyncPlannerRate, DEFAULT_CONFIG.routeLearning.policyV2.maxSyncPlannerRate, 0, 1),
+                maxNoisyInjectionRate: clampNumber(source.routeLearning?.policyV2?.maxNoisyInjectionRate, DEFAULT_CONFIG.routeLearning.policyV2.maxNoisyInjectionRate, 0, 1),
+            },
         },
         privacy: {
             storeRawTranscript: false,

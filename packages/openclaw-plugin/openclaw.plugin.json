@@ -1,7 +1,7 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.16",
+  "version": "0.2.17",
   "description": "Aggressive-but-safe local memory graph for OpenClaw: conservative retrieval, audited capture, strict scoped storage, bounded injection, and SQLite proof surfaces.",
   "kind": "memory",
   "activation": {
@@ -552,6 +552,138 @@
             "enableMemoryPostmortem": true
           }
         }
+      },
+      "routeLearning": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "teacher": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "background"
+                ],
+                "default": "background"
+              },
+              "maxRunsPerCycle": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100,
+                "default": 5
+              },
+              "minResolvedRewardMagnitude": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0
+              }
+            },
+            "default": {
+              "enabled": true,
+              "mode": "background",
+              "maxRunsPerCycle": 5,
+              "minResolvedRewardMagnitude": 0
+            }
+          },
+          "counterfactuals": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              },
+              "topK": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50,
+                "default": 5
+              },
+              "maxGraphDepth": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 2,
+                "default": 2
+              }
+            },
+            "default": {
+              "enabled": true,
+              "topK": 5,
+              "maxGraphDepth": 2
+            }
+          },
+          "policyV2": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              },
+              "shadowBeforeActivate": {
+                "type": "boolean",
+                "default": false
+              },
+              "minExamples": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000,
+                "default": 3
+              },
+              "maxSyncPlannerRate": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.05
+              },
+              "maxNoisyInjectionRate": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.05
+              }
+            },
+            "default": {
+              "enabled": true,
+              "shadowBeforeActivate": false,
+              "minExamples": 3,
+              "maxSyncPlannerRate": 0.05,
+              "maxNoisyInjectionRate": 0.05
+            }
+          }
+        },
+        "default": {
+          "enabled": true,
+          "teacher": {
+            "enabled": true,
+            "mode": "background",
+            "maxRunsPerCycle": 5,
+            "minResolvedRewardMagnitude": 0
+          },
+          "counterfactuals": {
+            "enabled": true,
+            "topK": 5,
+            "maxGraphDepth": 2
+          },
+          "policyV2": {
+            "enabled": true,
+            "shadowBeforeActivate": false,
+            "minExamples": 3,
+            "maxSyncPlannerRate": 0.05,
+            "maxNoisyInjectionRate": 0.05
+          }
+        }
       }
     }
   },
@@ -597,7 +729,7 @@
     },
     "capture.mode": {
       "label": "Capture Mode",
-      "help": "v0.2.16 defaults to aggressive capture consideration. This evaluates durable instructions broadly while strict validators still decide what can be stored."
+      "help": "v0.2.17 defaults to aggressive capture consideration. This evaluates durable instructions broadly while strict validators still decide what can be stored."
     },
     "routing.maxInjectedMemories": {
       "label": "Max Injected Memories",

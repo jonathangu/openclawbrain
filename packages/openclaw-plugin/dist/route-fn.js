@@ -89,7 +89,7 @@ export class RouteFn {
         if (!this.store)
             return null;
         try {
-            return this.store.getActivePolicySnapshot(packet.agentId);
+            return this.store.getActivePolicySnapshotV2?.(packet.agentId) ?? this.store.getActivePolicySnapshot(packet.agentId);
         }
         catch {
             return null;
@@ -133,7 +133,7 @@ function heuristicRoutePlan(packet, turnFrame, config, policySnapshot, retrieval
         memoryTypes: allMemoryTypes,
         requiredTags: [],
         excludedTags: retrievalIntent.includeRecallRules ? [] : ['recall_value'],
-        graphDepth: planningLike || policyBoost ? 1 : 0,
+        graphDepth: policyBoost?.graphDepth ?? (planningLike || policyBoost ? 1 : 0),
         maxCandidates: config.routing.maxCandidateMemories,
     };
     const injectionPlan = {
@@ -147,7 +147,7 @@ function heuristicRoutePlan(packet, turnFrame, config, policySnapshot, retrieval
         turnFrame,
         retrievalPlan,
         injectionPlan,
-        shouldRetrieve: retrievalIntent.shouldRetrieve,
+        shouldRetrieve: retrievalIntent.shouldRetrieve || route === 'retrieve_memory' || route === 'retrieve_and_distill' || policyBoost?.route === 'retrieve_memory',
         enqueueCapture: captureIntent.shouldConsiderCapture,
         retrievalIntent,
         captureIntent,
@@ -156,7 +156,22 @@ function heuristicRoutePlan(packet, turnFrame, config, policySnapshot, retrieval
     };
 }
 function applyPolicySnapshot(packet, turnFrame, policySnapshot) {
-    const boost = { route: null, confidence: 0, memoryTypes: [], queries: [] };
+    const boost = { route: null, confidence: 0, memoryTypes: [], queries: [], graphDepth: undefined };
+    if (policySnapshot?.version === 'route-policy-v2' && Array.isArray(policySnapshot.rules)) {
+        const message = packet.latestUserMessageRedacted.toLowerCase();
+        const rules = policySnapshot.rules
+            .filter((rule) => policyRuleMatches(rule, turnFrame, message))
+            .sort((a, b) => Number(b.confidence || 0) - Number(a.confidence || 0));
+        const rule = rules[0];
+        if (!rule)
+            return boost;
+        boost.route = rule.route;
+        boost.confidence = Number(rule.confidence || 0.7);
+        boost.memoryTypes = Array.isArray(rule.memoryTypes) ? rule.memoryTypes : [];
+        boost.queries = Array.isArray(rule.queries) ? rule.queries : [];
+        boost.graphDepth = rule.graphDepth ?? 0;
+        return boost;
+    }
     if (!policySnapshot?.policyText)
         return boost;
     const policy = String(policySnapshot.policyText).toLowerCase();
@@ -180,6 +195,15 @@ function applyPolicySnapshot(packet, turnFrame, policySnapshot) {
     if (/coding/.test(taskType) && /install|dependency|package/.test(policy))
         boost.queries.push('package manager correction workflow repo setup');
     return boost;
+}
+function policyRuleMatches(rule, turnFrame, message) {
+    const match = rule?.match ?? {};
+    if (match.taskType && match.taskType !== turnFrame.taskType)
+        return false;
+    const signals = Array.isArray(match.turnSignals) ? match.turnSignals : [];
+    if (signals.length === 0)
+        return true;
+    return signals.some((signal) => message.includes(String(signal).toLowerCase()) || turnFrame.impliedNeeds.join(' ').toLowerCase().includes(String(signal).toLowerCase()));
 }
 function memoryTypesForTurn(route, retrievalIntent, captureIntent, lower, planningLike) {
     if (retrievalIntent.intent === 'recall_value_request')
