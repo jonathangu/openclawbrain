@@ -3,7 +3,7 @@ import path from 'node:path';
 import { safeString } from './redact.js';
 
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.18';
+export const PLUGIN_VERSION = '0.2.19';
 export const DEFAULT_CONFIG: any = Object.freeze({
   enabled: true,
   mode: 'balanced',
@@ -69,6 +69,7 @@ export const DEFAULT_CONFIG: any = Object.freeze({
     teacher: Object.freeze({ enabled: true, mode: 'background', maxRunsPerCycle: 5, minResolvedRewardMagnitude: 0 }),
     counterfactuals: Object.freeze({ enabled: true, topK: 5, maxGraphDepth: 2 }),
     policyV2: Object.freeze({ enabled: true, shadowBeforeActivate: false, minExamples: 3, maxSyncPlannerRate: 0.05, maxNoisyInjectionRate: 0.05 }),
+    policyV3: Object.freeze({ enabled: true, shadowBeforeActivate: false, minFrames: 3, maxSyncPlannerRate: 0.1, maxHarmRate: 0.2, explorationAlpha: 0.35 }),
   }),
   privacy: Object.freeze({
     storeRawTranscript: false,
@@ -220,6 +221,14 @@ export function normalizePluginConfig(input: any = {}) {
         minExamples: clampInteger(source.routeLearning?.policyV2?.minExamples, DEFAULT_CONFIG.routeLearning.policyV2.minExamples, 1, 1000),
         maxSyncPlannerRate: clampNumber(source.routeLearning?.policyV2?.maxSyncPlannerRate, DEFAULT_CONFIG.routeLearning.policyV2.maxSyncPlannerRate, 0, 1),
         maxNoisyInjectionRate: clampNumber(source.routeLearning?.policyV2?.maxNoisyInjectionRate, DEFAULT_CONFIG.routeLearning.policyV2.maxNoisyInjectionRate, 0, 1),
+      },
+      policyV3: {
+        enabled: source.routeLearning?.policyV3?.enabled !== false,
+        shadowBeforeActivate: source.routeLearning?.policyV3?.shadowBeforeActivate === true,
+        minFrames: clampInteger(source.routeLearning?.policyV3?.minFrames, DEFAULT_CONFIG.routeLearning.policyV3.minFrames, 1, 5000),
+        maxSyncPlannerRate: clampNumber(source.routeLearning?.policyV3?.maxSyncPlannerRate, DEFAULT_CONFIG.routeLearning.policyV3.maxSyncPlannerRate, 0, 1),
+        maxHarmRate: clampNumber(source.routeLearning?.policyV3?.maxHarmRate, DEFAULT_CONFIG.routeLearning.policyV3.maxHarmRate, 0, 1),
+        explorationAlpha: clampNumber(source.routeLearning?.policyV3?.explorationAlpha, DEFAULT_CONFIG.routeLearning.policyV3.explorationAlpha, 0, 5),
       },
     },
     privacy: {

@@ -6,6 +6,9 @@ export interface RouteTeacherReport {
     counterfactuals: number;
     examples: number;
     policySnapshotId?: string;
+    policySnapshotV3Id?: string;
+    routeFramesV3?: number;
+    pairExamplesV3?: number;
 }
 export declare class RouteTeacher {
     private store;

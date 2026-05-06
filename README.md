@@ -8,14 +8,14 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 ![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and injected context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-Core capture/store/retrieve/inject works today. Route-learning quality, status polish, and long-term organic runtime still need more mileage.
+Core capture/store/retrieve/inject works today. `0.2.19` also ships the full `route-policy-v3` learning loop: route frames, action prototypes, pairwise route preferences, bandit feedback, distilled compact snapshots, and deterministic runtime fallback to `route-policy-v2` when no active v3 snapshot is ready.
 
 ## Install
 
 Requires OpenClaw `2026.5.2` or later.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.18
+openclaw plugins install clawhub:openclawbrain@0.2.19
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -23,9 +23,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.18.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.18/openclawbrain-0.2.18.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.18.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.19.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.19/openclawbrain-0.2.19.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.19.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -140,7 +140,7 @@ Use your real agent ids. Single-agent installs can skip this.
 | `/plugins/openclawbrain/learn?limit=50` | route examples and current learning state |
 | `/plugins/openclawbrain/route-teacher?limit=20` | LLM/deterministic route teacher critiques of actual route decisions |
 | `/plugins/openclawbrain/route-counterfactuals?decisionId=...` | no-memory, alternate-memory, graph-depth, memory-type, stay-silent, and latency counterfactuals |
-| `/plugins/openclawbrain/route-policy` | active structured `route-policy-v2` snapshot and route training examples |
+| `/plugins/openclawbrain/route-policy` | active structured `route-policy-v2` + `route-policy-v3` snapshots, v3 route frames, prototypes, and route training examples |
 | `/plugins/openclawbrain/audit?limit=20` | recent capture/store/reject decisions and rejection distribution |
 | `/plugins/openclawbrain/explain-last` | compact postmortem for the latest memory decision |
 
@@ -161,8 +161,9 @@ agent_end / after_tool_call
   → validate and store memory updates
   → resolve outcomes
   → route teacher critiques actual route vs graph-grounded alternatives
-  → counterfactuals become route training examples
-  → structured route-policy-v2 snapshots update deterministic route_fn
+  → counterfactuals become route training examples and v3 pairwise preferences
+  → bandit feedback updates action priors
+  → structured route-policy-v2/v3 snapshots update deterministic route_fn
 ```
 
 The graph stores scoped memory nodes and edges: corrections, preferences, workflows, context, route examples, outcomes, and superseded facts.
@@ -184,6 +185,7 @@ The graph stores scoped memory nodes and edges: corrections, preferences, workfl
 - [Architecture](docs/ARCHITECTURE.md)
 - [Route teacher master plan](docs/ROUTE_TEACHER_MASTER_PLAN.md)
 - [Ultimate route learning master plan](docs/ROUTE_LEARNING_ULTIMATE_MASTER_PLAN.md)
+- [Ultimate route learning master plan — Part 2](docs/ROUTE_LEARNING_ULTIMATE_MASTER_PLAN_PART2.md)
 - [Vision](VISION.md)
 - [Final plan](FINAL_PLAN.md)
 - [Memory graph image](docs/assets/openclawbrain-memory-graph.jpg)

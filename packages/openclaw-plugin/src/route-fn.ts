@@ -3,6 +3,7 @@ import type { TurnEventPacket } from './capture.js';
 import { hashText } from './redact.js';
 import { detectCaptureIntent, detectRetrievalIntent, type CaptureIntentResult, type RetrievalIntentResult } from './capture-intent.js';
 import { scorePolicySnapshotV2 } from './route-policy-v2.js';
+import { scorePolicySnapshotV3 } from './route-policy-v3.js';
 
 export interface RouteFingerprint {
   agentId: string;
@@ -118,7 +119,7 @@ export class RouteFn {
         retrievalIntent: cached.retrievalIntent ?? retrievalIntent,
         captureIntent: cached.captureIntent ?? captureIntent,
         latencyReason: 'cached route plan',
-        policySnapshotId: cached.policySnapshotId ?? this.store?.getActivePolicySnapshotV2?.(packet.agentId)?.id ?? this.store?.getActivePolicySnapshot?.(packet.agentId)?.id,
+        policySnapshotId: cached.policySnapshotId ?? this.store?.getActivePolicySnapshotV3?.(packet.agentId)?.id ?? this.store?.getActivePolicySnapshotV2?.(packet.agentId)?.id ?? this.store?.getActivePolicySnapshot?.(packet.agentId)?.id,
         matchedPolicyRuleId: cached.matchedPolicyRuleId,
         reasonCode: cached.matchedPolicyRuleId ? `cached_policy_rule:${cached.matchedPolicyRuleId}` : 'cached_route_plan',
       };
@@ -143,7 +144,7 @@ export class RouteFn {
   private loadPolicySnapshot(packet: TurnEventPacket) {
     if (!this.store) return null;
     try {
-      return this.store.getActivePolicySnapshotV2?.(packet.agentId) ?? this.store.getActivePolicySnapshot(packet.agentId);
+      return this.store.getActivePolicySnapshotV3?.(packet.agentId) ?? this.store.getActivePolicySnapshotV2?.(packet.agentId) ?? this.store.getActivePolicySnapshot(packet.agentId);
     } catch {
       return null;
     }
@@ -155,7 +156,9 @@ function heuristicRoutePlan(packet: TurnEventPacket, turnFrame: TurnFrame, confi
   const explicitCorrectionCue = /\b(actually|instead|wrong|no,)\b/i.test(packet.latestUserMessageRedacted);
   const planningLike = /\b(plan|design|architecture|file-by-file|implementation)\b/.test(message);
 
-  const policyMatch = scorePolicySnapshotV2(policySnapshot?.version === 'route-policy-v2' ? policySnapshot : null, turnFrame, packet.latestUserMessageRedacted);
+  const policyMatch = policySnapshot?.version === 'route-policy-v3'
+    ? scorePolicySnapshotV3(policySnapshot, turnFrame, packet.latestUserMessageRedacted)
+    : scorePolicySnapshotV2(policySnapshot?.version === 'route-policy-v2' ? policySnapshot : null, turnFrame, packet.latestUserMessageRedacted);
   if (policyMatch.matched && policyMatch.rule && policyMatch.score >= Number(config.routing?.minRouteConfidence ?? 0.7) && !explicitCorrectionCue) {
     return routePlanFromPolicyRule(packet, turnFrame, config, policySnapshot, policyMatch.rule, policyMatch.score, retrievalIntent, captureIntent, policyMatch.reasonCode);
   }
@@ -210,7 +213,13 @@ function heuristicRoutePlan(packet: TurnEventPacket, turnFrame: TurnFrame, confi
     turnFrame,
     retrievalPlan,
     injectionPlan,
-    shouldRetrieve: retrievalIntent.shouldRetrieve || route === 'retrieve_memory' || route === 'retrieve_and_distill' || policyBoost?.route === 'retrieve_memory',
+    shouldRetrieve: retrievalIntent.shouldRetrieve
+      || route === 'retrieve_memory'
+      || route === 'retrieve_and_distill'
+      || route === 'high_confidence_correction_only'
+      || policyBoost?.route === 'retrieve_memory'
+      || policyBoost?.route === 'retrieve_and_distill'
+      || policyBoost?.route === 'high_confidence_correction_only',
     enqueueCapture: captureIntent.shouldConsiderCapture,
     retrievalIntent,
     captureIntent,
@@ -247,7 +256,7 @@ function routePlanFromPolicyRule(packet: TurnEventPacket, turnFrame: TurnFrame, 
     enqueueCapture: captureIntent.shouldConsiderCapture,
     retrievalIntent,
     captureIntent,
-    latencyReason: 'policy-v2 deterministic rule',
+    latencyReason: policySnapshot?.version === 'route-policy-v3' ? 'policy-v3 distilled rule' : 'policy-v2 deterministic rule',
     policySnapshotId: policySnapshot?.id,
     matchedPolicyRuleId: rule.id,
     reasonCode,
@@ -256,6 +265,18 @@ function routePlanFromPolicyRule(packet: TurnEventPacket, turnFrame: TurnFrame, 
 
 function applyPolicySnapshot(packet: TurnEventPacket, turnFrame: TurnFrame, policySnapshot: any) {
   const boost = { route: null as RouteKind | null, confidence: 0, memoryTypes: [] as MemoryType[], queries: [] as string[], graphDepth: undefined as undefined | 0 | 1 | 2, matchedPolicyRuleId: undefined as string | undefined };
+  if (policySnapshot?.version === 'route-policy-v3' && Array.isArray(policySnapshot.rules)) {
+    const match = scorePolicySnapshotV3(policySnapshot, turnFrame, packet.latestUserMessageRedacted);
+    const rule = match.rule;
+    if (!match.matched || !rule) return boost;
+    boost.route = rule.route;
+    boost.confidence = match.score || Number(rule.confidence || 0.7);
+    boost.memoryTypes = Array.isArray(rule.memoryTypes) ? rule.memoryTypes : [];
+    boost.queries = Array.isArray(rule.queries) ? rule.queries : [];
+    boost.graphDepth = rule.graphDepth ?? 0;
+    boost.matchedPolicyRuleId = rule.id;
+    return boost;
+  }
   if (policySnapshot?.version === 'route-policy-v2' && Array.isArray(policySnapshot.rules)) {
     const match = scorePolicySnapshotV2(policySnapshot, turnFrame, packet.latestUserMessageRedacted);
     const rule = match.rule;

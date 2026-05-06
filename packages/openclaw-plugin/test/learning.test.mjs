@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { BackgroundLearner, RouteFn, RouteTeacher, buildRouteGraphSnapshot, maybeDistillAndStorePolicyV2, normalizePluginConfig, validatePolicySnapshotV2 } from '../dist/index.js';
+import { BackgroundLearner, RouteFn, RouteTeacher, buildRouteGraphSnapshot, maybeDistillAndStorePolicyV2, maybeDistillAndStorePolicyV3, normalizePluginConfig, validatePolicySnapshotV2, validatePolicySnapshotV3 } from '../dist/index.js';
 import { MemoryStore } from '../dist/memory-store.js';
 
 async function tempRoot() {
@@ -233,6 +233,7 @@ test('route teacher stores graph-grounded counterfactuals and activates structur
         enabled: true,
         teacher: { enabled: true, maxRunsPerCycle: 5, minResolvedRewardMagnitude: 0 },
         policyV2: { enabled: true, minExamples: 1, shadowBeforeActivate: false },
+        policyV3: { enabled: true, minFrames: 1, shadowBeforeActivate: false, maxHarmRate: 0.5 },
       },
     });
     const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
@@ -299,6 +300,9 @@ test('route teacher stores graph-grounded counterfactuals and activates structur
     assert.ok(report.counterfactuals >= 2);
     assert.ok(report.examples >= 1);
     assert.ok(report.policySnapshotId);
+    assert.ok(report.policySnapshotV3Id);
+    assert.equal(report.routeFramesV3, 1);
+    assert.ok(report.pairExamplesV3 >= 1);
     const runs = store.listRouteTeacherRuns('main', 10);
     assert.equal(runs[0].verdict, 'missed_recall');
     assert.deepEqual(runs[0].teacherMemoryIds, [memory.id]);
@@ -309,6 +313,12 @@ test('route teacher stores graph-grounded counterfactuals and activates structur
     assert.ok(policy);
     assert.equal(policy.version, 'route-policy-v2');
     assert.ok(policy.rules.some((rule) => rule.route === 'retrieve_memory' && rule.memoryTypes.includes('workflow')));
+
+    const policyV3 = store.getActivePolicySnapshotV3('main');
+    if (policyV3) {
+      assert.equal(policyV3.version, 'route-policy-v3');
+      assert.ok(policyV3.rules.some((rule) => rule.route === 'retrieve_memory' && rule.memoryTypes.includes('workflow')));
+    }
 
     const routeFn = new RouteFn({ config, store });
     const packet = {
@@ -328,7 +338,7 @@ test('route teacher stores graph-grounded counterfactuals and activates structur
     assert.equal(plan.route, 'retrieve_memory');
     assert.equal(plan.shouldRetrieve, true);
     assert.ok(plan.retrievalPlan.memoryTypes.includes('workflow'));
-    assert.equal(plan.policySnapshotId, policy.id);
+    assert.equal(plan.policySnapshotId, (policyV3 || policy).id);
     store.close();
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -416,6 +426,167 @@ test('policy v2 distiller stores gated active snapshots and route fn records mat
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test('policy v3 distiller stores action prototypes, bandit state, and active snapshots', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      routeLearning: {
+        enabled: true,
+        policyV3: { enabled: true, minFrames: 1, shadowBeforeActivate: false, maxHarmRate: 0.6 },
+      },
+    });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+
+    const frame1 = store.insertRouteFrameV3({
+      agentId: 'main',
+      routeDecisionId: 'd1',
+      redactedTurnSummary: 'Run the tests in this repo',
+      taskType: 'coding',
+      turnSignals: ['tests', 'repo', 'workflow'],
+      projectHint: 'openclawbrain',
+      repoHint: 'openclawbrain',
+      toolHints: ['exec'],
+      routeHintFlags: ['needs_workflow', 'needs_project_context'],
+      chosenActionId: 'a-retrieve-workflow',
+      chosenRoute: 'retrieve_memory',
+      chosenMemoryTypes: ['workflow'],
+      chosenGraphDepth: 1,
+      chosenSyncPlanner: 'no',
+      outcome: 'tool_success',
+      reward: 0.8,
+      rewardComponents: { retrievalHelpGain: 0.8, noisyInjectionPenalty: 0 },
+      payloadHash: 'p1',
+    });
+    store.insertRouteFrameV3({
+      agentId: 'main',
+      routeDecisionId: 'd2',
+      redactedTurnSummary: 'Thanks ok',
+      taskType: 'other',
+      turnSignals: ['thanks', 'ok'],
+      toolHints: [],
+      routeHintFlags: [],
+      chosenActionId: 'a-silence',
+      chosenRoute: 'no_memory',
+      chosenMemoryTypes: [],
+      chosenGraphDepth: 0,
+      chosenSyncPlanner: 'no',
+      outcome: 'no_signal',
+      reward: 0.4,
+      rewardComponents: { retrievalHelpGain: 0, noisyInjectionPenalty: 0 },
+      payloadHash: 'p2',
+    });
+    store.upsertRouteActionPrototypeV3({
+      id: 'a-retrieve-workflow',
+      agentId: 'main',
+      route: 'retrieve_memory',
+      memoryTypes: ['workflow'],
+      graphDepth: 1,
+      syncPlanner: 'no',
+      queryTemplateFamily: ['test workflow'],
+      sparseSignature: ['coding', 'tests', 'workflow', 'openclawbrain'],
+      denseEmbedding: [1, 0, 0.5],
+      supportPrior: 2,
+      harmPrior: 0,
+      status: 'active',
+      provenance: 'learned',
+      sourceExampleIds: ['d1'],
+    });
+    store.upsertRouteActionPrototypeV3({
+      id: 'a-silence',
+      agentId: 'main',
+      route: 'no_memory',
+      memoryTypes: [],
+      graphDepth: 0,
+      syncPlanner: 'no',
+      queryTemplateFamily: [],
+      sparseSignature: ['other', 'thanks', 'ok'],
+      denseEmbedding: [0.2, 0.1, 0],
+      supportPrior: 1,
+      harmPrior: 0,
+      status: 'active',
+      provenance: 'distilled',
+      sourceExampleIds: ['d2'],
+    });
+    store.insertRoutePairExampleV3({
+      agentId: 'main',
+      frameId: frame1.id,
+      positiveActionId: 'a-retrieve-workflow',
+      negativeActionId: 'a-silence',
+      labelSource: 'teacher',
+      marginWeight: 0.8,
+      evidenceIds: ['d1'],
+    });
+    store.upsertRouteBanditStateV3({
+      agentId: 'main',
+      learnerVersion: 'linucb-lite-v1',
+      featureSchemaVersion: 'route-v3-hybrid-24d-v1',
+      explorationAlpha: 0.35,
+      sharedWeights: [1, 0.75],
+      actionStats: {
+        'a-retrieve-workflow': { count: 3, rewardSum: 2.1, rewardMean: 0.7, rewardVariance: 0.02, lastReward: 0.8, positiveCount: 3, negativeCount: 0, updatedAt: new Date().toISOString() },
+        'a-silence': { count: 2, rewardSum: 0.5, rewardMean: 0.25, rewardVariance: 0.01, lastReward: 0.4, positiveCount: 2, negativeCount: 0, updatedAt: new Date().toISOString() },
+      },
+      updatedAt: new Date().toISOString(),
+    });
+
+    const report = maybeDistillAndStorePolicyV3(store, 'main', config);
+    assert.equal(report.validation.ok, true);
+    assert.equal(report.snapshot.status, 'active');
+    assert.equal(report.snapshot.version, 'route-policy-v3');
+    assert.ok(report.snapshot.rules.some((rule) => rule.route === 'retrieve_memory'));
+    assert.ok(store.getActivePolicySnapshotV3('main'));
+
+    const routeFn = new RouteFn({ config, store });
+    const plan = routeFn.plan({
+      agentId: 'main',
+      sourceHook: 'before_prompt_build',
+      latestUserMessageRedacted: 'Run the tests in this repo',
+      toolObservations: [],
+      recentInjections: [],
+      metadata: {},
+    });
+    assert.equal(plan.route, 'retrieve_memory');
+    assert.equal(plan.policySnapshotId, report.snapshot.id);
+    assert.ok(plan.matchedPolicyRuleId);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('policy v3 validation rejects broad retrieval and harm-heavy candidate', () => {
+  const config = normalizePluginConfig({ routeLearning: { policyV3: { maxSyncPlannerRate: 0.05, maxHarmRate: 0.2 } } });
+  const report = validatePolicySnapshotV3({
+    agentId: 'main',
+    version: 'route-policy-v3',
+    status: 'candidate',
+    rules: [{
+      id: 'bad-v3-rule',
+      actionId: 'a1',
+      match: {},
+      route: 'retrieve_memory',
+      memoryTypes: ['workflow'],
+      queries: ['workflow'],
+      graphDepth: 1,
+      syncPlanner: 'allowed',
+      confidence: 0.9,
+      evidenceIds: ['e1'],
+    }],
+    actionPriors: {},
+    globalBudgets: { maxSyncPlannerRate: 0.05, maxInjectedMemories: 8, maxInjectedChars: 2500, defaultGraphDepth: 1 },
+    evalSummary: { frames: 3, pairExamples: 1, prototypes: 1, projectedSyncPlannerRate: 1, noisyActionRate: 0.05, harmRate: 0.4 },
+    sourceFrameIds: ['f1'],
+    sourcePrototypeIds: ['a1'],
+  }, config);
+  assert.equal(report.ok, false);
+  assert.ok(report.errors.some((error) => error.includes('broad_retrieval_rule')));
+  assert.ok(report.errors.some((error) => error.includes('sync_planner_rate_exceeds_budget')));
+  assert.ok(report.errors.some((error) => error.includes('harm_rate_exceeds_gate')));
 });
 
 test('policy v2 validation rejects broad unsafe retrieval and sync budget overflow', () => {

@@ -7,7 +7,7 @@ import { mkdirSync } from 'node:fs';
 import { openDatabase } from './sqlite-driver.js';
 import { filterMemoriesForScope } from './scope.js';
 // ── Schema version ────────────────────────────────────────────────────────────
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 const MIGRATIONS = {
     1: `
@@ -512,6 +512,112 @@ const MIGRATIONS = {
     CREATE INDEX IF NOT EXISTS idx_route_frames_agent ON route_frames(agent_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_route_frames_turn_hash ON route_frames(turn_hash);
   `,
+    7: `
+    CREATE TABLE IF NOT EXISTS route_frames_v3 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      route_decision_id TEXT NOT NULL,
+      route_frame_id TEXT,
+      redacted_turn_summary TEXT NOT NULL,
+      task_type TEXT NOT NULL,
+      turn_signals_json TEXT NOT NULL DEFAULT '[]',
+      project_hint TEXT,
+      repo_hint TEXT,
+      tool_hints_json TEXT NOT NULL DEFAULT '[]',
+      route_hint_flags_json TEXT NOT NULL DEFAULT '[]',
+      chosen_action_id TEXT NOT NULL,
+      chosen_route TEXT NOT NULL,
+      chosen_memory_types_json TEXT NOT NULL DEFAULT '[]',
+      chosen_graph_depth INTEGER NOT NULL DEFAULT 0,
+      chosen_sync_planner TEXT NOT NULL DEFAULT 'no',
+      policy_snapshot_id TEXT,
+      policy_rule_id TEXT,
+      outcome TEXT,
+      reward REAL NOT NULL DEFAULT 0,
+      reward_components_json TEXT,
+      payload_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_route_frames_v3_agent ON route_frames_v3(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_route_frames_v3_decision ON route_frames_v3(route_decision_id);
+    CREATE INDEX IF NOT EXISTS idx_route_frames_v3_action ON route_frames_v3(agent_id, chosen_action_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS route_action_prototypes_v3 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      route TEXT NOT NULL,
+      memory_types_json TEXT NOT NULL DEFAULT '[]',
+      graph_depth INTEGER NOT NULL DEFAULT 0,
+      sync_planner TEXT NOT NULL DEFAULT 'no',
+      query_template_family_json TEXT NOT NULL DEFAULT '[]',
+      sparse_signature_json TEXT NOT NULL DEFAULT '[]',
+      dense_embedding_json TEXT NOT NULL DEFAULT '[]',
+      support_prior REAL NOT NULL DEFAULT 0,
+      harm_prior REAL NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'active',
+      provenance TEXT NOT NULL DEFAULT 'learned',
+      source_example_ids_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_route_action_prototypes_v3_agent ON route_action_prototypes_v3(agent_id, updated_at);
+
+    CREATE TABLE IF NOT EXISTS route_pair_examples_v3 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      frame_id TEXT NOT NULL,
+      positive_action_id TEXT NOT NULL,
+      negative_action_id TEXT NOT NULL,
+      label_source TEXT NOT NULL,
+      margin_weight REAL NOT NULL DEFAULT 1,
+      evidence_ids_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_route_pair_examples_v3_agent ON route_pair_examples_v3(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_route_pair_examples_v3_frame ON route_pair_examples_v3(frame_id);
+
+    CREATE TABLE IF NOT EXISTS route_bandit_feedback_v3 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      frame_id TEXT NOT NULL,
+      chosen_action_id TEXT NOT NULL,
+      reward REAL NOT NULL DEFAULT 0,
+      reward_components_json TEXT NOT NULL DEFAULT '{}',
+      cost REAL NOT NULL DEFAULT 0,
+      latency_ms INTEGER NOT NULL DEFAULT 0,
+      outcome_label TEXT NOT NULL DEFAULT 'ambiguous',
+      learning_bucket INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_route_bandit_feedback_v3_agent ON route_bandit_feedback_v3(agent_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS route_bandit_state_v3 (
+      agent_id TEXT PRIMARY KEY,
+      learner_version TEXT NOT NULL,
+      feature_schema_version TEXT NOT NULL,
+      exploration_alpha REAL NOT NULL DEFAULT 0.35,
+      shared_weights_json TEXT NOT NULL DEFAULT '[]',
+      action_stats_json TEXT NOT NULL DEFAULT '{}',
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS route_policy_snapshots_v3 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      version TEXT NOT NULL DEFAULT 'route-policy-v3',
+      status TEXT NOT NULL DEFAULT 'candidate',
+      rules_json TEXT NOT NULL DEFAULT '[]',
+      action_priors_json TEXT NOT NULL DEFAULT '{}',
+      global_budgets_json TEXT NOT NULL DEFAULT '{}',
+      eval_summary_json TEXT,
+      source_frame_ids_json TEXT NOT NULL DEFAULT '[]',
+      source_prototype_ids_json TEXT NOT NULL DEFAULT '[]',
+      model TEXT,
+      prompt_version TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_policy_v3_active ON route_policy_snapshots_v3(agent_id, status, created_at);
+  `,
 };
 // ── UUID helper ───────────────────────────────────────────────────────────────
 import { randomUUID } from 'node:crypto';
@@ -745,6 +851,116 @@ export class MemoryStore {
     getRouteFrame(id) {
         const row = this.db.prepare('SELECT * FROM route_frames WHERE id = ?').get(id);
         return row ? rowToRouteFrame(row) : null;
+    }
+    insertRouteFrameV3(frame) {
+        const id = frame.id || uuid();
+        const ts = frame.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO route_frames_v3 (
+        id, agent_id, route_decision_id, route_frame_id, redacted_turn_summary, task_type,
+        turn_signals_json, project_hint, repo_hint, tool_hints_json, route_hint_flags_json,
+        chosen_action_id, chosen_route, chosen_memory_types_json, chosen_graph_depth,
+        chosen_sync_planner, policy_snapshot_id, policy_rule_id, outcome, reward,
+        reward_components_json, payload_hash, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, frame.agentId, frame.routeDecisionId, frame.routeFrameId ?? null, frame.redactedTurnSummary, frame.taskType, JSON.stringify(frame.turnSignals ?? []), frame.projectHint ?? null, frame.repoHint ?? null, JSON.stringify(frame.toolHints ?? []), JSON.stringify(frame.routeHintFlags ?? []), frame.chosenActionId, frame.chosenRoute, JSON.stringify(frame.chosenMemoryTypes ?? []), frame.chosenGraphDepth, frame.chosenSyncPlanner, frame.policySnapshotId ?? null, frame.policyRuleId ?? null, frame.outcome ?? null, frame.reward, frame.rewardComponents ? JSON.stringify(frame.rewardComponents) : null, frame.payloadHash, ts);
+        return { ...frame, id, createdAt: ts };
+    }
+    listRouteFramesV3(agentId, limit = 100) {
+        return this.db.prepare('SELECT * FROM route_frames_v3 WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, Math.min(1000, Math.max(1, limit))).map(rowToRouteFrameV3);
+    }
+    upsertRouteActionPrototypeV3(prototype) {
+        const existing = this.db.prepare('SELECT * FROM route_action_prototypes_v3 WHERE id = ?').get(prototype.id);
+        const createdAt = existing?.created_at || prototype.createdAt || now();
+        const updatedAt = prototype.updatedAt || now();
+        if (existing) {
+            const mergedSupport = Number(existing.support_prior ?? 0) + Number(prototype.supportPrior ?? 0);
+            const mergedHarm = Number(existing.harm_prior ?? 0) + Number(prototype.harmPrior ?? 0);
+            const mergedExamples = [...new Set([...(JSON.parse(existing.source_example_ids_json ?? '[]')), ...(prototype.sourceExampleIds ?? [])])];
+            this.db.prepare(`
+        UPDATE route_action_prototypes_v3 SET
+          route = ?, memory_types_json = ?, graph_depth = ?, sync_planner = ?,
+          query_template_family_json = ?, sparse_signature_json = ?, dense_embedding_json = ?,
+          support_prior = ?, harm_prior = ?, status = ?, provenance = ?, source_example_ids_json = ?, updated_at = ?
+        WHERE id = ?
+      `).run(prototype.route, JSON.stringify(prototype.memoryTypes ?? []), prototype.graphDepth, prototype.syncPlanner, JSON.stringify(prototype.queryTemplateFamily ?? []), JSON.stringify(prototype.sparseSignature ?? []), JSON.stringify(prototype.denseEmbedding ?? []), mergedSupport, mergedHarm, prototype.status, prototype.provenance, JSON.stringify(mergedExamples), updatedAt, prototype.id);
+        }
+        else {
+            this.db.prepare(`
+        INSERT INTO route_action_prototypes_v3 (
+          id, agent_id, route, memory_types_json, graph_depth, sync_planner,
+          query_template_family_json, sparse_signature_json, dense_embedding_json,
+          support_prior, harm_prior, status, provenance, source_example_ids_json, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(prototype.id, prototype.agentId, prototype.route, JSON.stringify(prototype.memoryTypes ?? []), prototype.graphDepth, prototype.syncPlanner, JSON.stringify(prototype.queryTemplateFamily ?? []), JSON.stringify(prototype.sparseSignature ?? []), JSON.stringify(prototype.denseEmbedding ?? []), prototype.supportPrior ?? 0, prototype.harmPrior ?? 0, prototype.status, prototype.provenance, JSON.stringify(prototype.sourceExampleIds ?? []), createdAt, updatedAt);
+        }
+        return rowToRouteActionPrototypeV3(this.db.prepare('SELECT * FROM route_action_prototypes_v3 WHERE id = ?').get(prototype.id));
+    }
+    listRouteActionPrototypesV3(agentId, limit = 100) {
+        return this.db.prepare('SELECT * FROM route_action_prototypes_v3 WHERE agent_id = ? ORDER BY updated_at DESC LIMIT ?').all(agentId, Math.min(500, Math.max(1, limit))).map(rowToRouteActionPrototypeV3);
+    }
+    insertRoutePairExampleV3(example) {
+        const id = example.id || uuid();
+        const ts = example.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO route_pair_examples_v3 (
+        id, agent_id, frame_id, positive_action_id, negative_action_id, label_source, margin_weight, evidence_ids_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, example.agentId, example.frameId, example.positiveActionId, example.negativeActionId, example.labelSource, example.marginWeight, JSON.stringify(example.evidenceIds ?? []), ts);
+        return { ...example, id, createdAt: ts };
+    }
+    listRoutePairExamplesV3(agentId, limit = 200) {
+        return this.db.prepare('SELECT * FROM route_pair_examples_v3 WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, Math.min(2000, Math.max(1, limit))).map(rowToRoutePairExampleV3);
+    }
+    insertRouteBanditFeedbackV3(feedback) {
+        const id = feedback.id || uuid();
+        const ts = feedback.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO route_bandit_feedback_v3 (
+        id, agent_id, frame_id, chosen_action_id, reward, reward_components_json, cost, latency_ms, outcome_label, learning_bucket, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, feedback.agentId, feedback.frameId, feedback.chosenActionId, feedback.reward, JSON.stringify(feedback.rewardComponents ?? {}), feedback.cost, feedback.latencyMs, feedback.outcomeLabel, feedback.learningBucket ? 1 : 0, ts);
+        return { ...feedback, id, createdAt: ts };
+    }
+    getRouteBanditStateV3(agentId) {
+        const row = this.db.prepare('SELECT * FROM route_bandit_state_v3 WHERE agent_id = ?').get(agentId);
+        return row ? rowToRouteBanditStateV3(row) : null;
+    }
+    upsertRouteBanditStateV3(state) {
+        this.db.prepare(`
+      INSERT INTO route_bandit_state_v3 (
+        agent_id, learner_version, feature_schema_version, exploration_alpha, shared_weights_json, action_stats_json, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(agent_id) DO UPDATE SET
+        learner_version = excluded.learner_version,
+        feature_schema_version = excluded.feature_schema_version,
+        exploration_alpha = excluded.exploration_alpha,
+        shared_weights_json = excluded.shared_weights_json,
+        action_stats_json = excluded.action_stats_json,
+        updated_at = excluded.updated_at
+    `).run(state.agentId, state.learnerVersion, state.featureSchemaVersion, state.explorationAlpha, JSON.stringify(state.sharedWeights ?? []), JSON.stringify(state.actionStats ?? {}), state.updatedAt);
+        return this.getRouteBanditStateV3(state.agentId);
+    }
+    insertPolicySnapshotV3(snapshot) {
+        const id = snapshot.id || uuid();
+        const ts = snapshot.createdAt || now();
+        if (snapshot.status === 'active') {
+            this.db.prepare("UPDATE route_policy_snapshots_v3 SET status = 'shadow' WHERE agent_id = ? AND status = 'active'").run(snapshot.agentId);
+        }
+        this.db.prepare(`
+      INSERT INTO route_policy_snapshots_v3 (
+        id, agent_id, version, status, rules_json, action_priors_json, global_budgets_json, eval_summary_json,
+        source_frame_ids_json, source_prototype_ids_json, model, prompt_version, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, snapshot.agentId, snapshot.version, snapshot.status, JSON.stringify(snapshot.rules ?? []), JSON.stringify(snapshot.actionPriors ?? {}), JSON.stringify(snapshot.globalBudgets ?? {}), snapshot.evalSummary ? JSON.stringify(snapshot.evalSummary) : null, JSON.stringify(snapshot.sourceFrameIds ?? []), JSON.stringify(snapshot.sourcePrototypeIds ?? []), snapshot.model ?? null, snapshot.promptVersion ?? null, ts);
+        return { ...snapshot, id, createdAt: ts };
+    }
+    getActivePolicySnapshotV3(agentId) {
+        const row = this.db.prepare("SELECT * FROM route_policy_snapshots_v3 WHERE agent_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1").get(agentId);
+        return row ? rowToRoutePolicySnapshotV3(row) : null;
+    }
+    listPolicySnapshotsV3(agentId, limit = 20) {
+        return this.db.prepare('SELECT * FROM route_policy_snapshots_v3 WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, Math.min(200, Math.max(1, limit))).map(rowToRoutePolicySnapshotV3);
     }
     insertRouteDecision(decision) {
         const id = decision.id || uuid();
@@ -1440,6 +1656,92 @@ function rowToRouteTrainingExampleV2(r) {
         createdAt: r.created_at,
     };
 }
+function rowToRouteFrameV3(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        routeDecisionId: r.route_decision_id,
+        routeFrameId: r.route_frame_id,
+        redactedTurnSummary: r.redacted_turn_summary,
+        taskType: r.task_type,
+        turnSignals: JSON.parse(r.turn_signals_json ?? '[]'),
+        projectHint: r.project_hint,
+        repoHint: r.repo_hint,
+        toolHints: JSON.parse(r.tool_hints_json ?? '[]'),
+        routeHintFlags: JSON.parse(r.route_hint_flags_json ?? '[]'),
+        chosenActionId: r.chosen_action_id,
+        chosenRoute: r.chosen_route,
+        chosenMemoryTypes: JSON.parse(r.chosen_memory_types_json ?? '[]'),
+        chosenGraphDepth: r.chosen_graph_depth,
+        chosenSyncPlanner: r.chosen_sync_planner,
+        policySnapshotId: r.policy_snapshot_id,
+        policyRuleId: r.policy_rule_id,
+        outcome: r.outcome,
+        reward: r.reward,
+        rewardComponents: r.reward_components_json ? JSON.parse(r.reward_components_json) : undefined,
+        payloadHash: r.payload_hash,
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteActionPrototypeV3(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        route: r.route,
+        memoryTypes: JSON.parse(r.memory_types_json ?? '[]'),
+        graphDepth: r.graph_depth,
+        syncPlanner: r.sync_planner,
+        queryTemplateFamily: JSON.parse(r.query_template_family_json ?? '[]'),
+        sparseSignature: JSON.parse(r.sparse_signature_json ?? '[]'),
+        denseEmbedding: JSON.parse(r.dense_embedding_json ?? '[]'),
+        supportPrior: r.support_prior,
+        harmPrior: r.harm_prior,
+        status: r.status,
+        provenance: r.provenance,
+        sourceExampleIds: JSON.parse(r.source_example_ids_json ?? '[]'),
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+    };
+}
+function rowToRoutePairExampleV3(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        frameId: r.frame_id,
+        positiveActionId: r.positive_action_id,
+        negativeActionId: r.negative_action_id,
+        labelSource: r.label_source,
+        marginWeight: r.margin_weight,
+        evidenceIds: JSON.parse(r.evidence_ids_json ?? '[]'),
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteBanditFeedbackV3(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        frameId: r.frame_id,
+        chosenActionId: r.chosen_action_id,
+        reward: r.reward,
+        rewardComponents: JSON.parse(r.reward_components_json ?? '{}'),
+        cost: r.cost,
+        latencyMs: r.latency_ms,
+        outcomeLabel: r.outcome_label,
+        learningBucket: r.learning_bucket === 1,
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteBanditStateV3(r) {
+    return {
+        agentId: r.agent_id,
+        learnerVersion: r.learner_version,
+        featureSchemaVersion: r.feature_schema_version,
+        explorationAlpha: r.exploration_alpha,
+        sharedWeights: JSON.parse(r.shared_weights_json ?? '[]'),
+        actionStats: JSON.parse(r.action_stats_json ?? '{}'),
+        updatedAt: r.updated_at,
+    };
+}
 function rowToRoutePolicySnapshotV2(r) {
     return {
         id: r.id,
@@ -1450,6 +1752,23 @@ function rowToRoutePolicySnapshotV2(r) {
         globalBudgets: JSON.parse(r.global_budgets_json ?? '{}'),
         evalSummary: r.eval_summary_json ? JSON.parse(r.eval_summary_json) : undefined,
         exampleIds: JSON.parse(r.example_ids_json ?? '[]'),
+        model: r.model,
+        promptVersion: r.prompt_version,
+        createdAt: r.created_at,
+    };
+}
+function rowToRoutePolicySnapshotV3(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        version: 'route-policy-v3',
+        status: r.status,
+        rules: JSON.parse(r.rules_json ?? '[]'),
+        actionPriors: JSON.parse(r.action_priors_json ?? '{}'),
+        globalBudgets: JSON.parse(r.global_budgets_json ?? '{}'),
+        evalSummary: r.eval_summary_json ? JSON.parse(r.eval_summary_json) : undefined,
+        sourceFrameIds: JSON.parse(r.source_frame_ids_json ?? '[]'),
+        sourcePrototypeIds: JSON.parse(r.source_prototype_ids_json ?? '[]'),
         model: r.model,
         promptVersion: r.prompt_version,
         createdAt: r.created_at,

@@ -1,6 +1,6 @@
 import { type DatabaseLike } from './sqlite-driver.js';
 import { type ScopeContext } from './scope.js';
-import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, RouteFrameV2, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, CaptureAuditRow } from './memory-types.js';
+import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, RouteFrameV2, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, RouteFrameV3, RouteActionPrototypeV3, RoutePairExampleV3, RouteBanditFeedbackV3, RouteBanditStateV3, RoutePolicySnapshotV3, CaptureAuditRow } from './memory-types.js';
 export declare const uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 export declare const now: () => string;
 export interface MemoryStoreOptions {
@@ -56,6 +56,33 @@ export declare class MemoryStore {
         createdAt?: string;
     }): RouteFrameV2;
     getRouteFrame(id: string): RouteFrameV2 | null;
+    insertRouteFrameV3(frame: Omit<RouteFrameV3, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RouteFrameV3;
+    listRouteFramesV3(agentId: string, limit?: number): RouteFrameV3[];
+    upsertRouteActionPrototypeV3(prototype: Omit<RouteActionPrototypeV3, 'createdAt' | 'updatedAt'> & {
+        createdAt?: string;
+        updatedAt?: string;
+    }): RouteActionPrototypeV3;
+    listRouteActionPrototypesV3(agentId: string, limit?: number): RouteActionPrototypeV3[];
+    insertRoutePairExampleV3(example: Omit<RoutePairExampleV3, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RoutePairExampleV3;
+    listRoutePairExamplesV3(agentId: string, limit?: number): RoutePairExampleV3[];
+    insertRouteBanditFeedbackV3(feedback: Omit<RouteBanditFeedbackV3, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RouteBanditFeedbackV3;
+    getRouteBanditStateV3(agentId: string): RouteBanditStateV3 | null;
+    upsertRouteBanditStateV3(state: RouteBanditStateV3): RouteBanditStateV3;
+    insertPolicySnapshotV3(snapshot: Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RoutePolicySnapshotV3;
+    getActivePolicySnapshotV3(agentId: string): RoutePolicySnapshotV3 | null;
+    listPolicySnapshotsV3(agentId: string, limit?: number): RoutePolicySnapshotV3[];
     insertRouteDecision(decision: Omit<RouteDecision, 'id' | 'createdAt'> & {
         id?: string;
     }): RouteDecision;

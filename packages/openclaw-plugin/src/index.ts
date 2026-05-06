@@ -20,6 +20,7 @@ import { nativeSqliteSmokeTest } from './native-sqlite.js';
 import { clipText, eventId, hashText, latestUserTextFromEvent, redactJsonValue, redactText, safeString, shortHash } from './redact.js';
 import { RouteFn } from './route-fn.js';
 import { maybeDistillAndStorePolicyV2, scorePolicySnapshotV2, validatePolicySnapshotV2 } from './route-policy-v2.js';
+import { maybeDistillAndStorePolicyV3, scorePolicySnapshotV3, validatePolicySnapshotV3 } from './route-policy-v3.js';
 import { detectCaptureIntent, detectRetrievalIntent } from './capture-intent.js';
 import { defaultScopeContext, memoryInScope, scopeContextFromPacket } from './scope.js';
 
@@ -38,6 +39,7 @@ export { JobQueue } from './job-queue.js';
 export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
 export { maybeDistillAndStorePolicyV2, scorePolicySnapshotV2, validatePolicySnapshotV2 } from './route-policy-v2.js';
+export { maybeDistillAndStorePolicyV3, scorePolicySnapshotV3, validatePolicySnapshotV3, ingestRouteLearningArtifactsV3, rankActionPrototypesV3 } from './route-policy-v3.js';
 export { RouteTeacher, buildRouteGraphSnapshot } from './route-teacher.js';
 export { detectCaptureIntent, detectRetrievalIntent, classifySensitiveValue } from './capture-intent.js';
 export { ContextSelector } from './context-selector.js';
@@ -543,7 +545,11 @@ async function statusPayload(config: any, req: any = {}) {
         negativeExamples: store.countRouteExamples(agentId, 'negative'),
         routeTeacherRuns: store.listRouteTeacherRuns(agentId, 100).length,
         routeTrainingExamplesV2: store.countRouteTrainingExamplesV2(agentId),
+        routeFramesV3: store.listRouteFramesV3(agentId, 500).length,
+        routeActionPrototypesV3: store.listRouteActionPrototypesV3(agentId, 500).length,
+        routePairExamplesV3: store.listRoutePairExamplesV3(agentId, 500).length,
         activePolicySnapshotV2Id: store.getActivePolicySnapshotV2(agentId)?.id || null,
+        activePolicySnapshotV3Id: store.getActivePolicySnapshotV3(agentId)?.id || null,
       },
       learning: {
         enabled: config.learning.enabled === true,
@@ -781,7 +787,10 @@ async function processBackgroundJobsForAgent(config: any = {}, api: any = {}, ag
         agentId,
         lastDecisionKind: 'learning_cycle',
         routing: { activePolicySnapshotId: store.getActivePolicySnapshot(agentId)?.id || null },
-        routeLearning: { activePolicySnapshotV2Id: store.getActivePolicySnapshotV2(agentId)?.id || null },
+        routeLearning: {
+          activePolicySnapshotV2Id: store.getActivePolicySnapshotV2(agentId)?.id || null,
+          activePolicySnapshotV3Id: store.getActivePolicySnapshotV3(agentId)?.id || null,
+        },
         learning: {
           enabled: config.learning.enabled === true,
           queueDepth: store.getJobQueueDepth(agentId),
@@ -1075,13 +1084,19 @@ function routePolicyPayload(config: any = {}, agentId = 'main', limit = 20) {
   const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
   try {
     const active = store.getActivePolicySnapshotV2(agentId);
+    const activeV3 = store.getActivePolicySnapshotV3(agentId);
     const snapshots = store.listPolicySnapshotsV2(agentId, Number(limit) || 20);
+    const snapshotsV3 = store.listPolicySnapshotsV3(agentId, Number(limit) || 20);
     const examples = store.listRouteTrainingExamplesV2(agentId, 50);
+    const framesV3 = store.listRouteFramesV3(agentId, 50);
+    const prototypesV3 = store.listRouteActionPrototypesV3(agentId, 50);
     return {
       ok: true,
       agentId,
       active,
+      activeV3,
       snapshotCount: snapshots.length,
+      snapshotCountV3: snapshotsV3.length,
       snapshots: snapshots.map((snapshot) => ({
         id: snapshot.id,
         version: snapshot.version,
@@ -1091,8 +1106,22 @@ function routePolicyPayload(config: any = {}, agentId = 'main', limit = 20) {
         evalSummary: snapshot.evalSummary,
         createdAt: snapshot.createdAt,
       })),
+      snapshotsV3: snapshotsV3.map((snapshot) => ({
+        id: snapshot.id,
+        version: snapshot.version,
+        status: snapshot.status,
+        ruleCount: snapshot.rules.length,
+        actionPriorCount: Object.keys(snapshot.actionPriors || {}).length,
+        globalBudgets: snapshot.globalBudgets,
+        evalSummary: snapshot.evalSummary,
+        createdAt: snapshot.createdAt,
+      })),
       exampleCount: examples.length,
       examples: examples.slice(0, 20),
+      routeFramesV3Count: framesV3.length,
+      routeFramesV3: framesV3.slice(0, 20),
+      routeActionPrototypeCountV3: prototypesV3.length,
+      routeActionPrototypesV3: prototypesV3.slice(0, 20),
     };
   } finally {
     store.close();

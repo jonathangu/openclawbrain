@@ -528,6 +528,170 @@ export interface RoutePolicySnapshotV2 {
   createdAt: string;
 }
 
+// ── Hybrid route learning v3 ─────────────────────────────────────────────────
+
+export type RouteActionSyncPlannerMode = 'no' | 'never_unless_ambiguous' | 'allowed' | 'prefer';
+export type RouteActionPrototypeStatus = 'active' | 'shadow' | 'retired';
+export type RouteActionPrototypeProvenance = 'handwritten' | 'distilled' | 'learned';
+export type RoutePairLabelSource = 'teacher' | 'counterfactual' | 'manual' | 'outcome' | 'bandit';
+export type RouteBanditOutcomeLabel = 'accepted' | 'rejected' | 'ambiguous';
+
+export interface RouteFrameV3 {
+  id: string;
+  agentId: string;
+  routeDecisionId: string;
+  routeFrameId?: string;
+  redactedTurnSummary: string;
+  taskType: TaskType;
+  turnSignals: string[];
+  projectHint?: string;
+  repoHint?: string;
+  toolHints: string[];
+  routeHintFlags: string[];
+  chosenActionId: string;
+  chosenRoute: RouteKind;
+  chosenMemoryTypes: MemoryType[];
+  chosenGraphDepth: 0 | 1 | 2;
+  chosenSyncPlanner: RouteActionSyncPlannerMode;
+  policySnapshotId?: string;
+  policyRuleId?: string;
+  outcome?: string;
+  reward: number;
+  rewardComponents?: Record<string, number>;
+  payloadHash: string;
+  createdAt: string;
+}
+
+export interface RouteActionPrototypeV3 {
+  id: string;
+  agentId: string;
+  route: RouteKind;
+  memoryTypes: MemoryType[];
+  graphDepth: 0 | 1 | 2;
+  syncPlanner: RouteActionSyncPlannerMode;
+  queryTemplateFamily: string[];
+  sparseSignature: string[];
+  denseEmbedding: number[];
+  supportPrior: number;
+  harmPrior: number;
+  status: RouteActionPrototypeStatus;
+  provenance: RouteActionPrototypeProvenance;
+  sourceExampleIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RoutePairExampleV3 {
+  id: string;
+  agentId: string;
+  frameId: string;
+  positiveActionId: string;
+  negativeActionId: string;
+  labelSource: RoutePairLabelSource;
+  marginWeight: number;
+  evidenceIds: string[];
+  createdAt: string;
+}
+
+export interface RouteBanditFeedbackV3 {
+  id: string;
+  agentId: string;
+  frameId: string;
+  chosenActionId: string;
+  reward: number;
+  rewardComponents: Record<string, number>;
+  cost: number;
+  latencyMs: number;
+  outcomeLabel: RouteBanditOutcomeLabel;
+  learningBucket: boolean;
+  createdAt: string;
+}
+
+export interface RouteBanditStateV3 {
+  agentId: string;
+  learnerVersion: string;
+  featureSchemaVersion: string;
+  explorationAlpha: number;
+  sharedWeights: number[];
+  actionStats: Record<string, {
+    count: number;
+    rewardSum: number;
+    rewardMean: number;
+    rewardVariance: number;
+    lastReward: number;
+    positiveCount: number;
+    negativeCount: number;
+    updatedAt: string;
+  }>;
+  updatedAt: string;
+}
+
+export interface RoutePolicyRuleV3 {
+  id: string;
+  priority?: number;
+  actionId: string;
+  match: {
+    taskType?: TaskType | string;
+    turnSignals?: string[];
+    projectHint?: string;
+    repoHintPresent?: boolean;
+    safetySignalsAbsent?: string[];
+  };
+  route: RouteKind;
+  memoryTypes: MemoryType[];
+  queries: string[];
+  graphDepth: 0 | 1 | 2;
+  syncPlanner: RouteActionSyncPlannerMode;
+  confidence: number;
+  evidenceIds: string[];
+  priors?: {
+    support?: number;
+    harm?: number;
+    banditMeanReward?: number;
+    banditCount?: number;
+    pairWinRate?: number;
+  };
+  reason?: string;
+}
+
+export interface RoutePolicySnapshotV3 {
+  id: string;
+  agentId: string;
+  version: 'route-policy-v3';
+  status: 'candidate' | 'active' | 'rejected' | 'shadow';
+  rules: RoutePolicyRuleV3[];
+  actionPriors: Record<string, {
+    support: number;
+    harm: number;
+    banditMeanReward: number;
+    banditCount: number;
+    pairWinRate: number;
+  }>;
+  globalBudgets: {
+    maxSyncPlannerRate: number;
+    maxInjectedMemories: number;
+    maxInjectedChars: number;
+    defaultGraphDepth: 0 | 1 | 2;
+  };
+  evalSummary?: {
+    frames: number;
+    pairExamples: number;
+    prototypes: number;
+    projectedSyncPlannerRate: number;
+    noisyActionRate: number;
+    harmRate: number;
+    activationDecision?: string;
+    activationStatusReason?: string;
+    validationErrors?: string[];
+    validationWarnings?: string[];
+  };
+  sourceFrameIds: string[];
+  sourcePrototypeIds: string[];
+  model?: string;
+  promptVersion?: string;
+  createdAt: string;
+}
+
 // ── Distillation run audit ────────────────────────────────────────────────────
 
 export type DistillationPhase =

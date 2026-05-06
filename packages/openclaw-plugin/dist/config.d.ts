@@ -1,5 +1,5 @@
 export declare const PLUGIN_ID = "openclawbrain";
-export declare const PLUGIN_VERSION = "0.2.18";
+export declare const PLUGIN_VERSION = "0.2.19";
 export declare const DEFAULT_CONFIG: any;
 export declare function resolveOpenClawBrainConfig(api?: any): {
     enabled: boolean;
@@ -87,6 +87,14 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
             minExamples: number;
             maxSyncPlannerRate: number;
             maxNoisyInjectionRate: number;
+        };
+        policyV3: {
+            enabled: boolean;
+            shadowBeforeActivate: boolean;
+            minFrames: number;
+            maxSyncPlannerRate: number;
+            maxHarmRate: number;
+            explorationAlpha: number;
         };
     };
     privacy: {
@@ -207,6 +215,14 @@ export declare function normalizePluginConfig(input?: any): {
             minExamples: number;
             maxSyncPlannerRate: number;
             maxNoisyInjectionRate: number;
+        };
+        policyV3: {
+            enabled: boolean;
+            shadowBeforeActivate: boolean;
+            minFrames: number;
+            maxSyncPlannerRate: number;
+            maxHarmRate: number;
+            explorationAlpha: number;
         };
     };
     privacy: {

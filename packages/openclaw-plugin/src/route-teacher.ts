@@ -15,6 +15,7 @@ import type {
   TaskType,
 } from './memory-types.js';
 import { maybeDistillAndStorePolicyV2 } from './route-policy-v2.js';
+import { ingestRouteLearningArtifactsV3, maybeDistillAndStorePolicyV3 } from './route-policy-v3.js';
 
 const ROUTES: RouteKind[] = ['no_memory', 'capture_only', 'retrieve_memory', 'retrieve_and_distill', 'high_confidence_correction_only'];
 const MEMORY_TYPES: MemoryType[] = ['correction', 'preference', 'workflow', 'project_fact', 'tool_convention', 'routing_rule', 'agent_assignment', 'recall_rule', 'outcome', 'context'];
@@ -25,6 +26,9 @@ export interface RouteTeacherReport {
   counterfactuals: number;
   examples: number;
   policySnapshotId?: string;
+  policySnapshotV3Id?: string;
+  routeFramesV3?: number;
+  pairExamplesV3?: number;
 }
 
 export class RouteTeacher {
@@ -49,6 +53,8 @@ export class RouteTeacher {
     let teacherRuns = 0;
     let counterfactuals = 0;
     let examples = 0;
+    let routeFramesV3 = 0;
+    let pairExamplesV3 = 0;
 
     const candidates = this.store.getResolvedRouteDecisions(agentId, 100)
       .filter((decision) => !this.store.hasRouteTeacherRunForDecision(decision.id))
@@ -60,10 +66,21 @@ export class RouteTeacher {
       teacherRuns += result.teacherRuns;
       counterfactuals += result.counterfactuals;
       examples += result.examples;
+      routeFramesV3 += result.routeFramesV3 ?? 0;
+      pairExamplesV3 += result.pairExamplesV3 ?? 0;
     }
 
     const distillation = maybeDistillAndStorePolicyV2(this.store, agentId, this.config);
-    return { teacherRuns, counterfactuals, examples, policySnapshotId: distillation.snapshot?.id };
+    const distillationV3 = maybeDistillAndStorePolicyV3(this.store, agentId, this.config);
+    return {
+      teacherRuns,
+      counterfactuals,
+      examples,
+      routeFramesV3,
+      pairExamplesV3,
+      policySnapshotId: distillation.snapshot?.id,
+      policySnapshotV3Id: distillationV3.snapshot?.id,
+    };
   }
 
   async teachDecision(agentId: string, decision: RouteDecision): Promise<RouteTeacherReport> {
@@ -119,19 +136,32 @@ export class RouteTeacher {
       rejectionReason: finalValidation.valid ? validation.reason : (validation.reason || finalValidation.reason),
     });
 
+    const storedCounterfactuals: RouteCounterfactual[] = [];
     let counterfactuals = 0;
     for (const cf of normalizeCounterfactuals(safeOutput.counterfactuals, decision, snapshot)) {
-      this.store.insertRouteCounterfactual({ ...cf, agentId, routeTeacherRunId: run.id, routeDecisionId: decision.id });
+      storedCounterfactuals.push(this.store.insertRouteCounterfactual({ ...cf, agentId, routeTeacherRunId: run.id, routeDecisionId: decision.id }));
       counterfactuals += 1;
     }
 
+    const storedLessons = [];
     let examples = 0;
     for (const lesson of normalizeLessons(safeOutput.lessons, decision, snapshot, run)) {
-      this.store.insertRouteTrainingExampleV2({ ...lesson, agentId, routeDecisionId: decision.id, routeTeacherRunId: run.id });
+      storedLessons.push(this.store.insertRouteTrainingExampleV2({ ...lesson, agentId, routeDecisionId: decision.id, routeTeacherRunId: run.id }));
       examples += 1;
     }
 
-    return { teacherRuns: 1, counterfactuals, examples };
+    const ingest = ingestRouteLearningArtifactsV3(
+      this.store,
+      agentId,
+      decision,
+      this.store.getRouteFrame(decision.routeFrameId || ''),
+      run,
+      storedCounterfactuals,
+      storedLessons,
+      this.config,
+    );
+
+    return { teacherRuns: 1, counterfactuals, examples, routeFramesV3: ingest.frameId ? 1 : 0, pairExamplesV3: ingest.pairExamples };
   }
 }
 

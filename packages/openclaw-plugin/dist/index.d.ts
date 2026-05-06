@@ -13,6 +13,7 @@ export { JobQueue } from './job-queue.js';
 export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
 export { maybeDistillAndStorePolicyV2, scorePolicySnapshotV2, validatePolicySnapshotV2 } from './route-policy-v2.js';
+export { maybeDistillAndStorePolicyV3, scorePolicySnapshotV3, validatePolicySnapshotV3, ingestRouteLearningArtifactsV3, rankActionPrototypesV3 } from './route-policy-v3.js';
 export { RouteTeacher, buildRouteGraphSnapshot } from './route-teacher.js';
 export { detectCaptureIntent, detectRetrievalIntent, classifySensitiveValue } from './capture-intent.js';
 export { ContextSelector } from './context-selector.js';

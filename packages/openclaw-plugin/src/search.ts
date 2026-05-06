@@ -150,8 +150,8 @@ export function explainLastPayload(config: any, agentId: string, turnId?: string
     const graphSnapshot = routeDecision ? store.getRouteGraphSnapshot(routeDecision.id) : null;
     const teacherRun = routeDecision ? store.listRouteTeacherRuns(agentId, 200).find((run) => run.routeDecisionId === routeDecision.id) || null : null;
     const counterfactuals = routeDecision ? store.listRouteCounterfactuals(agentId, routeDecision.id, 20) : [];
-    const activePolicy = store.getActivePolicySnapshotV2(agentId);
-    const matchedRule = routeDecision?.policyRuleId && activePolicy ? activePolicy.rules.find((rule) => rule.id === routeDecision.policyRuleId) || null : null;
+    const activePolicy = store.getActivePolicySnapshotV3(agentId) || store.getActivePolicySnapshotV2(agentId);
+    const matchedRule = routeDecision?.policyRuleId && activePolicy ? activePolicy.rules.find((rule: any) => rule.id === routeDecision.policyRuleId) || null : null;
     return {
       ok: true,
       agentId,
