@@ -642,6 +642,7 @@ export interface RoutePolicyRuleV3 {
     id: string;
     priority?: number;
     actionId: string;
+    family?: 'silence' | 'workflow' | 'correction' | 'project_context' | 'general_retrieval' | 'sync_enabling';
     match: {
         taskType?: TaskType | string;
         turnSignals?: string[];
@@ -655,6 +656,10 @@ export interface RoutePolicyRuleV3 {
     graphDepth: 0 | 1 | 2;
     syncPlanner: RouteActionSyncPlannerMode;
     confidence: number;
+    rawConfidence?: number;
+    matchSpecificityScore?: number;
+    dominanceGroupKey?: string;
+    canonicalActionKey?: string;
     evidenceIds: string[];
     priors?: {
         support?: number;
@@ -672,6 +677,8 @@ export interface RoutePolicyRuleV3 {
         calibratedConfidence?: number;
         threshold?: number;
     };
+    riskFlags?: string[];
+    diagnosticNotes?: string[];
     reason?: string;
 }
 export interface RoutePolicySnapshotV3 {
@@ -706,6 +713,22 @@ export interface RoutePolicySnapshotV3 {
         activationStatusReason?: string;
         validationErrors?: string[];
         validationWarnings?: string[];
+        activationSummary?: {
+            mode?: string;
+            status?: string;
+            reason?: string;
+        };
+        rollbackRecommendation?: {
+            shouldRollback: boolean;
+            reason: string;
+            shadowDisagreementRate: number;
+            shadowSampleCount: number;
+        };
+        thresholds?: {
+            global?: number;
+            byRoute?: Partial<Record<RouteKind, number>>;
+            byFamily?: Record<string, number>;
+        };
         compactness?: {
             beforeMerge: number;
             afterMerge: number;

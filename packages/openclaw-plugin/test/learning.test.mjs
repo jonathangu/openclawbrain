@@ -716,6 +716,12 @@ test('policy v3 distiller merges duplicate prototypes and records replay/calibra
     assert.ok(report.snapshot.evalSummary?.compactness);
     assert.ok(report.snapshot.rules.length < 3);
     assert.ok(report.snapshot.evalSummary.replay.frames >= 1);
+    assert.ok(report.snapshot.rules.every((rule) => rule.family));
+    assert.ok(report.snapshot.rules.every((rule) => rule.canonicalActionKey));
+    assert.ok(report.snapshot.rules.every((rule) => typeof rule.matchSpecificityScore === 'number'));
+    assert.ok(report.snapshot.evalSummary?.thresholds?.byFamily);
+    assert.ok(report.snapshot.evalSummary?.activationSummary);
+    assert.ok(report.snapshot.evalSummary?.rollbackRecommendation);
     assert.ok(store.listRouteCalibrationExamplesV3('main', 20, report.snapshot.id).length >= 1);
     assert.ok(store.listRouteEvalCasesV3('main', 20, report.snapshot.id).length >= 1);
     assert.ok(store.listRouteEvalCaseLabelsV3('main', 20).length >= 1);
@@ -1102,6 +1108,68 @@ test('policy v3 calibration can abstain on weak matches', () => {
   assert.equal(match.matched, false);
   assert.equal(match.abstained, true);
   assert.ok(String(match.reasonCode).startsWith('policy_v3_abstain:'));
+});
+
+test('policy v3 family thresholding is stricter for correction rules', () => {
+  const snapshot = {
+    id: 'snap-correction-floor',
+    agentId: 'main',
+    version: 'route-policy-v3',
+    status: 'active',
+    rules: [{
+      id: 'corr-rule',
+      actionId: 'corr-action',
+      family: 'correction',
+      match: { taskType: 'coding', turnSignals: ['correction', 'repo'] },
+      route: 'high_confidence_correction_only',
+      memoryTypes: ['correction'],
+      queries: ['package correction'],
+      graphDepth: 0,
+      syncPlanner: 'no',
+      confidence: 0.42,
+      rawConfidence: 0.42,
+      evidenceIds: ['e1'],
+      priors: { support: 1, harm: 0, pairWinRate: 0.5, banditMeanReward: 0, banditCount: 1 },
+    }],
+    actionPriors: {
+      'corr-action': { support: 1, harm: 0, pairWinRate: 0.5, banditMeanReward: 0, banditCount: 1 },
+    },
+    globalBudgets: { maxSyncPlannerRate: 0.1, maxInjectedMemories: 8, maxInjectedChars: 2500, defaultGraphDepth: 1, minCalibratedConfidence: 0.62, abstainMargin: 0.05 },
+    evalSummary: { frames: 3, pairExamples: 1, prototypes: 1, projectedSyncPlannerRate: 0, noisyActionRate: 0, harmRate: 0 },
+    calibration: {
+      method: 'histogram_binning_v1',
+      holdoutFrames: 3,
+      comparableFrames: 3,
+      globalThreshold: 0.55,
+      abstainMargin: 0.05,
+      globalBuckets: [{ minScore: 0.5, maxScore: 0.8, successRate: 0.7, count: 3 }],
+      routeThresholds: { high_confidence_correction_only: 0.55 },
+      routeBuckets: { high_confidence_correction_only: [{ minScore: 0.5, maxScore: 0.8, successRate: 0.7, count: 3 }] },
+    },
+    sourceFrameIds: ['f1'],
+    sourcePrototypeIds: ['corr-action'],
+    createdAt: new Date().toISOString(),
+  };
+
+  const match = scorePolicySnapshotV3(snapshot, {
+    summary: 'Correction: fix the package manager issue in this repo',
+    userGoal: 'Fix the package manager issue',
+    taskType: 'coding',
+    activeObjects: [{ kind: 'repo', value: 'openclawbrain' }],
+    impliedNeeds: ['correction'],
+    memoryQuestions: [],
+    constraints: [],
+    routeHints: {
+      likelyNeedsCorrections: true,
+      likelyNeedsPreferences: false,
+      likelyNeedsWorkflow: false,
+      likelyNeedsProjectContext: true,
+    },
+  }, 'Correction: fix the package manager issue in this repo');
+
+  assert.equal(match.matched, false);
+  assert.equal(match.abstained, true);
+  assert.ok(match.threshold >= 0.7);
 });
 
 test('policy v3 hybrid ranking favors correction prototypes for correction turns', () => {

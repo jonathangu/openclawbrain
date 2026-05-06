@@ -1,6 +1,6 @@
 import { hashText, redactText } from './redact.js';
 import { buildCalibrationSummaryV3, applyCalibrationV3 } from './route-policy-v3-calibration.js';
-import { compactnessSummaryV3, mergeRuleCandidatesV3, normalizeQueryTemplateFamilyV3, pruneDominatedRulesV3 } from './route-policy-v3-normalize.js';
+import { canonicalActionKeyV3, compactnessSummaryV3, mergeRuleCandidatesV3, normalizeQueryTemplateFamilyV3, pruneDominatedRulesV3 } from './route-policy-v3-normalize.js';
 import { summarizeReplayEvaluationV3 } from './route-policy-v3-eval.js';
 import { detectRoutingModeV3, hybridWeightsForRoutingModeV3, prototypeRiskPenaltyV3 } from './route-policy-v3-routing-mode.js';
 const ROUTES = ['no_memory', 'capture_only', 'retrieve_memory', 'retrieve_and_distill', 'high_confidence_correction_only'];
@@ -252,13 +252,21 @@ export function maybeDistillAndStorePolicyV3(store, agentId, config) {
     }
     const activationReason = chooseActivationReasonV3(validation, existing, config, updateMode);
     const finalStatus = chooseSnapshotStatusV3(validation, existing, config, updateMode);
+    const shadowDecisions = store.listRouteShadowDecisionsV3?.(agentId, 2000) || [];
+    const rollbackRecommendation = buildRollbackRecommendationV3(existing, shadowDecisions);
     const stored = store.insertPolicySnapshotV3({
         ...draft,
         status: finalStatus,
         evalSummary: {
             ...(draft.evalSummary ?? {}),
             activationDecision: finalStatus,
+            activationSummary: {
+                mode: updateMode,
+                status: finalStatus,
+                reason: activationReason,
+            },
             activationStatusReason: activationReason,
+            rollbackRecommendation,
             validationErrors: validation.errors,
             validationWarnings: validation.warnings,
             projectedSyncPlannerRate: validation.projectedSyncPlannerRate,
@@ -268,7 +276,6 @@ export function maybeDistillAndStorePolicyV3(store, agentId, config) {
     });
     store.replaceRouteCalibrationExamplesV3?.(agentId, stored.id, calibrationArtifacts.examples.map((example) => ({ ...example, split: 'holdout' })));
     store.replaceRouteEvalCasesV3?.(agentId, stored.id, evalCaseArtifacts.cases.map((item) => ({ ...item, split: 'replay_eval' })));
-    const shadowDecisions = store.listRouteShadowDecisionsV3?.(agentId, 2000) || [];
     for (const stats of buildActionFamilyStatsV3(agentId, frames, pairs, prototypes, banditState, shadowDecisions)) {
         store.upsertRouteActionFamilyStatsV3?.(stats);
     }
@@ -306,15 +313,18 @@ export function distillPolicyRulesV3(frames, pairs, prototypes, banditState, con
         const effectiveMinConfidence = isNoMemoryRule ? 0.18 : minConfidence;
         if (confidence < effectiveMinConfidence)
             continue;
+        const family = ruleFamilyV3(prototype.route, prototype.memoryTypes, prototype.syncPlanner);
+        const repoHintPresent = (matchingFrames.length ? matchingFrames.some((frame) => Boolean(frame.repoHint)) : globalRepoPresent) || undefined;
         const rule = {
             id: hashText(`${prototype.id}:${taskTypes.join('|')}:${signals.join('|')}:${priors.support}:${priors.harm}`).slice(7, 25),
             priority: isNoMemoryRule ? 95 : 55,
             actionId: prototype.id,
+            family,
             match: {
                 taskType: taskTypes[0] || undefined,
                 turnSignals: stableSignals(signals).slice(0, Math.max(4, Number(config.routeLearning?.policyV3?.maxRuleSignals ?? 8))),
                 projectHint: projects[0] || undefined,
-                repoHintPresent: (matchingFrames.length ? matchingFrames.some((frame) => Boolean(frame.repoHint)) : globalRepoPresent) || undefined,
+                repoHintPresent,
                 safetySignalsAbsent: isNoMemoryRule ? ['unsafe'] : undefined,
             },
             route: prototype.route,
@@ -323,10 +333,23 @@ export function distillPolicyRulesV3(frames, pairs, prototypes, banditState, con
             graphDepth: prototype.graphDepth,
             syncPlanner: prototype.syncPlanner,
             confidence,
+            rawConfidence: confidence,
+            matchSpecificityScore: specificityScoreV3({
+                taskType: taskTypes[0] || undefined,
+                signals,
+                projectHint: projects[0] || undefined,
+                repoHintPresent,
+                graphDepth: prototype.graphDepth,
+                syncPlanner: prototype.syncPlanner,
+            }),
             evidenceIds: unique([...prototype.sourceExampleIds, ...matchingFrames.map((frame) => frame.routeDecisionId)]).slice(0, 40),
             priors,
+            riskFlags: riskFlagsForRuleV3(prototype.route, prototype.memoryTypes, prototype.graphDepth, prototype.syncPlanner),
+            diagnosticNotes: [`family:${family}`, `prototype:${prototype.id}`],
             reason: `distilled_from_prototype:${prototype.id}`,
         };
+        rule.canonicalActionKey = canonicalActionKeyV3(rule);
+        rule.dominanceGroupKey = dominanceGroupKeyV3(rule);
         if (validateRuleShapeV3(rule, config).length === 0)
             rawRules.push(rule);
     }
@@ -346,6 +369,8 @@ export function distillPolicyRulesV3(frames, pairs, prototypes, banditState, con
     const compactness = compactnessSummaryV3(rawRules, merged.rules, limited, merged.duplicateGroups, pruned.prunedRuleIds.length);
     return limited.map((rule) => ({
         ...rule,
+        canonicalActionKey: rule.canonicalActionKey || canonicalActionKeyV3(rule),
+        dominanceGroupKey: rule.dominanceGroupKey || dominanceGroupKeyV3(rule),
         reason: compactness.mergedAway > 0 || compactness.dominatedPruned > 0
             ? `${rule.reason || 'distilled'}|compact:${compactness.afterPrune}/${compactness.beforeMerge}`
             : rule.reason,
@@ -400,6 +425,9 @@ export function validatePolicySnapshotV3(snapshot, config = {}, existing) {
         if (harmRate > oldHarmRate + 0.05)
             errors.push('candidate_harm_rate_regressed');
     }
+    const rollback = evalSummary.rollbackRecommendation ?? {};
+    if (rollback.shouldRollback === true)
+        warnings.push(`rollback_recommended:${rollback.reason || 'shadow_disagreement'}`);
     const reason = errors.length === 0 ? 'passed_activation_gates' : errors[0];
     return { ok: errors.length === 0, status: errors.length === 0 ? 'active' : 'rejected', reason, errors, warnings, projectedSyncPlannerRate, noisyActionRate, harmRate };
 }
@@ -421,7 +449,7 @@ export function scorePolicySnapshotV3(snapshot, turnFrame, message = '', options
     if (!best.matched || !best.rule)
         return best;
     const calibrated = applyCalibrationV3(best.rawScore ?? best.score, best.rule.route, snapshot.calibration, mode);
-    const threshold = calibrated.threshold;
+    const threshold = Math.max(calibrated.threshold, familyThresholdFloorV3(best.rule, mode, snapshot));
     if (calibrated.abstained || calibrated.calibratedScore < threshold) {
         return {
             matched: false,
@@ -500,6 +528,69 @@ function routeHintCompatibility(rule, turnFrame) {
     if ((rule.memoryTypes.includes('project_fact') || rule.memoryTypes.includes('context')) && turnFrame.routeHints.likelyNeedsProjectContext)
         bonus += 0.03;
     return bonus;
+}
+function ruleFamilyV3(route, memoryTypes, syncPlanner) {
+    if (route === 'no_memory')
+        return 'silence';
+    if (syncPlanner === 'allowed' || syncPlanner === 'prefer')
+        return 'sync_enabling';
+    if ((memoryTypes || []).includes('correction'))
+        return 'correction';
+    if ((memoryTypes || []).includes('workflow'))
+        return 'workflow';
+    if ((memoryTypes || []).some((type) => type === 'project_fact' || type === 'context'))
+        return 'project_context';
+    return 'general_retrieval';
+}
+function specificityScoreV3(input) {
+    return clamp01((input.taskType ? 0.25 : 0) +
+        Math.min(0.35, (input.signals?.length || 0) * 0.06) +
+        (input.projectHint ? 0.12 : 0) +
+        (input.repoHintPresent ? 0.08 : 0) +
+        Math.min(0.12, Number(input.graphDepth || 0) * 0.06) +
+        ((input.syncPlanner === 'allowed' || input.syncPlanner === 'prefer') ? 0.08 : 0));
+}
+function dominanceGroupKeyV3(rule) {
+    return [
+        ruleFamilyV3(rule.route, rule.memoryTypes, rule.syncPlanner),
+        rule.route,
+        [...new Set(rule.memoryTypes || [])].sort().join(','),
+        Number(rule.graphDepth || 0),
+        String(rule.syncPlanner || 'no'),
+        String(rule.match?.taskType || ''),
+        String(rule.match?.projectHint || ''),
+        Boolean(rule.match?.repoHintPresent) ? 'repo' : 'norepo',
+    ].join('::');
+}
+function riskFlagsForRuleV3(route, memoryTypes, graphDepth, syncPlanner) {
+    const flags = [];
+    if (route !== 'no_memory' && memoryTypes.length === 0)
+        flags.push('empty_memory_type_retrieval');
+    if (graphDepth > 0)
+        flags.push('graph_expansion');
+    if (syncPlanner === 'allowed' || syncPlanner === 'prefer')
+        flags.push('sync_cost');
+    if (route !== 'no_memory' && !memoryTypes.includes('workflow') && !memoryTypes.includes('correction'))
+        flags.push('broad_semantic_retrieval');
+    return flags;
+}
+function familyThresholdFloorV3(rule, mode, snapshot) {
+    const base = Number(snapshot.globalBudgets?.minCalibratedConfidence ?? 0.62);
+    const family = String(rule.family || 'general_retrieval');
+    const familyFloor = family === 'silence'
+        ? Math.max(0.45, base - 0.1)
+        : family === 'workflow'
+            ? Math.max(0.58, base)
+            : family === 'project_context'
+                ? Math.max(0.62, base + 0.02)
+                : family === 'correction'
+                    ? Math.max(0.72, base + 0.08)
+                    : family === 'sync_enabling'
+                        ? Math.max(0.76, base + 0.1)
+                        : Math.max(0.66, base + 0.04);
+    const modeAdjustment = mode === 'ambiguous_general' ? 0.03 : mode === 'exact_correction' ? -0.01 : 0;
+    const graphAdjustment = Number(rule.graphDepth || 0) > 0 ? 0.02 : 0;
+    return clamp01(familyFloor + modeAdjustment + graphAdjustment);
 }
 function validateRuleShapeV3(rule, config) {
     const errors = [];
@@ -732,6 +823,30 @@ function buildPolicyCandidateReportV3(stored, draft, existing, shadowDecisions, 
         activationReason,
     };
 }
+function buildRollbackRecommendationV3(existing, shadowDecisions) {
+    if (!existing) {
+        return {
+            shouldRollback: false,
+            reason: 'no_existing_snapshot',
+            shadowDisagreementRate: 0,
+            shadowSampleCount: 0,
+        };
+    }
+    const recent = [...shadowDecisions]
+        .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+        .slice(0, 200);
+    const comparable = recent.filter((decision) => typeof decision.matchedObservedRoute === 'boolean');
+    const sampleCount = comparable.length;
+    const disagreements = comparable.filter((decision) => decision.matchedObservedRoute === false).length;
+    const disagreementRate = sampleCount ? disagreements / sampleCount : 0;
+    const shouldRollback = sampleCount >= 12 && disagreementRate >= 0.55;
+    return {
+        shouldRollback,
+        reason: shouldRollback ? 'shadow_disagreement_spike' : 'shadow_stable',
+        shadowDisagreementRate: Number(disagreementRate.toFixed(4)),
+        shadowSampleCount: sampleCount,
+    };
+}
 function priorsForPrototype(prototypeId, frames, pairCounts, banditState) {
     const support = frames.filter((frame) => Number(frame.reward || 0) >= 0).length;
     const harm = frames.filter((frame) => Number(frame.reward || 0) < 0).length;
@@ -773,6 +888,11 @@ function buildSnapshotV3(agentId, rules, actionPriors, frames, prototypes, confi
     const noisy = frames.filter((frame) => Number(frame.rewardComponents?.noisyInjectionPenalty || 0) > 0).length;
     const syncRules = rules.filter((rule) => rule.syncPlanner === 'allowed' || rule.syncPlanner === 'prefer').length;
     const compactness = compactnessSummaryV3(rules, rules, rules, 0, 0);
+    const minCalibratedConfidence = Number(config.routeLearning?.policyV3?.minCalibratedConfidence ?? 0.62);
+    const familyThresholds = Object.fromEntries([...new Set(rules.map((rule) => rule.family || ruleFamilyV3(rule.route, rule.memoryTypes, rule.syncPlanner)))].map((family) => [
+        family,
+        familyThresholdFloorV3({ family }, 'mixed', { globalBudgets: { minCalibratedConfidence } }),
+    ]));
     return {
         agentId,
         version: 'route-policy-v3',
@@ -784,7 +904,7 @@ function buildSnapshotV3(agentId, rules, actionPriors, frames, prototypes, confi
             maxInjectedMemories: Number(config.routing?.maxInjectedMemories ?? 8),
             maxInjectedChars: Number(config.routing?.maxInjectedChars ?? 2500),
             defaultGraphDepth: clampGraphDepth(config.routeLearning?.counterfactuals?.maxGraphDepth ?? 1),
-            minCalibratedConfidence: Number(config.routeLearning?.policyV3?.minCalibratedConfidence ?? 0.62),
+            minCalibratedConfidence,
             abstainMargin: Number(config.routeLearning?.policyV3?.abstainMargin ?? 0.05),
         },
         evalSummary: evalOverride ?? {
@@ -794,6 +914,22 @@ function buildSnapshotV3(agentId, rules, actionPriors, frames, prototypes, confi
             projectedSyncPlannerRate: rules.length ? syncRules / rules.length : 0,
             noisyActionRate: frames.length ? noisy / frames.length : 0,
             harmRate: frames.length ? harms / frames.length : 0,
+            activationSummary: {
+                mode: routePolicyV3UpdateMode(config),
+                status,
+                reason: `snapshot_status:${status}`,
+            },
+            rollbackRecommendation: {
+                shouldRollback: false,
+                reason: 'none',
+                shadowDisagreementRate: 0,
+                shadowSampleCount: 0,
+            },
+            thresholds: {
+                global: minCalibratedConfidence,
+                byRoute: calibration?.routeThresholds,
+                byFamily: familyThresholds,
+            },
             compactness,
         },
         calibration,
