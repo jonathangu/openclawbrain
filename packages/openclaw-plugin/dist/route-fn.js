@@ -1,5 +1,6 @@
 import { hashText } from './redact.js';
 import { detectCaptureIntent, detectRetrievalIntent } from './capture-intent.js';
+import { scorePolicySnapshotV2 } from './route-policy-v2.js';
 export class RouteCache {
     cache = new Map();
     get(fingerprint) {
@@ -64,12 +65,14 @@ export class RouteFn {
                 turnFrame,
                 retrievalPlan: cached.retrievalPlan,
                 injectionPlan: cached.injectionPlan,
-                shouldRetrieve: retrievalIntent.shouldRetrieve,
+                shouldRetrieve: cached.route === 'retrieve_memory' || cached.route === 'retrieve_and_distill' || cached.route === 'high_confidence_correction_only',
                 enqueueCapture: captureIntent.shouldConsiderCapture,
                 retrievalIntent: cached.retrievalIntent ?? retrievalIntent,
                 captureIntent: cached.captureIntent ?? captureIntent,
                 latencyReason: 'cached route plan',
-                policySnapshotId: this.store?.getActivePolicySnapshot?.(packet.agentId)?.id,
+                policySnapshotId: cached.policySnapshotId ?? this.store?.getActivePolicySnapshotV2?.(packet.agentId)?.id ?? this.store?.getActivePolicySnapshot?.(packet.agentId)?.id,
+                matchedPolicyRuleId: cached.matchedPolicyRuleId,
+                reasonCode: cached.matchedPolicyRuleId ? `cached_policy_rule:${cached.matchedPolicyRuleId}` : 'cached_route_plan',
             };
         }
         const policySnapshot = this.loadPolicySnapshot(packet);
@@ -81,6 +84,8 @@ export class RouteFn {
             confidence: plan.confidence,
             retrievalIntent: plan.retrievalIntent,
             captureIntent: plan.captureIntent,
+            policySnapshotId: plan.policySnapshotId,
+            matchedPolicyRuleId: plan.matchedPolicyRuleId,
             expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         });
         return plan;
@@ -100,6 +105,10 @@ function heuristicRoutePlan(packet, turnFrame, config, policySnapshot, retrieval
     const message = packet.latestUserMessageRedacted.toLowerCase();
     const explicitCorrectionCue = /\b(actually|instead|wrong|no,)\b/i.test(packet.latestUserMessageRedacted);
     const planningLike = /\b(plan|design|architecture|file-by-file|implementation)\b/.test(message);
+    const policyMatch = scorePolicySnapshotV2(policySnapshot?.version === 'route-policy-v2' ? policySnapshot : null, turnFrame, packet.latestUserMessageRedacted);
+    if (policyMatch.matched && policyMatch.rule && policyMatch.score >= Number(config.routing?.minRouteConfidence ?? 0.7) && !explicitCorrectionCue) {
+        return routePlanFromPolicyRule(packet, turnFrame, config, policySnapshot, policyMatch.rule, policyMatch.score, retrievalIntent, captureIntent, policyMatch.reasonCode);
+    }
     let route = 'no_memory';
     let confidence = Math.max(retrievalIntent.confidence, captureIntent.confidence);
     if (explicitCorrectionCue && retrievalIntent.shouldRetrieve) {
@@ -153,23 +162,55 @@ function heuristicRoutePlan(packet, turnFrame, config, policySnapshot, retrieval
         captureIntent,
         latencyReason: policySnapshot ? 'heuristic with policy snapshot' : 'heuristic uncached route',
         policySnapshotId: policySnapshot?.id,
+        matchedPolicyRuleId: policyBoost?.matchedPolicyRuleId,
+        reasonCode: policyBoost?.matchedPolicyRuleId ? `policy_boost:${policyBoost.matchedPolicyRuleId}` : 'heuristic_uncached_route',
+    };
+}
+function routePlanFromPolicyRule(packet, turnFrame, config, policySnapshot, rule, score, retrievalIntent, captureIntent, reasonCode) {
+    const route = rule.route;
+    const shouldRetrieve = route === 'retrieve_memory' || route === 'retrieve_and_distill' || route === 'high_confidence_correction_only';
+    const maxItems = Math.min(Number(config.routing.maxInjectedMemories ?? 8), Number(policySnapshot?.globalBudgets?.maxInjectedMemories ?? config.routing.maxInjectedMemories ?? 8));
+    const maxChars = Math.min(Number(config.routing.maxInjectedChars ?? 2500), Number(policySnapshot?.globalBudgets?.maxInjectedChars ?? config.routing.maxInjectedChars ?? 2500));
+    return {
+        route,
+        confidence: score,
+        turnFrame,
+        retrievalPlan: {
+            queries: shouldRetrieve ? [...new Set([...(rule.queries ?? []), ...buildQueries(packet, retrievalIntent)])].slice(0, 8) : [],
+            memoryTypes: shouldRetrieve ? [...new Set(rule.memoryTypes ?? [])] : [],
+            requiredTags: [],
+            excludedTags: retrievalIntent.includeRecallRules ? [] : ['recall_value'],
+            graphDepth: shouldRetrieve ? (rule.graphDepth ?? policySnapshot?.globalBudgets?.defaultGraphDepth ?? 0) : 0,
+            maxCandidates: Math.min(Number(config.routing.maxCandidateMemories ?? 40), 40),
+        },
+        injectionPlan: {
+            maxItems,
+            maxChars,
+            preferredFormat: shouldRetrieve ? (route === 'high_confidence_correction_only' ? 'rules' : 'bullets') : 'none',
+        },
+        shouldRetrieve,
+        enqueueCapture: captureIntent.shouldConsiderCapture,
+        retrievalIntent,
+        captureIntent,
+        latencyReason: 'policy-v2 deterministic rule',
+        policySnapshotId: policySnapshot?.id,
+        matchedPolicyRuleId: rule.id,
+        reasonCode,
     };
 }
 function applyPolicySnapshot(packet, turnFrame, policySnapshot) {
-    const boost = { route: null, confidence: 0, memoryTypes: [], queries: [], graphDepth: undefined };
+    const boost = { route: null, confidence: 0, memoryTypes: [], queries: [], graphDepth: undefined, matchedPolicyRuleId: undefined };
     if (policySnapshot?.version === 'route-policy-v2' && Array.isArray(policySnapshot.rules)) {
-        const message = packet.latestUserMessageRedacted.toLowerCase();
-        const rules = policySnapshot.rules
-            .filter((rule) => policyRuleMatches(rule, turnFrame, message))
-            .sort((a, b) => Number(b.confidence || 0) - Number(a.confidence || 0));
-        const rule = rules[0];
-        if (!rule)
+        const match = scorePolicySnapshotV2(policySnapshot, turnFrame, packet.latestUserMessageRedacted);
+        const rule = match.rule;
+        if (!match.matched || !rule)
             return boost;
         boost.route = rule.route;
-        boost.confidence = Number(rule.confidence || 0.7);
+        boost.confidence = match.score || Number(rule.confidence || 0.7);
         boost.memoryTypes = Array.isArray(rule.memoryTypes) ? rule.memoryTypes : [];
         boost.queries = Array.isArray(rule.queries) ? rule.queries : [];
         boost.graphDepth = rule.graphDepth ?? 0;
+        boost.matchedPolicyRuleId = rule.id;
         return boost;
     }
     if (!policySnapshot?.policyText)

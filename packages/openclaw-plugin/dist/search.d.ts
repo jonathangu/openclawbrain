@@ -135,6 +135,57 @@ export declare function explainLastPayload(config: any, agentId: string, turnId?
         shouldRetrieve: boolean;
         includeRecallRules: boolean;
     };
+    route: {
+        id: string;
+        route: import("./memory-types.js").RouteKind;
+        confidence: number;
+        latencyTier: string;
+        policySnapshotId: string | null;
+        policyRuleId: string | null;
+        reasonCode: string | null;
+        candidateCount: number | null;
+        selectedMemoryIds: string[];
+        omittedMemoryIds: string[];
+    } | null;
+    policy: {
+        activeSnapshotId: string;
+        ruleCount: number;
+        matchedRule: {
+            id: string;
+            route: import("./memory-types.js").RouteKind;
+            memoryTypes: import("./memory-types.js").MemoryType[];
+            queries: string[];
+            graphDepth: 0 | 1 | 2;
+            confidence: number;
+            evidenceIds: string[];
+            reason: any;
+            stats: any;
+        } | null;
+    } | null;
+    graphSnapshot: {
+        id: string;
+        candidateMemoryIds: string[];
+        graphStats: {
+            nodeCountSeen: number;
+            edgeCountSeen: number;
+            maxDepth: number;
+        };
+    } | null;
+    teacher: {
+        id: string;
+        verdict: import("./memory-types.js").RouteTeacherVerdict;
+        teacherRoute: import("./memory-types.js").RouteKind;
+        teacherMemoryIds: string[];
+        confidence: number;
+        validated: boolean;
+        rationale: string;
+    } | null;
+    counterfactualSummary: {
+        kind: import("./memory-types.js").RouteCounterfactualKind;
+        memoryIds: string[];
+        estimatedOutcome: import("./memory-types.js").RouteCounterfactualOutcome;
+        confidence: number;
+    }[];
     capture: {
         signalFound: boolean;
         intent: any;

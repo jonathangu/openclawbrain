@@ -18,6 +18,8 @@ export interface CachedRoutePlan {
     confidence: number;
     expiresAt: string;
     sourceRouteDecisionId?: string;
+    policySnapshotId?: string;
+    matchedPolicyRuleId?: string;
     retrievalIntent?: RetrievalIntentResult;
     captureIntent?: CaptureIntentResult;
 }
@@ -33,6 +35,8 @@ export interface RoutePlan {
     captureIntent: CaptureIntentResult;
     latencyReason: string;
     policySnapshotId?: string;
+    matchedPolicyRuleId?: string;
+    reasonCode?: string;
 }
 export declare class RouteCache {
     private cache;

@@ -146,6 +146,12 @@ export function explainLastPayload(config: any, agentId: string, turnId?: string
     if (!row) return { ok: false, agentId, reason: 'no_capture_audit_rows' };
     const considered = row.captureIntent?.shouldConsiderCapture === true;
     const stored = row.storedCount > 0;
+    const routeDecision = store.getRecentRouteDecisions(agentId, 200).find((decision) => turnId ? decision.turnId === turnId : decision.turnId === row.turnId) || null;
+    const graphSnapshot = routeDecision ? store.getRouteGraphSnapshot(routeDecision.id) : null;
+    const teacherRun = routeDecision ? store.listRouteTeacherRuns(agentId, 200).find((run) => run.routeDecisionId === routeDecision.id) || null : null;
+    const counterfactuals = routeDecision ? store.listRouteCounterfactuals(agentId, routeDecision.id, 20) : [];
+    const activePolicy = store.getActivePolicySnapshotV2(agentId);
+    const matchedRule = routeDecision?.policyRuleId && activePolicy ? activePolicy.rules.find((rule) => rule.id === routeDecision.policyRuleId) || null : null;
     return {
       ok: true,
       agentId,
@@ -161,6 +167,53 @@ export function explainLastPayload(config: any, agentId: string, turnId?: string
         shouldRetrieve: row.retrievalIntent?.shouldRetrieve === true,
         includeRecallRules: row.retrievalIntent?.includeRecallRules === true,
       },
+      route: routeDecision ? {
+        id: routeDecision.id,
+        route: routeDecision.route,
+        confidence: routeDecision.confidence,
+        latencyTier: routeDecision.latencyTier,
+        policySnapshotId: routeDecision.policySnapshotId || null,
+        policyRuleId: routeDecision.policyRuleId || null,
+        reasonCode: routeDecision.reasonCode || null,
+        candidateCount: routeDecision.candidateCount ?? null,
+        selectedMemoryIds: routeDecision.selectedMemoryIds,
+        omittedMemoryIds: routeDecision.omittedMemoryIds,
+      } : null,
+      policy: activePolicy ? {
+        activeSnapshotId: activePolicy.id,
+        ruleCount: activePolicy.rules.length,
+        matchedRule: matchedRule ? {
+          id: matchedRule.id,
+          route: matchedRule.route,
+          memoryTypes: matchedRule.memoryTypes,
+          queries: matchedRule.queries,
+          graphDepth: matchedRule.graphDepth,
+          confidence: matchedRule.confidence,
+          evidenceIds: matchedRule.evidenceIds,
+          reason: (matchedRule as any).reason || null,
+          stats: (matchedRule as any).stats || null,
+        } : null,
+      } : null,
+      graphSnapshot: graphSnapshot ? {
+        id: graphSnapshot.id,
+        candidateMemoryIds: graphSnapshot.candidateMemoryIds,
+        graphStats: graphSnapshot.graphStats,
+      } : null,
+      teacher: teacherRun ? {
+        id: teacherRun.id,
+        verdict: teacherRun.verdict,
+        teacherRoute: teacherRun.teacherRoute,
+        teacherMemoryIds: teacherRun.teacherMemoryIds,
+        confidence: teacherRun.confidence,
+        validated: teacherRun.validated,
+        rationale: teacherRun.rationale,
+      } : null,
+      counterfactualSummary: counterfactuals.map((cf) => ({
+        kind: cf.kind,
+        memoryIds: cf.memoryIds,
+        estimatedOutcome: cf.estimatedOutcome,
+        confidence: cf.confidence,
+      })),
       capture: {
         signalFound: considered,
         intent: row.captureIntent?.intent || 'unknown',

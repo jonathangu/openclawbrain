@@ -19,6 +19,7 @@ import { buildStatus } from './status.js';
 import { nativeSqliteSmokeTest } from './native-sqlite.js';
 import { clipText, eventId, hashText, latestUserTextFromEvent, redactJsonValue, redactText, safeString, shortHash } from './redact.js';
 import { RouteFn } from './route-fn.js';
+import { maybeDistillAndStorePolicyV2, scorePolicySnapshotV2, validatePolicySnapshotV2 } from './route-policy-v2.js';
 import { detectCaptureIntent, detectRetrievalIntent } from './capture-intent.js';
 import { defaultScopeContext, memoryInScope, scopeContextFromPacket } from './scope.js';
 
@@ -36,6 +37,7 @@ export { MemoryOperationApplier } from './memory-operations.js';
 export { JobQueue } from './job-queue.js';
 export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
+export { maybeDistillAndStorePolicyV2, scorePolicySnapshotV2, validatePolicySnapshotV2 } from './route-policy-v2.js';
 export { RouteTeacher, buildRouteGraphSnapshot } from './route-teacher.js';
 export { detectCaptureIntent, detectRetrievalIntent, classifySensitiveValue } from './capture-intent.js';
 export { ContextSelector } from './context-selector.js';
@@ -165,6 +167,19 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
 
   const routeDecision = store.insertRouteDecision({
     agentId: packet.agentId,
+    routeFrameId: store.insertRouteFrame({
+      agentId: packet.agentId,
+      sessionKeyHash: hashText(packet.sessionKey || packet.sessionId || ''),
+      turnHash: hashText(packet.latestUserMessageRedacted || ''),
+      redactedTurnSummary: redactText(plan.turnFrame.summary || packet.latestUserMessageRedacted, 500),
+      taskType: plan.turnFrame.taskType,
+      turnSignals: extractRouteSignals(plan.turnFrame, packet.latestUserMessageRedacted),
+      intentSignals: [plan.retrievalIntent.intent, plan.captureIntent.intent].filter(Boolean),
+      safetySignals: [],
+      projectHint: plan.turnFrame.routeHints.likelyNeedsProjectContext ? 'project_context' : undefined,
+      repoHint: plan.turnFrame.activeObjects.find((object: any) => object.kind === 'repo')?.value,
+      latencyBudgetMs: latency.maxSyncMs || 0,
+    }).id,
     sessionId: packet.sessionId,
     turnId: packet.turnId,
     runId: packet.runId,
@@ -182,6 +197,10 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
     model: client ? (config.llm.plannerModel || config.llm.routeModel || config.llm.feedbackModel || '') : undefined,
     promptVersion: latency.kind === 'sync_memory_planner' ? 'memory-planner-v1' : 'route-fn-v1',
     policySnapshotId: plan.policySnapshotId,
+    policyRuleId: plan.matchedPolicyRuleId,
+    candidateCount: initialCandidates.length,
+    reasonCode: plan.reasonCode || plan.latencyReason,
+    injectionPayloadHash: selection.shouldInject ? hashText(selection.distilledContext) : undefined,
     reward: 0,
   });
 
@@ -221,6 +240,11 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
       route: routeDecision.route,
       confidence: routeDecision.confidence,
       selectedMemoryIds: selection.selectedMemoryIds,
+      omittedMemoryIds: selection.omitted.map((it) => it.memoryId),
+      policySnapshotId: routeDecision.policySnapshotId || null,
+      policyRuleId: routeDecision.policyRuleId || null,
+      candidateCount: initialCandidates.length,
+      reasonCode: routeDecision.reasonCode || null,
       model: routeDecision.model,
       promptVersion: routeDecision.promptVersion,
     },
@@ -936,6 +960,19 @@ function shouldAllowCapture(config: any) {
 
 function shouldAllowRouting(config: any) {
   return config.routing?.enabled === true && config.routing?.mode !== 'off';
+}
+
+function extractRouteSignals(turnFrame: any, text = '') {
+  const lower = `${text} ${turnFrame?.summary || ''} ${turnFrame?.userGoal || ''} ${(turnFrame?.impliedNeeds || []).join(' ')}`.toLowerCase();
+  const signals = new Set<string>();
+  for (const token of ['test', 'build', 'install', 'dependency', 'write', 'draft', 'plan', 'debug', 'thanks', 'ok', 'remember', 'actually', 'instead']) {
+    if (lower.includes(token)) signals.add(token);
+  }
+  if (turnFrame?.routeHints?.likelyNeedsWorkflow) signals.add('workflow');
+  if (turnFrame?.routeHints?.likelyNeedsPreferences) signals.add('preference');
+  if (turnFrame?.routeHints?.likelyNeedsCorrections) signals.add('correction');
+  if (turnFrame?.routeHints?.likelyNeedsProjectContext) signals.add('project_context');
+  return [...signals].slice(0, 12);
 }
 
 function isLoopbackUrl(value: string) {

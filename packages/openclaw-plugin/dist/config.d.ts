@@ -1,5 +1,5 @@
 export declare const PLUGIN_ID = "openclawbrain";
-export declare const PLUGIN_VERSION = "0.2.17";
+export declare const PLUGIN_VERSION = "0.2.18";
 export declare const DEFAULT_CONFIG: any;
 export declare function resolveOpenClawBrainConfig(api?: any): {
     enabled: boolean;

@@ -1,4 +1,5 @@
 import { hashText, redactJsonValue, redactText } from './redact.js';
+import { maybeDistillAndStorePolicyV2 } from './route-policy-v2.js';
 const ROUTES = ['no_memory', 'capture_only', 'retrieve_memory', 'retrieve_and_distill', 'high_confidence_correction_only'];
 const MEMORY_TYPES = ['correction', 'preference', 'workflow', 'project_fact', 'tool_convention', 'routing_rule', 'agent_assignment', 'recall_rule', 'outcome', 'context'];
 const PROMPT_VERSION = 'route-teacher-v1';
@@ -31,8 +32,8 @@ export class RouteTeacher {
             counterfactuals += result.counterfactuals;
             examples += result.examples;
         }
-        const snapshot = maybeBuildStructuredPolicy(this.store, agentId, this.config);
-        return { teacherRuns, counterfactuals, examples, policySnapshotId: snapshot?.id };
+        const distillation = maybeDistillAndStorePolicyV2(this.store, agentId, this.config);
+        return { teacherRuns, counterfactuals, examples, policySnapshotId: distillation.snapshot?.id };
     }
     async teachDecision(agentId, decision) {
         const snapshot = this.store.getRouteGraphSnapshot(decision.id) ?? fallbackGraphSnapshot(this.store, agentId, decision);
@@ -291,80 +292,6 @@ function normalizeCounterfactuals(rawCounterfactuals, decision, snapshot) {
             rationale: redactText(String(cf.rationale || 'No rationale supplied.'), 500),
         };
     }).filter((cf) => cf.confidence >= 0.4);
-}
-function maybeBuildStructuredPolicy(store, agentId, config) {
-    if (config.routeLearning?.policyV2?.enabled === false)
-        return null;
-    const examples = store.listRouteTrainingExamplesV2(agentId, 200);
-    const minExamples = Number(config.routeLearning?.policyV2?.minExamples ?? 3);
-    if (examples.length < minExamples)
-        return store.getActivePolicySnapshotV2(agentId);
-    const rules = distillRules(examples, config);
-    if (rules.length === 0)
-        return store.getActivePolicySnapshotV2(agentId);
-    const existing = store.getActivePolicySnapshotV2(agentId);
-    const ruleText = JSON.stringify(rules);
-    if (existing && JSON.stringify(existing.rules) === ruleText)
-        return existing;
-    return store.insertPolicySnapshotV2({
-        agentId,
-        version: 'route-policy-v2',
-        status: config.routeLearning?.policyV2?.shadowBeforeActivate === true ? 'shadow' : 'active',
-        rules,
-        globalBudgets: {
-            maxSyncPlannerRate: Number(config.routeLearning?.policyV2?.maxSyncPlannerRate ?? 0.05),
-            maxInjectedMemories: Number(config.routing?.maxInjectedMemories ?? 8),
-            maxInjectedChars: Number(config.routing?.maxInjectedChars ?? 2500),
-            defaultGraphDepth: 1,
-        },
-        evalSummary: {
-            cases: examples.length,
-            wins: examples.filter((ex) => ex.exampleKind === 'prefer_route' || ex.exampleKind === 'missed_recall').length,
-            ties: examples.filter((ex) => ex.exampleKind === 'correct_silence').length,
-            misses: examples.filter((ex) => ex.exampleKind === 'missed_recall').length,
-            noisyInjections: examples.filter((ex) => ex.exampleKind === 'avoid_route' || ex.exampleKind === 'avoid_memory_type').length,
-            harms: examples.reduce((sum, ex) => sum + ex.harmCount, 0),
-            p95LatencyMs: 0,
-        },
-        exampleIds: examples.map((ex) => ex.id).slice(0, 100),
-        model: config.llm?.learningModel || 'deterministic-route-teacher',
-        promptVersion: 'route-policy-v2-distiller-v1',
-    });
-}
-function distillRules(examples, config) {
-    const groups = new Map();
-    for (const example of examples) {
-        const key = `${example.exampleKind}:${example.taskType}:${example.route}:${example.memoryTypes.join(',')}:${example.graphDepth}`;
-        const group = groups.get(key) ?? [];
-        group.push(example);
-        groups.set(key, group);
-    }
-    const rules = [];
-    for (const [key, group] of groups.entries()) {
-        const [kind, taskType, route] = key.split(':');
-        const support = group.reduce((sum, ex) => sum + ex.supportCount, 0);
-        const harm = group.reduce((sum, ex) => sum + ex.harmCount, 0);
-        const confidence = clamp01(Math.max(...group.map((ex) => ex.confidence)) + support * 0.02 - harm * 0.08);
-        if (confidence < 0.6)
-            continue;
-        const memoryTypes = [...new Set(group.flatMap((ex) => ex.memoryTypes))].slice(0, 5);
-        const queries = [...new Set(group.flatMap((ex) => ex.queryTemplates))].slice(0, 8);
-        const turnSignals = [...new Set(group.flatMap((ex) => ex.turnSignals))].slice(0, 8);
-        rules.push({
-            id: hashText(`${key}:${support}:${harm}:${queries.join('|')}`).slice(0, 16),
-            match: { taskType, turnSignals },
-            route: kind === 'correct_silence' ? 'no_memory' : sanitizeRoute(route),
-            memoryTypes: kind === 'correct_silence' ? [] : memoryTypes,
-            queries: kind === 'correct_silence' ? [] : queries,
-            graphDepth: kind === 'correct_silence' ? 0 : clampGraphDepth(Math.max(...group.map((ex) => ex.graphDepth))),
-            syncPlanner: group.some((ex) => ex.exampleKind === 'prefer_sync_planner') ? 'allowed' : 'never_unless_ambiguous',
-            confidence,
-            evidenceIds: [...new Set(group.flatMap((ex) => ex.evidenceIds))].slice(0, 20),
-        });
-    }
-    return rules
-        .sort((a, b) => b.confidence - a.confidence)
-        .slice(0, Math.max(3, Number(config.routeLearning?.policyV2?.maxRules ?? 25)));
 }
 function validateTeacherOutput(output, snapshot, decision) {
     if (!output || typeof output !== 'object')

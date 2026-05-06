@@ -1,6 +1,6 @@
 import { type DatabaseLike } from './sqlite-driver.js';
 import { type ScopeContext } from './scope.js';
-import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, CaptureAuditRow } from './memory-types.js';
+import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, RouteFrameV2, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, CaptureAuditRow } from './memory-types.js';
 export declare const uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 export declare const now: () => string;
 export interface MemoryStoreOptions {
@@ -51,6 +51,11 @@ export declare class MemoryStore {
     }): number;
     getPendingInjections(agentId: string): InjectionEvent[];
     getInjectionsForRouteDecision(routeDecisionId: string): InjectionEvent[];
+    insertRouteFrame(frame: Omit<RouteFrameV2, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RouteFrameV2;
+    getRouteFrame(id: string): RouteFrameV2 | null;
     insertRouteDecision(decision: Omit<RouteDecision, 'id' | 'createdAt'> & {
         id?: string;
     }): RouteDecision;

@@ -9,7 +9,7 @@ import { openDatabase, type DatabaseLike } from './sqlite-driver.js';
 import { filterMemoriesForScope, type ScopeContext } from './scope.js';
 import type {
   MemoryNode, MemoryType, MemoryEdge, EdgeRelation,
-  RouteDecision, RouteKind, TurnFrame, RetrievalPlan, InjectionPlan,
+  RouteDecision, RouteKind, RouteFrameV2, TurnFrame, RetrievalPlan, InjectionPlan,
   InjectionEvent, InjectionOutcome,
   BackgroundJob, JobKind, JobStatus,
   ProofEvent,
@@ -21,7 +21,7 @@ import type {
 
 // ── Schema version ────────────────────────────────────────────────────────────
 
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 
@@ -508,6 +508,26 @@ const MIGRATIONS: Record<number, string> = {
 
     CREATE INDEX IF NOT EXISTS idx_policy_v2_active ON route_policy_snapshots_v2(agent_id, status, created_at);
   `,
+  6: `
+    CREATE TABLE IF NOT EXISTS route_frames (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      session_key_hash TEXT,
+      turn_hash TEXT NOT NULL,
+      redacted_turn_summary TEXT NOT NULL,
+      task_type TEXT NOT NULL,
+      turn_signals_json TEXT NOT NULL DEFAULT '[]',
+      intent_signals_json TEXT NOT NULL DEFAULT '[]',
+      safety_signals_json TEXT NOT NULL DEFAULT '[]',
+      project_hint TEXT,
+      repo_hint TEXT,
+      latency_budget_ms INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_route_frames_agent ON route_frames(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_route_frames_turn_hash ON route_frames(turn_hash);
+  `,
 };
 
 // ── UUID helper ───────────────────────────────────────────────────────────────
@@ -544,6 +564,13 @@ export class MemoryStore {
       if (!sql) continue;
       if (v === 4 && !tableHasColumn(this.db, 'background_jobs', 'dedupe_key')) {
         this.db.exec('ALTER TABLE background_jobs ADD COLUMN dedupe_key TEXT;');
+      }
+      if (v === 6) {
+        if (!tableHasColumn(this.db, 'route_decisions', 'route_frame_id')) this.db.exec('ALTER TABLE route_decisions ADD COLUMN route_frame_id TEXT;');
+        if (!tableHasColumn(this.db, 'route_decisions', 'policy_rule_id')) this.db.exec('ALTER TABLE route_decisions ADD COLUMN policy_rule_id TEXT;');
+        if (!tableHasColumn(this.db, 'route_decisions', 'candidate_count')) this.db.exec('ALTER TABLE route_decisions ADD COLUMN candidate_count INTEGER DEFAULT 0;');
+        if (!tableHasColumn(this.db, 'route_decisions', 'reason_code')) this.db.exec('ALTER TABLE route_decisions ADD COLUMN reason_code TEXT;');
+        if (!tableHasColumn(this.db, 'route_decisions', 'injection_payload_hash')) this.db.exec('ALTER TABLE route_decisions ADD COLUMN injection_payload_hash TEXT;');
       }
       this.db.exec(sql);
       this.db.pragma(`user_version = ${v}`);
@@ -770,7 +797,30 @@ export class MemoryStore {
     ).all(routeDecisionId) as any[]).map(rowToInjection);
   }
 
-  // ── Route decisions ─────────────────────────────────────────────────────────
+  // ── Route frames and decisions ──────────────────────────────────────────────
+
+  insertRouteFrame(frame: Omit<RouteFrameV2, 'id' | 'createdAt'> & { id?: string; createdAt?: string }): RouteFrameV2 {
+    const id = frame.id || uuid();
+    const ts = frame.createdAt || now();
+    this.db.prepare(`
+      INSERT INTO route_frames (
+        id, agent_id, session_key_hash, turn_hash, redacted_turn_summary, task_type,
+        turn_signals_json, intent_signals_json, safety_signals_json, project_hint,
+        repo_hint, latency_budget_ms, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id, frame.agentId, frame.sessionKeyHash ?? null, frame.turnHash, frame.redactedTurnSummary,
+      frame.taskType, JSON.stringify(frame.turnSignals ?? []), JSON.stringify(frame.intentSignals ?? []),
+      JSON.stringify(frame.safetySignals ?? []), frame.projectHint ?? null, frame.repoHint ?? null,
+      frame.latencyBudgetMs, ts,
+    );
+    return { ...frame, id, createdAt: ts };
+  }
+
+  getRouteFrame(id: string): RouteFrameV2 | null {
+    const row = this.db.prepare('SELECT * FROM route_frames WHERE id = ?').get(id) as any;
+    return row ? rowToRouteFrame(row) : null;
+  }
 
   insertRouteDecision(decision: Omit<RouteDecision, 'id' | 'createdAt'> & { id?: string }): RouteDecision {
     const id = decision.id || uuid();
@@ -779,19 +829,22 @@ export class MemoryStore {
     const reward = decision.reward ?? 0;
     this.db.prepare(`
       INSERT INTO route_decisions (
-        id, agent_id, session_id, turn_id, run_id, route, confidence, latency_tier,
+        id, agent_id, route_frame_id, session_id, turn_id, run_id, route, confidence, latency_tier,
         sync_llm_used, sync_latency_ms, fallback_used,
         turn_frame_json, retrieval_plan_json, injection_plan_json,
         selected_memory_ids_json, omitted_memory_ids_json,
-        model, prompt_version, policy_snapshot_id, outcome, reward, created_at, resolved_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        model, prompt_version, policy_snapshot_id, policy_rule_id,
+        candidate_count, reason_code, injection_payload_hash,
+        outcome, reward, created_at, resolved_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      id, decision.agentId, decision.sessionId ?? null, decision.turnId ?? null, decision.runId ?? null,
+      id, decision.agentId, decision.routeFrameId ?? null, decision.sessionId ?? null, decision.turnId ?? null, decision.runId ?? null,
       decision.route, decision.confidence, decision.latencyTier,
       decision.syncLlmUsed ? 1 : 0, decision.syncLatencyMs ?? null, decision.fallbackUsed ? 1 : 0,
       JSON.stringify(decision.turnFrame), JSON.stringify(decision.retrievalPlan), JSON.stringify(decision.injectionPlan),
       JSON.stringify(decision.selectedMemoryIds), JSON.stringify(decision.omittedMemoryIds),
-      decision.model ?? null, decision.promptVersion ?? null, decision.policySnapshotId ?? null,
+      decision.model ?? null, decision.promptVersion ?? null, decision.policySnapshotId ?? null, decision.policyRuleId ?? null,
+      decision.candidateCount ?? 0, decision.reasonCode ?? null, decision.injectionPayloadHash ?? null,
       outcome, reward, ts, null,
     );
     return { ...decision, id, outcome, reward, createdAt: ts };
@@ -1487,9 +1540,27 @@ function rowToEdge(r: any): MemoryEdge {
   };
 }
 
+function rowToRouteFrame(r: any): RouteFrameV2 {
+  return {
+    id: r.id,
+    agentId: r.agent_id,
+    sessionKeyHash: r.session_key_hash,
+    turnHash: r.turn_hash,
+    redactedTurnSummary: r.redacted_turn_summary,
+    taskType: r.task_type,
+    turnSignals: JSON.parse(r.turn_signals_json ?? '[]'),
+    intentSignals: JSON.parse(r.intent_signals_json ?? '[]'),
+    safetySignals: JSON.parse(r.safety_signals_json ?? '[]'),
+    projectHint: r.project_hint,
+    repoHint: r.repo_hint,
+    latencyBudgetMs: r.latency_budget_ms,
+    createdAt: r.created_at,
+  };
+}
+
 function rowToRouteDecision(r: any): RouteDecision {
   return {
-    id: r.id, agentId: r.agent_id, sessionId: r.session_id,
+    id: r.id, agentId: r.agent_id, routeFrameId: r.route_frame_id, sessionId: r.session_id,
     turnId: r.turn_id, runId: r.run_id,
     route: r.route, confidence: r.confidence, latencyTier: r.latency_tier,
     syncLlmUsed: r.sync_llm_used === 1, syncLatencyMs: r.sync_latency_ms,
@@ -1501,6 +1572,10 @@ function rowToRouteDecision(r: any): RouteDecision {
     omittedMemoryIds: JSON.parse(r.omitted_memory_ids_json ?? '[]'),
     model: r.model, promptVersion: r.prompt_version,
     policySnapshotId: r.policy_snapshot_id,
+    policyRuleId: r.policy_rule_id,
+    candidateCount: r.candidate_count,
+    reasonCode: r.reason_code,
+    injectionPayloadHash: r.injection_payload_hash,
     outcome: r.outcome, reward: r.reward,
     createdAt: r.created_at, resolvedAt: r.resolved_at,
   };

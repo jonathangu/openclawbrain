@@ -63,6 +63,21 @@ export interface TurnFrame {
         likelyNeedsProjectContext: boolean;
     };
 }
+export interface RouteFrameV2 {
+    id: string;
+    agentId: string;
+    sessionKeyHash?: string;
+    turnHash: string;
+    redactedTurnSummary: string;
+    taskType: TaskType;
+    turnSignals: string[];
+    intentSignals: string[];
+    safetySignals: string[];
+    projectHint?: string;
+    repoHint?: string;
+    latencyBudgetMs: number;
+    createdAt: string;
+}
 export type RouteKind = 'no_memory' | 'capture_only' | 'retrieve_memory' | 'retrieve_and_distill' | 'high_confidence_correction_only';
 export interface RetrievalPlan {
     queries: string[];
@@ -89,6 +104,7 @@ export interface LatencyPlan {
 export interface RouteDecision {
     id: string;
     agentId: string;
+    routeFrameId?: string;
     sessionId?: string;
     turnId?: string;
     runId?: string;
@@ -108,6 +124,10 @@ export interface RouteDecision {
     model?: string;
     promptVersion?: string;
     policySnapshotId?: string;
+    policyRuleId?: string;
+    candidateCount?: number;
+    reasonCode?: string;
+    injectionPayloadHash?: string;
     outcome?: string;
     reward: number;
     createdAt: string;
@@ -356,6 +376,7 @@ export interface RouteTrainingExampleV2 {
 }
 export interface RoutePolicyRuleV2 {
     id: string;
+    priority?: number;
     match: {
         taskType?: TaskType | string;
         turnSignals?: string[];
@@ -370,6 +391,13 @@ export interface RoutePolicyRuleV2 {
     syncPlanner: 'no' | 'never_unless_ambiguous' | 'allowed' | 'prefer';
     confidence: number;
     evidenceIds: string[];
+    stats?: {
+        support?: number;
+        harm?: number;
+        harmRate?: number;
+        kind?: string;
+    };
+    reason?: string;
 }
 export interface RoutePolicySnapshotV2 {
     id: string;
@@ -391,6 +419,13 @@ export interface RoutePolicySnapshotV2 {
         noisyInjections: number;
         harms: number;
         p95LatencyMs: number;
+        activationDecision?: string;
+        activationStatusReason?: string;
+        validationErrors?: string[];
+        validationWarnings?: string[];
+        projectedSyncPlannerRate?: number;
+        noisyInjectionRate?: number;
+        harmRate?: number;
     };
     exampleIds: string[];
     model?: string;

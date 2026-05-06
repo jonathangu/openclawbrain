@@ -15,7 +15,7 @@ Core capture/store/retrieve/inject works today. Route-learning quality, status p
 Requires OpenClaw `2026.5.2` or later.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.17
+openclaw plugins install clawhub:openclawbrain@0.2.18
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -23,9 +23,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.17.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.17/openclawbrain-0.2.17.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.17.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.18.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.18/openclawbrain-0.2.18.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.18.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```

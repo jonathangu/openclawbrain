@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { BackgroundLearner, RouteFn, RouteTeacher, buildRouteGraphSnapshot, normalizePluginConfig } from '../dist/index.js';
+import { BackgroundLearner, RouteFn, RouteTeacher, buildRouteGraphSnapshot, maybeDistillAndStorePolicyV2, normalizePluginConfig, validatePolicySnapshotV2 } from '../dist/index.js';
 import { MemoryStore } from '../dist/memory-store.js';
 
 async function tempRoot() {
@@ -333,4 +333,113 @@ test('route teacher stores graph-grounded counterfactuals and activates structur
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test('policy v2 distiller stores gated active snapshots and route fn records matched rule id', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      routeLearning: {
+        enabled: true,
+        policyV2: { enabled: true, minExamples: 1, shadowBeforeActivate: false, maxNoisyInjectionRate: 0.5 },
+      },
+    });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const decision = store.insertRouteDecision({
+      agentId: 'main',
+      route: 'no_memory',
+      confidence: 0.5,
+      latencyTier: 'no_extra_llm',
+      syncLlmUsed: false,
+      fallbackUsed: false,
+      turnFrame: {
+        summary: 'Thanks',
+        userGoal: 'Thanks',
+        taskType: 'other',
+        activeObjects: [],
+        impliedNeeds: [],
+        memoryQuestions: [],
+        constraints: [],
+        routeHints: {
+          likelyNeedsCorrections: false,
+          likelyNeedsPreferences: false,
+          likelyNeedsWorkflow: false,
+          likelyNeedsProjectContext: false,
+        },
+      },
+      retrievalPlan: { queries: [], memoryTypes: [], requiredTags: [], excludedTags: [], graphDepth: 0, maxCandidates: 5 },
+      injectionPlan: { maxItems: 0, maxChars: 0, preferredFormat: 'none' },
+      selectedMemoryIds: [],
+      omittedMemoryIds: [],
+      reward: 0,
+    });
+    store.insertRouteTrainingExampleV2({
+      agentId: 'main',
+      routeDecisionId: decision.id,
+      exampleKind: 'correct_silence',
+      taskType: 'other',
+      turnSignals: ['thanks', 'ok'],
+      route: 'no_memory',
+      memoryTypes: [],
+      queryTemplates: [],
+      graphDepth: 0,
+      confidence: 0.92,
+      supportCount: 4,
+      harmCount: 0,
+      source: 'manual_eval',
+      evidenceIds: [decision.id],
+    });
+
+    const report = maybeDistillAndStorePolicyV2(store, 'main', config);
+    assert.equal(report.validation.ok, true);
+    assert.equal(report.snapshot.status, 'active');
+    assert.equal(report.snapshot.version, 'route-policy-v2');
+    assert.ok(report.snapshot.rules[0].stats.support >= 4);
+
+    const routeFn = new RouteFn({ config, store });
+    const plan = routeFn.plan({
+      agentId: 'main',
+      sourceHook: 'before_prompt_build',
+      latestUserMessageRedacted: 'thanks ok',
+      toolObservations: [],
+      recentInjections: [],
+      metadata: {},
+    });
+    assert.equal(plan.route, 'no_memory');
+    assert.equal(plan.shouldRetrieve, false);
+    assert.equal(plan.matchedPolicyRuleId, report.snapshot.rules[0].id);
+    assert.equal(plan.policySnapshotId, report.snapshot.id);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('policy v2 validation rejects broad unsafe retrieval and sync budget overflow', () => {
+  const config = normalizePluginConfig({ routeLearning: { policyV2: { maxSyncPlannerRate: 0.05 } } });
+  const report = validatePolicySnapshotV2({
+    agentId: 'main',
+    version: 'route-policy-v2',
+    status: 'candidate',
+    rules: [{
+      id: 'bad-rule',
+      match: {},
+      route: 'retrieve_memory',
+      memoryTypes: ['workflow'],
+      queries: ['workflow'],
+      graphDepth: 1,
+      syncPlanner: 'allowed',
+      confidence: 0.9,
+      evidenceIds: ['e1'],
+    }],
+    globalBudgets: { maxSyncPlannerRate: 0.05, maxInjectedMemories: 8, maxInjectedChars: 2500, defaultGraphDepth: 1 },
+    evalSummary: { cases: 1, wins: 1, ties: 0, misses: 0, noisyInjections: 0, harms: 0, p95LatencyMs: 0 },
+    exampleIds: ['e1'],
+  }, config);
+  assert.equal(report.ok, false);
+  assert.ok(report.errors.some((error) => error.includes('broad_retrieval_rule')));
+  assert.ok(report.errors.some((error) => error.includes('sync_planner_rate_exceeds_budget')));
 });
