@@ -139,7 +139,7 @@ export function ingestRouteLearningArtifactsV3(
   lessons: RouteTrainingExampleV2[],
   config: any,
 ): RouteLearningV3IngestReport {
-  const chosenPrototype = upsertPrototypeForDecision(store, agentId, decision, lessons, 'learned');
+  const chosenPrototype = upsertPrototypeForDecision(store, agentId, decision, lessons, 'learned', config);
   const rewardComponents = rewardComponentsForDecision(decision);
   const frame = store.insertRouteFrameV3({
     agentId,
@@ -194,7 +194,7 @@ export function ingestRouteLearningArtifactsV3(
 
   const prototypeIds = new Set<string>([chosenPrototype.id]);
   const pairExamples: RoutePairExampleV3[] = [];
-  const teacherPrototype = upsertPrototypeForTeacher(store, agentId, teacherRun, lessons, 'distilled');
+  const teacherPrototype = upsertPrototypeForTeacher(store, agentId, teacherRun, lessons, 'distilled', config);
   prototypeIds.add(teacherPrototype.id);
 
   if (teacherPrototype.id !== chosenPrototype.id) {
@@ -213,7 +213,7 @@ export function ingestRouteLearningArtifactsV3(
   for (const cf of counterfactuals) {
     if (cf.estimatedOutcome !== 'likely_helpful' && cf.estimatedOutcome !== 'likely_missed') continue;
     if (Number(cf.confidence || 0) < 0.35) continue;
-    const prototype = upsertPrototypeForCounterfactual(store, agentId, decision, cf, 'distilled');
+    const prototype = upsertPrototypeForCounterfactual(store, agentId, decision, cf, 'distilled', config);
     prototypeIds.add(prototype.id);
     if (prototype.id === chosenPrototype.id) continue;
     const counterfactualBeatsChosen = cf.estimatedOutcome === 'likely_helpful';
@@ -243,7 +243,7 @@ export function ingestRouteLearningArtifactsV3(
       status: 'active',
       provenance: 'distilled',
       sourceExampleIds: [decision.id],
-    });
+    }, config);
     prototypeIds.add(silencePrototype.id);
     pairExamples.push(store.insertRoutePairExampleV3({
       agentId,
@@ -272,9 +272,9 @@ export function maybeDistillAndStorePolicyV3(store: any, agentId: string, config
   const updateMode = routePolicyV3UpdateMode(config);
   const frames = store.listRouteFramesV3(agentId, 400) as RouteFrameV3[];
   const pairs = store.listRoutePairExamplesV3(agentId, 1200) as RoutePairExampleV3[];
-  const listedPrototypes = store.listRouteActionPrototypesV3(agentId, 200) as RouteActionPrototypeV3[];
+  const listedPrototypes = promoteEligibleColdStartPrototypesV3(store, store.listRouteActionPrototypesV3(agentId, 200) as RouteActionPrototypeV3[], config);
   const retirement = retireStalePrototypesV3(store, listedPrototypes, config);
-  const prototypes = listedPrototypes.filter((prototype) => prototype.status !== 'retired' && !retirement.retiredPrototypeIds.includes(prototype.id));
+  const prototypes = listedPrototypes.filter((prototype) => prototype.status !== 'retired' && prototype.status !== 'cold_start' && !retirement.retiredPrototypeIds.includes(prototype.id));
   const banditState = store.getRouteBanditStateV3(agentId) as RouteBanditStateV3 | null;
   const minFrames = Number(config.routeLearning?.policyV3?.minFrames ?? 3);
   const existing = store.getActivePolicySnapshotV3(agentId) as RoutePolicySnapshotV3 | null;
@@ -631,7 +631,7 @@ function validateRuleShapeV3(rule: any, config: any) {
   return errors;
 }
 
-function upsertPrototypeForDecision(store: any, agentId: string, decision: RouteDecision, lessons: RouteTrainingExampleV2[], provenance: 'learned' | 'distilled') {
+function upsertPrototypeForDecision(store: any, agentId: string, decision: RouteDecision, lessons: RouteTrainingExampleV2[], provenance: 'learned' | 'distilled', config: any) {
   const lesson = lessons.find((item) => item.route === decision.route) || lessons[0];
   return upsertPrototype(store, {
     agentId,
@@ -658,10 +658,10 @@ function upsertPrototypeForDecision(store: any, agentId: string, decision: Route
     status: 'active',
     provenance,
     sourceExampleIds: unique([decision.id, ...(lesson ? [lesson.id] : [])]),
-  });
+  }, config);
 }
 
-function upsertPrototypeForTeacher(store: any, agentId: string, teacherRun: RouteTeacherRun, lessons: RouteTrainingExampleV2[], provenance: 'distilled') {
+function upsertPrototypeForTeacher(store: any, agentId: string, teacherRun: RouteTeacherRun, lessons: RouteTrainingExampleV2[], provenance: 'distilled', config: any) {
   const memoryTypes = sanitizeMemoryTypes(lessons.flatMap((lesson) => lesson.route === teacherRun.teacherRoute ? lesson.memoryTypes : []).length
     ? lessons.flatMap((lesson) => lesson.route === teacherRun.teacherRoute ? lesson.memoryTypes : [])
     : []);
@@ -687,10 +687,10 @@ function upsertPrototypeForTeacher(store: any, agentId: string, teacherRun: Rout
     status: 'active',
     provenance,
     sourceExampleIds: unique([teacherRun.id, ...lessons.map((lesson) => lesson.id)]),
-  });
+  }, config);
 }
 
-function upsertPrototypeForCounterfactual(store: any, agentId: string, decision: RouteDecision, cf: RouteCounterfactual, provenance: 'distilled') {
+function upsertPrototypeForCounterfactual(store: any, agentId: string, decision: RouteDecision, cf: RouteCounterfactual, provenance: 'distilled', config: any) {
   const route = cf.kind === 'stay_silent' || cf.kind === 'no_memory'
     ? 'no_memory'
     : cf.memoryTypes.includes('correction')
@@ -721,12 +721,34 @@ function upsertPrototypeForCounterfactual(store: any, agentId: string, decision:
     status: 'active',
     provenance,
     sourceExampleIds: unique([decision.id, cf.id]),
-  });
+  }, config);
 }
 
-function upsertPrototype(store: any, input: Omit<RouteActionPrototypeV3, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }) {
+function upsertPrototype(store: any, input: Omit<RouteActionPrototypeV3, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }, config: any) {
   const prototypeId = input.id || prototypeIdFor(input);
-  return store.upsertRouteActionPrototypeV3({ ...input, id: prototypeId });
+  const existing = store.getRouteActionPrototypeV3?.(prototypeId) as RouteActionPrototypeV3 | null | undefined;
+  const support = Number(existing?.supportPrior || 0) + Number(input.supportPrior || 0);
+  const harm = Number(existing?.harmPrior || 0) + Number(input.harmPrior || 0);
+  const status = derivePrototypeStatusV3(input.status, input.provenance, support, harm, config);
+  return store.upsertRouteActionPrototypeV3({ ...input, id: prototypeId, status });
+}
+
+function derivePrototypeStatusV3(current: RouteActionPrototypeV3['status'], provenance: RouteActionPrototypeV3['provenance'], support: number, harm: number, config: any): RouteActionPrototypeV3['status'] {
+  if (current === 'retired') return 'retired';
+  if (current === 'shadow') return 'shadow';
+  if (provenance !== 'learned') return 'active';
+  const minSamples = Number(config.routeLearning?.policyV3?.coldStartMinSamples ?? 3);
+  return (support + harm) < minSamples ? 'cold_start' : 'active';
+}
+
+function promoteEligibleColdStartPrototypesV3(store: any, prototypes: RouteActionPrototypeV3[], config: any) {
+  const minSamples = Number(config.routeLearning?.policyV3?.coldStartMinSamples ?? 3);
+  return prototypes.map((prototype) => {
+    if (prototype.status !== 'cold_start') return prototype;
+    const sampleCount = Number(prototype.supportPrior || 0) + Number(prototype.harmPrior || 0);
+    if (sampleCount < minSamples) return prototype;
+    return store.setRouteActionPrototypeStatusV3?.(prototype.id, 'active') || { ...prototype, status: 'active' };
+  });
 }
 
 function prototypeIdFor(input: { route: RouteKind; memoryTypes: MemoryType[]; graphDepth: 0 | 1 | 2; syncPlanner: string; queryTemplateFamily: string[]; sparseSignature: string[] }) {

@@ -838,6 +838,114 @@ test('policy v3 manual-review update mode keeps candidate snapshots shadow-only'
   }
 });
 
+test('policy v3 keeps cold-start prototypes out of active distillation until enough evidence accumulates', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      routeLearning: {
+        enabled: true,
+        policyV3: {
+          enabled: true,
+          minFrames: 2,
+          coldStartMinSamples: 3,
+          maxHarmRate: 0.6,
+        },
+      },
+    });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+
+    const frame1 = store.insertRouteFrameV3({
+      agentId: 'main',
+      routeDecisionId: 'cs-1',
+      redactedTurnSummary: 'Run repo tests',
+      taskType: 'coding',
+      turnSignals: ['test', 'repo', 'workflow'],
+      projectHint: 'openclawbrain',
+      repoHint: 'openclawbrain',
+      toolHints: ['exec'],
+      routeHintFlags: ['needs_workflow'],
+      chosenActionId: 'cs-action',
+      chosenRoute: 'retrieve_memory',
+      chosenMemoryTypes: ['workflow'],
+      chosenGraphDepth: 1,
+      chosenSyncPlanner: 'no',
+      outcome: 'tool_success',
+      reward: 0.7,
+      rewardComponents: { retrievalHelpGain: 0.7 },
+      payloadHash: 'cs-p1',
+    });
+    const frame2 = store.insertRouteFrameV3({
+      agentId: 'main',
+      routeDecisionId: 'cs-2',
+      redactedTurnSummary: 'Run tests before commit',
+      taskType: 'coding',
+      turnSignals: ['tests', 'repo', 'workflow'],
+      projectHint: 'openclawbrain',
+      repoHint: 'openclawbrain',
+      toolHints: ['exec'],
+      routeHintFlags: ['needs_workflow'],
+      chosenActionId: 'cs-action',
+      chosenRoute: 'retrieve_memory',
+      chosenMemoryTypes: ['workflow'],
+      chosenGraphDepth: 1,
+      chosenSyncPlanner: 'no',
+      outcome: 'tool_success',
+      reward: 0.68,
+      rewardComponents: { retrievalHelpGain: 0.68 },
+      payloadHash: 'cs-p2',
+    });
+
+    store.upsertRouteActionPrototypeV3({
+      id: 'cs-action',
+      agentId: 'main',
+      route: 'retrieve_memory',
+      memoryTypes: ['workflow'],
+      graphDepth: 1,
+      syncPlanner: 'no',
+      queryTemplateFamily: ['repo test workflow'],
+      sparseSignature: ['coding', 'test', 'repo', 'workflow'],
+      denseEmbedding: [1, 0.2, 0.1],
+      supportPrior: 2,
+      harmPrior: 0,
+      status: 'cold_start',
+      provenance: 'learned',
+      sourceExampleIds: [frame1.id, frame2.id],
+    });
+
+    const before = maybeDistillAndStorePolicyV3(store, 'main', config);
+    assert.equal(before.snapshot, undefined);
+    assert.equal(store.getActivePolicySnapshotV3('main'), null);
+
+    store.upsertRouteActionPrototypeV3({
+      id: 'cs-action',
+      agentId: 'main',
+      route: 'retrieve_memory',
+      memoryTypes: ['workflow'],
+      graphDepth: 1,
+      syncPlanner: 'no',
+      queryTemplateFamily: ['repo test workflow'],
+      sparseSignature: ['coding', 'test', 'repo', 'workflow'],
+      denseEmbedding: [1, 0.2, 0.1],
+      supportPrior: 1,
+      harmPrior: 0,
+      status: 'cold_start',
+      provenance: 'learned',
+      sourceExampleIds: [frame1.id],
+    });
+
+    const after = maybeDistillAndStorePolicyV3(store, 'main', config);
+    assert.equal(after.validation.ok, true);
+    assert.ok(after.snapshot);
+    assert.equal(store.getRouteActionPrototypeV3('cs-action').status, 'active');
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('route shadow decisions are stored and finalized after outcome resolution', async () => {
   const root = await tempRoot();
   try {

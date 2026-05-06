@@ -44,7 +44,7 @@ function chooseActivationReasonV3(validation, existing, config, updateMode) {
     return validation.reason;
 }
 export function ingestRouteLearningArtifactsV3(store, agentId, decision, routeFrame, teacherRun, counterfactuals, lessons, config) {
-    const chosenPrototype = upsertPrototypeForDecision(store, agentId, decision, lessons, 'learned');
+    const chosenPrototype = upsertPrototypeForDecision(store, agentId, decision, lessons, 'learned', config);
     const rewardComponents = rewardComponentsForDecision(decision);
     const frame = store.insertRouteFrameV3({
         agentId,
@@ -97,7 +97,7 @@ export function ingestRouteLearningArtifactsV3(store, agentId, decision, routeFr
     store.upsertRouteBanditStateV3(updateBanditState(store.getRouteBanditStateV3(agentId), banditFeedback, config));
     const prototypeIds = new Set([chosenPrototype.id]);
     const pairExamples = [];
-    const teacherPrototype = upsertPrototypeForTeacher(store, agentId, teacherRun, lessons, 'distilled');
+    const teacherPrototype = upsertPrototypeForTeacher(store, agentId, teacherRun, lessons, 'distilled', config);
     prototypeIds.add(teacherPrototype.id);
     if (teacherPrototype.id !== chosenPrototype.id) {
         const pair = store.insertRoutePairExampleV3({
@@ -116,7 +116,7 @@ export function ingestRouteLearningArtifactsV3(store, agentId, decision, routeFr
             continue;
         if (Number(cf.confidence || 0) < 0.35)
             continue;
-        const prototype = upsertPrototypeForCounterfactual(store, agentId, decision, cf, 'distilled');
+        const prototype = upsertPrototypeForCounterfactual(store, agentId, decision, cf, 'distilled', config);
         prototypeIds.add(prototype.id);
         if (prototype.id === chosenPrototype.id)
             continue;
@@ -146,7 +146,7 @@ export function ingestRouteLearningArtifactsV3(store, agentId, decision, routeFr
             status: 'active',
             provenance: 'distilled',
             sourceExampleIds: [decision.id],
-        });
+        }, config);
         prototypeIds.add(silencePrototype.id);
         pairExamples.push(store.insertRoutePairExampleV3({
             agentId,
@@ -173,9 +173,9 @@ export function maybeDistillAndStorePolicyV3(store, agentId, config) {
     const updateMode = routePolicyV3UpdateMode(config);
     const frames = store.listRouteFramesV3(agentId, 400);
     const pairs = store.listRoutePairExamplesV3(agentId, 1200);
-    const listedPrototypes = store.listRouteActionPrototypesV3(agentId, 200);
+    const listedPrototypes = promoteEligibleColdStartPrototypesV3(store, store.listRouteActionPrototypesV3(agentId, 200), config);
     const retirement = retireStalePrototypesV3(store, listedPrototypes, config);
-    const prototypes = listedPrototypes.filter((prototype) => prototype.status !== 'retired' && !retirement.retiredPrototypeIds.includes(prototype.id));
+    const prototypes = listedPrototypes.filter((prototype) => prototype.status !== 'retired' && prototype.status !== 'cold_start' && !retirement.retiredPrototypeIds.includes(prototype.id));
     const banditState = store.getRouteBanditStateV3(agentId);
     const minFrames = Number(config.routeLearning?.policyV3?.minFrames ?? 3);
     const existing = store.getActivePolicySnapshotV3(agentId);
@@ -531,7 +531,7 @@ function validateRuleShapeV3(rule, config) {
         errors.push(`bad_sync_planner:${rule.id}`);
     return errors;
 }
-function upsertPrototypeForDecision(store, agentId, decision, lessons, provenance) {
+function upsertPrototypeForDecision(store, agentId, decision, lessons, provenance, config) {
     const lesson = lessons.find((item) => item.route === decision.route) || lessons[0];
     return upsertPrototype(store, {
         agentId,
@@ -558,9 +558,9 @@ function upsertPrototypeForDecision(store, agentId, decision, lessons, provenanc
         status: 'active',
         provenance,
         sourceExampleIds: unique([decision.id, ...(lesson ? [lesson.id] : [])]),
-    });
+    }, config);
 }
-function upsertPrototypeForTeacher(store, agentId, teacherRun, lessons, provenance) {
+function upsertPrototypeForTeacher(store, agentId, teacherRun, lessons, provenance, config) {
     const memoryTypes = sanitizeMemoryTypes(lessons.flatMap((lesson) => lesson.route === teacherRun.teacherRoute ? lesson.memoryTypes : []).length
         ? lessons.flatMap((lesson) => lesson.route === teacherRun.teacherRoute ? lesson.memoryTypes : [])
         : []);
@@ -586,9 +586,9 @@ function upsertPrototypeForTeacher(store, agentId, teacherRun, lessons, provenan
         status: 'active',
         provenance,
         sourceExampleIds: unique([teacherRun.id, ...lessons.map((lesson) => lesson.id)]),
-    });
+    }, config);
 }
-function upsertPrototypeForCounterfactual(store, agentId, decision, cf, provenance) {
+function upsertPrototypeForCounterfactual(store, agentId, decision, cf, provenance, config) {
     const route = cf.kind === 'stay_silent' || cf.kind === 'no_memory'
         ? 'no_memory'
         : cf.memoryTypes.includes('correction')
@@ -619,11 +619,36 @@ function upsertPrototypeForCounterfactual(store, agentId, decision, cf, provenan
         status: 'active',
         provenance,
         sourceExampleIds: unique([decision.id, cf.id]),
-    });
+    }, config);
 }
-function upsertPrototype(store, input) {
+function upsertPrototype(store, input, config) {
     const prototypeId = input.id || prototypeIdFor(input);
-    return store.upsertRouteActionPrototypeV3({ ...input, id: prototypeId });
+    const existing = store.getRouteActionPrototypeV3?.(prototypeId);
+    const support = Number(existing?.supportPrior || 0) + Number(input.supportPrior || 0);
+    const harm = Number(existing?.harmPrior || 0) + Number(input.harmPrior || 0);
+    const status = derivePrototypeStatusV3(input.status, input.provenance, support, harm, config);
+    return store.upsertRouteActionPrototypeV3({ ...input, id: prototypeId, status });
+}
+function derivePrototypeStatusV3(current, provenance, support, harm, config) {
+    if (current === 'retired')
+        return 'retired';
+    if (current === 'shadow')
+        return 'shadow';
+    if (provenance !== 'learned')
+        return 'active';
+    const minSamples = Number(config.routeLearning?.policyV3?.coldStartMinSamples ?? 3);
+    return (support + harm) < minSamples ? 'cold_start' : 'active';
+}
+function promoteEligibleColdStartPrototypesV3(store, prototypes, config) {
+    const minSamples = Number(config.routeLearning?.policyV3?.coldStartMinSamples ?? 3);
+    return prototypes.map((prototype) => {
+        if (prototype.status !== 'cold_start')
+            return prototype;
+        const sampleCount = Number(prototype.supportPrior || 0) + Number(prototype.harmPrior || 0);
+        if (sampleCount < minSamples)
+            return prototype;
+        return store.setRouteActionPrototypeStatusV3?.(prototype.id, 'active') || { ...prototype, status: 'active' };
+    });
 }
 function prototypeIdFor(input) {
     return hashText(JSON.stringify({

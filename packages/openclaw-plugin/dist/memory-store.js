@@ -1056,6 +1056,10 @@ export class MemoryStore {
     listRouteActionPrototypesV3(agentId, limit = 100) {
         return this.db.prepare('SELECT * FROM route_action_prototypes_v3 WHERE agent_id = ? ORDER BY updated_at DESC LIMIT ?').all(agentId, Math.min(500, Math.max(1, limit))).map(rowToRouteActionPrototypeV3);
     }
+    getRouteActionPrototypeV3(id) {
+        const row = this.db.prepare('SELECT * FROM route_action_prototypes_v3 WHERE id = ?').get(id);
+        return row ? rowToRouteActionPrototypeV3(row) : null;
+    }
     setRouteActionPrototypeStatusV3(id, status) {
         this.db.prepare('UPDATE route_action_prototypes_v3 SET status = ?, updated_at = ? WHERE id = ?').run(status, now(), id);
         const row = this.db.prepare('SELECT * FROM route_action_prototypes_v3 WHERE id = ?').get(id);

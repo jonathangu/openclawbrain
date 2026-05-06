@@ -93,6 +93,7 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
             updateMode: any;
             shadowBeforeActivate: boolean;
             activationCooldownMs: number;
+            coldStartMinSamples: number;
             minFrames: number;
             maxSyncPlannerRate: number;
             maxHarmRate: number;
@@ -239,6 +240,7 @@ export declare function normalizePluginConfig(input?: any): {
             updateMode: any;
             shadowBeforeActivate: boolean;
             activationCooldownMs: number;
+            coldStartMinSamples: number;
             minFrames: number;
             maxSyncPlannerRate: number;
             maxHarmRate: number;

@@ -1144,6 +1144,11 @@ export class MemoryStore {
     ).all(agentId, Math.min(500, Math.max(1, limit))) as any[]).map(rowToRouteActionPrototypeV3);
   }
 
+  getRouteActionPrototypeV3(id: string): RouteActionPrototypeV3 | null {
+    const row = this.db.prepare('SELECT * FROM route_action_prototypes_v3 WHERE id = ?').get(id) as any;
+    return row ? rowToRouteActionPrototypeV3(row) : null;
+  }
+
   setRouteActionPrototypeStatusV3(id: string, status: RouteActionPrototypeV3['status']): RouteActionPrototypeV3 | null {
     this.db.prepare('UPDATE route_action_prototypes_v3 SET status = ?, updated_at = ? WHERE id = ?').run(status, now(), id);
     const row = this.db.prepare('SELECT * FROM route_action_prototypes_v3 WHERE id = ?').get(id) as any;
