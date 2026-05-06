@@ -71,7 +71,9 @@ export const DEFAULT_CONFIG: any = Object.freeze({
     policyV2: Object.freeze({ enabled: true, shadowBeforeActivate: false, minExamples: 3, maxSyncPlannerRate: 0.05, maxNoisyInjectionRate: 0.05 }),
     policyV3: Object.freeze({
       enabled: true,
+      updateMode: 'gated_active',
       shadowBeforeActivate: false,
+      activationCooldownMs: 0,
       minFrames: 3,
       maxSyncPlannerRate: 0.1,
       maxHarmRate: 0.2,
@@ -86,6 +88,8 @@ export const DEFAULT_CONFIG: any = Object.freeze({
       minCalibratedConfidence: 0.62,
       abstainMargin: 0.05,
       calibrationBuckets: 5,
+      storeShadowDecisions: true,
+      maxShadowSnapshots: 3,
       minProjectedImprovement: -0.01,
       compactnessMaxDuplicateRate: 0.35,
       prototypeRetirementHarmRate: 0.7,
@@ -245,7 +249,11 @@ export function normalizePluginConfig(input: any = {}) {
       },
       policyV3: {
         enabled: source.routeLearning?.policyV3?.enabled !== false,
+        updateMode: ['collect_only', 'distill_shadow', 'gated_active', 'manual_review_required'].includes(String(source.routeLearning?.policyV3?.updateMode || ''))
+          ? String(source.routeLearning?.policyV3?.updateMode)
+          : DEFAULT_CONFIG.routeLearning.policyV3.updateMode,
         shadowBeforeActivate: source.routeLearning?.policyV3?.shadowBeforeActivate === true,
+        activationCooldownMs: clampInteger(source.routeLearning?.policyV3?.activationCooldownMs, DEFAULT_CONFIG.routeLearning.policyV3.activationCooldownMs, 0, 7 * 24 * 60 * 60 * 1000),
         minFrames: clampInteger(source.routeLearning?.policyV3?.minFrames, DEFAULT_CONFIG.routeLearning.policyV3.minFrames, 1, 5000),
         maxSyncPlannerRate: clampNumber(source.routeLearning?.policyV3?.maxSyncPlannerRate, DEFAULT_CONFIG.routeLearning.policyV3.maxSyncPlannerRate, 0, 1),
         maxHarmRate: clampNumber(source.routeLearning?.policyV3?.maxHarmRate, DEFAULT_CONFIG.routeLearning.policyV3.maxHarmRate, 0, 1),
@@ -260,6 +268,8 @@ export function normalizePluginConfig(input: any = {}) {
         minCalibratedConfidence: clampNumber(source.routeLearning?.policyV3?.minCalibratedConfidence, DEFAULT_CONFIG.routeLearning.policyV3.minCalibratedConfidence, 0, 1),
         abstainMargin: clampNumber(source.routeLearning?.policyV3?.abstainMargin, DEFAULT_CONFIG.routeLearning.policyV3.abstainMargin, 0, 0.5),
         calibrationBuckets: clampInteger(source.routeLearning?.policyV3?.calibrationBuckets, DEFAULT_CONFIG.routeLearning.policyV3.calibrationBuckets, 3, 10),
+        storeShadowDecisions: source.routeLearning?.policyV3?.storeShadowDecisions !== false,
+        maxShadowSnapshots: clampInteger(source.routeLearning?.policyV3?.maxShadowSnapshots, DEFAULT_CONFIG.routeLearning.policyV3.maxShadowSnapshots, 0, 20),
         minProjectedImprovement: clampNumber(source.routeLearning?.policyV3?.minProjectedImprovement, DEFAULT_CONFIG.routeLearning.policyV3.minProjectedImprovement, -1, 1),
         compactnessMaxDuplicateRate: clampNumber(source.routeLearning?.policyV3?.compactnessMaxDuplicateRate, DEFAULT_CONFIG.routeLearning.policyV3.compactnessMaxDuplicateRate, 0, 1),
         prototypeRetirementHarmRate: clampNumber(source.routeLearning?.policyV3?.prototypeRetirementHarmRate, DEFAULT_CONFIG.routeLearning.policyV3.prototypeRetirementHarmRate, 0, 1),

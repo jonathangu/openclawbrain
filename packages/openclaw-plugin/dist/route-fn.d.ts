@@ -20,6 +20,12 @@ export interface CachedRoutePlan {
     sourceRouteDecisionId?: string;
     policySnapshotId?: string;
     matchedPolicyRuleId?: string;
+    routingMode?: string;
+    rawPolicyScore?: number;
+    calibratedPolicyScore?: number;
+    policyThreshold?: number;
+    abstained?: boolean;
+    fallbackSource?: string;
     retrievalIntent?: RetrievalIntentResult;
     captureIntent?: CaptureIntentResult;
 }
@@ -36,6 +42,12 @@ export interface RoutePlan {
     latencyReason: string;
     policySnapshotId?: string;
     matchedPolicyRuleId?: string;
+    routingMode?: string;
+    rawPolicyScore?: number;
+    calibratedPolicyScore?: number;
+    policyThreshold?: number;
+    abstained?: boolean;
+    fallbackSource?: string;
     reasonCode?: string;
 }
 export declare class RouteCache {

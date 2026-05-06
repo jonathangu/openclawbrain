@@ -716,6 +716,220 @@ test('policy v3 distiller merges duplicate prototypes and records replay/calibra
     assert.ok(report.snapshot.evalSummary?.compactness);
     assert.ok(report.snapshot.rules.length < 3);
     assert.ok(report.snapshot.evalSummary.replay.frames >= 1);
+    assert.ok(store.listRouteCalibrationExamplesV3('main', 20, report.snapshot.id).length >= 1);
+    assert.ok(store.listRouteEvalCasesV3('main', 20, report.snapshot.id).length >= 1);
+    assert.ok(store.listRouteEvalCaseLabelsV3('main', 20).length >= 1);
+    assert.ok(store.listRoutePolicyCandidateReportsV3('main', 10).some((candidate) => candidate.snapshotId === report.snapshot.id));
+    assert.ok(store.listRouteActionFamilyStatsV3('main', 10).length >= 2);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('policy v3 manual-review update mode keeps candidate snapshots shadow-only', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      routeLearning: {
+        enabled: true,
+        policyV3: {
+          enabled: true,
+          updateMode: 'manual_review_required',
+          minFrames: 2,
+          maxHarmRate: 0.6,
+        },
+      },
+    });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+
+    const frameA = store.insertRouteFrameV3({
+      agentId: 'main',
+      routeDecisionId: 'mr-1',
+      redactedTurnSummary: 'Run project tests',
+      taskType: 'coding',
+      turnSignals: ['test', 'repo', 'workflow'],
+      projectHint: 'openclawbrain',
+      repoHint: 'openclawbrain',
+      toolHints: ['exec'],
+      routeHintFlags: ['needs_workflow'],
+      chosenActionId: 'mr-action',
+      chosenRoute: 'retrieve_memory',
+      chosenMemoryTypes: ['workflow'],
+      chosenGraphDepth: 1,
+      chosenSyncPlanner: 'no',
+      outcome: 'tool_success',
+      reward: 0.7,
+      rewardComponents: { retrievalHelpGain: 0.7 },
+      payloadHash: 'mr-p1',
+    });
+    const frameB = store.insertRouteFrameV3({
+      agentId: 'main',
+      routeDecisionId: 'mr-2',
+      redactedTurnSummary: 'Run tests in repo',
+      taskType: 'coding',
+      turnSignals: ['tests', 'repo', 'workflow'],
+      projectHint: 'openclawbrain',
+      repoHint: 'openclawbrain',
+      toolHints: ['exec'],
+      routeHintFlags: ['needs_workflow'],
+      chosenActionId: 'mr-action',
+      chosenRoute: 'retrieve_memory',
+      chosenMemoryTypes: ['workflow'],
+      chosenGraphDepth: 1,
+      chosenSyncPlanner: 'no',
+      outcome: 'tool_success',
+      reward: 0.72,
+      rewardComponents: { retrievalHelpGain: 0.72 },
+      payloadHash: 'mr-p2',
+    });
+    store.upsertRouteActionPrototypeV3({
+      id: 'mr-action',
+      agentId: 'main',
+      route: 'retrieve_memory',
+      memoryTypes: ['workflow'],
+      graphDepth: 1,
+      syncPlanner: 'no',
+      queryTemplateFamily: ['repo test workflow'],
+      sparseSignature: ['coding', 'test', 'repo', 'workflow'],
+      denseEmbedding: [1, 0.3, 0.1],
+      supportPrior: 2,
+      harmPrior: 0,
+      status: 'active',
+      provenance: 'learned',
+      sourceExampleIds: [frameA.id, frameB.id],
+    });
+    store.upsertRouteActionPrototypeV3({
+      id: 'mr-silence',
+      agentId: 'main',
+      route: 'no_memory',
+      memoryTypes: [],
+      graphDepth: 0,
+      syncPlanner: 'no',
+      queryTemplateFamily: [],
+      sparseSignature: ['other', 'silence'],
+      denseEmbedding: [0.1, 0, 0],
+      supportPrior: 1,
+      harmPrior: 0,
+      status: 'active',
+      provenance: 'learned',
+      sourceExampleIds: [frameA.id],
+    });
+    store.insertRoutePairExampleV3({
+      agentId: 'main',
+      frameId: frameA.id,
+      positiveActionId: 'mr-action',
+      negativeActionId: 'mr-silence',
+      labelSource: 'teacher',
+      marginWeight: 0.6,
+      evidenceIds: [frameA.id],
+    });
+
+    const report = maybeDistillAndStorePolicyV3(store, 'main', config);
+    assert.equal(report.validation.ok, true);
+    assert.equal(report.snapshot.status, 'shadow');
+    assert.equal(report.snapshot.evalSummary.activationStatusReason, 'manual_review_required');
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('route shadow decisions are stored and finalized after outcome resolution', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({ enabled: true, mode: 'balanced', activationRoot: root });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    store.insertPolicySnapshotV3({
+      agentId: 'main',
+      version: 'route-policy-v3',
+      status: 'shadow',
+      rules: [{
+        id: 'shadow-rule',
+        actionId: 'shadow-action',
+        match: { taskType: 'coding', turnSignals: ['test', 'repo'] },
+        route: 'retrieve_memory',
+        memoryTypes: ['workflow'],
+        queries: ['test workflow'],
+        graphDepth: 1,
+        syncPlanner: 'no',
+        confidence: 0.74,
+        evidenceIds: ['e1'],
+      }],
+      actionPriors: {
+        'shadow-action': { support: 1, harm: 0, pairWinRate: 0.6, banditMeanReward: 0.2, banditCount: 1 },
+      },
+      globalBudgets: { maxSyncPlannerRate: 0.1, maxInjectedMemories: 8, maxInjectedChars: 2500, defaultGraphDepth: 1, minCalibratedConfidence: 0.4, abstainMargin: 0.05 },
+      evalSummary: { frames: 1, pairExamples: 0, prototypes: 1, projectedSyncPlannerRate: 0, noisyActionRate: 0, harmRate: 0 },
+      calibration: {
+        method: 'histogram_binning_v1',
+        holdoutFrames: 1,
+        comparableFrames: 1,
+        globalThreshold: 0.4,
+        abstainMargin: 0.05,
+        globalBuckets: [{ minScore: 0.5, maxScore: 1, successRate: 0.8, count: 1 }],
+        routeThresholds: { retrieve_memory: 0.4 },
+        routeBuckets: { retrieve_memory: [{ minScore: 0.5, maxScore: 1, successRate: 0.8, count: 1 }] },
+      },
+      sourceFrameIds: [],
+      sourcePrototypeIds: ['shadow-action'],
+    });
+
+    const decision = store.insertRouteDecision({
+      agentId: 'main',
+      route: 'retrieve_memory',
+      confidence: 0.8,
+      latencyTier: 'no_sync',
+      syncLlmUsed: false,
+      fallbackUsed: false,
+      turnFrame: {
+        summary: 'Run repo tests',
+        userGoal: 'Run repo tests',
+        taskType: 'coding',
+        activeObjects: [{ kind: 'repo', value: 'openclawbrain' }],
+        impliedNeeds: ['test workflow'],
+        memoryQuestions: [],
+        constraints: [],
+        routeHints: {
+          likelyNeedsCorrections: false,
+          likelyNeedsPreferences: false,
+          likelyNeedsWorkflow: true,
+          likelyNeedsProjectContext: true,
+        },
+      },
+      retrievalPlan: { queries: ['test workflow'], memoryTypes: ['workflow'], requiredTags: [], excludedTags: [], graphDepth: 1, maxCandidates: 8 },
+      injectionPlan: { maxItems: 4, maxChars: 800, preferredFormat: 'bullets' },
+      selectedMemoryIds: [],
+      omittedMemoryIds: [],
+      reward: 0,
+    });
+
+    const shadowSnapshot = store.listPolicySnapshotsV3('main', 5)[0];
+    const match = scorePolicySnapshotV3(shadowSnapshot, decision.turnFrame, 'Run repo tests', { requireActive: false });
+    store.insertRouteShadowDecisionV3({
+      agentId: 'main',
+      routeDecisionId: decision.id,
+      snapshotId: shadowSnapshot.id,
+      snapshotStatus: shadowSnapshot.status,
+      proposedRoute: match.rule.route,
+      proposedActionId: match.rule.actionId,
+      proposedRuleId: match.rule.id,
+      rawScore: match.rawScore,
+      calibratedScore: match.calibratedScore,
+      threshold: match.threshold,
+      abstained: match.abstained,
+      routingMode: 'workflow_exact',
+      reasonCode: match.reasonCode,
+    });
+
+    store.finalizeRouteShadowDecisionsV3(decision.id, 'retrieve_memory', 0.8);
+    const shadows = store.listRouteShadowDecisionsV3('main', 10, decision.id);
+    assert.equal(shadows.length, 1);
+    assert.equal(shadows[0].matchedObservedRoute, true);
+    assert.equal(shadows[0].reward, 0.8);
     store.close();
   } finally {
     await rm(root, { recursive: true, force: true });

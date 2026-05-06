@@ -19,6 +19,9 @@ export interface RoutePolicyV3MatchResult {
     abstained?: boolean;
     reasonCode: string;
 }
+interface RoutePolicyV3ScoreOptions {
+    requireActive?: boolean;
+}
 export interface RoutePolicyV3DistillationReport {
     snapshot?: RoutePolicySnapshotV3;
     validation?: RoutePolicyV3ValidationReport;
@@ -38,7 +41,7 @@ export declare function ingestRouteLearningArtifactsV3(store: any, agentId: stri
 export declare function maybeDistillAndStorePolicyV3(store: any, agentId: string, config: any): RoutePolicyV3DistillationReport;
 export declare function distillPolicyRulesV3(frames: RouteFrameV3[], pairs: RoutePairExampleV3[], prototypes: RouteActionPrototypeV3[], banditState: RouteBanditStateV3 | null, config: any): RoutePolicyRuleV3[];
 export declare function validatePolicySnapshotV3(snapshot: Partial<RoutePolicySnapshotV3>, config?: any, existing?: RoutePolicySnapshotV3 | null): RoutePolicyV3ValidationReport;
-export declare function scorePolicySnapshotV3(snapshot: RoutePolicySnapshotV3 | null | undefined, turnFrame: TurnFrame, message?: string): RoutePolicyV3MatchResult;
+export declare function scorePolicySnapshotV3(snapshot: RoutePolicySnapshotV3 | null | undefined, turnFrame: TurnFrame, message?: string, options?: RoutePolicyV3ScoreOptions): RoutePolicyV3MatchResult;
 export declare function rankActionPrototypesV3(frame: Pick<RouteFrameV3, 'taskType' | 'turnSignals' | 'projectHint' | 'repoHint' | 'toolHints' | 'routeHintFlags' | 'redactedTurnSummary'>, prototypes: RouteActionPrototypeV3[], banditState: RouteBanditStateV3 | null): {
     prototype: RouteActionPrototypeV3;
     score: number;
@@ -48,3 +51,4 @@ export declare function rankActionPrototypesV3(frame: Pick<RouteFrameV3, 'taskTy
     riskPenalty: number;
     mode: import("./route-policy-v3-routing-mode.js").RoutingModeV3;
 }[];
+export {};

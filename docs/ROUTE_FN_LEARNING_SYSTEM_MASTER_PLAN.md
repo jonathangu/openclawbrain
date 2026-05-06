@@ -1,10 +1,10 @@
 # OpenClawBrain Route Function Learning System Master Plan
 
-**Status:** canonical end-to-end plan for making the learned `route_fn`, its update loop, and its training-data/storage layer materially better  
+**Status:** sole canonical end-to-end plan for making the learned `route_fn`, its update loop, and its training-data/storage layer materially better
 **Owner:** GUCLAW / Jonathan  
 **Date:** 2026-05-06  
 **Depends on:** shipped `route-policy-v2`, implemented `route-policy-v3`, teacher/counterfactual pipeline, current v3 storage tables  
-**Supersedes for forward design:** use this as the top-level execution plan above `ROUTE_LEARNING_ULTIMATE_MASTER_PLAN.md`, `ROUTE_TEACHER_MASTER_PLAN_PART2.md`, and `ROUTE_LEARNING_V3_HARDENING_MASTER_PLAN.md` when deciding what to build next.  
+**Single-truth note:** the older split route-learning / teacher / hardening plan docs were intentionally deleted after consolidation; use this file as the only forward plan.
 **Current production baseline:** `route-policy-v2` remains the safest shipped runtime default; current v3 work is the guarded learning lane.
 
 ---

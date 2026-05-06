@@ -21,6 +21,7 @@ import { clipText, eventId, hashText, latestUserTextFromEvent, redactJsonValue, 
 import { RouteFn } from './route-fn.js';
 import { maybeDistillAndStorePolicyV2, scorePolicySnapshotV2, validatePolicySnapshotV2 } from './route-policy-v2.js';
 import { maybeDistillAndStorePolicyV3, scorePolicySnapshotV3, validatePolicySnapshotV3 } from './route-policy-v3.js';
+import { detectRoutingModeV3 } from './route-policy-v3-routing-mode.js';
 import { detectCaptureIntent, detectRetrievalIntent } from './capture-intent.js';
 import { defaultScopeContext, memoryInScope, scopeContextFromPacket } from './scope.js';
 
@@ -203,11 +204,19 @@ async function handleV2PromptHook(event: any = {}, config: any = normalizePlugin
     promptVersion: latency.kind === 'sync_memory_planner' ? 'memory-planner-v1' : 'route-fn-v1',
     policySnapshotId: plan.policySnapshotId,
     policyRuleId: plan.matchedPolicyRuleId,
+    routingMode: plan.routingMode,
+    rawPolicyScore: plan.rawPolicyScore,
+    calibratedPolicyScore: plan.calibratedPolicyScore,
+    policyThreshold: plan.policyThreshold,
+    abstained: plan.abstained,
+    fallbackSource: plan.fallbackSource,
     candidateCount: initialCandidates.length,
     reasonCode: plan.reasonCode || plan.latencyReason,
     injectionPayloadHash: selection.shouldInject ? hashText(selection.distilledContext) : undefined,
     reward: 0,
   });
+
+  recordRouteShadowDecisionsV3(store, packet.agentId, routeDecision.id, plan.turnFrame, packet.latestUserMessageRedacted, plan.policySnapshotId, config);
 
   buildRouteGraphSnapshot(
     store,
@@ -1093,6 +1102,12 @@ function routePolicyPayload(config: any = {}, agentId = 'main', limit = 20) {
     const examples = store.listRouteTrainingExamplesV2(agentId, 50);
     const framesV3 = store.listRouteFramesV3(agentId, 50);
     const prototypesV3 = store.listRouteActionPrototypesV3(agentId, 50);
+    const shadowDecisionsV3 = store.listRouteShadowDecisionsV3(agentId, 50);
+    const calibrationExamplesV3 = store.listRouteCalibrationExamplesV3(agentId, 50);
+    const evalCasesV3 = store.listRouteEvalCasesV3?.(agentId, 50) || [];
+    const evalCaseLabelsV3 = store.listRouteEvalCaseLabelsV3?.(agentId, 100) || [];
+    const candidateReportsV3 = store.listRoutePolicyCandidateReportsV3(agentId, 20);
+    const familyStatsV3 = store.listRouteActionFamilyStatsV3(agentId, 20);
     return {
       ok: true,
       agentId,
@@ -1125,9 +1140,50 @@ function routePolicyPayload(config: any = {}, agentId = 'main', limit = 20) {
       routeFramesV3: framesV3.slice(0, 20),
       routeActionPrototypeCountV3: prototypesV3.length,
       routeActionPrototypesV3: prototypesV3.slice(0, 20),
+      routeShadowDecisionCountV3: shadowDecisionsV3.length,
+      routeShadowDecisionsV3: shadowDecisionsV3.slice(0, 20),
+      routeCalibrationExampleCountV3: calibrationExamplesV3.length,
+      routeCalibrationExamplesV3: calibrationExamplesV3.slice(0, 20),
+      routeEvalCaseCountV3: evalCasesV3.length,
+      routeEvalCasesV3: evalCasesV3.slice(0, 20),
+      routeEvalCaseLabelCountV3: evalCaseLabelsV3.length,
+      routeEvalCaseLabelsV3: evalCaseLabelsV3.slice(0, 30),
+      routePolicyCandidateReportCountV3: candidateReportsV3.length,
+      routePolicyCandidateReportsV3: candidateReportsV3.slice(0, 10),
+      routeActionFamilyStatsCountV3: familyStatsV3.length,
+      routeActionFamilyStatsV3: familyStatsV3.slice(0, 10),
     };
   } finally {
     store.close();
+  }
+}
+
+function recordRouteShadowDecisionsV3(store: any, agentId: string, routeDecisionId: string, turnFrame: any, message: string, controllingSnapshotId: string | undefined, config: any) {
+  if (config.routeLearning?.policyV3?.enabled === false || config.routeLearning?.policyV3?.storeShadowDecisions === false) return;
+  const limit = Math.max(0, Number(config.routeLearning?.policyV3?.maxShadowSnapshots ?? 3));
+  if (limit === 0) return;
+  const snapshots = (store.listPolicySnapshotsV3(agentId, Math.max(10, limit * 4)) || [])
+    .filter((snapshot: any) => snapshot?.version === 'route-policy-v3')
+    .filter((snapshot: any) => snapshot.id !== controllingSnapshotId)
+    .filter((snapshot: any) => snapshot.status === 'shadow')
+    .slice(0, limit);
+  for (const snapshot of snapshots) {
+    const match = scorePolicySnapshotV3(snapshot, turnFrame, message, { requireActive: false });
+    store.insertRouteShadowDecisionV3({
+      agentId,
+      routeDecisionId,
+      snapshotId: snapshot.id,
+      snapshotStatus: snapshot.status,
+      proposedRoute: match.rule?.route || 'no_memory',
+      proposedActionId: match.rule?.actionId,
+      proposedRuleId: match.rule?.id,
+      rawScore: Number(match.rawScore || 0),
+      calibratedScore: Number(match.calibratedScore || match.score || 0),
+      threshold: Number(match.threshold || 0),
+      abstained: Boolean(match.abstained || !match.matched),
+      routingMode: detectRoutingModeV3(turnFrame, message),
+      reasonCode: match.reasonCode || 'shadow_policy_v3',
+    });
   }
 }
 

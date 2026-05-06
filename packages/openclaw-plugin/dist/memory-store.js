@@ -7,7 +7,7 @@ import { mkdirSync } from 'node:fs';
 import { openDatabase } from './sqlite-driver.js';
 import { filterMemoriesForScope } from './scope.js';
 // ── Schema version ────────────────────────────────────────────────────────────
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 10;
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 const MIGRATIONS = {
     1: `
@@ -623,6 +623,125 @@ const MIGRATIONS = {
     8: `
     -- v8: persist route-policy-v3 calibration + lineage JSON
   `,
+    9: `
+    CREATE TABLE IF NOT EXISTS route_shadow_decisions_v3 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      route_decision_id TEXT NOT NULL,
+      snapshot_id TEXT NOT NULL,
+      snapshot_status TEXT NOT NULL,
+      proposed_route TEXT NOT NULL,
+      proposed_action_id TEXT,
+      proposed_rule_id TEXT,
+      raw_score REAL NOT NULL DEFAULT 0,
+      calibrated_score REAL NOT NULL DEFAULT 0,
+      threshold REAL NOT NULL DEFAULT 0,
+      abstained INTEGER NOT NULL DEFAULT 0,
+      routing_mode TEXT NOT NULL DEFAULT 'mixed',
+      reason_code TEXT NOT NULL,
+      matched_observed_route INTEGER,
+      reward REAL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_route_shadow_decisions_v3_agent ON route_shadow_decisions_v3(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_route_shadow_decisions_v3_decision ON route_shadow_decisions_v3(route_decision_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS route_calibration_examples_v3 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      snapshot_id TEXT NOT NULL,
+      frame_id TEXT NOT NULL,
+      route TEXT NOT NULL,
+      action_id TEXT,
+      rule_id TEXT,
+      routing_mode TEXT NOT NULL,
+      raw_score REAL NOT NULL DEFAULT 0,
+      calibrated_score REAL NOT NULL DEFAULT 0,
+      observed_success INTEGER NOT NULL DEFAULT 0,
+      comparable INTEGER NOT NULL DEFAULT 0,
+      split TEXT NOT NULL DEFAULT 'holdout',
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_route_calibration_examples_v3_agent ON route_calibration_examples_v3(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_route_calibration_examples_v3_snapshot ON route_calibration_examples_v3(snapshot_id, split, created_at);
+
+    CREATE TABLE IF NOT EXISTS route_action_family_stats_v3 (
+      family_key TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      route TEXT NOT NULL,
+      memory_types_json TEXT NOT NULL DEFAULT '[]',
+      graph_depth INTEGER NOT NULL DEFAULT 0,
+      sync_planner TEXT NOT NULL DEFAULT 'no',
+      support_count INTEGER NOT NULL DEFAULT 0,
+      harm_count INTEGER NOT NULL DEFAULT 0,
+      mean_reward REAL NOT NULL DEFAULT 0,
+      reward_variance REAL NOT NULL DEFAULT 0,
+      pair_win_rate REAL NOT NULL DEFAULT 0,
+      bandit_mean_reward REAL NOT NULL DEFAULT 0,
+      bandit_count INTEGER NOT NULL DEFAULT 0,
+      shadow_agreement_rate REAL NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_route_action_family_stats_v3_agent ON route_action_family_stats_v3(agent_id, updated_at);
+
+    CREATE TABLE IF NOT EXISTS route_policy_candidate_reports_v3 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      snapshot_id TEXT NOT NULL,
+      previous_snapshot_id TEXT,
+      status TEXT NOT NULL,
+      body_hash TEXT NOT NULL,
+      rule_count INTEGER NOT NULL DEFAULT 0,
+      compactness_before INTEGER NOT NULL DEFAULT 0,
+      compactness_after INTEGER NOT NULL DEFAULT 0,
+      duplicate_groups INTEGER NOT NULL DEFAULT 0,
+      merged_away INTEGER NOT NULL DEFAULT 0,
+      dominated_pruned INTEGER NOT NULL DEFAULT 0,
+      estimated_improvement REAL NOT NULL DEFAULT 0,
+      projected_sync_planner_rate REAL NOT NULL DEFAULT 0,
+      noisy_action_rate REAL NOT NULL DEFAULT 0,
+      harm_rate REAL NOT NULL DEFAULT 0,
+      calibration_holdout_frames INTEGER NOT NULL DEFAULT 0,
+      shadow_decision_count INTEGER NOT NULL DEFAULT 0,
+      retired_prototype_ids_json TEXT NOT NULL DEFAULT '[]',
+      activation_reason TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_route_policy_candidate_reports_v3_agent ON route_policy_candidate_reports_v3(agent_id, created_at);
+  `,
+    10: `
+    CREATE TABLE IF NOT EXISTS route_eval_cases_v3 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      snapshot_id TEXT NOT NULL,
+      frame_id TEXT NOT NULL,
+      routing_mode TEXT NOT NULL DEFAULT 'mixed',
+      observed_route TEXT NOT NULL,
+      expected_route TEXT NOT NULL,
+      reward REAL NOT NULL DEFAULT 0,
+      quality TEXT NOT NULL DEFAULT 'usable',
+      human_reviewed INTEGER NOT NULL DEFAULT 0,
+      promotion_safe INTEGER NOT NULL DEFAULT 1,
+      notes TEXT,
+      split TEXT NOT NULL DEFAULT 'replay_eval',
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_route_eval_cases_v3_agent ON route_eval_cases_v3(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_route_eval_cases_v3_snapshot ON route_eval_cases_v3(snapshot_id, split, created_at);
+
+    CREATE TABLE IF NOT EXISTS route_eval_case_labels_v3 (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      case_id TEXT NOT NULL,
+      source TEXT NOT NULL,
+      preferred_route TEXT NOT NULL,
+      confidence REAL NOT NULL DEFAULT 0.5,
+      notes TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_route_eval_case_labels_v3_agent ON route_eval_case_labels_v3(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_route_eval_case_labels_v3_case ON route_eval_case_labels_v3(case_id, created_at);
+  `,
 };
 // ── UUID helper ───────────────────────────────────────────────────────────────
 import { randomUUID } from 'node:crypto';
@@ -665,6 +784,32 @@ export class MemoryStore {
                     this.db.exec('ALTER TABLE route_policy_snapshots_v3 ADD COLUMN calibration_json TEXT;');
                 if (!tableHasColumn(this.db, 'route_policy_snapshots_v3', 'lineage_json'))
                     this.db.exec('ALTER TABLE route_policy_snapshots_v3 ADD COLUMN lineage_json TEXT;');
+            }
+            if (v === 9) {
+                if (!tableHasColumn(this.db, 'route_decisions', 'routing_mode'))
+                    this.db.exec('ALTER TABLE route_decisions ADD COLUMN routing_mode TEXT;');
+                if (!tableHasColumn(this.db, 'route_decisions', 'raw_policy_score'))
+                    this.db.exec('ALTER TABLE route_decisions ADD COLUMN raw_policy_score REAL;');
+                if (!tableHasColumn(this.db, 'route_decisions', 'calibrated_policy_score'))
+                    this.db.exec('ALTER TABLE route_decisions ADD COLUMN calibrated_policy_score REAL;');
+                if (!tableHasColumn(this.db, 'route_decisions', 'policy_threshold'))
+                    this.db.exec('ALTER TABLE route_decisions ADD COLUMN policy_threshold REAL;');
+                if (!tableHasColumn(this.db, 'route_decisions', 'abstained'))
+                    this.db.exec('ALTER TABLE route_decisions ADD COLUMN abstained INTEGER NOT NULL DEFAULT 0;');
+                if (!tableHasColumn(this.db, 'route_decisions', 'fallback_source'))
+                    this.db.exec('ALTER TABLE route_decisions ADD COLUMN fallback_source TEXT;');
+                if (!tableHasColumn(this.db, 'route_frames_v3', 'routing_mode'))
+                    this.db.exec('ALTER TABLE route_frames_v3 ADD COLUMN routing_mode TEXT;');
+                if (!tableHasColumn(this.db, 'route_frames_v3', 'raw_policy_score'))
+                    this.db.exec('ALTER TABLE route_frames_v3 ADD COLUMN raw_policy_score REAL;');
+                if (!tableHasColumn(this.db, 'route_frames_v3', 'calibrated_policy_score'))
+                    this.db.exec('ALTER TABLE route_frames_v3 ADD COLUMN calibrated_policy_score REAL;');
+                if (!tableHasColumn(this.db, 'route_frames_v3', 'policy_threshold'))
+                    this.db.exec('ALTER TABLE route_frames_v3 ADD COLUMN policy_threshold REAL;');
+                if (!tableHasColumn(this.db, 'route_frames_v3', 'abstained'))
+                    this.db.exec('ALTER TABLE route_frames_v3 ADD COLUMN abstained INTEGER NOT NULL DEFAULT 0;');
+                if (!tableHasColumn(this.db, 'route_frames_v3', 'fallback_source'))
+                    this.db.exec('ALTER TABLE route_frames_v3 ADD COLUMN fallback_source TEXT;');
             }
             this.db.exec(sql);
             this.db.pragma(`user_version = ${v}`);
@@ -871,10 +1016,11 @@ export class MemoryStore {
         id, agent_id, route_decision_id, route_frame_id, redacted_turn_summary, task_type,
         turn_signals_json, project_hint, repo_hint, tool_hints_json, route_hint_flags_json,
         chosen_action_id, chosen_route, chosen_memory_types_json, chosen_graph_depth,
-        chosen_sync_planner, policy_snapshot_id, policy_rule_id, outcome, reward,
+        chosen_sync_planner, policy_snapshot_id, policy_rule_id, routing_mode, raw_policy_score,
+        calibrated_policy_score, policy_threshold, abstained, fallback_source, outcome, reward,
         reward_components_json, payload_hash, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, frame.agentId, frame.routeDecisionId, frame.routeFrameId ?? null, frame.redactedTurnSummary, frame.taskType, JSON.stringify(frame.turnSignals ?? []), frame.projectHint ?? null, frame.repoHint ?? null, JSON.stringify(frame.toolHints ?? []), JSON.stringify(frame.routeHintFlags ?? []), frame.chosenActionId, frame.chosenRoute, JSON.stringify(frame.chosenMemoryTypes ?? []), frame.chosenGraphDepth, frame.chosenSyncPlanner, frame.policySnapshotId ?? null, frame.policyRuleId ?? null, frame.outcome ?? null, frame.reward, frame.rewardComponents ? JSON.stringify(frame.rewardComponents) : null, frame.payloadHash, ts);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, frame.agentId, frame.routeDecisionId, frame.routeFrameId ?? null, frame.redactedTurnSummary, frame.taskType, JSON.stringify(frame.turnSignals ?? []), frame.projectHint ?? null, frame.repoHint ?? null, JSON.stringify(frame.toolHints ?? []), JSON.stringify(frame.routeHintFlags ?? []), frame.chosenActionId, frame.chosenRoute, JSON.stringify(frame.chosenMemoryTypes ?? []), frame.chosenGraphDepth, frame.chosenSyncPlanner, frame.policySnapshotId ?? null, frame.policyRuleId ?? null, frame.routingMode ?? null, frame.rawPolicyScore ?? null, frame.calibratedPolicyScore ?? null, frame.policyThreshold ?? null, frame.abstained ? 1 : 0, frame.fallbackSource ?? null, frame.outcome ?? null, frame.reward, frame.rewardComponents ? JSON.stringify(frame.rewardComponents) : null, frame.payloadHash, ts);
         return { ...frame, id, createdAt: ts };
     }
     listRouteFramesV3(agentId, limit = 100) {
@@ -957,6 +1103,147 @@ export class MemoryStore {
     `).run(state.agentId, state.learnerVersion, state.featureSchemaVersion, state.explorationAlpha, JSON.stringify(state.sharedWeights ?? []), JSON.stringify(state.actionStats ?? {}), state.updatedAt);
         return this.getRouteBanditStateV3(state.agentId);
     }
+    insertRouteShadowDecisionV3(decision) {
+        const id = decision.id || uuid();
+        const ts = decision.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO route_shadow_decisions_v3 (
+        id, agent_id, route_decision_id, snapshot_id, snapshot_status, proposed_route,
+        proposed_action_id, proposed_rule_id, raw_score, calibrated_score, threshold,
+        abstained, routing_mode, reason_code, matched_observed_route, reward, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, decision.agentId, decision.routeDecisionId, decision.snapshotId, decision.snapshotStatus, decision.proposedRoute, decision.proposedActionId ?? null, decision.proposedRuleId ?? null, decision.rawScore, decision.calibratedScore, decision.threshold, decision.abstained ? 1 : 0, decision.routingMode, decision.reasonCode, decision.matchedObservedRoute == null ? null : (decision.matchedObservedRoute ? 1 : 0), decision.reward ?? null, ts);
+        return { ...decision, id, createdAt: ts };
+    }
+    listRouteShadowDecisionsV3(agentId, limit = 100, routeDecisionId) {
+        const sql = routeDecisionId
+            ? 'SELECT * FROM route_shadow_decisions_v3 WHERE agent_id = ? AND route_decision_id = ? ORDER BY created_at DESC LIMIT ?'
+            : 'SELECT * FROM route_shadow_decisions_v3 WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?';
+        const rows = routeDecisionId
+            ? this.db.prepare(sql).all(agentId, routeDecisionId, Math.min(5000, Math.max(1, limit)))
+            : this.db.prepare(sql).all(agentId, Math.min(5000, Math.max(1, limit)));
+        return rows.map(rowToRouteShadowDecisionV3);
+    }
+    replaceRouteCalibrationExamplesV3(agentId, snapshotId, examples) {
+        this.db.prepare('DELETE FROM route_calibration_examples_v3 WHERE agent_id = ? AND snapshot_id = ?').run(agentId, snapshotId);
+        return examples.map((example) => {
+            const id = example.id || uuid();
+            const ts = example.createdAt || now();
+            this.db.prepare(`
+        INSERT INTO route_calibration_examples_v3 (
+          id, agent_id, snapshot_id, frame_id, route, action_id, rule_id, routing_mode,
+          raw_score, calibrated_score, observed_success, comparable, split, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, agentId, snapshotId, example.frameId, example.route, example.actionId ?? null, example.ruleId ?? null, example.routingMode, example.rawScore, example.calibratedScore, example.observedSuccess ? 1 : 0, example.comparable ? 1 : 0, example.split, ts);
+            return { ...example, id, agentId, snapshotId, createdAt: ts };
+        });
+    }
+    listRouteCalibrationExamplesV3(agentId, limit = 200, snapshotId) {
+        const sql = snapshotId
+            ? 'SELECT * FROM route_calibration_examples_v3 WHERE agent_id = ? AND snapshot_id = ? ORDER BY created_at DESC LIMIT ?'
+            : 'SELECT * FROM route_calibration_examples_v3 WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?';
+        const rows = snapshotId
+            ? this.db.prepare(sql).all(agentId, snapshotId, Math.min(5000, Math.max(1, limit)))
+            : this.db.prepare(sql).all(agentId, Math.min(5000, Math.max(1, limit)));
+        return rows.map(rowToRouteCalibrationExampleV3);
+    }
+    replaceRouteEvalCasesV3(agentId, snapshotId, cases) {
+        const existingCaseIds = this.db.prepare('SELECT id FROM route_eval_cases_v3 WHERE agent_id = ? AND snapshot_id = ?').all(agentId, snapshotId)
+            .map((row) => String(row.id));
+        if (existingCaseIds.length) {
+            const placeholders = existingCaseIds.map(() => '?').join(', ');
+            this.db.prepare(`DELETE FROM route_eval_case_labels_v3 WHERE case_id IN (${placeholders})`).run(...existingCaseIds);
+        }
+        this.db.prepare('DELETE FROM route_eval_cases_v3 WHERE agent_id = ? AND snapshot_id = ?').run(agentId, snapshotId);
+        return cases.map((item) => {
+            const id = item.id || uuid();
+            const ts = item.createdAt || now();
+            this.db.prepare(`
+        INSERT INTO route_eval_cases_v3 (
+          id, agent_id, snapshot_id, frame_id, routing_mode, observed_route, expected_route,
+          reward, quality, human_reviewed, promotion_safe, notes, split, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(id, agentId, snapshotId, item.frameId, item.routingMode, item.observedRoute, item.expectedRoute, item.reward, item.quality, item.humanReviewed ? 1 : 0, item.promotionSafe ? 1 : 0, item.notes ?? null, item.split, ts);
+            for (const label of item.labels || []) {
+                const labelId = label.id || uuid();
+                const labelTs = label.createdAt || ts;
+                this.db.prepare(`
+          INSERT INTO route_eval_case_labels_v3 (
+            id, agent_id, case_id, source, preferred_route, confidence, notes, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(labelId, agentId, id, label.source, label.preferredRoute, label.confidence, label.notes ?? null, labelTs);
+            }
+            return {
+                ...item,
+                id,
+                agentId,
+                snapshotId,
+                createdAt: ts,
+            };
+        });
+    }
+    listRouteEvalCasesV3(agentId, limit = 200, snapshotId) {
+        const sql = snapshotId
+            ? 'SELECT * FROM route_eval_cases_v3 WHERE agent_id = ? AND snapshot_id = ? ORDER BY created_at DESC LIMIT ?'
+            : 'SELECT * FROM route_eval_cases_v3 WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?';
+        const rows = snapshotId
+            ? this.db.prepare(sql).all(agentId, snapshotId, Math.min(5000, Math.max(1, limit)))
+            : this.db.prepare(sql).all(agentId, Math.min(5000, Math.max(1, limit)));
+        return rows.map(rowToRouteEvalCaseV3);
+    }
+    listRouteEvalCaseLabelsV3(agentId, limit = 500, caseId) {
+        const sql = caseId
+            ? 'SELECT * FROM route_eval_case_labels_v3 WHERE agent_id = ? AND case_id = ? ORDER BY created_at DESC LIMIT ?'
+            : 'SELECT * FROM route_eval_case_labels_v3 WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?';
+        const rows = caseId
+            ? this.db.prepare(sql).all(agentId, caseId, Math.min(5000, Math.max(1, limit)))
+            : this.db.prepare(sql).all(agentId, Math.min(5000, Math.max(1, limit)));
+        return rows.map(rowToRouteEvalCaseLabelV3);
+    }
+    upsertRouteActionFamilyStatsV3(stats) {
+        this.db.prepare(`
+      INSERT INTO route_action_family_stats_v3 (
+        family_key, agent_id, route, memory_types_json, graph_depth, sync_planner,
+        support_count, harm_count, mean_reward, reward_variance, pair_win_rate,
+        bandit_mean_reward, bandit_count, shadow_agreement_rate, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(family_key) DO UPDATE SET
+        agent_id = excluded.agent_id,
+        route = excluded.route,
+        memory_types_json = excluded.memory_types_json,
+        graph_depth = excluded.graph_depth,
+        sync_planner = excluded.sync_planner,
+        support_count = excluded.support_count,
+        harm_count = excluded.harm_count,
+        mean_reward = excluded.mean_reward,
+        reward_variance = excluded.reward_variance,
+        pair_win_rate = excluded.pair_win_rate,
+        bandit_mean_reward = excluded.bandit_mean_reward,
+        bandit_count = excluded.bandit_count,
+        shadow_agreement_rate = excluded.shadow_agreement_rate,
+        updated_at = excluded.updated_at
+    `).run(stats.familyKey, stats.agentId, stats.route, JSON.stringify(stats.memoryTypes ?? []), stats.graphDepth, stats.syncPlanner, stats.supportCount, stats.harmCount, stats.meanReward, stats.rewardVariance, stats.pairWinRate, stats.banditMeanReward, stats.banditCount, stats.shadowAgreementRate, stats.updatedAt);
+        return rowToRouteActionFamilyStatsV3(this.db.prepare('SELECT * FROM route_action_family_stats_v3 WHERE family_key = ?').get(stats.familyKey));
+    }
+    listRouteActionFamilyStatsV3(agentId, limit = 100) {
+        return this.db.prepare('SELECT * FROM route_action_family_stats_v3 WHERE agent_id = ? ORDER BY updated_at DESC LIMIT ?').all(agentId, Math.min(2000, Math.max(1, limit))).map(rowToRouteActionFamilyStatsV3);
+    }
+    insertRoutePolicyCandidateReportV3(report) {
+        const id = report.id || uuid();
+        const ts = report.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO route_policy_candidate_reports_v3 (
+        id, agent_id, snapshot_id, previous_snapshot_id, status, body_hash, rule_count,
+        compactness_before, compactness_after, duplicate_groups, merged_away, dominated_pruned,
+        estimated_improvement, projected_sync_planner_rate, noisy_action_rate, harm_rate,
+        calibration_holdout_frames, shadow_decision_count, retired_prototype_ids_json, activation_reason, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, report.agentId, report.snapshotId, report.previousSnapshotId ?? null, report.status, report.bodyHash, report.ruleCount, report.compactnessBefore, report.compactnessAfter, report.duplicateGroups, report.mergedAway, report.dominatedPruned, report.estimatedImprovement, report.projectedSyncPlannerRate, report.noisyActionRate, report.harmRate, report.calibrationHoldoutFrames, report.shadowDecisionCount, JSON.stringify(report.retiredPrototypeIds ?? []), report.activationReason, ts);
+        return { ...report, id, createdAt: ts };
+    }
+    listRoutePolicyCandidateReportsV3(agentId, limit = 50) {
+        return this.db.prepare('SELECT * FROM route_policy_candidate_reports_v3 WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, Math.min(1000, Math.max(1, limit))).map(rowToRoutePolicyCandidateReportV3);
+    }
     insertPolicySnapshotV3(snapshot) {
         const id = snapshot.id || uuid();
         const ts = snapshot.createdAt || now();
@@ -989,11 +1276,12 @@ export class MemoryStore {
         sync_llm_used, sync_latency_ms, fallback_used,
         turn_frame_json, retrieval_plan_json, injection_plan_json,
         selected_memory_ids_json, omitted_memory_ids_json,
-        model, prompt_version, policy_snapshot_id, policy_rule_id,
+        model, prompt_version, policy_snapshot_id, policy_rule_id, routing_mode,
+        raw_policy_score, calibrated_policy_score, policy_threshold, abstained, fallback_source,
         candidate_count, reason_code, injection_payload_hash,
         outcome, reward, created_at, resolved_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, decision.agentId, decision.routeFrameId ?? null, decision.sessionId ?? null, decision.turnId ?? null, decision.runId ?? null, decision.route, decision.confidence, decision.latencyTier, decision.syncLlmUsed ? 1 : 0, decision.syncLatencyMs ?? null, decision.fallbackUsed ? 1 : 0, JSON.stringify(decision.turnFrame), JSON.stringify(decision.retrievalPlan), JSON.stringify(decision.injectionPlan), JSON.stringify(decision.selectedMemoryIds), JSON.stringify(decision.omittedMemoryIds), decision.model ?? null, decision.promptVersion ?? null, decision.policySnapshotId ?? null, decision.policyRuleId ?? null, decision.candidateCount ?? 0, decision.reasonCode ?? null, decision.injectionPayloadHash ?? null, outcome, reward, ts, null);
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, decision.agentId, decision.routeFrameId ?? null, decision.sessionId ?? null, decision.turnId ?? null, decision.runId ?? null, decision.route, decision.confidence, decision.latencyTier, decision.syncLlmUsed ? 1 : 0, decision.syncLatencyMs ?? null, decision.fallbackUsed ? 1 : 0, JSON.stringify(decision.turnFrame), JSON.stringify(decision.retrievalPlan), JSON.stringify(decision.injectionPlan), JSON.stringify(decision.selectedMemoryIds), JSON.stringify(decision.omittedMemoryIds), decision.model ?? null, decision.promptVersion ?? null, decision.policySnapshotId ?? null, decision.policyRuleId ?? null, decision.routingMode ?? null, decision.rawPolicyScore ?? null, decision.calibratedPolicyScore ?? null, decision.policyThreshold ?? null, decision.abstained ? 1 : 0, decision.fallbackSource ?? null, decision.candidateCount ?? 0, decision.reasonCode ?? null, decision.injectionPayloadHash ?? null, outcome, reward, ts, null);
         return { ...decision, id, outcome, reward, createdAt: ts };
     }
     getRouteDecision(id) {
@@ -1003,6 +1291,14 @@ export class MemoryStore {
     resolveRouteDecision(id, outcome, reward) {
         this.db.prepare('UPDATE route_decisions SET outcome = ?, reward = ?, resolved_at = ? WHERE id = ?')
             .run(outcome, reward, now(), id);
+    }
+    finalizeRouteShadowDecisionsV3(routeDecisionId, actualRoute, reward) {
+        this.db.prepare(`
+      UPDATE route_shadow_decisions_v3
+      SET matched_observed_route = CASE WHEN proposed_route = ? THEN 1 ELSE 0 END,
+          reward = ?
+      WHERE route_decision_id = ?
+    `).run(actualRoute, reward, routeDecisionId);
     }
     getRecentRouteDecisions(agentId, limit = 20) {
         return this.db.prepare('SELECT * FROM route_decisions WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, limit).map(rowToRouteDecision);
@@ -1561,6 +1857,12 @@ function rowToRouteDecision(r) {
         model: r.model, promptVersion: r.prompt_version,
         policySnapshotId: r.policy_snapshot_id,
         policyRuleId: r.policy_rule_id,
+        routingMode: r.routing_mode,
+        rawPolicyScore: r.raw_policy_score,
+        calibratedPolicyScore: r.calibrated_policy_score,
+        policyThreshold: r.policy_threshold,
+        abstained: r.abstained === 1,
+        fallbackSource: r.fallback_source,
         candidateCount: r.candidate_count,
         reasonCode: r.reason_code,
         injectionPayloadHash: r.injection_payload_hash,
@@ -1692,10 +1994,129 @@ function rowToRouteFrameV3(r) {
         chosenSyncPlanner: r.chosen_sync_planner,
         policySnapshotId: r.policy_snapshot_id,
         policyRuleId: r.policy_rule_id,
+        routingMode: r.routing_mode,
+        rawPolicyScore: r.raw_policy_score,
+        calibratedPolicyScore: r.calibrated_policy_score,
+        policyThreshold: r.policy_threshold,
+        abstained: r.abstained === 1,
+        fallbackSource: r.fallback_source,
         outcome: r.outcome,
         reward: r.reward,
         rewardComponents: r.reward_components_json ? JSON.parse(r.reward_components_json) : undefined,
         payloadHash: r.payload_hash,
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteShadowDecisionV3(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        routeDecisionId: r.route_decision_id,
+        snapshotId: r.snapshot_id,
+        snapshotStatus: r.snapshot_status,
+        proposedRoute: r.proposed_route,
+        proposedActionId: r.proposed_action_id,
+        proposedRuleId: r.proposed_rule_id,
+        rawScore: r.raw_score,
+        calibratedScore: r.calibrated_score,
+        threshold: r.threshold,
+        abstained: r.abstained === 1,
+        routingMode: r.routing_mode,
+        reasonCode: r.reason_code,
+        matchedObservedRoute: r.matched_observed_route == null ? undefined : r.matched_observed_route === 1,
+        reward: r.reward == null ? undefined : r.reward,
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteCalibrationExampleV3(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        snapshotId: r.snapshot_id,
+        frameId: r.frame_id,
+        route: r.route,
+        actionId: r.action_id,
+        ruleId: r.rule_id,
+        routingMode: r.routing_mode,
+        rawScore: r.raw_score,
+        calibratedScore: r.calibrated_score,
+        observedSuccess: r.observed_success === 1,
+        comparable: r.comparable === 1,
+        split: r.split,
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteEvalCaseV3(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        snapshotId: r.snapshot_id,
+        frameId: r.frame_id,
+        routingMode: r.routing_mode,
+        observedRoute: r.observed_route,
+        expectedRoute: r.expected_route,
+        reward: r.reward,
+        quality: r.quality,
+        humanReviewed: r.human_reviewed === 1,
+        promotionSafe: r.promotion_safe === 1,
+        notes: r.notes,
+        split: r.split,
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteEvalCaseLabelV3(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        caseId: r.case_id,
+        source: r.source,
+        preferredRoute: r.preferred_route,
+        confidence: r.confidence,
+        notes: r.notes,
+        createdAt: r.created_at,
+    };
+}
+function rowToRouteActionFamilyStatsV3(r) {
+    return {
+        familyKey: r.family_key,
+        agentId: r.agent_id,
+        route: r.route,
+        memoryTypes: JSON.parse(r.memory_types_json ?? '[]'),
+        graphDepth: r.graph_depth,
+        syncPlanner: r.sync_planner,
+        supportCount: r.support_count,
+        harmCount: r.harm_count,
+        meanReward: r.mean_reward,
+        rewardVariance: r.reward_variance,
+        pairWinRate: r.pair_win_rate,
+        banditMeanReward: r.bandit_mean_reward,
+        banditCount: r.bandit_count,
+        shadowAgreementRate: r.shadow_agreement_rate,
+        updatedAt: r.updated_at,
+    };
+}
+function rowToRoutePolicyCandidateReportV3(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        snapshotId: r.snapshot_id,
+        previousSnapshotId: r.previous_snapshot_id,
+        status: r.status,
+        bodyHash: r.body_hash,
+        ruleCount: r.rule_count,
+        compactnessBefore: r.compactness_before,
+        compactnessAfter: r.compactness_after,
+        duplicateGroups: r.duplicate_groups,
+        mergedAway: r.merged_away,
+        dominatedPruned: r.dominated_pruned,
+        estimatedImprovement: r.estimated_improvement,
+        projectedSyncPlannerRate: r.projected_sync_planner_rate,
+        noisyActionRate: r.noisy_action_rate,
+        harmRate: r.harm_rate,
+        calibrationHoldoutFrames: r.calibration_holdout_frames,
+        shadowDecisionCount: r.shadow_decision_count,
+        retiredPrototypeIds: JSON.parse(r.retired_prototype_ids_json ?? '[]'),
+        activationReason: r.activation_reason,
         createdAt: r.created_at,
     };
 }

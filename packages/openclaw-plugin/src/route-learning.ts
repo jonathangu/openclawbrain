@@ -27,6 +27,7 @@ export class RouteLearning {
       const outcome = classifyRouteOutcome(decision, injections);
       if (!outcome) continue;
       this.store.resolveRouteDecision(decision.id, outcome.outcome, outcome.reward);
+      this.store.finalizeRouteShadowDecisionsV3?.(decision.id, decision.route, outcome.reward);
       resolvedDecisions += 1;
       memoryUpdates += applyMemoryUpdates(this.store, injections);
       if (!this.store.hasRouteExampleForDecision(agentId, decision.id)) {

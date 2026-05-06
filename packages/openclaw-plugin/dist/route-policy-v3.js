@@ -8,6 +8,41 @@ const RETRIEVAL_ROUTES = new Set(['retrieve_memory', 'retrieve_and_distill', 'hi
 const MEMORY_TYPES = ['correction', 'preference', 'workflow', 'project_fact', 'tool_convention', 'routing_rule', 'agent_assignment', 'recall_rule', 'outcome', 'context'];
 const SYNC_MODES = ['no', 'never_unless_ambiguous', 'allowed', 'prefer'];
 const EMBED_DIM = 24;
+function routePolicyV3UpdateMode(config) {
+    const mode = String(config.routeLearning?.policyV3?.updateMode || 'gated_active');
+    return mode === 'collect_only' || mode === 'distill_shadow' || mode === 'manual_review_required'
+        ? mode
+        : 'gated_active';
+}
+function activationCooldownActiveV3(existing, config) {
+    const cooldownMs = Math.max(0, Number(config.routeLearning?.policyV3?.activationCooldownMs ?? 0));
+    if (!existing || cooldownMs <= 0 || !existing.createdAt)
+        return false;
+    const ageMs = Date.now() - Date.parse(existing.createdAt);
+    return Number.isFinite(ageMs) && ageMs >= 0 && ageMs < cooldownMs;
+}
+function chooseSnapshotStatusV3(validation, existing, config, updateMode) {
+    if (!validation.ok)
+        return 'rejected';
+    if (updateMode === 'distill_shadow' || updateMode === 'manual_review_required')
+        return 'shadow';
+    if (activationCooldownActiveV3(existing, config))
+        return 'shadow';
+    return config.routeLearning?.policyV3?.shadowBeforeActivate === true ? 'shadow' : 'active';
+}
+function chooseActivationReasonV3(validation, existing, config, updateMode) {
+    if (!validation.ok)
+        return validation.reason;
+    if (updateMode === 'distill_shadow')
+        return 'update_mode_distill_shadow';
+    if (updateMode === 'manual_review_required')
+        return 'manual_review_required';
+    if (activationCooldownActiveV3(existing, config))
+        return 'activation_cooldown_active';
+    if (config.routeLearning?.policyV3?.shadowBeforeActivate === true)
+        return 'shadow_before_activate';
+    return validation.reason;
+}
 export function ingestRouteLearningArtifactsV3(store, agentId, decision, routeFrame, teacherRun, counterfactuals, lessons, config) {
     const chosenPrototype = upsertPrototypeForDecision(store, agentId, decision, lessons, 'learned');
     const rewardComponents = rewardComponentsForDecision(decision);
@@ -29,6 +64,12 @@ export function ingestRouteLearningArtifactsV3(store, agentId, decision, routeFr
         chosenSyncPlanner: chosenPrototype.syncPlanner,
         policySnapshotId: decision.policySnapshotId,
         policyRuleId: decision.policyRuleId,
+        routingMode: decision.routingMode,
+        rawPolicyScore: decision.rawPolicyScore,
+        calibratedPolicyScore: decision.calibratedPolicyScore,
+        policyThreshold: decision.policyThreshold,
+        abstained: decision.abstained,
+        fallbackSource: decision.fallbackSource,
         outcome: decision.outcome,
         reward: Number(decision.reward || 0),
         rewardComponents,
@@ -129,6 +170,7 @@ export function maybeDistillAndStorePolicyV3(store, agentId, config) {
     if (config.routeLearning?.policyV3?.enabled === false) {
         return { framesConsidered: 0, pairExamplesConsidered: 0, prototypesConsidered: 0, rulesGenerated: 0 };
     }
+    const updateMode = routePolicyV3UpdateMode(config);
     const frames = store.listRouteFramesV3(agentId, 400);
     const pairs = store.listRoutePairExamplesV3(agentId, 1200);
     const listedPrototypes = store.listRouteActionPrototypesV3(agentId, 200);
@@ -144,6 +186,15 @@ export function maybeDistillAndStorePolicyV3(store, agentId, config) {
             pairExamplesConsidered: pairs.length,
             prototypesConsidered: prototypes.length,
             rulesGenerated: existing?.rules.length ?? 0,
+        };
+    }
+    if (updateMode === 'collect_only') {
+        return {
+            snapshot: existing ?? undefined,
+            framesConsidered: frames.length,
+            pairExamplesConsidered: pairs.length,
+            prototypesConsidered: prototypes.length,
+            rulesGenerated: 0,
         };
     }
     const rules = distillPolicyRulesV3(frames, pairs, prototypes, banditState, config);
@@ -175,8 +226,10 @@ export function maybeDistillAndStorePolicyV3(store, agentId, config) {
         comparedAgainstSnapshotId: existing?.id,
         retiredPrototypeIds: retirement.retiredPrototypeIds,
     });
-    const calibration = buildSnapshotCalibrationV3(preCalibration, frames, config);
+    const calibrationArtifacts = buildSnapshotCalibrationArtifactsV3(preCalibration, frames, config);
+    const calibration = calibrationArtifacts.summary;
     const replay = buildSnapshotReplaySummaryV3({ ...preCalibration, calibration }, frames, existing, config);
+    const evalCaseArtifacts = buildSnapshotEvalCaseArtifactsV3({ ...preCalibration, calibration }, frames, config);
     const draft = buildSnapshotV3(agentId, rules, priors, frames, prototypes, config, 'candidate', {
         ...(preCalibration.evalSummary ?? {}),
         replay,
@@ -197,16 +250,15 @@ export function maybeDistillAndStorePolicyV3(store, agentId, config) {
             rulesGenerated: rules.length,
         };
     }
-    const finalStatus = validation.ok
-        ? (config.routeLearning?.policyV3?.shadowBeforeActivate === true ? 'shadow' : 'active')
-        : 'rejected';
+    const activationReason = chooseActivationReasonV3(validation, existing, config, updateMode);
+    const finalStatus = chooseSnapshotStatusV3(validation, existing, config, updateMode);
     const stored = store.insertPolicySnapshotV3({
         ...draft,
         status: finalStatus,
         evalSummary: {
             ...(draft.evalSummary ?? {}),
             activationDecision: finalStatus,
-            activationStatusReason: validation.reason,
+            activationStatusReason: activationReason,
             validationErrors: validation.errors,
             validationWarnings: validation.warnings,
             projectedSyncPlannerRate: validation.projectedSyncPlannerRate,
@@ -214,6 +266,13 @@ export function maybeDistillAndStorePolicyV3(store, agentId, config) {
             harmRate: validation.harmRate,
         },
     });
+    store.replaceRouteCalibrationExamplesV3?.(agentId, stored.id, calibrationArtifacts.examples.map((example) => ({ ...example, split: 'holdout' })));
+    store.replaceRouteEvalCasesV3?.(agentId, stored.id, evalCaseArtifacts.cases.map((item) => ({ ...item, split: 'replay_eval' })));
+    const shadowDecisions = store.listRouteShadowDecisionsV3?.(agentId, 2000) || [];
+    for (const stats of buildActionFamilyStatsV3(agentId, frames, pairs, prototypes, banditState, shadowDecisions)) {
+        store.upsertRouteActionFamilyStatsV3?.(stats);
+    }
+    store.insertRoutePolicyCandidateReportV3?.(buildPolicyCandidateReportV3(stored, draft, existing, shadowDecisions, retirement.retiredPrototypeIds, activationReason));
     return {
         snapshot: stored,
         validation: { ...validation, status: finalStatus },
@@ -344,8 +403,9 @@ export function validatePolicySnapshotV3(snapshot, config = {}, existing) {
     const reason = errors.length === 0 ? 'passed_activation_gates' : errors[0];
     return { ok: errors.length === 0, status: errors.length === 0 ? 'active' : 'rejected', reason, errors, warnings, projectedSyncPlannerRate, noisyActionRate, harmRate };
 }
-export function scorePolicySnapshotV3(snapshot, turnFrame, message = '') {
-    if (!snapshot || snapshot.version !== 'route-policy-v3' || snapshot.status !== 'active' || !Array.isArray(snapshot.rules)) {
+export function scorePolicySnapshotV3(snapshot, turnFrame, message = '', options = {}) {
+    const requireActive = options.requireActive !== false;
+    if (!snapshot || snapshot.version !== 'route-policy-v3' || (requireActive && snapshot.status !== 'active') || !Array.isArray(snapshot.rules)) {
         return { matched: false, score: 0, reasonCode: 'no_active_policy_v3' };
     }
     const haystack = `${message} ${turnFrame.summary} ${turnFrame.userGoal} ${turnFrame.impliedNeeds.join(' ')} ${turnFrame.memoryQuestions.join(' ')}`.toLowerCase();
@@ -579,6 +639,74 @@ function buildActionPriors(frames, pairs, prototypes, banditState) {
     const pairCounts = summarizePairCounts(pairs);
     return Object.fromEntries(prototypes.map((prototype) => [prototype.id, priorsForPrototype(prototype.id, frames.filter((frame) => frame.chosenActionId === prototype.id), pairCounts, banditState)]));
 }
+function actionFamilyKeyV3(input) {
+    return `${input.route}::${[...new Set(input.memoryTypes || [])].sort().join(',')}::${input.graphDepth}::${input.syncPlanner}`;
+}
+function buildActionFamilyStatsV3(agentId, frames, pairs, prototypes, banditState, shadowDecisions) {
+    const pairCounts = summarizePairCounts(pairs);
+    const shadowByRoute = shadowDecisions.reduce((acc, decision) => {
+        acc[decision.proposedRoute] ||= [];
+        acc[decision.proposedRoute].push(decision);
+        return acc;
+    }, {});
+    return prototypes.map((prototype) => {
+        const familyKey = actionFamilyKeyV3(prototype);
+        const prototypeFrames = frames.filter((frame) => frame.chosenActionId === prototype.id);
+        const rewards = prototypeFrames.map((frame) => Number(frame.reward || 0));
+        const meanReward = rewards.length ? rewards.reduce((sum, value) => sum + value, 0) / rewards.length : 0;
+        const rewardVariance = rewards.length
+            ? rewards.reduce((sum, value) => sum + Math.pow(value - meanReward, 2), 0) / rewards.length
+            : 0;
+        const pair = pairCounts[prototype.id] || { wins: 0, losses: 0 };
+        const stats = banditState?.actionStats?.[prototype.id];
+        const routeShadow = shadowByRoute[prototype.route] || [];
+        const shadowAgreementRate = routeShadow.length
+            ? routeShadow.filter((decision) => decision.matchedObservedRoute === true).length / routeShadow.length
+            : 0;
+        return {
+            familyKey,
+            agentId,
+            route: prototype.route,
+            memoryTypes: prototype.memoryTypes,
+            graphDepth: prototype.graphDepth,
+            syncPlanner: prototype.syncPlanner,
+            supportCount: prototypeFrames.filter((frame) => Number(frame.reward || 0) >= 0).length,
+            harmCount: prototypeFrames.filter((frame) => Number(frame.reward || 0) < 0).length,
+            meanReward: Number(meanReward.toFixed(4)),
+            rewardVariance: Number(rewardVariance.toFixed(4)),
+            pairWinRate: Number(((pair.wins + pair.losses) > 0 ? pair.wins / (pair.wins + pair.losses) : 0.5).toFixed(4)),
+            banditMeanReward: Number(Number(stats?.rewardMean || 0).toFixed(4)),
+            banditCount: Number(stats?.count || 0),
+            shadowAgreementRate: Number(shadowAgreementRate.toFixed(4)),
+            updatedAt: new Date().toISOString(),
+        };
+    });
+}
+function buildPolicyCandidateReportV3(stored, draft, existing, shadowDecisions, retiredPrototypeIds, activationReason) {
+    const compactness = stored.evalSummary?.compactness || draft.evalSummary?.compactness || {};
+    const replay = stored.evalSummary?.replay || draft.evalSummary?.replay || {};
+    return {
+        agentId: stored.agentId,
+        snapshotId: stored.id,
+        previousSnapshotId: existing?.id,
+        status: stored.status,
+        bodyHash: stablePolicyBodyV3(stored),
+        ruleCount: stored.rules.length,
+        compactnessBefore: Number(compactness.beforeMerge || stored.rules.length),
+        compactnessAfter: Number(compactness.afterPrune || stored.rules.length),
+        duplicateGroups: Number(compactness.duplicateGroups || 0),
+        mergedAway: Number(compactness.mergedAway || 0),
+        dominatedPruned: Number(compactness.dominatedPruned || 0),
+        estimatedImprovement: Number(replay.estimatedImprovement || 0),
+        projectedSyncPlannerRate: Number(stored.evalSummary?.projectedSyncPlannerRate || 0),
+        noisyActionRate: Number(stored.evalSummary?.noisyActionRate || 0),
+        harmRate: Number(stored.evalSummary?.harmRate || 0),
+        calibrationHoldoutFrames: Number(stored.calibration?.holdoutFrames || 0),
+        shadowDecisionCount: shadowDecisions.filter((decision) => decision.snapshotId === stored.id).length,
+        retiredPrototypeIds: [...retiredPrototypeIds],
+        activationReason,
+    };
+}
 function priorsForPrototype(prototypeId, frames, pairCounts, banditState) {
     const support = frames.filter((frame) => Number(frame.reward || 0) >= 0).length;
     const harm = frames.filter((frame) => Number(frame.reward || 0) < 0).length;
@@ -651,7 +779,7 @@ function buildSnapshotV3(agentId, rules, actionPriors, frames, prototypes, confi
         promptVersion: 'route-policy-v3-distiller-v1',
     };
 }
-function buildSnapshotCalibrationV3(snapshot, frames, config) {
+function buildSnapshotCalibrationArtifactsV3(snapshot, frames, config) {
     const holdout = holdoutFramesV3(frames, config);
     const predictions = holdout.map((frame) => {
         const match = scoreSnapshotAgainstFrameV3(snapshot, frame);
@@ -662,7 +790,70 @@ function buildSnapshotCalibrationV3(snapshot, frames, config) {
             comparable: match.route === frame.chosenRoute,
         };
     });
-    return buildCalibrationSummaryV3(predictions, config);
+    const summary = buildCalibrationSummaryV3(predictions, config);
+    const examples = holdout.map((frame) => {
+        const match = scoreSnapshotAgainstFrameV3(snapshot, frame);
+        const mode = detectRoutingModeV3({
+            taskType: frame.taskType,
+            turnSignals: frame.turnSignals,
+            routeHintFlags: frame.routeHintFlags,
+            redactedTurnSummary: frame.redactedTurnSummary,
+        }, frame.redactedTurnSummary);
+        const calibrated = applyCalibrationV3(match.rawScore, match.route, summary, mode);
+        return {
+            frameId: frame.id,
+            route: match.route,
+            actionId: match.rule?.actionId,
+            ruleId: match.rule?.id,
+            routingMode: mode,
+            rawScore: match.rawScore,
+            calibratedScore: calibrated.calibratedScore,
+            observedSuccess: frameSuccessLabelV3(frame),
+            comparable: match.route === frame.chosenRoute,
+            split: 'holdout',
+        };
+    });
+    return { summary, examples };
+}
+function buildSnapshotEvalCaseArtifactsV3(snapshot, frames, config) {
+    const holdout = holdoutFramesV3(frames, config);
+    const cases = holdout.map((frame) => {
+        const match = scoreSnapshotAgainstFrameV3(snapshot, frame);
+        const mode = detectRoutingModeV3({
+            taskType: frame.taskType,
+            turnSignals: frame.turnSignals,
+            routeHintFlags: frame.routeHintFlags,
+            redactedTurnSummary: frame.redactedTurnSummary,
+        }, frame.redactedTurnSummary);
+        const reward = Number(frame.reward || 0);
+        const success = frameSuccessLabelV3(frame);
+        const quality = success && Math.abs(reward) >= 0.35
+            ? 'trusted'
+            : success || Math.abs(reward) >= 0.15
+                ? 'usable'
+                : Math.abs(reward) > 0
+                    ? 'weak'
+                    : 'ambiguous';
+        return {
+            frameId: frame.id,
+            routingMode: mode,
+            observedRoute: frame.chosenRoute,
+            expectedRoute: success ? frame.chosenRoute : (match.route || frame.chosenRoute),
+            reward,
+            quality,
+            humanReviewed: false,
+            promotionSafe: quality === 'trusted' || quality === 'usable',
+            notes: `holdout_frame:${frame.id}`,
+            split: 'replay_eval',
+            labels: [{
+                    source: 'outcome',
+                    preferredRoute: success ? frame.chosenRoute : (match.route || frame.chosenRoute),
+                    confidence: success ? 0.85 : (quality === 'ambiguous' ? 0.35 : 0.55),
+                    notes: success ? 'outcome_supported' : 'outcome_weak_or_negative',
+                }],
+        };
+    });
+    return { cases };
 }
 function buildSnapshotReplaySummaryV3(snapshot, frames, existing, config) {
     const holdout = holdoutFramesV3(frames, config);

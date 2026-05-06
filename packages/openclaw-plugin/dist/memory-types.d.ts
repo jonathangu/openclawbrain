@@ -125,6 +125,12 @@ export interface RouteDecision {
     promptVersion?: string;
     policySnapshotId?: string;
     policyRuleId?: string;
+    routingMode?: string;
+    rawPolicyScore?: number;
+    calibratedPolicyScore?: number;
+    policyThreshold?: number;
+    abstained?: boolean;
+    fallbackSource?: string;
     candidateCount?: number;
     reasonCode?: string;
     injectionPayloadHash?: string;
@@ -433,10 +439,13 @@ export interface RoutePolicySnapshotV2 {
     createdAt: string;
 }
 export type RouteActionSyncPlannerMode = 'no' | 'never_unless_ambiguous' | 'allowed' | 'prefer';
-export type RouteActionPrototypeStatus = 'active' | 'shadow' | 'retired';
+export type RouteActionPrototypeStatus = 'active' | 'shadow' | 'retired' | 'cold_start';
 export type RouteActionPrototypeProvenance = 'handwritten' | 'distilled' | 'learned';
 export type RoutePairLabelSource = 'teacher' | 'counterfactual' | 'manual' | 'outcome' | 'bandit';
 export type RouteBanditOutcomeLabel = 'accepted' | 'rejected' | 'ambiguous';
+export type RouteCalibrationExampleSplitV3 = 'holdout' | 'replay_eval' | 'shadow_audit';
+export type RouteEvalCaseQualityV3 = 'trusted' | 'usable' | 'weak' | 'ambiguous';
+export type RouteEvalCaseLabelSourceV3 = 'outcome' | 'teacher' | 'manual' | 'consensus';
 export interface RouteFrameV3 {
     id: string;
     agentId: string;
@@ -456,6 +465,12 @@ export interface RouteFrameV3 {
     chosenSyncPlanner: RouteActionSyncPlannerMode;
     policySnapshotId?: string;
     policyRuleId?: string;
+    routingMode?: string;
+    rawPolicyScore?: number;
+    calibratedPolicyScore?: number;
+    policyThreshold?: number;
+    abstained?: boolean;
+    fallbackSource?: string;
     outcome?: string;
     reward: number;
     rewardComponents?: Record<string, number>;
@@ -521,6 +536,107 @@ export interface RouteBanditStateV3 {
         updatedAt: string;
     }>;
     updatedAt: string;
+}
+export interface RouteShadowDecisionV3 {
+    id: string;
+    agentId: string;
+    routeDecisionId: string;
+    snapshotId: string;
+    snapshotStatus: 'candidate' | 'active' | 'rejected' | 'shadow';
+    proposedRoute: RouteKind;
+    proposedActionId?: string;
+    proposedRuleId?: string;
+    rawScore: number;
+    calibratedScore: number;
+    threshold: number;
+    abstained: boolean;
+    routingMode: string;
+    reasonCode: string;
+    matchedObservedRoute?: boolean;
+    reward?: number;
+    createdAt: string;
+}
+export interface RouteCalibrationExampleV3 {
+    id: string;
+    agentId: string;
+    snapshotId: string;
+    frameId: string;
+    route: RouteKind;
+    actionId?: string;
+    ruleId?: string;
+    routingMode: string;
+    rawScore: number;
+    calibratedScore: number;
+    observedSuccess: boolean;
+    comparable: boolean;
+    split: RouteCalibrationExampleSplitV3;
+    createdAt: string;
+}
+export interface RouteActionFamilyStatsV3 {
+    familyKey: string;
+    agentId: string;
+    route: RouteKind;
+    memoryTypes: MemoryType[];
+    graphDepth: 0 | 1 | 2;
+    syncPlanner: RouteActionSyncPlannerMode;
+    supportCount: number;
+    harmCount: number;
+    meanReward: number;
+    rewardVariance: number;
+    pairWinRate: number;
+    banditMeanReward: number;
+    banditCount: number;
+    shadowAgreementRate: number;
+    updatedAt: string;
+}
+export interface RoutePolicyCandidateReportV3 {
+    id: string;
+    agentId: string;
+    snapshotId: string;
+    previousSnapshotId?: string;
+    status: 'candidate' | 'active' | 'rejected' | 'shadow';
+    bodyHash: string;
+    ruleCount: number;
+    compactnessBefore: number;
+    compactnessAfter: number;
+    duplicateGroups: number;
+    mergedAway: number;
+    dominatedPruned: number;
+    estimatedImprovement: number;
+    projectedSyncPlannerRate: number;
+    noisyActionRate: number;
+    harmRate: number;
+    calibrationHoldoutFrames: number;
+    shadowDecisionCount: number;
+    retiredPrototypeIds: string[];
+    activationReason: string;
+    createdAt: string;
+}
+export interface RouteEvalCaseV3 {
+    id: string;
+    agentId: string;
+    snapshotId: string;
+    frameId: string;
+    routingMode: string;
+    observedRoute: RouteKind;
+    expectedRoute: RouteKind;
+    reward: number;
+    quality: RouteEvalCaseQualityV3;
+    humanReviewed: boolean;
+    promotionSafe: boolean;
+    notes?: string;
+    split: RouteCalibrationExampleSplitV3;
+    createdAt: string;
+}
+export interface RouteEvalCaseLabelV3 {
+    id: string;
+    agentId: string;
+    caseId: string;
+    source: RouteEvalCaseLabelSourceV3;
+    preferredRoute: RouteKind;
+    confidence: number;
+    notes?: string;
+    createdAt: string;
 }
 export interface RoutePolicyRuleV3 {
     id: string;

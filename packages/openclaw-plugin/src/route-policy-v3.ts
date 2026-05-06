@@ -5,12 +5,17 @@ import type {
   RouteBanditStateV3,
   RouteCounterfactual,
   RouteDecision,
+  RouteCalibrationExampleV3,
   RouteFrameV2,
   RouteFrameV3,
+  RouteEvalCaseV3,
   RouteKind,
+  RouteActionFamilyStatsV3,
   RoutePairExampleV3,
+  RoutePolicyCandidateReportV3,
   RoutePolicyRuleV3,
   RoutePolicySnapshotV3,
+  RouteShadowDecisionV3,
   RouteTeacherRun,
   RouteTrainingExampleV2,
   TaskType,
@@ -50,6 +55,23 @@ export interface RoutePolicyV3MatchResult {
   reasonCode: string;
 }
 
+interface RoutePolicyV3ScoreOptions {
+  requireActive?: boolean;
+}
+
+interface RoutePolicyV3CalibrationArtifacts {
+  summary?: RoutePolicyV3CalibrationSummary;
+  examples: Array<Omit<RouteCalibrationExampleV3, 'id' | 'agentId' | 'snapshotId' | 'createdAt'>>;
+}
+
+interface RoutePolicyV3EvalCaseArtifacts {
+  cases: Array<
+    Omit<RouteEvalCaseV3, 'id' | 'agentId' | 'snapshotId' | 'createdAt'> & {
+      labels?: Array<{ source: 'outcome' | 'teacher' | 'manual' | 'consensus'; preferredRoute: RouteKind; confidence: number; notes?: string }>;
+    }
+  >;
+}
+
 export interface RoutePolicyV3DistillationReport {
   snapshot?: RoutePolicySnapshotV3;
   validation?: RoutePolicyV3ValidationReport;
@@ -65,6 +87,46 @@ export interface RouteLearningV3IngestReport {
   prototypeIds: string[];
   pairExamples: number;
   banditFeedbackId: string;
+}
+
+function routePolicyV3UpdateMode(config: any): 'collect_only' | 'distill_shadow' | 'gated_active' | 'manual_review_required' {
+  const mode = String(config.routeLearning?.policyV3?.updateMode || 'gated_active');
+  return mode === 'collect_only' || mode === 'distill_shadow' || mode === 'manual_review_required'
+    ? mode
+    : 'gated_active';
+}
+
+function activationCooldownActiveV3(existing: RoutePolicySnapshotV3 | null, config: any) {
+  const cooldownMs = Math.max(0, Number(config.routeLearning?.policyV3?.activationCooldownMs ?? 0));
+  if (!existing || cooldownMs <= 0 || !existing.createdAt) return false;
+  const ageMs = Date.now() - Date.parse(existing.createdAt);
+  return Number.isFinite(ageMs) && ageMs >= 0 && ageMs < cooldownMs;
+}
+
+function chooseSnapshotStatusV3(
+  validation: RoutePolicyV3ValidationReport,
+  existing: RoutePolicySnapshotV3 | null,
+  config: any,
+  updateMode: ReturnType<typeof routePolicyV3UpdateMode>,
+): 'active' | 'shadow' | 'rejected' {
+  if (!validation.ok) return 'rejected';
+  if (updateMode === 'distill_shadow' || updateMode === 'manual_review_required') return 'shadow';
+  if (activationCooldownActiveV3(existing, config)) return 'shadow';
+  return config.routeLearning?.policyV3?.shadowBeforeActivate === true ? 'shadow' : 'active';
+}
+
+function chooseActivationReasonV3(
+  validation: RoutePolicyV3ValidationReport,
+  existing: RoutePolicySnapshotV3 | null,
+  config: any,
+  updateMode: ReturnType<typeof routePolicyV3UpdateMode>,
+) {
+  if (!validation.ok) return validation.reason;
+  if (updateMode === 'distill_shadow') return 'update_mode_distill_shadow';
+  if (updateMode === 'manual_review_required') return 'manual_review_required';
+  if (activationCooldownActiveV3(existing, config)) return 'activation_cooldown_active';
+  if (config.routeLearning?.policyV3?.shadowBeforeActivate === true) return 'shadow_before_activate';
+  return validation.reason;
 }
 
 export function ingestRouteLearningArtifactsV3(
@@ -97,6 +159,12 @@ export function ingestRouteLearningArtifactsV3(
     chosenSyncPlanner: chosenPrototype.syncPlanner,
     policySnapshotId: decision.policySnapshotId,
     policyRuleId: decision.policyRuleId,
+    routingMode: decision.routingMode,
+    rawPolicyScore: decision.rawPolicyScore,
+    calibratedPolicyScore: decision.calibratedPolicyScore,
+    policyThreshold: decision.policyThreshold,
+    abstained: decision.abstained,
+    fallbackSource: decision.fallbackSource,
     outcome: decision.outcome,
     reward: Number(decision.reward || 0),
     rewardComponents,
@@ -201,6 +269,7 @@ export function maybeDistillAndStorePolicyV3(store: any, agentId: string, config
   if (config.routeLearning?.policyV3?.enabled === false) {
     return { framesConsidered: 0, pairExamplesConsidered: 0, prototypesConsidered: 0, rulesGenerated: 0 };
   }
+  const updateMode = routePolicyV3UpdateMode(config);
   const frames = store.listRouteFramesV3(agentId, 400) as RouteFrameV3[];
   const pairs = store.listRoutePairExamplesV3(agentId, 1200) as RoutePairExampleV3[];
   const listedPrototypes = store.listRouteActionPrototypesV3(agentId, 200) as RouteActionPrototypeV3[];
@@ -216,6 +285,15 @@ export function maybeDistillAndStorePolicyV3(store: any, agentId: string, config
       pairExamplesConsidered: pairs.length,
       prototypesConsidered: prototypes.length,
       rulesGenerated: existing?.rules.length ?? 0,
+    };
+  }
+  if (updateMode === 'collect_only') {
+    return {
+      snapshot: existing ?? undefined,
+      framesConsidered: frames.length,
+      pairExamplesConsidered: pairs.length,
+      prototypesConsidered: prototypes.length,
+      rulesGenerated: 0,
     };
   }
 
@@ -249,8 +327,10 @@ export function maybeDistillAndStorePolicyV3(store: any, agentId: string, config
     comparedAgainstSnapshotId: existing?.id,
     retiredPrototypeIds: retirement.retiredPrototypeIds,
   });
-  const calibration = buildSnapshotCalibrationV3(preCalibration, frames, config);
+  const calibrationArtifacts = buildSnapshotCalibrationArtifactsV3(preCalibration, frames, config);
+  const calibration = calibrationArtifacts.summary;
   const replay = buildSnapshotReplaySummaryV3({ ...preCalibration, calibration }, frames, existing, config);
+  const evalCaseArtifacts = buildSnapshotEvalCaseArtifactsV3({ ...preCalibration, calibration }, frames, config);
   const draft = buildSnapshotV3(agentId, rules, priors, frames, prototypes, config, 'candidate', {
     ...(preCalibration.evalSummary ?? {}),
     replay,
@@ -272,16 +352,15 @@ export function maybeDistillAndStorePolicyV3(store: any, agentId: string, config
     };
   }
 
-  const finalStatus = validation.ok
-    ? (config.routeLearning?.policyV3?.shadowBeforeActivate === true ? 'shadow' : 'active')
-    : 'rejected';
+  const activationReason = chooseActivationReasonV3(validation, existing, config, updateMode);
+  const finalStatus = chooseSnapshotStatusV3(validation, existing, config, updateMode);
   const stored = store.insertPolicySnapshotV3({
     ...draft,
     status: finalStatus,
     evalSummary: {
       ...(draft.evalSummary ?? {}),
       activationDecision: finalStatus,
-      activationStatusReason: validation.reason,
+      activationStatusReason: activationReason,
       validationErrors: validation.errors,
       validationWarnings: validation.warnings,
       projectedSyncPlannerRate: validation.projectedSyncPlannerRate,
@@ -289,6 +368,13 @@ export function maybeDistillAndStorePolicyV3(store: any, agentId: string, config
       harmRate: validation.harmRate,
     },
   });
+  store.replaceRouteCalibrationExamplesV3?.(agentId, stored.id, calibrationArtifacts.examples.map((example) => ({ ...example, split: 'holdout' })));
+  store.replaceRouteEvalCasesV3?.(agentId, stored.id, evalCaseArtifacts.cases.map((item) => ({ ...item, split: 'replay_eval' })));
+  const shadowDecisions = store.listRouteShadowDecisionsV3?.(agentId, 2000) || [];
+  for (const stats of buildActionFamilyStatsV3(agentId, frames, pairs, prototypes, banditState, shadowDecisions)) {
+    store.upsertRouteActionFamilyStatsV3?.(stats);
+  }
+  store.insertRoutePolicyCandidateReportV3?.(buildPolicyCandidateReportV3(stored, draft, existing, shadowDecisions, retirement.retiredPrototypeIds, activationReason));
   return {
     snapshot: stored,
     validation: { ...validation, status: finalStatus },
@@ -426,8 +512,9 @@ export function validatePolicySnapshotV3(snapshot: Partial<RoutePolicySnapshotV3
   return { ok: errors.length === 0, status: errors.length === 0 ? 'active' : 'rejected', reason, errors, warnings, projectedSyncPlannerRate, noisyActionRate, harmRate };
 }
 
-export function scorePolicySnapshotV3(snapshot: RoutePolicySnapshotV3 | null | undefined, turnFrame: TurnFrame, message = ''): RoutePolicyV3MatchResult {
-  if (!snapshot || snapshot.version !== 'route-policy-v3' || snapshot.status !== 'active' || !Array.isArray(snapshot.rules)) {
+export function scorePolicySnapshotV3(snapshot: RoutePolicySnapshotV3 | null | undefined, turnFrame: TurnFrame, message = '', options: RoutePolicyV3ScoreOptions = {}): RoutePolicyV3MatchResult {
+  const requireActive = options.requireActive !== false;
+  if (!snapshot || snapshot.version !== 'route-policy-v3' || (requireActive && snapshot.status !== 'active') || !Array.isArray(snapshot.rules)) {
     return { matched: false, score: 0, reasonCode: 'no_active_policy_v3' };
   }
   const haystack = `${message} ${turnFrame.summary} ${turnFrame.userGoal} ${turnFrame.impliedNeeds.join(' ')} ${turnFrame.memoryQuestions.join(' ')}`.toLowerCase();
@@ -658,6 +745,91 @@ function buildActionPriors(frames: RouteFrameV3[], pairs: RoutePairExampleV3[], 
   return Object.fromEntries(prototypes.map((prototype) => [prototype.id, priorsForPrototype(prototype.id, frames.filter((frame) => frame.chosenActionId === prototype.id), pairCounts, banditState)]));
 }
 
+function actionFamilyKeyV3(input: { route: RouteKind; memoryTypes: MemoryType[]; graphDepth: 0 | 1 | 2; syncPlanner: string }) {
+  return `${input.route}::${[...new Set(input.memoryTypes || [])].sort().join(',')}::${input.graphDepth}::${input.syncPlanner}`;
+}
+
+function buildActionFamilyStatsV3(
+  agentId: string,
+  frames: RouteFrameV3[],
+  pairs: RoutePairExampleV3[],
+  prototypes: RouteActionPrototypeV3[],
+  banditState: RouteBanditStateV3 | null,
+  shadowDecisions: RouteShadowDecisionV3[],
+): RouteActionFamilyStatsV3[] {
+  const pairCounts = summarizePairCounts(pairs);
+  const shadowByRoute = shadowDecisions.reduce((acc, decision) => {
+    acc[decision.proposedRoute] ||= [];
+    acc[decision.proposedRoute].push(decision);
+    return acc;
+  }, {} as Record<string, RouteShadowDecisionV3[]>);
+  return prototypes.map((prototype) => {
+    const familyKey = actionFamilyKeyV3(prototype);
+    const prototypeFrames = frames.filter((frame) => frame.chosenActionId === prototype.id);
+    const rewards = prototypeFrames.map((frame) => Number(frame.reward || 0));
+    const meanReward = rewards.length ? rewards.reduce((sum, value) => sum + value, 0) / rewards.length : 0;
+    const rewardVariance = rewards.length
+      ? rewards.reduce((sum, value) => sum + Math.pow(value - meanReward, 2), 0) / rewards.length
+      : 0;
+    const pair = pairCounts[prototype.id] || { wins: 0, losses: 0 };
+    const stats = banditState?.actionStats?.[prototype.id];
+    const routeShadow = shadowByRoute[prototype.route] || [];
+    const shadowAgreementRate = routeShadow.length
+      ? routeShadow.filter((decision) => decision.matchedObservedRoute === true).length / routeShadow.length
+      : 0;
+    return {
+      familyKey,
+      agentId,
+      route: prototype.route,
+      memoryTypes: prototype.memoryTypes,
+      graphDepth: prototype.graphDepth,
+      syncPlanner: prototype.syncPlanner,
+      supportCount: prototypeFrames.filter((frame) => Number(frame.reward || 0) >= 0).length,
+      harmCount: prototypeFrames.filter((frame) => Number(frame.reward || 0) < 0).length,
+      meanReward: Number(meanReward.toFixed(4)),
+      rewardVariance: Number(rewardVariance.toFixed(4)),
+      pairWinRate: Number(((pair.wins + pair.losses) > 0 ? pair.wins / (pair.wins + pair.losses) : 0.5).toFixed(4)),
+      banditMeanReward: Number(Number(stats?.rewardMean || 0).toFixed(4)),
+      banditCount: Number(stats?.count || 0),
+      shadowAgreementRate: Number(shadowAgreementRate.toFixed(4)),
+      updatedAt: new Date().toISOString(),
+    };
+  });
+}
+
+function buildPolicyCandidateReportV3(
+  stored: RoutePolicySnapshotV3,
+  draft: Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'>,
+  existing: RoutePolicySnapshotV3 | null,
+  shadowDecisions: RouteShadowDecisionV3[],
+  retiredPrototypeIds: string[],
+  activationReason: string,
+): Omit<RoutePolicyCandidateReportV3, 'id' | 'createdAt'> {
+  const compactness: any = stored.evalSummary?.compactness || draft.evalSummary?.compactness || {};
+  const replay: any = stored.evalSummary?.replay || draft.evalSummary?.replay || {};
+  return {
+    agentId: stored.agentId,
+    snapshotId: stored.id,
+    previousSnapshotId: existing?.id,
+    status: stored.status,
+    bodyHash: stablePolicyBodyV3(stored),
+    ruleCount: stored.rules.length,
+    compactnessBefore: Number(compactness.beforeMerge || stored.rules.length),
+    compactnessAfter: Number(compactness.afterPrune || stored.rules.length),
+    duplicateGroups: Number(compactness.duplicateGroups || 0),
+    mergedAway: Number(compactness.mergedAway || 0),
+    dominatedPruned: Number(compactness.dominatedPruned || 0),
+    estimatedImprovement: Number(replay.estimatedImprovement || 0),
+    projectedSyncPlannerRate: Number(stored.evalSummary?.projectedSyncPlannerRate || 0),
+    noisyActionRate: Number(stored.evalSummary?.noisyActionRate || 0),
+    harmRate: Number(stored.evalSummary?.harmRate || 0),
+    calibrationHoldoutFrames: Number(stored.calibration?.holdoutFrames || 0),
+    shadowDecisionCount: shadowDecisions.filter((decision) => decision.snapshotId === stored.id).length,
+    retiredPrototypeIds: [...retiredPrototypeIds],
+    activationReason,
+  };
+}
+
 function priorsForPrototype(prototypeId: string, frames: RouteFrameV3[], pairCounts: Record<string, { wins: number; losses: number }>, banditState: RouteBanditStateV3 | null) {
   const support = frames.filter((frame) => Number(frame.reward || 0) >= 0).length;
   const harm = frames.filter((frame) => Number(frame.reward || 0) < 0).length;
@@ -744,7 +916,7 @@ function buildSnapshotV3(
   };
 }
 
-function buildSnapshotCalibrationV3(snapshot: Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'>, frames: RouteFrameV3[], config: any) {
+function buildSnapshotCalibrationArtifactsV3(snapshot: Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'>, frames: RouteFrameV3[], config: any): RoutePolicyV3CalibrationArtifacts {
   const holdout = holdoutFramesV3(frames, config);
   const predictions: RouteCalibrationPredictionV3[] = holdout.map((frame) => {
     const match = scoreSnapshotAgainstFrameV3(snapshot, frame);
@@ -755,7 +927,71 @@ function buildSnapshotCalibrationV3(snapshot: Omit<RoutePolicySnapshotV3, 'id' |
       comparable: match.route === frame.chosenRoute,
     };
   });
-  return buildCalibrationSummaryV3(predictions, config);
+  const summary = buildCalibrationSummaryV3(predictions, config);
+  const examples = holdout.map((frame) => {
+    const match = scoreSnapshotAgainstFrameV3(snapshot, frame);
+    const mode = detectRoutingModeV3({
+      taskType: frame.taskType,
+      turnSignals: frame.turnSignals,
+      routeHintFlags: frame.routeHintFlags,
+      redactedTurnSummary: frame.redactedTurnSummary,
+    }, frame.redactedTurnSummary);
+    const calibrated = applyCalibrationV3(match.rawScore, match.route, summary, mode);
+    return {
+      frameId: frame.id,
+      route: match.route,
+      actionId: match.rule?.actionId,
+      ruleId: match.rule?.id,
+      routingMode: mode,
+      rawScore: match.rawScore,
+      calibratedScore: calibrated.calibratedScore,
+      observedSuccess: frameSuccessLabelV3(frame),
+      comparable: match.route === frame.chosenRoute,
+      split: 'holdout' as const,
+    };
+  });
+  return { summary, examples };
+}
+
+function buildSnapshotEvalCaseArtifactsV3(snapshot: Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'>, frames: RouteFrameV3[], config: any): RoutePolicyV3EvalCaseArtifacts {
+  const holdout = holdoutFramesV3(frames, config);
+  const cases = holdout.map((frame) => {
+    const match = scoreSnapshotAgainstFrameV3(snapshot, frame);
+    const mode = detectRoutingModeV3({
+      taskType: frame.taskType,
+      turnSignals: frame.turnSignals,
+      routeHintFlags: frame.routeHintFlags,
+      redactedTurnSummary: frame.redactedTurnSummary,
+    }, frame.redactedTurnSummary);
+    const reward = Number(frame.reward || 0);
+    const success = frameSuccessLabelV3(frame);
+    const quality: RouteEvalCaseV3['quality'] = success && Math.abs(reward) >= 0.35
+      ? 'trusted'
+      : success || Math.abs(reward) >= 0.15
+        ? 'usable'
+        : Math.abs(reward) > 0
+          ? 'weak'
+          : 'ambiguous';
+    return {
+      frameId: frame.id,
+      routingMode: mode,
+      observedRoute: frame.chosenRoute,
+      expectedRoute: success ? frame.chosenRoute : (match.route || frame.chosenRoute),
+      reward,
+      quality,
+      humanReviewed: false,
+      promotionSafe: quality === 'trusted' || quality === 'usable',
+      notes: `holdout_frame:${frame.id}`,
+      split: 'replay_eval' as const,
+      labels: [{
+        source: 'outcome' as const,
+        preferredRoute: success ? frame.chosenRoute : (match.route || frame.chosenRoute),
+        confidence: success ? 0.85 : (quality === 'ambiguous' ? 0.35 : 0.55),
+        notes: success ? 'outcome_supported' : 'outcome_weak_or_negative',
+      }],
+    };
+  });
+  return { cases };
 }
 
 function buildSnapshotReplaySummaryV3(snapshot: Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'>, frames: RouteFrameV3[], existing: RoutePolicySnapshotV3 | null, config: any) {

@@ -1,6 +1,6 @@
 import { type DatabaseLike } from './sqlite-driver.js';
 import { type ScopeContext } from './scope.js';
-import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, RouteFrameV2, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, RouteFrameV3, RouteActionPrototypeV3, RoutePairExampleV3, RouteBanditFeedbackV3, RouteBanditStateV3, RoutePolicySnapshotV3, CaptureAuditRow } from './memory-types.js';
+import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, RouteKind, RouteFrameV2, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, RouteFrameV3, RouteActionPrototypeV3, RoutePairExampleV3, RouteBanditFeedbackV3, RouteBanditStateV3, RoutePolicySnapshotV3, RouteShadowDecisionV3, RouteCalibrationExampleV3, RouteActionFamilyStatsV3, RoutePolicyCandidateReportV3, RouteEvalCaseV3, RouteEvalCaseLabelV3, CaptureAuditRow } from './memory-types.js';
 export declare const uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 export declare const now: () => string;
 export interface MemoryStoreOptions {
@@ -78,6 +78,33 @@ export declare class MemoryStore {
     }): RouteBanditFeedbackV3;
     getRouteBanditStateV3(agentId: string): RouteBanditStateV3 | null;
     upsertRouteBanditStateV3(state: RouteBanditStateV3): RouteBanditStateV3;
+    insertRouteShadowDecisionV3(decision: Omit<RouteShadowDecisionV3, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RouteShadowDecisionV3;
+    listRouteShadowDecisionsV3(agentId: string, limit?: number, routeDecisionId?: string): RouteShadowDecisionV3[];
+    replaceRouteCalibrationExamplesV3(agentId: string, snapshotId: string, examples: Array<Omit<RouteCalibrationExampleV3, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }>): RouteCalibrationExampleV3[];
+    listRouteCalibrationExamplesV3(agentId: string, limit?: number, snapshotId?: string): RouteCalibrationExampleV3[];
+    replaceRouteEvalCasesV3(agentId: string, snapshotId: string, cases: Array<Omit<RouteEvalCaseV3, 'id' | 'agentId' | 'snapshotId' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+        labels?: Array<Omit<RouteEvalCaseLabelV3, 'id' | 'agentId' | 'caseId' | 'createdAt'> & {
+            id?: string;
+            createdAt?: string;
+        }>;
+    }>): RouteEvalCaseV3[];
+    listRouteEvalCasesV3(agentId: string, limit?: number, snapshotId?: string): RouteEvalCaseV3[];
+    listRouteEvalCaseLabelsV3(agentId: string, limit?: number, caseId?: string): RouteEvalCaseLabelV3[];
+    upsertRouteActionFamilyStatsV3(stats: RouteActionFamilyStatsV3): RouteActionFamilyStatsV3;
+    listRouteActionFamilyStatsV3(agentId: string, limit?: number): RouteActionFamilyStatsV3[];
+    insertRoutePolicyCandidateReportV3(report: Omit<RoutePolicyCandidateReportV3, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): RoutePolicyCandidateReportV3;
+    listRoutePolicyCandidateReportsV3(agentId: string, limit?: number): RoutePolicyCandidateReportV3[];
     insertPolicySnapshotV3(snapshot: Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'> & {
         id?: string;
         createdAt?: string;
@@ -89,6 +116,7 @@ export declare class MemoryStore {
     }): RouteDecision;
     getRouteDecision(id: string): RouteDecision | null;
     resolveRouteDecision(id: string, outcome: string, reward: number): void;
+    finalizeRouteShadowDecisionsV3(routeDecisionId: string, actualRoute: RouteKind, reward: number): void;
     getRecentRouteDecisions(agentId: string, limit?: number): RouteDecision[];
     getUnresolvedRouteDecisions(agentId: string): RouteDecision[];
     getResolvedRouteDecisions(agentId: string, limit?: number): RouteDecision[];

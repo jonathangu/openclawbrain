@@ -90,7 +90,9 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
         };
         policyV3: {
             enabled: boolean;
+            updateMode: any;
             shadowBeforeActivate: boolean;
+            activationCooldownMs: number;
             minFrames: number;
             maxSyncPlannerRate: number;
             maxHarmRate: number;
@@ -105,6 +107,8 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
             minCalibratedConfidence: number;
             abstainMargin: number;
             calibrationBuckets: number;
+            storeShadowDecisions: boolean;
+            maxShadowSnapshots: number;
             minProjectedImprovement: number;
             compactnessMaxDuplicateRate: number;
             prototypeRetirementHarmRate: number;
@@ -232,7 +236,9 @@ export declare function normalizePluginConfig(input?: any): {
         };
         policyV3: {
             enabled: boolean;
+            updateMode: any;
             shadowBeforeActivate: boolean;
+            activationCooldownMs: number;
             minFrames: number;
             maxSyncPlannerRate: number;
             maxHarmRate: number;
@@ -247,6 +253,8 @@ export declare function normalizePluginConfig(input?: any): {
             minCalibratedConfidence: number;
             abstainMargin: number;
             calibrationBuckets: number;
+            storeShadowDecisions: boolean;
+            maxShadowSnapshots: number;
             minProjectedImprovement: number;
             compactnessMaxDuplicateRate: number;
             prototypeRetirementHarmRate: number;
