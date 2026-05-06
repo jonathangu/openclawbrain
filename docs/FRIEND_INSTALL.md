@@ -9,15 +9,15 @@ What it does: local-first memory for OpenClaw agents. It stores durable correcti
 
 Install:
 
-openclaw plugins install clawhub:openclawbrain@0.2.19
+openclaw plugins install clawhub:openclawbrain@0.2.20
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 
 If ClawHub is still rate-limited or metadata is propagating, use the release archive fallback:
 
-curl -L -o /tmp/openclawbrain-0.2.19.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.19/openclawbrain-0.2.19.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.19.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.20.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.20/openclawbrain-0.2.20.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.20.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 
