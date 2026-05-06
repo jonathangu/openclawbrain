@@ -95,6 +95,20 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
             maxSyncPlannerRate: number;
             maxHarmRate: number;
             explorationAlpha: number;
+            minRuleConfidence: number;
+            maxRules: number;
+            maxRulesPerRoute: number;
+            maxRuleSignals: number;
+            holdoutFraction: number;
+            minHoldoutFrames: number;
+            minRouteThresholdSamples: number;
+            minCalibratedConfidence: number;
+            abstainMargin: number;
+            calibrationBuckets: number;
+            minProjectedImprovement: number;
+            compactnessMaxDuplicateRate: number;
+            prototypeRetirementHarmRate: number;
+            prototypeRetirementMinCount: number;
         };
     };
     privacy: {
@@ -223,6 +237,20 @@ export declare function normalizePluginConfig(input?: any): {
             maxSyncPlannerRate: number;
             maxHarmRate: number;
             explorationAlpha: number;
+            minRuleConfidence: number;
+            maxRules: number;
+            maxRulesPerRoute: number;
+            maxRuleSignals: number;
+            holdoutFraction: number;
+            minHoldoutFrames: number;
+            minRouteThresholdSamples: number;
+            minCalibratedConfidence: number;
+            abstainMargin: number;
+            calibrationBuckets: number;
+            minProjectedImprovement: number;
+            compactnessMaxDuplicateRate: number;
+            prototypeRetirementHarmRate: number;
+            prototypeRetirementMinCount: number;
         };
     };
     privacy: {

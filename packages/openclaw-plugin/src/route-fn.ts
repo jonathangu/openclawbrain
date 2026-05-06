@@ -226,7 +226,9 @@ function heuristicRoutePlan(packet: TurnEventPacket, turnFrame: TurnFrame, confi
     latencyReason: policySnapshot ? 'heuristic with policy snapshot' : 'heuristic uncached route',
     policySnapshotId: policySnapshot?.id,
     matchedPolicyRuleId: policyBoost?.matchedPolicyRuleId,
-    reasonCode: policyBoost?.matchedPolicyRuleId ? `policy_boost:${policyBoost.matchedPolicyRuleId}` : 'heuristic_uncached_route',
+    reasonCode: policyBoost?.matchedPolicyRuleId
+      ? `policy_boost:${policyBoost.matchedPolicyRuleId}`
+      : policyBoost?.reasonCode || 'heuristic_uncached_route',
   };
 }
 
@@ -264,29 +266,37 @@ function routePlanFromPolicyRule(packet: TurnEventPacket, turnFrame: TurnFrame, 
 }
 
 function applyPolicySnapshot(packet: TurnEventPacket, turnFrame: TurnFrame, policySnapshot: any) {
-  const boost = { route: null as RouteKind | null, confidence: 0, memoryTypes: [] as MemoryType[], queries: [] as string[], graphDepth: undefined as undefined | 0 | 1 | 2, matchedPolicyRuleId: undefined as string | undefined };
+  const boost = { route: null as RouteKind | null, confidence: 0, memoryTypes: [] as MemoryType[], queries: [] as string[], graphDepth: undefined as undefined | 0 | 1 | 2, matchedPolicyRuleId: undefined as string | undefined, reasonCode: undefined as string | undefined };
   if (policySnapshot?.version === 'route-policy-v3' && Array.isArray(policySnapshot.rules)) {
     const match = scorePolicySnapshotV3(policySnapshot, turnFrame, packet.latestUserMessageRedacted);
     const rule = match.rule;
-    if (!match.matched || !rule) return boost;
+    if (!match.matched || !rule) {
+      boost.reasonCode = match.reasonCode;
+      return boost;
+    }
     boost.route = rule.route;
     boost.confidence = match.score || Number(rule.confidence || 0.7);
     boost.memoryTypes = Array.isArray(rule.memoryTypes) ? rule.memoryTypes : [];
     boost.queries = Array.isArray(rule.queries) ? rule.queries : [];
     boost.graphDepth = rule.graphDepth ?? 0;
     boost.matchedPolicyRuleId = rule.id;
+    boost.reasonCode = match.reasonCode;
     return boost;
   }
   if (policySnapshot?.version === 'route-policy-v2' && Array.isArray(policySnapshot.rules)) {
     const match = scorePolicySnapshotV2(policySnapshot, turnFrame, packet.latestUserMessageRedacted);
     const rule = match.rule;
-    if (!match.matched || !rule) return boost;
+    if (!match.matched || !rule) {
+      boost.reasonCode = match.reasonCode;
+      return boost;
+    }
     boost.route = rule.route;
     boost.confidence = match.score || Number(rule.confidence || 0.7);
     boost.memoryTypes = Array.isArray(rule.memoryTypes) ? rule.memoryTypes : [];
     boost.queries = Array.isArray(rule.queries) ? rule.queries : [];
     boost.graphDepth = rule.graphDepth ?? 0;
     boost.matchedPolicyRuleId = rule.id;
+    boost.reasonCode = match.reasonCode;
     return boost;
   }
   if (!policySnapshot?.policyText) return boost;

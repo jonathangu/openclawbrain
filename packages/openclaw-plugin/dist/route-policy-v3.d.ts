@@ -13,6 +13,10 @@ export interface RoutePolicyV3MatchResult {
     matched: boolean;
     rule?: RoutePolicyRuleV3;
     score: number;
+    rawScore?: number;
+    calibratedScore?: number;
+    threshold?: number;
+    abstained?: boolean;
     reasonCode: string;
 }
 export interface RoutePolicyV3DistillationReport {
@@ -41,4 +45,6 @@ export declare function rankActionPrototypesV3(frame: Pick<RouteFrameV3, 'taskTy
     sparse: number;
     dense: number;
     bonus: number;
+    riskPenalty: number;
+    mode: import("./route-policy-v3-routing-mode.js").RoutingModeV3;
 }[];

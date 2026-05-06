@@ -546,6 +546,15 @@ export interface RoutePolicyRuleV3 {
         banditMeanReward?: number;
         banditCount?: number;
         pairWinRate?: number;
+        teacherConfidenceMean?: number;
+        validatorConfidenceMean?: number;
+        ambiguityPenaltyMean?: number;
+    };
+    calibration?: {
+        sampleCount?: number;
+        successRate?: number;
+        calibratedConfidence?: number;
+        threshold?: number;
     };
     reason?: string;
 }
@@ -567,6 +576,8 @@ export interface RoutePolicySnapshotV3 {
         maxInjectedMemories: number;
         maxInjectedChars: number;
         defaultGraphDepth: 0 | 1 | 2;
+        minCalibratedConfidence?: number;
+        abstainMargin?: number;
     };
     evalSummary?: {
         frames: number;
@@ -579,6 +590,65 @@ export interface RoutePolicySnapshotV3 {
         activationStatusReason?: string;
         validationErrors?: string[];
         validationWarnings?: string[];
+        compactness?: {
+            beforeMerge: number;
+            afterMerge: number;
+            afterPrune: number;
+            duplicateGroups: number;
+            mergedAway: number;
+            dominatedPruned: number;
+            avgSignalsPerRule: number;
+            avgQueriesPerRule: number;
+            maxRulesPerRoute: number;
+        };
+        replay?: {
+            frames: number;
+            comparableFrames: number;
+            matchedFrames: number;
+            abstainRate: number;
+            routeAgreement: number;
+            rewardWeightedAgreement: number;
+            projectedValue: number;
+            baselineProjectedValue: number;
+            estimatedImprovement: number;
+            modeBreakdown?: Record<string, {
+                frames: number;
+                matchedFrames: number;
+                abstained: number;
+                projectedValue: number;
+            }>;
+            calibration?: {
+                holdoutFrames: number;
+                comparableFrames: number;
+                globalThreshold: number;
+                abstainMargin: number;
+            };
+        };
+    };
+    calibration?: {
+        method: 'histogram_binning_v1';
+        holdoutFrames: number;
+        comparableFrames: number;
+        globalThreshold: number;
+        abstainMargin: number;
+        globalBuckets: Array<{
+            minScore: number;
+            maxScore: number;
+            successRate: number;
+            count: number;
+        }>;
+        routeThresholds: Partial<Record<RouteKind, number>>;
+        routeBuckets: Partial<Record<RouteKind, Array<{
+            minScore: number;
+            maxScore: number;
+            successRate: number;
+            count: number;
+        }>>>;
+    };
+    lineage?: {
+        previousSnapshotId?: string;
+        comparedAgainstSnapshotId?: string;
+        retiredPrototypeIds?: string[];
     };
     sourceFrameIds: string[];
     sourcePrototypeIds: string[];

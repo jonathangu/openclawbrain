@@ -17,6 +17,10 @@ import type {
   TurnFrame,
 } from './memory-types.js';
 import { hashText, redactText } from './redact.js';
+import { buildCalibrationSummaryV3, applyCalibrationV3, type RoutePolicyV3CalibrationSummary, type RouteCalibrationPredictionV3 } from './route-policy-v3-calibration.js';
+import { compactnessSummaryV3, mergeRuleCandidatesV3, normalizeQueryTemplateFamilyV3, pruneDominatedRulesV3 } from './route-policy-v3-normalize.js';
+import { summarizeReplayEvaluationV3, type RouteReplayPredictionV3 } from './route-policy-v3-eval.js';
+import { detectRoutingModeV3, hybridWeightsForRoutingModeV3, prototypeRiskPenaltyV3 } from './route-policy-v3-routing-mode.js';
 
 const ROUTES: RouteKind[] = ['no_memory', 'capture_only', 'retrieve_memory', 'retrieve_and_distill', 'high_confidence_correction_only'];
 const RETRIEVAL_ROUTES = new Set<RouteKind>(['retrieve_memory', 'retrieve_and_distill', 'high_confidence_correction_only']);
@@ -39,6 +43,10 @@ export interface RoutePolicyV3MatchResult {
   matched: boolean;
   rule?: RoutePolicyRuleV3;
   score: number;
+  rawScore?: number;
+  calibratedScore?: number;
+  threshold?: number;
+  abstained?: boolean;
   reasonCode: string;
 }
 
@@ -128,7 +136,7 @@ export function ingestRouteLearningArtifactsV3(
       positiveActionId: teacherPrototype.id,
       negativeActionId: chosenPrototype.id,
       labelSource: 'teacher',
-      marginWeight: clamp01(Math.max(0.2, Number(teacherRun.confidence || 0.5))),
+      marginWeight: learningMarginWeightV3(Number(teacherRun.confidence || 0.5), decision),
       evidenceIds: unique([decision.id, teacherRun.id]),
     });
     pairExamples.push(pair);
@@ -136,16 +144,18 @@ export function ingestRouteLearningArtifactsV3(
 
   for (const cf of counterfactuals) {
     if (cf.estimatedOutcome !== 'likely_helpful' && cf.estimatedOutcome !== 'likely_missed') continue;
+    if (Number(cf.confidence || 0) < 0.35) continue;
     const prototype = upsertPrototypeForCounterfactual(store, agentId, decision, cf, 'distilled');
     prototypeIds.add(prototype.id);
     if (prototype.id === chosenPrototype.id) continue;
+    const counterfactualBeatsChosen = cf.estimatedOutcome === 'likely_helpful';
     pairExamples.push(store.insertRoutePairExampleV3({
       agentId,
       frameId: frame.id,
-      positiveActionId: prototype.id,
-      negativeActionId: chosenPrototype.id,
+      positiveActionId: counterfactualBeatsChosen ? prototype.id : chosenPrototype.id,
+      negativeActionId: counterfactualBeatsChosen ? chosenPrototype.id : prototype.id,
       labelSource: 'counterfactual',
-      marginWeight: clamp01(Math.max(0.15, Number(cf.confidence || teacherRun.confidence || 0.5))),
+      marginWeight: learningMarginWeightV3(Number(cf.confidence || teacherRun.confidence || 0.5), decision),
       evidenceIds: unique([decision.id, teacherRun.id, cf.id]),
     }));
   }
@@ -173,7 +183,7 @@ export function ingestRouteLearningArtifactsV3(
       positiveActionId: silencePrototype.id,
       negativeActionId: chosenPrototype.id,
       labelSource: 'outcome',
-      marginWeight: clamp01(Math.abs(Number(decision.reward || 0))),
+      marginWeight: learningMarginWeightV3(Math.abs(Number(decision.reward || 0)), decision),
       evidenceIds: unique([decision.id]),
     }));
   }
@@ -193,7 +203,9 @@ export function maybeDistillAndStorePolicyV3(store: any, agentId: string, config
   }
   const frames = store.listRouteFramesV3(agentId, 400) as RouteFrameV3[];
   const pairs = store.listRoutePairExamplesV3(agentId, 1200) as RoutePairExampleV3[];
-  const prototypes = store.listRouteActionPrototypesV3(agentId, 200).filter((prototype: RouteActionPrototypeV3) => prototype.status !== 'retired') as RouteActionPrototypeV3[];
+  const listedPrototypes = store.listRouteActionPrototypesV3(agentId, 200) as RouteActionPrototypeV3[];
+  const retirement = retireStalePrototypesV3(store, listedPrototypes, config);
+  const prototypes = listedPrototypes.filter((prototype) => prototype.status !== 'retired' && !retirement.retiredPrototypeIds.includes(prototype.id));
   const banditState = store.getRouteBanditStateV3(agentId) as RouteBanditStateV3 | null;
   const minFrames = Number(config.routeLearning?.policyV3?.minFrames ?? 3);
   const existing = store.getActivePolicySnapshotV3(agentId) as RoutePolicySnapshotV3 | null;
@@ -219,7 +231,8 @@ export function maybeDistillAndStorePolicyV3(store: any, agentId: string, config
       activationDecision: 'rejected',
       activationStatusReason: 'no_valid_rules',
       validationErrors: ['no_valid_rules'],
-    }));
+      compactness: compactnessSummaryV3([], [], [], 0, 0),
+    }, undefined, { previousSnapshotId: existing?.id, comparedAgainstSnapshotId: existing?.id, retiredPrototypeIds: retirement.retiredPrototypeIds }));
     return {
       snapshot: rejected,
       validation: validatePolicySnapshotV3(rejected, config, existing),
@@ -231,7 +244,21 @@ export function maybeDistillAndStorePolicyV3(store: any, agentId: string, config
   }
 
   const priors = buildActionPriors(frames, pairs, prototypes, banditState);
-  const draft = buildSnapshotV3(agentId, rules, priors, frames, prototypes, config, 'candidate');
+  const preCalibration = buildSnapshotV3(agentId, rules, priors, frames, prototypes, config, 'candidate', undefined, undefined, {
+    previousSnapshotId: existing?.id,
+    comparedAgainstSnapshotId: existing?.id,
+    retiredPrototypeIds: retirement.retiredPrototypeIds,
+  });
+  const calibration = buildSnapshotCalibrationV3(preCalibration, frames, config);
+  const replay = buildSnapshotReplaySummaryV3({ ...preCalibration, calibration }, frames, existing, config);
+  const draft = buildSnapshotV3(agentId, rules, priors, frames, prototypes, config, 'candidate', {
+    ...(preCalibration.evalSummary ?? {}),
+    replay,
+  }, calibration, {
+    previousSnapshotId: existing?.id,
+    comparedAgainstSnapshotId: existing?.id,
+    retiredPrototypeIds: retirement.retiredPrototypeIds,
+  });
   const validation = validatePolicySnapshotV3(draft, config, existing);
   const identical = existing && stablePolicyBodyV3(existing) === stablePolicyBodyV3(draft);
   if (identical) {
@@ -280,48 +307,71 @@ export function distillPolicyRulesV3(
   config: any,
 ): RoutePolicyRuleV3[] {
   const pairCounts = summarizePairCounts(pairs);
-  const rules: RoutePolicyRuleV3[] = [];
+  const rawRules: RoutePolicyRuleV3[] = [];
   const minConfidence = Number(config.routeLearning?.policyV3?.minRuleConfidence ?? 0.55);
+  const globalTaskTypes = topCounts(frames.map((frame) => frame.taskType), 2);
+  const globalSignals = topCounts(frames.flatMap((frame) => frame.turnSignals), 12);
+  const globalProjects = topCounts(frames.map((frame) => frame.projectHint || '').filter(Boolean), 2);
+  const globalRepoPresent = frames.some((frame) => Boolean(frame.repoHint));
   for (const prototype of prototypes) {
-    const rows = frames.filter((frame) => frame.chosenActionId === prototype.id);
-    const taskTypes = topCounts(rows.map((frame) => frame.taskType), 1);
-    const signals = topCounts(rows.flatMap((frame) => frame.turnSignals), 8);
-    const projects = topCounts(rows.map((frame) => frame.projectHint || '').filter(Boolean), 1);
-    const priors = priorsForPrototype(prototype.id, rows, pairCounts, banditState);
+    const matchingFrames = frames.filter((frame) => frame.chosenActionId === prototype.id);
+    const taskTypes = matchingFrames.length ? topCounts(matchingFrames.map((frame) => frame.taskType), 1) : globalTaskTypes;
+    const signals = matchingFrames.length ? topCounts(matchingFrames.flatMap((frame) => frame.turnSignals), 8) : globalSignals;
+    const projects = matchingFrames.length ? topCounts(matchingFrames.map((frame) => frame.projectHint || '').filter(Boolean), 1) : globalProjects;
+    const priors = priorsForPrototype(prototype.id, matchingFrames, pairCounts, banditState);
     const confidence = clamp01(
       0.42 +
       Math.min(0.18, priors.support * 0.03) -
       Math.min(0.2, priors.harm * 0.05) +
       priors.pairWinRate * 0.18 +
-      Math.max(-0.1, Math.min(0.15, priors.banditMeanReward * 0.18))
+      Math.max(-0.1, Math.min(0.15, priors.banditMeanReward * 0.18)) -
+      Math.min(0.08, Number(priors.ambiguityPenaltyMean || 0) * 0.12)
     );
-    if (confidence < minConfidence) continue;
+    const isNoMemoryRule = prototype.route === 'no_memory';
+    const effectiveMinConfidence = isNoMemoryRule ? 0.18 : minConfidence;
+    if (confidence < effectiveMinConfidence) continue;
     const rule: RoutePolicyRuleV3 = {
       id: hashText(`${prototype.id}:${taskTypes.join('|')}:${signals.join('|')}:${priors.support}:${priors.harm}`).slice(7, 25),
-      priority: prototype.route === 'no_memory' ? 95 : 55,
+      priority: isNoMemoryRule ? 95 : 55,
       actionId: prototype.id,
       match: {
         taskType: taskTypes[0] || undefined,
-        turnSignals: signals,
+        turnSignals: stableSignals(signals).slice(0, Math.max(4, Number(config.routeLearning?.policyV3?.maxRuleSignals ?? 8))),
         projectHint: projects[0] || undefined,
-        repoHintPresent: rows.some((frame) => Boolean(frame.repoHint)) || undefined,
-        safetySignalsAbsent: prototype.route === 'no_memory' ? ['unsafe'] : undefined,
+        repoHintPresent: (matchingFrames.length ? matchingFrames.some((frame) => Boolean(frame.repoHint)) : globalRepoPresent) || undefined,
+        safetySignalsAbsent: isNoMemoryRule ? ['unsafe'] : undefined,
       },
       route: prototype.route,
       memoryTypes: prototype.memoryTypes,
-      queries: prototype.queryTemplateFamily,
+      queries: normalizeQueryTemplateFamilyV3(prototype.queryTemplateFamily, 8),
       graphDepth: prototype.graphDepth,
       syncPlanner: prototype.syncPlanner,
       confidence,
-      evidenceIds: unique([...prototype.sourceExampleIds, ...rows.map((frame) => frame.routeDecisionId)]).slice(0, 40),
+      evidenceIds: unique([...prototype.sourceExampleIds, ...matchingFrames.map((frame) => frame.routeDecisionId)]).slice(0, 40),
       priors,
       reason: `distilled_from_prototype:${prototype.id}`,
     };
-    if (validateRuleShapeV3(rule, config).length === 0) rules.push(rule);
+    if (validateRuleShapeV3(rule, config).length === 0) rawRules.push(rule);
   }
-  return rules
-    .sort((a, b) => Number(b.priority || 0) - Number(a.priority || 0) || b.confidence - a.confidence)
-    .slice(0, Math.max(4, Number(config.routeLearning?.policyV3?.maxRules ?? 32)));
+  const merged = mergeRuleCandidatesV3(rawRules, config);
+  const pruned = pruneDominatedRulesV3(merged.rules);
+  const maxRulesPerRoute = Math.max(1, Number(config.routeLearning?.policyV3?.maxRulesPerRoute ?? 10));
+  const capped: RoutePolicyRuleV3[] = [];
+  const byRoute = new Map<RouteKind, number>();
+  for (const rule of pruned.rules.sort((a, b) => Number(b.priority || 0) - Number(a.priority || 0) || b.confidence - a.confidence)) {
+    const count = byRoute.get(rule.route) || 0;
+    if (count >= maxRulesPerRoute) continue;
+    capped.push(rule);
+    byRoute.set(rule.route, count + 1);
+  }
+  const limited = capped.slice(0, Math.max(4, Number(config.routeLearning?.policyV3?.maxRules ?? 32)));
+  const compactness = compactnessSummaryV3(rawRules, merged.rules, limited, merged.duplicateGroups, pruned.prunedRuleIds.length);
+  return limited.map((rule) => ({
+    ...rule,
+    reason: compactness.mergedAway > 0 || compactness.dominatedPruned > 0
+      ? `${rule.reason || 'distilled'}|compact:${compactness.afterPrune}/${compactness.beforeMerge}`
+      : rule.reason,
+  }));
 }
 
 export function validatePolicySnapshotV3(snapshot: Partial<RoutePolicySnapshotV3>, config: any = {}, existing?: RoutePolicySnapshotV3 | null): RoutePolicyV3ValidationReport {
@@ -344,6 +394,29 @@ export function validatePolicySnapshotV3(snapshot: Partial<RoutePolicySnapshotV3
   if (harmRate > maxHarmRate) errors.push(`harm_rate_exceeds_gate:${harmRate.toFixed(3)}>${maxHarmRate}`);
   if (noisyActionRate > Math.min(0.5, maxHarmRate + 0.15)) errors.push(`noisy_action_rate_exceeds_gate:${noisyActionRate.toFixed(3)}`);
 
+  const compactness = evalSummary.compactness ?? {};
+  const duplicateRate = Number(compactness.beforeMerge || 0) > 0
+    ? Number(compactness.mergedAway || 0) / Number(compactness.beforeMerge || 1)
+    : 0;
+  const maxDuplicateRate = Number(config.routeLearning?.policyV3?.compactnessMaxDuplicateRate ?? 0.35);
+  if (duplicateRate > maxDuplicateRate) warnings.push(`duplicate_rate_high:${duplicateRate.toFixed(3)}>${maxDuplicateRate}`);
+  if (Number(compactness.maxRulesPerRoute || 0) > Number(config.routeLearning?.policyV3?.maxRulesPerRoute ?? 10)) {
+    errors.push(`max_rules_per_route_exceeded:${compactness.maxRulesPerRoute}`);
+  }
+
+  const replay = evalSummary.replay ?? {};
+  const projectedImprovement = Number(replay.estimatedImprovement ?? 0);
+  const minProjectedImprovement = Number(config.routeLearning?.policyV3?.minProjectedImprovement ?? -0.01);
+  if (Number(replay.frames || 0) > 0 && projectedImprovement < minProjectedImprovement) {
+    errors.push(`candidate_projected_value_regressed:${projectedImprovement.toFixed(3)}<${minProjectedImprovement}`);
+  }
+
+  const calibration = snapshot.calibration;
+  const minCalibratedConfidence = Number(snapshot.globalBudgets?.minCalibratedConfidence ?? config.routeLearning?.policyV3?.minCalibratedConfidence ?? 0.62);
+  if (calibration && Number(calibration.globalThreshold || 0) + Number(calibration.abstainMargin || 0) < minCalibratedConfidence - 0.12) {
+    warnings.push('calibration_threshold_suspiciously_low');
+  }
+
   if (existing?.evalSummary) {
     const oldHarmRate = Number((existing.evalSummary as any).harmRate ?? 0);
     if (harmRate > oldHarmRate + 0.05) errors.push('candidate_harm_rate_regressed');
@@ -358,13 +431,37 @@ export function scorePolicySnapshotV3(snapshot: RoutePolicySnapshotV3 | null | u
     return { matched: false, score: 0, reasonCode: 'no_active_policy_v3' };
   }
   const haystack = `${message} ${turnFrame.summary} ${turnFrame.userGoal} ${turnFrame.impliedNeeds.join(' ')} ${turnFrame.memoryQuestions.join(' ')}`.toLowerCase();
-  let best: RoutePolicyV3MatchResult = { matched: false, score: 0, reasonCode: 'no_matching_policy_rule_v3' };
+  const mode = detectRoutingModeV3(turnFrame, message);
+  let best: RoutePolicyV3MatchResult = { matched: false, score: 0, reasonCode: 'no_matching_policy_rule_v3', rawScore: 0, calibratedScore: 0, threshold: 0, abstained: false };
   for (const rule of snapshot.rules) {
-    const match = scoreRuleV3(rule, turnFrame, haystack, snapshot.actionPriors?.[rule.actionId]);
+    const match = scoreRuleV3(rule, turnFrame, haystack, snapshot.actionPriors?.[rule.actionId], mode);
     if (!match.matched) continue;
     if (match.score > best.score) best = match;
   }
-  return best;
+  if (!best.matched || !best.rule) return best;
+  const calibrated = applyCalibrationV3(best.rawScore ?? best.score, best.rule.route, snapshot.calibration as RoutePolicyV3CalibrationSummary | undefined, mode);
+  const threshold = calibrated.threshold;
+  if (calibrated.abstained || calibrated.calibratedScore < threshold) {
+    return {
+      matched: false,
+      rule: best.rule,
+      score: calibrated.calibratedScore,
+      rawScore: calibrated.rawScore,
+      calibratedScore: calibrated.calibratedScore,
+      threshold,
+      abstained: true,
+      reasonCode: `policy_v3_abstain:${best.rule.id}:${mode}`,
+    };
+  }
+  return {
+    ...best,
+    score: calibrated.calibratedScore,
+    calibratedScore: calibrated.calibratedScore,
+    rawScore: calibrated.rawScore,
+    threshold,
+    abstained: false,
+    reasonCode: `${best.reasonCode}:${mode}`,
+  };
 }
 
 export function rankActionPrototypesV3(
@@ -372,6 +469,8 @@ export function rankActionPrototypesV3(
   prototypes: RouteActionPrototypeV3[],
   banditState: RouteBanditStateV3 | null,
 ) {
+  const mode = detectRoutingModeV3(frame, frame.redactedTurnSummary || '');
+  const weights = hybridWeightsForRoutingModeV3(mode);
   const queryEmbedding = embedTextParts([
     frame.redactedTurnSummary,
     frame.taskType,
@@ -386,24 +485,31 @@ export function rankActionPrototypesV3(
     const dense = bilinearScore(queryEmbedding, prototype.denseEmbedding || []);
     const stats = banditState?.actionStats?.[prototype.id];
     const bonus = stats ? (stats.rewardMean + Number((banditState?.explorationAlpha ?? 0.35)) / Math.sqrt(Math.max(1, stats.count))) : 0;
-    const total = sparse * 0.6 + dense * 0.25 + Math.max(-0.15, Math.min(0.15, bonus * 0.15));
-    return { prototype, score: total, sparse, dense, bonus };
+    const riskPenalty = prototypeRiskPenaltyV3(prototype, mode);
+    const total =
+      sparse * weights.sparse +
+      dense * weights.dense +
+      Math.max(-0.15, Math.min(0.15, bonus * weights.bandit)) -
+      riskPenalty * weights.risk;
+    return { prototype, score: total, sparse, dense, bonus, riskPenalty, mode };
   }).sort((a, b) => b.score - a.score);
 }
 
-function scoreRuleV3(rule: RoutePolicyRuleV3, turnFrame: TurnFrame, haystack: string, priors?: any): RoutePolicyV3MatchResult {
+function scoreRuleV3(rule: RoutePolicyRuleV3, turnFrame: TurnFrame, haystack: string, priors?: any, mode = detectRoutingModeV3(turnFrame, haystack)): RoutePolicyV3MatchResult {
   const match = rule.match ?? {};
   if (match.taskType && match.taskType !== turnFrame.taskType) return { matched: false, rule, score: 0, reasonCode: 'task_type_mismatch' };
   const signals = Array.isArray(match.turnSignals) ? match.turnSignals.map((value) => String(value).toLowerCase()).filter(Boolean) : [];
   const overlap = signals.filter((signal) => haystack.includes(signal)).length;
   if (signals.length > 0 && overlap === 0) return { matched: false, rule, score: 0, reasonCode: 'turn_signal_mismatch' };
+  const weights = hybridWeightsForRoutingModeV3(mode);
   const priority = Number((rule as any).priority || 0) / 200;
-  const signalBonus = signals.length ? Math.min(0.15, overlap * 0.03) : 0;
+  const signalBonus = signals.length ? Math.min(0.18, overlap * weights.signalBonus) : 0;
   const routeHintBonus = routeHintCompatibility(rule, turnFrame);
   const banditBonus = priors ? Math.max(-0.08, Math.min(0.12, Number(priors.banditMeanReward || 0) * 0.12 + Number(priors.pairWinRate || 0) * 0.08)) : 0;
   const supportBonus = priors ? Math.min(0.08, Number(priors.support || 0) * 0.01) : 0;
-  const score = clamp01(Number(rule.confidence || 0) + priority + signalBonus + routeHintBonus + banditBonus + supportBonus);
-  return { matched: true, rule, score, reasonCode: `policy_v3_rule:${rule.id}` };
+  const ambiguityPenalty = priors ? Math.min(0.08, Number(priors.ambiguityPenaltyMean || 0) * 0.12) : 0;
+  const rawScore = clamp01(Number(rule.confidence || 0) + priority + signalBonus + routeHintBonus + banditBonus + supportBonus - ambiguityPenalty);
+  return { matched: true, rule, score: rawScore, rawScore, calibratedScore: rawScore, abstained: false, reasonCode: `policy_v3_rule:${rule.id}` };
 }
 
 function routeHintCompatibility(rule: RoutePolicyRuleV3, turnFrame: TurnFrame) {
@@ -446,10 +552,11 @@ function upsertPrototypeForDecision(store: any, agentId: string, decision: Route
     memoryTypes: sanitizeMemoryTypes(decision.retrievalPlan?.memoryTypes?.length ? decision.retrievalPlan.memoryTypes : lesson?.memoryTypes ?? []),
     graphDepth: clampGraphDepth(decision.retrievalPlan?.graphDepth ?? lesson?.graphDepth ?? 0),
     syncPlanner: decision.syncLlmUsed ? 'allowed' : 'no',
-    queryTemplateFamily: sanitizeStrings(decision.retrievalPlan?.queries?.length ? decision.retrievalPlan.queries : lesson?.queryTemplates ?? [], 8),
+    queryTemplateFamily: normalizeQueryTemplateFamilyV3(decision.retrievalPlan?.queries?.length ? decision.retrievalPlan.queries : lesson?.queryTemplates ?? [], 8),
     sparseSignature: stableSignals([
       sanitizeTaskType(decision.turnFrame.taskType),
       ...signalsFromDecision(decision),
+      ...routeHintFlags(decision.turnFrame),
       ...sanitizeMemoryTypes(decision.retrievalPlan?.memoryTypes ?? []),
     ]),
     denseEmbedding: embedTextParts([
@@ -477,7 +584,7 @@ function upsertPrototypeForTeacher(store: any, agentId: string, teacherRun: Rout
     memoryTypes,
     graphDepth: clampGraphDepth(teacherRun.teacherGraphDepth ?? 0),
     syncPlanner: teacherRun.syncPlannerWorthIt ? 'allowed' : 'no',
-    queryTemplateFamily: sanitizeStrings(teacherRun.teacherQueries ?? [], 8),
+    queryTemplateFamily: normalizeQueryTemplateFamilyV3(teacherRun.teacherQueries ?? [], 8),
     sparseSignature: stableSignals([
       sanitizeTaskType(lessons[0]?.taskType || 'other'),
       ...lessons.flatMap((lesson) => lesson.turnSignals || []),
@@ -510,7 +617,7 @@ function upsertPrototypeForCounterfactual(store: any, agentId: string, decision:
     memoryTypes: sanitizeMemoryTypes(cf.memoryTypes ?? []),
     graphDepth: clampGraphDepth(cf.graphDepth ?? 0),
     syncPlanner: cf.kind === 'sync_planner' ? 'allowed' : 'no',
-    queryTemplateFamily: sanitizeStrings(decision.retrievalPlan?.queries ?? [], 8),
+    queryTemplateFamily: normalizeQueryTemplateFamilyV3(decision.retrievalPlan?.queries ?? [], 8),
     sparseSignature: stableSignals([
       sanitizeTaskType(decision.turnFrame.taskType),
       String(cf.kind || ''),
@@ -554,6 +661,15 @@ function buildActionPriors(frames: RouteFrameV3[], pairs: RoutePairExampleV3[], 
 function priorsForPrototype(prototypeId: string, frames: RouteFrameV3[], pairCounts: Record<string, { wins: number; losses: number }>, banditState: RouteBanditStateV3 | null) {
   const support = frames.filter((frame) => Number(frame.reward || 0) >= 0).length;
   const harm = frames.filter((frame) => Number(frame.reward || 0) < 0).length;
+  const ambiguityPenaltyMean = frames.length
+    ? frames.reduce((sum, frame) => sum + Number(frame.rewardComponents?.ambiguityPenalty || 0), 0) / frames.length
+    : 0;
+  const teacherConfidenceMean = frames.length
+    ? frames.reduce((sum, frame) => sum + Number(frame.rewardComponents?.teacherConfidence || 0), 0) / frames.length
+    : 0;
+  const validatorConfidenceMean = frames.length
+    ? frames.reduce((sum, frame) => sum + Number(frame.rewardComponents?.validatorConfidence || 0), 0) / frames.length
+    : 0;
   const pair = pairCounts[prototypeId] || { wins: 0, losses: 0 };
   const pairWinRate = pair.wins + pair.losses > 0 ? pair.wins / (pair.wins + pair.losses) : 0.5;
   const stats = banditState?.actionStats?.[prototypeId];
@@ -563,6 +679,9 @@ function priorsForPrototype(prototypeId: string, frames: RouteFrameV3[], pairCou
     banditMeanReward: Number(stats?.rewardMean || 0),
     banditCount: Number(stats?.count || 0),
     pairWinRate,
+    teacherConfidenceMean: Number(teacherConfidenceMean.toFixed(4)),
+    validatorConfidenceMean: Number(validatorConfidenceMean.toFixed(4)),
+    ambiguityPenaltyMean: Number(ambiguityPenaltyMean.toFixed(4)),
   };
 }
 
@@ -586,10 +705,13 @@ function buildSnapshotV3(
   config: any,
   status: 'candidate' | 'active' | 'shadow' | 'rejected',
   evalOverride?: any,
+  calibration?: RoutePolicyV3CalibrationSummary,
+  lineage?: RoutePolicySnapshotV3['lineage'],
 ): Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'> {
   const harms = frames.filter((frame) => Number(frame.reward || 0) < 0).length;
   const noisy = frames.filter((frame) => Number(frame.rewardComponents?.noisyInjectionPenalty || 0) > 0).length;
   const syncRules = rules.filter((rule) => rule.syncPlanner === 'allowed' || rule.syncPlanner === 'prefer').length;
+  const compactness = compactnessSummaryV3(rules, rules, rules, 0, 0);
   return {
     agentId,
     version: 'route-policy-v3',
@@ -601,6 +723,8 @@ function buildSnapshotV3(
       maxInjectedMemories: Number(config.routing?.maxInjectedMemories ?? 8),
       maxInjectedChars: Number(config.routing?.maxInjectedChars ?? 2500),
       defaultGraphDepth: clampGraphDepth(config.routeLearning?.counterfactuals?.maxGraphDepth ?? 1),
+      minCalibratedConfidence: Number(config.routeLearning?.policyV3?.minCalibratedConfidence ?? 0.62),
+      abstainMargin: Number(config.routeLearning?.policyV3?.abstainMargin ?? 0.05),
     },
     evalSummary: evalOverride ?? {
       frames: frames.length,
@@ -609,7 +733,10 @@ function buildSnapshotV3(
       projectedSyncPlannerRate: rules.length ? syncRules / rules.length : 0,
       noisyActionRate: frames.length ? noisy / frames.length : 0,
       harmRate: frames.length ? harms / frames.length : 0,
+      compactness,
     },
+    calibration,
+    lineage,
     sourceFrameIds: frames.map((frame) => frame.id).slice(0, 200),
     sourcePrototypeIds: prototypes.map((prototype) => prototype.id).slice(0, 200),
     model: config.llm?.learningModel || 'deterministic-route-policy-v3',
@@ -617,13 +744,157 @@ function buildSnapshotV3(
   };
 }
 
+function buildSnapshotCalibrationV3(snapshot: Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'>, frames: RouteFrameV3[], config: any) {
+  const holdout = holdoutFramesV3(frames, config);
+  const predictions: RouteCalibrationPredictionV3[] = holdout.map((frame) => {
+    const match = scoreSnapshotAgainstFrameV3(snapshot, frame);
+    return {
+      rawScore: match.rawScore,
+      route: match.route,
+      observedSuccess: frameSuccessLabelV3(frame),
+      comparable: match.route === frame.chosenRoute,
+    };
+  });
+  return buildCalibrationSummaryV3(predictions, config);
+}
+
+function buildSnapshotReplaySummaryV3(snapshot: Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'>, frames: RouteFrameV3[], existing: RoutePolicySnapshotV3 | null, config: any) {
+  const holdout = holdoutFramesV3(frames, config);
+  const predictions = holdout.map((frame) => replayPredictionForFrameV3(snapshot, frame));
+  const baseline = holdout.map((frame) => replayPredictionForFrameV3(existing || null, frame));
+  return summarizeReplayEvaluationV3(predictions, baseline, snapshot.calibration as RoutePolicyV3CalibrationSummary | undefined);
+}
+
+function holdoutFramesV3(frames: RouteFrameV3[], config: any) {
+  const ordered = [...frames].sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+  const fraction = Number(config.routeLearning?.policyV3?.holdoutFraction ?? 0.3);
+  const minHoldout = Number(config.routeLearning?.policyV3?.minHoldoutFrames ?? 2);
+  const count = Math.min(ordered.length, Math.max(minHoldout, Math.round(ordered.length * fraction)));
+  return ordered.slice(-count);
+}
+
+function replayPredictionForFrameV3(snapshot: RoutePolicySnapshotV3 | Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'> | null, frame: RouteFrameV3): RouteReplayPredictionV3 {
+  const mode = detectRoutingModeV3({
+    taskType: frame.taskType,
+    turnSignals: frame.turnSignals,
+    routeHintFlags: frame.routeHintFlags,
+    redactedTurnSummary: frame.redactedTurnSummary,
+  }, frame.redactedTurnSummary);
+  if (!snapshot || snapshot.version !== 'route-policy-v3') {
+    return {
+      frameId: frame.id,
+      route: null,
+      rawScore: 0,
+      calibratedScore: 0,
+      abstained: true,
+      comparable: false,
+      matchedObservedRoute: false,
+      reward: Number(frame.reward || 0),
+      mode,
+    };
+  }
+  const match = scoreSnapshotAgainstFrameV3(snapshot, frame);
+  const calibrated = applyCalibrationV3(match.rawScore, match.route, snapshot.calibration as RoutePolicyV3CalibrationSummary | undefined, mode);
+  return {
+    frameId: frame.id,
+    route: match.route,
+    rawScore: match.rawScore,
+    calibratedScore: calibrated.calibratedScore,
+    abstained: calibrated.abstained,
+    comparable: match.route === frame.chosenRoute,
+    matchedObservedRoute: match.route === frame.chosenRoute,
+    reward: Number(frame.reward || 0),
+    mode,
+  };
+}
+
+function scoreSnapshotAgainstFrameV3(snapshot: RoutePolicySnapshotV3 | Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'>, frame: RouteFrameV3) {
+  const turnFrame = turnFrameFromStoredFrameV3(frame);
+  const haystack = `${frame.redactedTurnSummary} ${frame.turnSignals.join(' ')} ${frame.toolHints.join(' ')}`.toLowerCase();
+  const mode = detectRoutingModeV3({
+    taskType: frame.taskType,
+    turnSignals: frame.turnSignals,
+    routeHintFlags: frame.routeHintFlags,
+    redactedTurnSummary: frame.redactedTurnSummary,
+  }, frame.redactedTurnSummary);
+  let bestRule: RoutePolicyRuleV3 | undefined;
+  let bestScore = 0;
+  for (const rule of snapshot.rules || []) {
+    const match = scoreRuleV3(rule, turnFrame, haystack, snapshot.actionPriors?.[rule.actionId], mode);
+    if (!match.matched || !match.rule) continue;
+    if ((match.rawScore ?? match.score) > bestScore) {
+      bestScore = match.rawScore ?? match.score;
+      bestRule = match.rule;
+    }
+  }
+  return {
+    route: bestRule?.route || 'no_memory',
+    rawScore: bestScore,
+    rule: bestRule,
+  };
+}
+
+function turnFrameFromStoredFrameV3(frame: RouteFrameV3): TurnFrame {
+  return {
+    summary: frame.redactedTurnSummary,
+    userGoal: frame.redactedTurnSummary,
+    taskType: frame.taskType,
+    activeObjects: [
+      ...(frame.projectHint ? [{ kind: 'concept' as const, value: frame.projectHint }] : []),
+      ...(frame.repoHint ? [{ kind: 'repo' as const, value: frame.repoHint }] : []),
+      ...(frame.toolHints || []).map((tool) => ({ kind: 'tool' as const, value: tool })),
+    ] as Array<{ kind: 'concept' | 'repo' | 'tool'; value: string }>,
+    impliedNeeds: [...(frame.turnSignals || [])],
+    memoryQuestions: [],
+    constraints: [],
+    routeHints: {
+      likelyNeedsCorrections: (frame.routeHintFlags || []).includes('needs_correction') || frame.chosenMemoryTypes.includes('correction'),
+      likelyNeedsPreferences: (frame.routeHintFlags || []).includes('needs_preference') || frame.chosenMemoryTypes.includes('preference'),
+      likelyNeedsWorkflow: (frame.routeHintFlags || []).includes('needs_workflow') || frame.chosenMemoryTypes.includes('workflow'),
+      likelyNeedsProjectContext: (frame.routeHintFlags || []).includes('needs_project_context') || Boolean(frame.projectHint || frame.repoHint),
+    },
+  };
+}
+
+function frameSuccessLabelV3(frame: RouteFrameV3) {
+  if (frame.chosenRoute === 'no_memory') return Number(frame.reward || 0) >= 0;
+  return Number(frame.reward || 0) > 0;
+}
+
+function retireStalePrototypesV3(store: any, prototypes: RouteActionPrototypeV3[], config: any) {
+  const minCount = Number(config.routeLearning?.policyV3?.prototypeRetirementMinCount ?? 3);
+  const harmRate = Number(config.routeLearning?.policyV3?.prototypeRetirementHarmRate ?? 0.7);
+  const retiredPrototypeIds: string[] = [];
+  for (const prototype of prototypes) {
+    const sampleCount = Math.max(0, Number(prototype.supportPrior || 0) + Number(prototype.harmPrior || 0));
+    if (prototype.status === 'retired' || sampleCount < minCount) continue;
+    const observedHarmRate = sampleCount > 0 ? Number(prototype.harmPrior || 0) / sampleCount : 0;
+    if (observedHarmRate < harmRate) continue;
+    retiredPrototypeIds.push(prototype.id);
+    store.setRouteActionPrototypeStatusV3?.(prototype.id, 'retired');
+  }
+  return { retiredPrototypeIds };
+}
+
 function stablePolicyBodyV3(snapshot: RoutePolicySnapshotV3 | Omit<RoutePolicySnapshotV3, 'id' | 'createdAt'>) {
-  return JSON.stringify({ rules: snapshot.rules, actionPriors: snapshot.actionPriors, globalBudgets: snapshot.globalBudgets });
+  return JSON.stringify({
+    rules: snapshot.rules,
+    actionPriors: snapshot.actionPriors,
+    globalBudgets: snapshot.globalBudgets,
+    calibration: snapshot.calibration ? {
+      globalThreshold: snapshot.calibration.globalThreshold,
+      routeThresholds: snapshot.calibration.routeThresholds,
+    } : null,
+  });
 }
 
 function rewardComponentsForDecision(decision: RouteDecision) {
   const reward = Number(decision.reward || 0);
   const hadMemory = (decision.selectedMemoryIds?.length || 0) > 0;
+  const ambiguityPenalty = reward === 0 ? 0.15 : Math.max(0, 0.1 - Math.abs(reward) * 0.05);
+  const teacherConfidence = Math.max(0.3, Math.min(1, Math.abs(reward) || Number(decision.confidence || 0.5)));
+  const validatorConfidence = reward !== 0 ? Math.max(0.45, Math.min(1, Math.abs(reward))) : 0.4;
+  const abstainGain = !hadMemory && reward >= 0 ? Math.min(0.35, 0.12 + reward * 0.25) : 0;
   return {
     retrievalHelpGain: reward > 0 && hadMemory ? reward : 0,
     correctionPreventionGain: reward > 0 && decision.route === 'high_confidence_correction_only' ? reward : 0,
@@ -632,7 +903,16 @@ function rewardComponentsForDecision(decision: RouteDecision) {
     unnecessarySyncPenalty: decision.syncLlmUsed && reward <= 0 ? 0.25 : 0,
     graphOverreachPenalty: Number(decision.retrievalPlan?.graphDepth || 0) > 1 && reward < 0 ? 0.15 : 0,
     latencyPenalty: Math.min(1, Number(decision.syncLatencyMs || 0) / 5000),
+    ambiguityPenalty,
+    teacherConfidence,
+    validatorConfidence,
+    abstainGain,
   };
+}
+
+function learningMarginWeightV3(baseConfidence: number, decision: RouteDecision) {
+  const ambiguityPenalty = rewardComponentsForDecision(decision).ambiguityPenalty || 0;
+  return clamp01(Math.max(0.12, baseConfidence * (1 - ambiguityPenalty)));
 }
 
 function updateBanditState(state: RouteBanditStateV3 | null, feedback: RouteBanditFeedbackV3, config: any): RouteBanditStateV3 {
@@ -658,19 +938,21 @@ function updateBanditState(state: RouteBanditStateV3 | null, feedback: RouteBand
     negativeCount: 0,
     updatedAt: feedback.createdAt,
   };
+  const rewardWeight = Math.max(0.2, 1 - Number(feedback.rewardComponents?.ambiguityPenalty || 0));
+  const effectiveReward = Number(feedback.reward || 0) * rewardWeight;
   const count = current.count + 1;
-  const rewardSum = current.rewardSum + Number(feedback.reward || 0);
+  const rewardSum = current.rewardSum + effectiveReward;
   const rewardMean = rewardSum / count;
-  const delta = Number(feedback.reward || 0) - current.rewardMean;
-  const rewardVariance = count > 1 ? ((current.rewardVariance * current.count) + delta * (Number(feedback.reward || 0) - rewardMean)) / count : 0;
+  const delta = effectiveReward - current.rewardMean;
+  const rewardVariance = count > 1 ? ((current.rewardVariance * current.count) + delta * (effectiveReward - rewardMean)) / count : 0;
   next.actionStats[feedback.chosenActionId] = {
     count,
     rewardSum,
     rewardMean,
     rewardVariance,
-    lastReward: Number(feedback.reward || 0),
-    positiveCount: current.positiveCount + (feedback.reward >= 0 ? 1 : 0),
-    negativeCount: current.negativeCount + (feedback.reward < 0 ? 1 : 0),
+    lastReward: effectiveReward,
+    positiveCount: current.positiveCount + (effectiveReward >= 0 ? 1 : 0),
+    negativeCount: current.negativeCount + (effectiveReward < 0 ? 1 : 0),
     updatedAt: feedback.createdAt,
   };
   next.updatedAt = feedback.createdAt;

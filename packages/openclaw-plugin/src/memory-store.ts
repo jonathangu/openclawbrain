@@ -22,7 +22,7 @@ import type {
 
 // ── Schema version ────────────────────────────────────────────────────────────
 
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 
@@ -627,6 +627,8 @@ const MIGRATIONS: Record<number, string> = {
       action_priors_json TEXT NOT NULL DEFAULT '{}',
       global_budgets_json TEXT NOT NULL DEFAULT '{}',
       eval_summary_json TEXT,
+      calibration_json TEXT,
+      lineage_json TEXT,
       source_frame_ids_json TEXT NOT NULL DEFAULT '[]',
       source_prototype_ids_json TEXT NOT NULL DEFAULT '[]',
       model TEXT,
@@ -634,6 +636,9 @@ const MIGRATIONS: Record<number, string> = {
       created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_policy_v3_active ON route_policy_snapshots_v3(agent_id, status, created_at);
+  `,
+  8: `
+    -- v8: persist route-policy-v3 calibration + lineage JSON
   `,
 };
 
@@ -678,6 +683,10 @@ export class MemoryStore {
         if (!tableHasColumn(this.db, 'route_decisions', 'candidate_count')) this.db.exec('ALTER TABLE route_decisions ADD COLUMN candidate_count INTEGER DEFAULT 0;');
         if (!tableHasColumn(this.db, 'route_decisions', 'reason_code')) this.db.exec('ALTER TABLE route_decisions ADD COLUMN reason_code TEXT;');
         if (!tableHasColumn(this.db, 'route_decisions', 'injection_payload_hash')) this.db.exec('ALTER TABLE route_decisions ADD COLUMN injection_payload_hash TEXT;');
+      }
+      if (v === 8) {
+        if (!tableHasColumn(this.db, 'route_policy_snapshots_v3', 'calibration_json')) this.db.exec('ALTER TABLE route_policy_snapshots_v3 ADD COLUMN calibration_json TEXT;');
+        if (!tableHasColumn(this.db, 'route_policy_snapshots_v3', 'lineage_json')) this.db.exec('ALTER TABLE route_policy_snapshots_v3 ADD COLUMN lineage_json TEXT;');
       }
       this.db.exec(sql);
       this.db.pragma(`user_version = ${v}`);
@@ -998,6 +1007,12 @@ export class MemoryStore {
     ).all(agentId, Math.min(500, Math.max(1, limit))) as any[]).map(rowToRouteActionPrototypeV3);
   }
 
+  setRouteActionPrototypeStatusV3(id: string, status: RouteActionPrototypeV3['status']): RouteActionPrototypeV3 | null {
+    this.db.prepare('UPDATE route_action_prototypes_v3 SET status = ?, updated_at = ? WHERE id = ?').run(status, now(), id);
+    const row = this.db.prepare('SELECT * FROM route_action_prototypes_v3 WHERE id = ?').get(id) as any;
+    return row ? rowToRouteActionPrototypeV3(row) : null;
+  }
+
   insertRoutePairExampleV3(example: Omit<RoutePairExampleV3, 'id' | 'createdAt'> & { id?: string; createdAt?: string }): RoutePairExampleV3 {
     const id = example.id || uuid();
     const ts = example.createdAt || now();
@@ -1065,12 +1080,13 @@ export class MemoryStore {
     }
     this.db.prepare(`
       INSERT INTO route_policy_snapshots_v3 (
-        id, agent_id, version, status, rules_json, action_priors_json, global_budgets_json, eval_summary_json,
+        id, agent_id, version, status, rules_json, action_priors_json, global_budgets_json, eval_summary_json, calibration_json, lineage_json,
         source_frame_ids_json, source_prototype_ids_json, model, prompt_version, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id, snapshot.agentId, snapshot.version, snapshot.status, JSON.stringify(snapshot.rules ?? []), JSON.stringify(snapshot.actionPriors ?? {}),
       JSON.stringify(snapshot.globalBudgets ?? {}), snapshot.evalSummary ? JSON.stringify(snapshot.evalSummary) : null,
+      snapshot.calibration ? JSON.stringify(snapshot.calibration) : null, snapshot.lineage ? JSON.stringify(snapshot.lineage) : null,
       JSON.stringify(snapshot.sourceFrameIds ?? []), JSON.stringify(snapshot.sourcePrototypeIds ?? []), snapshot.model ?? null, snapshot.promptVersion ?? null, ts,
     );
     return { ...snapshot, id, createdAt: ts };
@@ -2075,6 +2091,8 @@ function rowToRoutePolicySnapshotV3(r: any): RoutePolicySnapshotV3 {
     actionPriors: JSON.parse(r.action_priors_json ?? '{}'),
     globalBudgets: JSON.parse(r.global_budgets_json ?? '{}'),
     evalSummary: r.eval_summary_json ? JSON.parse(r.eval_summary_json) : undefined,
+    calibration: r.calibration_json ? JSON.parse(r.calibration_json) : undefined,
+    lineage: r.lineage_json ? JSON.parse(r.lineage_json) : undefined,
     sourceFrameIds: JSON.parse(r.source_frame_ids_json ?? '[]'),
     sourcePrototypeIds: JSON.parse(r.source_prototype_ids_json ?? '[]'),
     model: r.model,

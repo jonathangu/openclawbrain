@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { BackgroundLearner, RouteFn, RouteTeacher, buildRouteGraphSnapshot, maybeDistillAndStorePolicyV2, maybeDistillAndStorePolicyV3, normalizePluginConfig, validatePolicySnapshotV2, validatePolicySnapshotV3 } from '../dist/index.js';
+import { BackgroundLearner, RouteFn, RouteTeacher, buildRouteGraphSnapshot, maybeDistillAndStorePolicyV2, maybeDistillAndStorePolicyV3, normalizePluginConfig, rankActionPrototypesV3, scorePolicySnapshotV3, validatePolicySnapshotV2, validatePolicySnapshotV3 } from '../dist/index.js';
 import { MemoryStore } from '../dist/memory-store.js';
 
 async function tempRoot() {
@@ -552,6 +552,384 @@ test('policy v3 distiller stores action prototypes, bandit state, and active sna
     });
     assert.equal(plan.route, 'retrieve_memory');
     assert.equal(plan.policySnapshotId, report.snapshot.id);
+    assert.ok(plan.matchedPolicyRuleId);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('policy v3 distiller merges duplicate prototypes and records replay/calibration summaries', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      routeLearning: {
+        enabled: true,
+        policyV3: {
+          enabled: true,
+          minFrames: 2,
+          shadowBeforeActivate: false,
+          maxHarmRate: 0.6,
+          maxRules: 12,
+          maxRulesPerRoute: 4,
+        },
+      },
+    });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+
+    const frames = [
+      store.insertRouteFrameV3({
+        agentId: 'main',
+        routeDecisionId: 'dup-1',
+        redactedTurnSummary: 'Run repo tests before commit',
+        taskType: 'coding',
+        turnSignals: ['test', 'workflow', 'repo'],
+        projectHint: 'openclawbrain',
+        repoHint: 'openclawbrain',
+        toolHints: ['exec'],
+        routeHintFlags: ['needs_workflow', 'needs_project_context'],
+        chosenActionId: 'dup-a',
+        chosenRoute: 'retrieve_memory',
+        chosenMemoryTypes: ['workflow'],
+        chosenGraphDepth: 1,
+        chosenSyncPlanner: 'no',
+        outcome: 'tool_success',
+        reward: 0.8,
+        rewardComponents: { retrievalHelpGain: 0.8, noisyInjectionPenalty: 0 },
+        payloadHash: 'dup-p1',
+      }),
+      store.insertRouteFrameV3({
+        agentId: 'main',
+        routeDecisionId: 'dup-2',
+        redactedTurnSummary: 'Run tests in this repo',
+        taskType: 'coding',
+        turnSignals: ['tests', 'workflow', 'repo'],
+        projectHint: 'openclawbrain',
+        repoHint: 'openclawbrain',
+        toolHints: ['exec'],
+        routeHintFlags: ['needs_workflow', 'needs_project_context'],
+        chosenActionId: 'dup-b',
+        chosenRoute: 'retrieve_memory',
+        chosenMemoryTypes: ['workflow'],
+        chosenGraphDepth: 1,
+        chosenSyncPlanner: 'no',
+        outcome: 'tool_success',
+        reward: 0.75,
+        rewardComponents: { retrievalHelpGain: 0.75, noisyInjectionPenalty: 0 },
+        payloadHash: 'dup-p2',
+      }),
+      store.insertRouteFrameV3({
+        agentId: 'main',
+        routeDecisionId: 'dup-3',
+        redactedTurnSummary: 'Thanks ok',
+        taskType: 'other',
+        turnSignals: ['thanks', 'ok'],
+        toolHints: [],
+        routeHintFlags: [],
+        chosenActionId: 'dup-silence',
+        chosenRoute: 'no_memory',
+        chosenMemoryTypes: [],
+        chosenGraphDepth: 0,
+        chosenSyncPlanner: 'no',
+        outcome: 'no_signal',
+        reward: 0.35,
+        rewardComponents: { abstainGain: 0.2, noisyInjectionPenalty: 0 },
+        payloadHash: 'dup-p3',
+      }),
+    ];
+
+    store.upsertRouteActionPrototypeV3({
+      id: 'dup-a',
+      agentId: 'main',
+      route: 'retrieve_memory',
+      memoryTypes: ['workflow'],
+      graphDepth: 1,
+      syncPlanner: 'no',
+      queryTemplateFamily: ['test workflow'],
+      sparseSignature: ['coding', 'test', 'workflow', 'openclawbrain'],
+      denseEmbedding: [1, 0.4, 0.2],
+      supportPrior: 2,
+      harmPrior: 0,
+      status: 'active',
+      provenance: 'learned',
+      sourceExampleIds: [frames[0].id],
+    });
+    store.upsertRouteActionPrototypeV3({
+      id: 'dup-b',
+      agentId: 'main',
+      route: 'retrieve_memory',
+      memoryTypes: ['workflow'],
+      graphDepth: 1,
+      syncPlanner: 'no',
+      queryTemplateFamily: ['repo test workflow'],
+      sparseSignature: ['coding', 'tests', 'workflow', 'openclawbrain'],
+      denseEmbedding: [1, 0.38, 0.2],
+      supportPrior: 2,
+      harmPrior: 0,
+      status: 'active',
+      provenance: 'distilled',
+      sourceExampleIds: [frames[1].id],
+    });
+    store.upsertRouteActionPrototypeV3({
+      id: 'dup-silence',
+      agentId: 'main',
+      route: 'no_memory',
+      memoryTypes: [],
+      graphDepth: 0,
+      syncPlanner: 'no',
+      queryTemplateFamily: [],
+      sparseSignature: ['other', 'thanks', 'ok'],
+      denseEmbedding: [0.1, 0.1, 0],
+      supportPrior: 1,
+      harmPrior: 0,
+      status: 'active',
+      provenance: 'learned',
+      sourceExampleIds: [frames[2].id],
+    });
+
+    store.insertRoutePairExampleV3({
+      agentId: 'main',
+      frameId: frames[0].id,
+      positiveActionId: 'dup-a',
+      negativeActionId: 'dup-silence',
+      labelSource: 'teacher',
+      marginWeight: 0.8,
+      evidenceIds: [frames[0].id],
+    });
+    store.insertRoutePairExampleV3({
+      agentId: 'main',
+      frameId: frames[1].id,
+      positiveActionId: 'dup-b',
+      negativeActionId: 'dup-silence',
+      labelSource: 'teacher',
+      marginWeight: 0.8,
+      evidenceIds: [frames[1].id],
+    });
+
+    const report = maybeDistillAndStorePolicyV3(store, 'main', config);
+    assert.equal(report.validation.ok, true);
+    assert.ok(report.snapshot.calibration);
+    assert.ok(report.snapshot.evalSummary?.replay);
+    assert.ok(report.snapshot.evalSummary?.compactness);
+    assert.ok(report.snapshot.rules.length < 3);
+    assert.ok(report.snapshot.evalSummary.replay.frames >= 1);
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('policy v3 calibration can abstain on weak matches', () => {
+  const snapshot = {
+    id: 'snap-weak',
+    agentId: 'main',
+    version: 'route-policy-v3',
+    status: 'active',
+    rules: [{
+      id: 'weak-rule',
+      actionId: 'weak-action',
+      match: { taskType: 'coding', turnSignals: ['test', 'repo'] },
+      route: 'retrieve_memory',
+      memoryTypes: ['workflow'],
+      queries: ['test workflow'],
+      graphDepth: 1,
+      syncPlanner: 'no',
+      confidence: 0.72,
+      evidenceIds: ['e1'],
+      priors: { support: 1, harm: 0, pairWinRate: 0.5, banditMeanReward: 0.1, banditCount: 1 },
+    }],
+    actionPriors: {
+      'weak-action': { support: 1, harm: 0, pairWinRate: 0.5, banditMeanReward: 0.1, banditCount: 1 },
+    },
+    globalBudgets: { maxSyncPlannerRate: 0.1, maxInjectedMemories: 8, maxInjectedChars: 2500, defaultGraphDepth: 1, minCalibratedConfidence: 0.85, abstainMargin: 0.05 },
+    evalSummary: { frames: 3, pairExamples: 1, prototypes: 1, projectedSyncPlannerRate: 0, noisyActionRate: 0, harmRate: 0 },
+    calibration: {
+      method: 'histogram_binning_v1',
+      holdoutFrames: 3,
+      comparableFrames: 3,
+      globalThreshold: 0.85,
+      abstainMargin: 0.05,
+      globalBuckets: [{ minScore: 0.6, maxScore: 0.8, successRate: 0.45, count: 3 }],
+      routeThresholds: { retrieve_memory: 0.85 },
+      routeBuckets: { retrieve_memory: [{ minScore: 0.6, maxScore: 0.8, successRate: 0.45, count: 3 }] },
+    },
+    sourceFrameIds: ['f1'],
+    sourcePrototypeIds: ['weak-action'],
+    createdAt: new Date().toISOString(),
+  };
+
+  const match = scorePolicySnapshotV3(snapshot, {
+    summary: 'Run repo tests',
+    userGoal: 'Run repo tests',
+    taskType: 'coding',
+    activeObjects: [{ kind: 'repo', value: 'openclawbrain' }],
+    impliedNeeds: ['test workflow'],
+    memoryQuestions: [],
+    constraints: [],
+    routeHints: {
+      likelyNeedsCorrections: false,
+      likelyNeedsPreferences: false,
+      likelyNeedsWorkflow: true,
+      likelyNeedsProjectContext: true,
+    },
+  }, 'Run repo tests');
+
+  assert.equal(match.matched, false);
+  assert.equal(match.abstained, true);
+  assert.ok(String(match.reasonCode).startsWith('policy_v3_abstain:'));
+});
+
+test('policy v3 hybrid ranking favors correction prototypes for correction turns', () => {
+  const ranked = rankActionPrototypesV3({
+    taskType: 'coding',
+    turnSignals: ['correction', 'pnpm', 'repo'],
+    projectHint: 'openclawbrain',
+    repoHint: 'openclawbrain',
+    toolHints: ['exec'],
+    routeHintFlags: ['needs_correction', 'needs_project_context'],
+    redactedTurnSummary: 'Fix package manager correction in this repo',
+  }, [
+    {
+      id: 'corr',
+      agentId: 'main',
+      route: 'high_confidence_correction_only',
+      memoryTypes: ['correction'],
+      graphDepth: 0,
+      syncPlanner: 'no',
+      queryTemplateFamily: ['package manager correction'],
+      sparseSignature: ['coding', 'correction', 'pnpm', 'repo'],
+      denseEmbedding: [1, 0.2, 0.1],
+      supportPrior: 2,
+      harmPrior: 0,
+      status: 'active',
+      provenance: 'learned',
+      sourceExampleIds: ['e1'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      id: 'workflow',
+      agentId: 'main',
+      route: 'retrieve_memory',
+      memoryTypes: ['workflow'],
+      graphDepth: 1,
+      syncPlanner: 'no',
+      queryTemplateFamily: ['test workflow'],
+      sparseSignature: ['coding', 'workflow', 'test', 'repo'],
+      denseEmbedding: [0.7, 0.3, 0.1],
+      supportPrior: 2,
+      harmPrior: 0,
+      status: 'active',
+      provenance: 'learned',
+      sourceExampleIds: ['e2'],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ], null);
+
+  assert.equal(ranked[0].prototype.id, 'corr');
+});
+
+test('policy v3 teacher ingestion does not invert likely_missed counterfactuals into no_memory winners', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      routing: { minRouteConfidence: 0.55 },
+      routeLearning: {
+        enabled: true,
+        teacher: { enabled: true, maxRunsPerCycle: 10, minResolvedRewardMagnitude: 0 },
+        policyV2: { enabled: true, minExamples: 1, shadowBeforeActivate: false, maxNoisyInjectionRate: 0.6 },
+        policyV3: { enabled: true, minFrames: 1, shadowBeforeActivate: false, maxHarmRate: 0.4, maxSyncPlannerRate: 0.7 },
+      },
+    });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const correction = store.insertMemory({
+      agentId: 'main',
+      type: 'correction',
+      content: 'Use pnpm instead of npm.',
+      scopeKind: 'repo',
+      scopeKey: 'openclawbrain',
+      normalizedKey: 'repo:openclawbrain:correction:pnpm',
+      tags: ['correction'],
+      importance: 0.9,
+      freshness: 1,
+      confidence: 0.95,
+      useCount: 0,
+      usefulCount: 0,
+      captureCount: 1,
+    });
+
+    const helpfulCorrection = store.insertRouteDecision({
+      agentId: 'main',
+      sessionId: 's-corr',
+      turnId: 't-corr',
+      runId: 'r-corr',
+      route: 'high_confidence_correction_only',
+      confidence: 0.92,
+      latencyTier: 'sync_memory_planner',
+      syncLlmUsed: true,
+      fallbackUsed: false,
+      turnFrame: {
+        summary: 'Fix install docs package manager',
+        userGoal: 'Fix install docs package manager',
+        taskType: 'coding',
+        activeObjects: [{ kind: 'repo', value: 'openclawbrain' }],
+        impliedNeeds: ['Need package-manager corrections'],
+        memoryQuestions: [],
+        constraints: [],
+        routeHints: {
+          likelyNeedsCorrections: true,
+          likelyNeedsPreferences: false,
+          likelyNeedsWorkflow: false,
+          likelyNeedsProjectContext: true,
+        },
+      },
+      retrievalPlan: {
+        queries: ['package manager correction'],
+        memoryTypes: ['correction'],
+        requiredTags: [],
+        excludedTags: [],
+        graphDepth: 0,
+        maxCandidates: 10,
+      },
+      injectionPlan: { maxItems: 1, maxChars: 120, preferredFormat: 'rules' },
+      selectedMemoryIds: [correction.id],
+      omittedMemoryIds: [],
+      reward: 0,
+    });
+    store.resolveRouteDecision(helpfulCorrection.id, 'tool_success', 0.95);
+    buildRouteGraphSnapshot(store, 'main', helpfulCorrection.id, ['package manager correction'], [correction], 0);
+
+    const teacher = new RouteTeacher({ store, config });
+    await teacher.run('main');
+
+    const activeV3 = store.getActivePolicySnapshotV3('main');
+    assert.ok(activeV3);
+
+    const routeFn = new RouteFn({ config, store });
+    const plan = routeFn.plan({
+      agentId: 'main',
+      sessionId: 'probe',
+      sessionKey: 'probe',
+      turnId: 'probe-turn',
+      runId: 'probe-run',
+      sourceHook: 'before_prompt_build',
+      latestUserMessageRedacted: 'Fix install docs package manager',
+      recentAssistantMessage: '',
+      toolObservations: [],
+      recentInjections: [],
+      metadata: {},
+    });
+
+    assert.equal(plan.route, 'high_confidence_correction_only');
+    assert.equal(plan.shouldRetrieve, true);
+    assert.ok(plan.retrievalPlan.memoryTypes.includes('correction'));
     assert.ok(plan.matchedPolicyRuleId);
     store.close();
   } finally {

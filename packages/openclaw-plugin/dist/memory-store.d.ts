@@ -66,6 +66,7 @@ export declare class MemoryStore {
         updatedAt?: string;
     }): RouteActionPrototypeV3;
     listRouteActionPrototypesV3(agentId: string, limit?: number): RouteActionPrototypeV3[];
+    setRouteActionPrototypeStatusV3(id: string, status: RouteActionPrototypeV3['status']): RouteActionPrototypeV3 | null;
     insertRoutePairExampleV3(example: Omit<RoutePairExampleV3, 'id' | 'createdAt'> & {
         id?: string;
         createdAt?: string;
