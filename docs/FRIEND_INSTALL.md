@@ -10,7 +10,13 @@ The core idea: an agent should not just "remember everything." It should learn w
 The trust boundary is the important part: the LLM proposes meaning, but code owns validation, storage, calibration, promotion, and rollback. SQLite keeps the graph and evidence local and inspectable.
 
 How it works: https://openclawbrain.ai/how-it-works/
+Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
+
+Install/upgrade if you already run OpenClaw:
+openclaw plugins install clawhub:openclawbrain@0.2.21 --force
+openclaw plugins enable openclawbrain
+openclaw gateway restart
 ```
 
 ## Install note
@@ -22,9 +28,9 @@ Hey — if you want to try OpenClawBrain, install the latest native OpenClaw mem
 
 What it does: local-first memory for OpenClaw agents. It stores durable corrections/workflows in SQLite, learns when those memories should route into a future turn, injects only a bounded relevant context slice, and exposes proof/status/search/graph/route-policy routes so you can verify what happened.
 
-Install:
+Install or upgrade:
 
-openclaw plugins install clawhub:openclawbrain@0.2.21
+openclaw plugins install clawhub:openclawbrain@0.2.21 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 

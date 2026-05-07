@@ -16,10 +16,12 @@ You need:
 - a running OpenClaw gateway
 - local Ollama or another local OpenAI-compatible endpoint for the full default learning path
 
-## 1) Install the plugin
+## 1) Install or upgrade the plugin
+
+Use the same command for a fresh install or an upgrade. `--force` replaces an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.21
+openclaw plugins install clawhub:openclawbrain@0.2.21 --force
 openclaw plugins enable openclawbrain
 ```
 

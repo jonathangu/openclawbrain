@@ -42,15 +42,21 @@ The core idea: an agent should not just "remember everything." It should learn w
 The trust boundary is the important part: the LLM proposes meaning, but code owns validation, storage, calibration, promotion, and rollback. SQLite keeps the graph and evidence local and inspectable.
 
 How it works: https://openclawbrain.ai/how-it-works/
+Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
+
+Install/upgrade if you already run OpenClaw:
+openclaw plugins install clawhub:openclawbrain@0.2.21 --force
+openclaw plugins enable openclawbrain
+openclaw gateway restart
 ```
 
-## Install
+## Install or upgrade
 
-Requires OpenClaw `2026.5.2` or later.
+Requires OpenClaw `2026.5.2` or later. Use the same command for a fresh install or an upgrade; `--force` is safe when replacing an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.21
+openclaw plugins install clawhub:openclawbrain@0.2.21 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
