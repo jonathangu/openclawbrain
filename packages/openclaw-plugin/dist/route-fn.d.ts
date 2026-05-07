@@ -67,5 +67,5 @@ export declare class RouteFn {
     });
     fingerprint(packet: TurnEventPacket): RouteFingerprint;
     plan(packet: TurnEventPacket): RoutePlan;
-    private loadPolicySnapshot;
+    private loadPolicySnapshots;
 }

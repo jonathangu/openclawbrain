@@ -428,6 +428,185 @@ test('policy v2 distiller stores gated active snapshots and route fn records mat
   }
 });
 
+test('route fn uses v3 as production authority before v2 fallback', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      routing: { minRouteConfidence: 0.5 },
+    });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    store.insertPolicySnapshotV2({
+      agentId: 'main',
+      version: 'route-policy-v2',
+      status: 'active',
+      rules: [{
+        id: 'v2-workflow',
+        match: { taskType: 'coding', turnSignals: ['repo', 'tests'] },
+        route: 'retrieve_memory',
+        memoryTypes: ['workflow'],
+        queries: ['v2 workflow'],
+        graphDepth: 1,
+        syncPlanner: 'no',
+        confidence: 0.95,
+        evidenceIds: ['v2-e1'],
+      }],
+      globalBudgets: { maxSyncPlannerRate: 0.05, maxInjectedMemories: 8, maxInjectedChars: 2500, defaultGraphDepth: 1 },
+      evalSummary: { cases: 1, wins: 1, ties: 0, misses: 0, noisyInjections: 0, harms: 0, p95LatencyMs: 0 },
+      exampleIds: ['v2-e1'],
+    });
+    store.insertPolicySnapshotV3({
+      agentId: 'main',
+      version: 'route-policy-v3',
+      status: 'active',
+      rules: [{
+        id: 'v3-workflow',
+        actionId: 'v3-action',
+        family: 'workflow',
+        match: { taskType: 'coding', turnSignals: ['repo', 'tests'] },
+        route: 'retrieve_memory',
+        memoryTypes: ['project_fact'],
+        queries: ['v3 project context'],
+        graphDepth: 0,
+        syncPlanner: 'no',
+        confidence: 0.95,
+        evidenceIds: ['v3-e1'],
+        priors: { support: 6, harm: 0, pairWinRate: 0.8, banditMeanReward: 0.4, banditCount: 3 },
+      }],
+      actionPriors: {
+        'v3-action': { support: 6, harm: 0, pairWinRate: 0.8, banditMeanReward: 0.4, banditCount: 3 },
+      },
+      globalBudgets: { maxSyncPlannerRate: 0.1, maxInjectedMemories: 8, maxInjectedChars: 2500, defaultGraphDepth: 1, minCalibratedConfidence: 0.4, abstainMargin: 0.05 },
+      evalSummary: { frames: 6, pairExamples: 2, prototypes: 1, projectedSyncPlannerRate: 0, noisyActionRate: 0, harmRate: 0 },
+      calibration: {
+        method: 'histogram_binning_v1',
+        holdoutFrames: 3,
+        comparableFrames: 3,
+        globalThreshold: 0.4,
+        abstainMargin: 0.05,
+        globalBuckets: [{ minScore: 0.5, maxScore: 1, successRate: 0.9, count: 3 }],
+        routeThresholds: { retrieve_memory: 0.4 },
+        routeBuckets: { retrieve_memory: [{ minScore: 0.5, maxScore: 1, successRate: 0.9, count: 3 }] },
+      },
+      sourceFrameIds: ['v3-e1'],
+      sourcePrototypeIds: ['v3-action'],
+    });
+
+    const routeFn = new RouteFn({ config, store });
+    const plan = routeFn.plan({
+      agentId: 'main',
+      sourceHook: 'before_prompt_build',
+      latestUserMessageRedacted: 'Run repo tests',
+      toolObservations: [],
+      recentInjections: [],
+      metadata: {},
+    });
+    assert.equal(plan.matchedPolicyRuleId, 'v3-workflow');
+    assert.equal(plan.policySnapshotId, store.getActivePolicySnapshotV3('main').id);
+    assert.deepEqual(plan.retrievalPlan.memoryTypes, ['project_fact']);
+    assert.equal(plan.fallbackSource, 'none');
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('route fn falls back to v2 when active v3 abstains', async () => {
+  const root = await tempRoot();
+  try {
+    const config = normalizePluginConfig({
+      enabled: true,
+      mode: 'balanced',
+      activationRoot: root,
+      routing: { minRouteConfidence: 0.5 },
+    });
+    const store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    store.insertPolicySnapshotV2({
+      agentId: 'main',
+      version: 'route-policy-v2',
+      status: 'active',
+      rules: [{
+        id: 'v2-fallback',
+        match: { taskType: 'coding', turnSignals: ['repo', 'tests'] },
+        route: 'retrieve_memory',
+        memoryTypes: ['workflow'],
+        queries: ['v2 workflow'],
+        graphDepth: 1,
+        syncPlanner: 'no',
+        confidence: 0.92,
+        evidenceIds: ['v2-e1'],
+      }],
+      globalBudgets: { maxSyncPlannerRate: 0.05, maxInjectedMemories: 8, maxInjectedChars: 2500, defaultGraphDepth: 1 },
+      evalSummary: { cases: 1, wins: 1, ties: 0, misses: 0, noisyInjections: 0, harms: 0, p95LatencyMs: 0 },
+      exampleIds: ['v2-e1'],
+    });
+    store.insertPolicySnapshotV3({
+      agentId: 'main',
+      version: 'route-policy-v3',
+      status: 'active',
+      rules: [{
+        id: 'v3-weak',
+        actionId: 'v3-weak-action',
+        family: 'workflow',
+        match: { taskType: 'coding', turnSignals: ['repo', 'tests'] },
+        route: 'retrieve_memory',
+        memoryTypes: ['project_fact'],
+        queries: ['weak v3 context'],
+        graphDepth: 1,
+        syncPlanner: 'no',
+        confidence: 0.75,
+        evidenceIds: ['v3-e1'],
+        priors: { support: 1, harm: 0, pairWinRate: 0.5, banditMeanReward: 0.1, banditCount: 1 },
+      }],
+      actionPriors: {
+        'v3-weak-action': { support: 1, harm: 0, pairWinRate: 0.5, banditMeanReward: 0.1, banditCount: 1 },
+      },
+      globalBudgets: { maxSyncPlannerRate: 0.1, maxInjectedMemories: 8, maxInjectedChars: 2500, defaultGraphDepth: 1, minCalibratedConfidence: 0.9, abstainMargin: 0.02 },
+      evalSummary: { frames: 3, pairExamples: 1, prototypes: 1, projectedSyncPlannerRate: 0, noisyActionRate: 0, harmRate: 0 },
+      calibration: {
+        method: 'histogram_binning_v1',
+        holdoutFrames: 3,
+        comparableFrames: 3,
+        globalThreshold: 0.9,
+        abstainMargin: 0.02,
+        globalBuckets: [{ minScore: 0.5, maxScore: 1, successRate: 0.3, count: 3 }],
+        routeThresholds: { retrieve_memory: 0.9 },
+        routeBuckets: { retrieve_memory: [{ minScore: 0.5, maxScore: 1, successRate: 0.3, count: 3 }] },
+      },
+      sourceFrameIds: ['v3-e1'],
+      sourcePrototypeIds: ['v3-weak-action'],
+    });
+
+    const routeFn = new RouteFn({ config, store });
+    const plan = routeFn.plan({
+      agentId: 'main',
+      sourceHook: 'before_prompt_build',
+      latestUserMessageRedacted: 'Run repo tests',
+      toolObservations: [],
+      recentInjections: [],
+      metadata: {},
+    });
+    assert.equal(plan.matchedPolicyRuleId, 'v2-fallback');
+    assert.equal(plan.policySnapshotId, store.getActivePolicySnapshotV2('main').id);
+    assert.deepEqual(plan.retrievalPlan.memoryTypes, ['workflow']);
+    assert.equal(plan.abstained, true);
+    assert.equal(plan.fallbackSource, 'v2');
+    store.close();
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('policy v3 production defaults are exposed through config normalization', () => {
+  const config = normalizePluginConfig({});
+  assert.equal(config.routeLearning.policyV3.enabled, true);
+  assert.equal(config.routeLearning.policyV3.updateMode, 'gated_active');
+  assert.equal(config.routeLearning.policyV3.shadowBeforeActivate, false);
+  assert.equal(config.routeLearning.policyV3.storeShadowDecisions, true);
+});
+
 test('policy v3 distiller stores action prototypes, bandit state, and active snapshots', async () => {
   const root = await tempRoot();
   try {

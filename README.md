@@ -8,14 +8,14 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 ![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and injected context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-Core capture/store/retrieve/inject works today. `0.2.20` also ships the full `route-policy-v3` learning loop: route frames, action prototypes, pairwise route preferences, bandit feedback, distilled compact snapshots, and deterministic runtime fallback to `route-policy-v2` when no active v3 snapshot is ready.
+Core capture/store/retrieve/inject works today. `0.2.21` makes `route-policy-v3` the production route brain: active v3 snapshots route first, abstention is preserved as a production decision, and `route-policy-v2`/heuristics are explicit fallback or rollback paths.
 
 ## Install
 
 Requires OpenClaw `2026.5.2` or later.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.20
+openclaw plugins install clawhub:openclawbrain@0.2.21
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -23,9 +23,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.20.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.20/openclawbrain-0.2.20.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.20.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.21.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.21/openclawbrain-0.2.21.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.21.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```

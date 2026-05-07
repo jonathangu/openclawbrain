@@ -1,40 +1,61 @@
 # OpenClawBrain Route Function Learning System Master Plan
 
-**Status:** sole canonical end-to-end plan for making the learned `route_fn`, its update loop, and its training-data/storage layer materially better
+**Status:** sole canonical production hard-cutover plan for making `route-policy-v3` the primary learned `route_fn`, update loop, and training-data/storage layer
 **Owner:** GUCLAW / Jonathan  
 **Date:** 2026-05-06  
 **Depends on:** shipped `route-policy-v2`, implemented `route-policy-v3`, teacher/counterfactual pipeline, current v3 storage tables  
 **Single-truth note:** the older split route-learning / teacher / hardening plan docs were intentionally deleted after consolidation; use this file as the only forward plan.
-**Current production baseline:** `route-policy-v2` remains the safest shipped runtime default; current v3 work is the guarded learning lane.
+**Hard-cutover decision:** `route-policy-v3` is the production route-brain architecture. `route-policy-v2` and legacy heuristics are fallback/rollback paths only.
 
 ---
 
 ## 0. Executive decision
 
-Yes: we should make the learned route function much better.
+Yes: hard cut over to the real learned route function.
 
-But the right upgrade is **not** to replace the system with a bigger opaque model.
+The decision is no longer “keep v3 guarded until later.” The decision is:
 
-The right upgrade is to make the route-learning system stronger in **three coupled layers**:
+> **`route-policy-v3` becomes the production route authority.**
 
-1. **Serving route function** — smaller, more canonical, more calibrated, more explicit about abstention and fallback.
-2. **Update machinery** — better supervision, safer promotion rules, stronger replay/shadow/off-policy evidence, less policy churn.
-3. **Training-data/storage model** — richer, cleaner, more normalized, lineage-preserving, easier to dedupe, easier to replay, easier to audit.
+This does **not** mean removing calibration, abstention, replay, shadow comparison, or rollback. Those are not temporary “guarded learning” scaffolds. They are permanent production invariants.
+
+The right production system has **three coupled layers**:
+
+1. **Serving route function** — v3-first, compact, deterministic, canonical, calibrated, explicit about abstention and fallback.
+2. **Update machinery** — continuous evidence harvest, candidate distillation, champion/challenger comparison, gated promotion, rollback-ready history.
+3. **Training-data/storage model** — richer, cleaner, normalized, lineage-preserving, dedupe-ready, replay-ready, audit-ready.
 
 The invariant stays the same:
 
 > **runtime serving should still be a compact deterministic artifact; richer ML should live in the update path, data path, and evaluation path.**
 
-That means the best end state is:
+That means the production target is:
 
 ```text
 turn outcomes + critiques + counterfactuals + shadow proposals
   -> normalized learning warehouse
   -> prototype/action learning + calibration + replay eval
   -> candidate policy distillation
-  -> strict activation gates
+  -> champion/challenger promotion gates
   -> compact deterministic route_fn snapshot at runtime
 ```
+
+## 0.1 Production hard-cutover contract
+
+The hard cutover means these rules are canonical:
+
+1. **v3-first serving.** If an active valid `route-policy-v3` snapshot exists, runtime asks v3 first.
+2. **v2 is rollback/fallback only.** `route-policy-v2` must not be described as the safest steady-state baseline after this plan. It remains useful for rollback, missing-snapshot recovery, invalid-snapshot recovery, and emergency fallback.
+3. **Heuristics are last-resort fallback.** Legacy heuristic routing exists to keep the product fail-closed when learned policy cannot make a safe decision.
+4. **Abstention is production behavior.** A v3 abstain is not a failure. It is a learned route decision that delegates to fallback when confidence is not high enough.
+5. **`gated_active` is the target operating mode.** `collect_only` and `distill_shadow` are bootstrapping/debug modes. `manual_review_required` is reserved for high-risk changes or explicit operator policy, not the normal steady state.
+6. **Promotion is champion/challenger.** The current active v3 snapshot is champion. New candidates are challengers. A challenger promotes only if replay/calibration/compactness/harm gates show it is better enough than champion.
+7. **Shadow stays as evidence, not as the destination.** Shadow decisions are used to compare candidates and catch regressions, but the target is active production learning.
+8. **Rollback is mandatory.** Every active snapshot must record lineage, prior champion, activation reason, validation summary, and rollback recommendation.
+9. **Sync/planner routes remain high-risk.** The hard cutover must not let the learner freely increase visible action, sync, or tool noise. Those families require stricter gates.
+10. **No raw transcript storage.** The learning loop must stay redacted and lineage-preserving.
+
+This is the definition of “hard cutover” for OpenClawBrain: v3 owns production routing, while production-grade controls make the learner trustworthy rather than timid.
 
 ---
 
@@ -139,9 +160,9 @@ A better storage system should:
 
 ---
 
-## 4. Target architecture
+## 4. Production target architecture
 
-The future route-learning system should be organized into five layers.
+The production route-learning system is organized into five layers.
 
 ```text
 Layer A: Observation store
@@ -202,7 +223,7 @@ It should be allowed to be richer than serving, but all outputs must still disti
 This layer decides whether a candidate route function:
 
 - stays rejected
-- remains shadow-only
+- remains shadow-only for more evidence
 - becomes active
 - replaces a prior active policy
 - triggers rollback recommendations
@@ -221,9 +242,9 @@ It should remain:
 
 ---
 
-## 5. The target serving contract for the learned `route_fn`
+## 5. The production serving contract for the learned `route_fn`
 
-The next strong route function should not just be a list of rules. It should be a compact decision bundle.
+The production route function is not just a list of rules. It is a compact decision bundle.
 
 ## 5.1 Serving snapshot shape
 
@@ -243,8 +264,10 @@ RoutePolicySnapshotVNext = {
     comparedAgainstSnapshotId?,
   },
   servingMode: {
-    defaultFallback: 'heuristic' | 'v2' | 'no_memory_safe',
+    defaultFallback: 'v2' | 'heuristic' | 'no_memory_safe',
     abstainEnabled: true,
+    primaryAuthority: 'route-policy-v3',
+    v2Role: 'fallback_or_rollback_only',
   },
   rules: RoutePolicyRuleVNext[],
   actionPriors,
@@ -287,13 +310,24 @@ Add or standardize fields like:
 
 ## 5.3 Serving-time routing behavior
 
-The runtime should use a three-way decision, not just “match vs no match”:
+The runtime uses a three-way decision, not just “match vs no match”:
 
 1. **apply rule directly**
 2. **abstain and defer to fallback router**
 3. **safe silence / no-memory path**
 
 This is the single most important serving-control change.
+
+Production serving order:
+
+1. load active valid v3 snapshot
+2. score v3 rules with routing-mode-aware weights
+3. apply calibrated family thresholds
+4. if the winner passes threshold, serve v3 route plan
+5. if v3 abstains, delegate to v2/fallback with explicit provenance
+6. if v3 snapshot is absent/invalid/rolled back, use v2/fallback
+
+There should be no production mode where v2 silently outranks a valid active v3 snapshot.
 
 ## 5.4 Family-specific thresholds
 
@@ -405,16 +439,41 @@ Add anti-thrash logic:
 - “improvement margin” requirement above current active policy
 - explicit rollback recommendation if live shadow evidence worsens sharply
 
-## 6.3 Update modes
+## 6.3 Update modes and production default
 
 The updater should support distinct modes:
 
-- **collect_only** — store data, no new candidates
-- **distill_shadow** — build candidates but never activate
-- **gated_active** — activate only if full gates pass
-- **manual_review_required** — build candidate and attach report for operator approval
+- **collect_only** — store data, no new candidates; bootstrapping/debug only.
+- **distill_shadow** — build candidates but never activate; temporary validation mode only.
+- **gated_active** — production default; activate only if full gates pass.
+- **manual_review_required** — build candidate and attach report for operator approval; reserved for high-risk families, major schema/scoring changes, or explicit operator request.
 
-This makes rollout safer.
+The target steady state is **gated_active**, not guarded/shadow-only operation.
+
+Default configuration target:
+
+```ts
+routeLearning.policyV3.updateMode = 'gated_active'
+routeLearning.policyV3.shadowBeforeActivate = true
+routeLearning.policyV3.storeShadowDecisions = true
+```
+
+`collect_only` and `distill_shadow` can still be useful during schema migrations, emergency diagnosis, or new learner experiments, but they are not the master-plan destination.
+
+## 6.4 Champion/challenger production loop
+
+The production updater should operate like this:
+
+1. Current active v3 snapshot is the champion.
+2. New evidence accumulates into frames, prototypes, pairs, bandit feedback, calibration examples, eval cases, family stats, and shadow decisions.
+3. Distillation builds a challenger snapshot from quality-gated evidence.
+4. Challenger runs replay against frozen eval cases and comparison against champion.
+5. Challenger must pass compactness, calibration, harm/noise, sync/planner, abstention, and projected-improvement gates.
+6. Passing challenger promotes to active.
+7. Previous champion remains the rollback target.
+8. Failed challenger is preserved with a candidate report explaining why it did not promote.
+
+The product should always be able to answer: what changed, why it changed, whether it helped, and how to roll it back.
 
 ---
 
@@ -977,11 +1036,29 @@ Recommend rollback or shadow-only demotion when:
 
 ---
 
-## 12. Concrete execution roadmap
+## 12. Concrete production cutover roadmap
 
-## Phase 1 — Route function cleanup
+## Phase 1 — v3-first runtime ownership
 
-Goal: make the serving artifact smaller and saner.
+Goal: make v3 the first production route authority wherever an active valid v3 snapshot exists.
+
+Build:
+
+- runtime serving order that scores v3 before v2/heuristics
+- explicit v2 fallback/rollback path
+- active snapshot validity checks
+- route decision provenance for v3 served, v3 abstained, v3 unavailable, and rollback modes
+- config/default posture that treats `gated_active` as the target mode
+
+Done when:
+
+- valid active v3 snapshots are consulted before v2/heuristics
+- v2 is only used for abstention, missing/invalid snapshot, or rollback
+- tests cover v3 win, v3 abstain, v3 invalid fallback, and rollback fallback
+
+## Phase 2 — Route function cleanup
+
+Goal: make the serving artifact smaller and saner before broad active use grows.
 
 Build:
 
@@ -998,7 +1075,7 @@ Done when:
 - duplicate-family counts fall
 - tests show pruning/merge behavior is correct
 
-## Phase 2 — Calibration + abstention
+## Phase 3 — Calibration + abstention
 
 Goal: make learned routing trustworthy enough to know when not to act.
 
@@ -1015,9 +1092,9 @@ Done when:
 - replay shows more reliable confidence bands
 - abstention is explicit and test-covered
 
-## Phase 3 — Replay + shadow + promotion control
+## Phase 4 — Replay + shadow + promotion control
 
-Goal: stop activating based on weak evidence.
+Goal: make active promotion champion/challenger instead of shadow-only or manual forever.
 
 Build:
 
@@ -1026,13 +1103,15 @@ Build:
 - shadow-decision logging
 - candidate report rows
 - improvement-gated activation policy
+- prior-champion rollback metadata
 
 Done when:
 
 - every candidate has a durable comparison report
 - activation reasons are measurable and inspectable
+- passing challengers can promote automatically in `gated_active`
 
-## Phase 4 — Training warehouse normalization
+## Phase 5 — Training warehouse normalization
 
 Goal: make storage future-proof and analytically clean.
 
@@ -1048,7 +1127,7 @@ Done when:
 
 - replay/calibration/promotion no longer rely on ad hoc reconstruction
 
-## Phase 5 — Adaptive routing modes + better online updates
+## Phase 6 — Adaptive routing modes + better online updates
 
 Goal: improve quality after the safety substrate is in place.
 
@@ -1065,7 +1144,7 @@ Done when:
 
 - adaptive logic measurably helps exact vs semantic turn families
 
-## Phase 6 — Optional stronger learner behind the same contract
+## Phase 7 — Optional stronger learner behind the same contract
 
 Only after the above.
 
@@ -1107,16 +1186,18 @@ Likely new modules over time:
 
 ## 14. Migration strategy
 
-Do not try to big-bang replace the current storage.
+Do not big-bang replace the current storage. Do hard-cut over **serving authority** to v3, while migrating warehouse shape in stages.
 
 Use staged migration:
 
 1. keep current v3 tables live
-2. add vNext companion tables where new concepts are needed
-3. dual-write where safe
-4. backfill derived rows from old v3 frames where possible
-5. keep runtime serving on the stable snapshot contract
-6. only retire old paths once replay/proof parity is reached
+2. make active valid v3 snapshots the first production route authority
+3. keep v2/heuristics as explicit fallback/rollback
+4. add vNext companion tables where new concepts are needed
+5. dual-write where safe
+6. backfill derived rows from old v3 frames where possible
+7. keep runtime serving on the stable snapshot contract
+8. only retire old storage paths once replay/proof parity is reached
 
 This avoids breaking current learning while upgrading the system.
 
@@ -1136,17 +1217,17 @@ For now, do **not**:
 
 ## 16. Final recommendation
 
-The best next move is:
+The master-plan move is:
 
-1. **clean the serving route function first**
-2. **make confidence/abstention real**
-3. **build replay/shadow/promotion discipline**
+1. **make v3 the production route authority**
+2. **keep v2/heuristics as rollback/fallback only**
+3. **make confidence/abstention/replay/promotion hard production contracts**
 4. **normalize the training warehouse**
-5. **only then add stronger adaptivity**
+5. **then add stronger adaptivity behind the same serving contract**
 
 In short:
 
-> **first make the learned route function smaller and more trustworthy; then make the updater more evidence-based; then make the storage layer more like a real learning warehouse.**
+> **v3 owns production routing; gates make it trustworthy; the warehouse makes it learn; fallback keeps the product fail-closed.**
 
 That is the highest-leverage path to a route-learning system that is:
 

@@ -34,16 +34,16 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.20`
+- **Current package release:** `0.2.21`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.5.2` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection
-- **Current loop:** first-class OpenClaw memory registration, conservative retrieval, aggressive audited capture, strict scoped storage, sparse injection
+- **Current loop:** first-class OpenClaw memory registration, v3 production route learning, conservative fallback, aggressive audited capture, strict scoped storage, sparse injection
 
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.20
+openclaw plugins install clawhub:openclawbrain@0.2.21
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -51,9 +51,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.20.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.20/openclawbrain-0.2.20.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.20.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.21.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.21/openclawbrain-0.2.21.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.21.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
