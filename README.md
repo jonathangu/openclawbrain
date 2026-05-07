@@ -2,13 +2,48 @@
 
 **Evidence, not vibes, for agent memory.**
 
-OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.ai) agents. It remembers durable corrections, preferences, workflows, and context, then retrieves only the small slice that matters for the current turn.
+OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.ai) agents. It remembers durable corrections, preferences, workflows, and context, then learns when that memory should affect a future turn.
 
 > **LLM decides semantic meaning. Code enforces trust boundaries. SQLite stores the graph and evidence.**
 
 ![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and injected context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-Core capture/store/retrieve/inject works today. `0.2.21` makes `route-policy-v3` the production route brain: active v3 snapshots route first, abstention is preserved as a production decision, and `route-policy-v2`/heuristics are explicit fallback or rollback paths.
+`0.2.21` makes `route-policy-v3` the production route brain: active v3 snapshots route first, abstention is a first-class production decision, and `route-policy-v2`/heuristics are explicit fallback or rollback paths. The product claim is no longer just "remember useful facts." It is: learn a compact, inspectable route function that decides when memory should matter.
+
+## Short version
+
+An agent should not remember everything all the time. It should learn when memory actually matters.
+
+OpenClawBrain turns corrections, accepted or rejected help, route misses, tool outcomes, and handoff decisions into local evidence. A teacher distills that evidence into redacted route frames. Candidate policies are tested in shadow, replayed against eval cases, calibrated by action family, then promoted only when deterministic gates pass. At runtime, the active `route-policy-v3` route_fn either injects a small relevant context slice or abstains and keeps the prompt clean.
+
+The trust boundary is the spine:
+
+- LLM proposes semantic meaning.
+- Code owns validation, redaction, scoping, storage, replay, calibration, promotion, and rollback.
+- SQLite stores the graph and the evidence trail locally.
+
+```text
+feedback and outcomes
+  -> redacted route frames
+  -> SQLite evidence graph
+  -> shadow decisions and replay cases
+  -> calibrated candidate snapshots
+  -> active route-policy-v3 route_fn
+  -> bounded context injection or abstention
+```
+
+## Shareable blurb
+
+```text
+OpenClawBrain is my local-first memory system for AI agents.
+
+The core idea: an agent should not just "remember everything." It should learn when memory actually matters. OpenClawBrain turns corrections, outcomes, misses, and handoffs into local evidence, then learns a small routing policy that decides when to bring the right memory into a future turn — or abstain when it is not confident.
+
+The trust boundary is the important part: the LLM proposes meaning, but code owns validation, storage, calibration, promotion, and rollback. SQLite keeps the graph and evidence local and inspectable.
+
+How it works: https://openclawbrain.ai/how-it-works/
+Project page: https://jonathangu.com/openclawbrain/
+```
 
 ## Install
 

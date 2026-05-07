@@ -1,11 +1,26 @@
-# Copy-paste install note
+# Copy-paste notes
+
+## Project blurb
+
+```text
+Hey friends — I just shipped OpenClawBrain, my local-first memory system for AI agents.
+
+The core idea: an agent should not just "remember everything." It should learn when memory actually matters. OpenClawBrain turns corrections, outcomes, misses, and handoffs into local evidence, then learns a small routing policy that decides when to bring the right memory into a future turn — or abstain when it is not confident.
+
+The trust boundary is the important part: the LLM proposes meaning, but code owns validation, storage, calibration, promotion, and rollback. SQLite keeps the graph and evidence local and inspectable.
+
+How it works: https://openclawbrain.ai/how-it-works/
+Project page: https://jonathangu.com/openclawbrain/
+```
+
+## Install note
 
 Send this to someone who already has OpenClaw `2026.5.2` or later installed.
 
 ```text
 Hey — if you want to try OpenClawBrain, install the latest native OpenClaw memory plugin.
 
-What it does: local-first memory for OpenClaw agents. It stores durable corrections/workflows in SQLite, retrieves only the small relevant slice when useful, injects a bounded context block, and exposes proof/status/search/graph routes so you can verify what happened.
+What it does: local-first memory for OpenClaw agents. It stores durable corrections/workflows in SQLite, learns when those memories should route into a future turn, injects only a bounded relevant context slice, and exposes proof/status/search/graph/route-policy routes so you can verify what happened.
 
 Install:
 
@@ -39,6 +54,7 @@ Then teach it a tiny durable rule, like “Use pnpm instead of npm in this repo.
 /plugins/openclawbrain/proof?limit=10
 /plugins/openclawbrain/search?query=pnpm&limit=10
 /plugins/openclawbrain/graph?agentId=main&limit=10
+/plugins/openclawbrain/route-policy
 
 Docs: https://openclawbrain.ai/install/
 Repo: https://github.com/jonathangu/openclawbrain
