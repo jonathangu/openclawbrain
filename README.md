@@ -223,6 +223,7 @@ The graph stores scoped memory nodes and edges: corrections, preferences, workfl
 - [Install](https://openclawbrain.ai/install/)
 - [Proof](https://openclawbrain.ai/proof/)
 - [How it works](https://openclawbrain.ai/how-it-works/)
+- [Ultimate guide](docs/ULTIMATE_GUIDE.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Canonical route-fn learning system master plan](docs/ROUTE_FN_LEARNING_SYSTEM_MASTER_PLAN.md)
 - [Vision](VISION.md)
