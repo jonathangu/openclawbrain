@@ -9,6 +9,7 @@ export { JsonParseError, JsonTimeoutError, JsonValidationError, runJsonWithValid
 export { CaptureOrchestrator, sanitizeToolEvent } from './capture.js';
 export { FeedbackDistiller, validateFeedbackDistillation } from './feedback-distiller.js';
 export { MemoryOperationApplier } from './memory-operations.js';
+export { MemoryAuthorityResolver, authorityEventTypeForDecision, defaultValidityForMemory } from './memory-authority.js';
 export { JobQueue } from './job-queue.js';
 export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';

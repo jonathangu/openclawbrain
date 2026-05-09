@@ -1,12 +1,14 @@
 # Getting Started with OpenClawBrain
 
-This is the fastest honest path to a working OpenClawBrain `0.2.21` install.
+This is the fastest honest path to a working OpenClawBrain `0.2.22` install.
 
 ## What you are installing
 
 OpenClawBrain is a native OpenClaw plugin that gives agents local, inspectable memory. It remembers durable corrections, preferences, workflows, and context, then learns when that memory should affect a future turn.
 
 The production route brain is `route-policy-v3`: a compact learned route function backed by redacted route frames, SQLite evidence, shadow decisions, replay/eval cases, calibration, gated promotion, and rollback lineage.
+
+The 0.2.22 runtime also includes Memory Authority resolution. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. Stale tool/workflow memories can be marked for verification; user-owned facts can require confirmation; soft preferences can become weak context instead of hard instructions.
 
 ## Before you start
 
@@ -21,16 +23,16 @@ You need:
 Use the same command for a fresh install or an upgrade. `--force` replaces an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.21 --force
+openclaw plugins install clawhub:openclawbrain@0.2.22 --force
 openclaw plugins enable openclawbrain
 ```
 
 If ClawHub metadata is still propagating, install the GitHub release archive:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.21.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.21/openclawbrain-0.2.21.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.21.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.22.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.22/openclawbrain-0.2.22.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.22.tgz --force
 openclaw plugins enable openclawbrain
 ```
 

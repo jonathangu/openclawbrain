@@ -14,6 +14,7 @@ Imagine an agent that understands “close it out” means evidence, not vibes. 
 
 - **Remembers durable lessons.** Corrections, preferences, workflows, and context become scoped local memory nodes instead of disappearing at the end of a session.
 - **Keeps prompts small.** It does not dump your whole history into every turn. It retrieves candidates locally and injects only a bounded XML slice when memory is likely to help.
+- **Checks authority before injection.** Retrieved memories can be injected, weakened, verified, confirmed, suppressed, or kept audit-only depending on staleness, scope, privacy, supersession, and current user instructions.
 - **Stays local-first.** SQLite stores the graph and evidence. FTS5 powers local search. Raw transcript upload is hard-disabled.
 - **Shows its work.** You can check status, run health checks, inspect proof events, search memory, view the graph, and review route decisions.
 - **Learns on the standard local path.** OpenClawBrain points at local Ollama by default. Local models propose structured JSON; code validates, redacts, scopes, thresholds, and writes.
@@ -28,22 +29,23 @@ OpenClawBrain takes a different approach:
 
 1. route first: should memory participate?
 2. search SQLite FTS locally
-3. rank and inject only a small bounded block
-4. record outcomes so memory can improve
-5. show proof instead of asking for blind trust
+3. resolve whether retrieved memories still have authority
+4. rank and inject only a small bounded block
+5. record outcomes so memory can improve
+6. show proof instead of asking for blind trust
 
 ## Current release
 
-- **Current package release:** `0.2.21`
+- **Current package release:** `0.2.22`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.5.2` or later
-- **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → bounded prompt injection
-- **Current loop:** first-class OpenClaw memory registration, v3 production route learning, conservative fallback, aggressive audited capture, strict scoped storage, sparse injection
+- **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded prompt injection
+- **Current loop:** first-class OpenClaw memory registration, v3 production route learning, Memory Authority decisions, conservative fallback, aggressive audited capture, strict scoped storage, sparse injection
 
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.21
+openclaw plugins install clawhub:openclawbrain@0.2.22
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -51,9 +53,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.21.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.21/openclawbrain-0.2.21.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.21.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.22.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.22/openclawbrain-0.2.22.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.22.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -126,7 +128,7 @@ openclaw doctor
 | `/plugins/openclawbrain/learn?limit=50` | route examples and current learning state |
 | `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
 | `/plugins/openclawbrain/audit?limit=20` | recent capture/store/reject decisions and rejection distribution |
-| `/plugins/openclawbrain/explain-last` | compact postmortem for the latest memory decision |
+| `/plugins/openclawbrain/explain-last` | compact postmortem for the latest route and memory authority decision |
 
 ## Privacy and safety
 
@@ -134,6 +136,7 @@ openclaw doctor
 - Raw transcript upload is hard-disabled
 - Redaction happens before storage and before model use
 - The model does not write directly to memory
+- Stale, superseded, private, tombstoned, or locally overridden memories do not silently become instructions
 - Plugin failure does not block the main agent
 - Local-first by default
 

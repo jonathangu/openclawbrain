@@ -8,7 +8,7 @@ The short version is:
 
 > An agent should not remember everything all the time. It should learn when memory actually matters.
 
-The current release, `openclawbrain@0.2.21`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, and finally route-policy-v3 as the production route brain.
+The current release, `openclawbrain@0.2.22`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, and now Memory Authority resolution between retrieval and injection.
 
 The most important lesson is not "use a graph." It is:
 
@@ -23,6 +23,7 @@ feedback and outcomes
   -> shadow decisions and replay cases
   -> calibrated candidate snapshots
   -> active route-policy-v3 route_fn
+  -> Memory Authority resolver
   -> bounded context injection or abstention
 ```
 
@@ -786,12 +787,63 @@ observe -> redact -> store evidence -> route -> retrieve -> inject/abstain
   -> promote or roll back -> serve a compact route_fn
 ```
 
+## The 0.2.22 Upgrade: Memory Authority
+
+The next hard problem was not "retrieve better memories." It was deciding
+whether a retrieved memory still had the right to influence the current turn.
+
+OpenClawBrain 0.2.22 adds a `MemoryAuthorityResolver` between retrieval and
+context selection:
+
+```text
+search finds relevant candidates
+  -> authority resolver checks validity, scope, privacy, supersession, risk
+  -> context selector injects, weakens, verifies, confirms, abstains, or suppresses
+  -> proof rows explain what happened
+```
+
+The new invariant is:
+
+```text
+relevant != authorized
+```
+
+A memory can be semantically relevant and still be wrong, expired, unsafe,
+superseded, too broad, tombstoned, or overridden by the user's current
+instruction. For example, "prefer concise answers" remains a useful default, but
+it should not override a turn that explicitly asks for deep critique.
+
+The resolver supports these decisions:
+
+| Decision | Meaning |
+|---|---|
+| `inject` | The memory is relevant, current, scoped, safe, and strong enough to use. |
+| `weak_context` | The memory is a soft prior, not a command. |
+| `verify_before_use` | The memory is environment-owned and should be checked before acting. |
+| `confirm_before_use` | The memory is user-owned, material, uncertain, and not cheaply verifiable. |
+| `abstain` | The memory is relevant but should not affect this turn. |
+| `audit_only` | The memory stays visible for inspection, not prompt influence. |
+| `never_use` | The memory is deleted, tombstoned, private, or otherwise blocked. |
+
+This adds two new SQLite surfaces:
+
+- `memory_validity`: retention state, behavioral availability, temporal
+  validity, privacy class, decay policy, validation strategy, and authority
+  scores.
+- `memory_authority_events`: records of memories being used, weakened, verified,
+  confirmed, suppressed, tombstoned, superseded, or withheld.
+
+It also changes update behavior. Same-key same-value captures reinforce an
+existing memory. Same-key changed-value captures create lineage instead of
+overwriting history. Sensitive "forget" requests create tombstones so the system
+does not delete a memory and then quietly recapture it later.
+
 ## The Practical Operator Model
 
 Install or upgrade:
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.21 --force
+openclaw plugins install clawhub:openclawbrain@0.2.22 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -826,14 +878,17 @@ You want to see:
 - proof rows appearing
 - search returning scoped memories when they exist
 - route-policy-v3 surfaced as the active route brain
+- authority events explaining why relevant memories were injected, weakened,
+  verified, confirmed, suppressed, or withheld
 
 ## Current Public Truth
 
-As of `0.2.21`:
+As of `0.2.22`:
 
-- The latest package is `openclawbrain@0.2.21`.
-- The source tag is `v0.2.21`.
+- The latest package is `openclawbrain@0.2.22`.
+- The source tag is `v0.2.22`.
 - The production route brain is route-policy-v3.
+- Memory Authority now separates relevance from authority before injection.
 - v2 and heuristics are fallback/rollback paths.
 - SQLite stores the graph and evidence locally.
 - Prompt injection is bounded and proofed.

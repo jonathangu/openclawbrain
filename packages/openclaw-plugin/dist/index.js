@@ -9,6 +9,7 @@ import { LatencyController } from './latency-controller.js';
 import { OllamaNativeLlmClient, OpenAICompatibleLlmClient, isOllamaLoopbackBaseUrl } from './llm-client.js';
 import { MemoryPlanner } from './memory-planner.js';
 import { MemoryOperationApplier } from './memory-operations.js';
+import { authorityEventTypeForDecision } from './memory-authority.js';
 import { MemoryStore } from './memory-store.js';
 import { decidePolicy } from './policy.js';
 import { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
@@ -34,6 +35,7 @@ export { JsonParseError, JsonTimeoutError, JsonValidationError, runJsonWithValid
 export { CaptureOrchestrator, sanitizeToolEvent } from './capture.js';
 export { FeedbackDistiller, validateFeedbackDistillation } from './feedback-distiller.js';
 export { MemoryOperationApplier } from './memory-operations.js';
+export { MemoryAuthorityResolver, authorityEventTypeForDecision, defaultValidityForMemory } from './memory-authority.js';
 export { JobQueue } from './job-queue.js';
 export { LatencyController } from './latency-controller.js';
 export { RouteCache, RouteFn } from './route-fn.js';
@@ -205,6 +207,7 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
         injectionPayloadHash: selection.shouldInject ? hashText(selection.distilledContext) : undefined,
         reward: 0,
     });
+    recordRouteAuthorityEvents(store, packet, routeDecision.id, selection);
     recordRouteShadowDecisionsV3(store, packet.agentId, routeDecision.id, plan.turnFrame, packet.latestUserMessageRedacted, plan.policySnapshotId, config);
     buildRouteGraphSnapshot(store, packet.agentId, routeDecision.id, plan.retrievalPlan.queries, initialCandidates, plan.retrievalPlan.graphDepth);
     store.insertCaptureAudit({
@@ -234,6 +237,7 @@ async function handleV2PromptHook(event = {}, config = normalizePluginConfig(), 
             confidence: routeDecision.confidence,
             selectedMemoryIds: selection.selectedMemoryIds,
             omittedMemoryIds: selection.omitted.map((it) => it.memoryId),
+            authority: selection.audit.authority || [],
             policySnapshotId: routeDecision.policySnapshotId || null,
             policyRuleId: routeDecision.policyRuleId || null,
             candidateCount: initialCandidates.length,
@@ -522,6 +526,7 @@ async function statusPayload(config, req = {}) {
                 routingRules: store.countMemories(agentId, 'routing_rule'),
                 recallRules: store.countMemories(agentId, 'recall_rule'),
                 captureAuditRows: store.countCaptureAudit(agentId),
+                authorityEvents: store.listMemoryAuthorityEvents(agentId, 500).length,
             },
             routing: {
                 activePolicySnapshotId: store.getActivePolicySnapshot(agentId)?.id || null,
@@ -898,7 +903,7 @@ function emptySelection() {
         distilledContext: '',
         selected: [],
         omitted: [],
-        audit: { promptBudgetUsedChars: 0, risk: 'low' },
+        audit: { promptBudgetUsedChars: 0, risk: 'low', authority: [] },
     };
 }
 function estimateTaskValue(message) {
@@ -986,6 +991,21 @@ function extractRouteSignals(turnFrame, text = '') {
     if (turnFrame?.routeHints?.likelyNeedsProjectContext)
         signals.add('project_context');
     return [...signals].slice(0, 12);
+}
+function recordRouteAuthorityEvents(store, packet, routeDecisionId, selection) {
+    const authority = Array.isArray(selection?.audit?.authority) ? selection.audit.authority : [];
+    for (const resolution of authority) {
+        store.insertMemoryAuthorityEvent({
+            agentId: packet.agentId,
+            memoryId: resolution.memoryId,
+            eventType: authorityEventTypeForDecision(resolution.decision),
+            source: 'route_decision',
+            turnId: packet.turnId,
+            routeId: routeDecisionId,
+            evidenceId: String(packet.metadata?.promptHash || ''),
+            reason: (resolution.reasons || []).join('; '),
+        });
+    }
 }
 function isLoopbackUrl(value) {
     try {

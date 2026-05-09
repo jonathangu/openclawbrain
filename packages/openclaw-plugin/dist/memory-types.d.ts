@@ -31,6 +31,64 @@ export interface MemoryNode {
     supersededBy?: string;
     deletedAt?: string;
 }
+export type MemoryRetentionState = 'stored' | 'redacted' | 'soft_deleted' | 'tombstoned' | 'hard_deleted';
+export type MemoryBehavioralAvailability = 'injectable' | 'confirm_before_use' | 'explicit_request_only' | 'never_use';
+export type MemoryTemporalValidity = 'current' | 'stale' | 'expired' | 'unknown';
+export type MemoryPrivacyClass = 'normal' | 'sensitive' | 'recall_only' | 'do_not_restore' | 'do_not_reveal_proactively';
+export type MemoryValidationStrategy = 'none' | 'user_confirm' | 'environment_check' | 'tool_success' | 'document_check' | 'time_expiry' | 'never_proactive';
+export interface MemoryValidity {
+    memoryId: string;
+    retentionState: MemoryRetentionState;
+    behavioralAvailability: MemoryBehavioralAvailability;
+    temporalValidity: MemoryTemporalValidity;
+    privacyClass: MemoryPrivacyClass;
+    decayPolicy: string;
+    validationStrategy: MemoryValidationStrategy;
+    validFrom?: string;
+    validUntil?: string;
+    expiresAt?: string;
+    lastConfirmedAt?: string;
+    lastVerifiedAt?: string;
+    lastSuccessfulUseAt?: string;
+    lastFailedUseAt?: string;
+    lastContradictedAt?: string;
+    revalidateAfter?: string;
+    halfLifeDays?: number;
+    evidenceConfidence: number;
+    currentValidityScore: number;
+    behavioralAuthorityScore: number;
+    stateReason?: string;
+    updatedAt: string;
+}
+export type MemoryAuthorityDecisionKind = 'inject' | 'weak_context' | 'verify_before_use' | 'confirm_before_use' | 'abstain' | 'audit_only' | 'never_use';
+export interface MemoryAuthorityResolution {
+    memoryId: string;
+    decision: MemoryAuthorityDecisionKind;
+    authorityScore: number;
+    relevanceScore: number;
+    evidenceConfidence: number;
+    currentValidity: number;
+    behavioralAuthority: number;
+    validationStrategy: MemoryValidationStrategy;
+    reasons: string[];
+    requiredAction?: 'verify_environment' | 'ask_user' | 'explicit_recall' | 'none';
+    risk: 'low' | 'medium' | 'high';
+}
+export type MemoryAuthorityEventType = 'captured' | 'reinforced' | 'used' | 'weak_context_used' | 'verification_requested' | 'verification_failed' | 'confirmation_requested' | 'confirmation_declined' | 'abstained' | 'audit_only' | 'suppressed' | 'soft_deleted' | 'tombstoned' | 'hard_deleted' | 'superseded' | 'expired' | 'revived' | 'user_corrected' | 'overridden_by_current_instruction';
+export interface MemoryAuthorityEvent {
+    id: string;
+    agentId: string;
+    memoryId: string;
+    eventType: MemoryAuthorityEventType;
+    source: string;
+    turnId?: string;
+    routeId?: string;
+    evidenceId?: string;
+    oldValue?: string;
+    newValue?: string;
+    reason?: string;
+    createdAt: string;
+}
 export type EdgeRelation = 'related' | 'contradicts' | 'supersedes' | 'extends' | 'used_with' | 'supports_workflow';
 export interface MemoryEdge {
     id: string;
@@ -149,14 +207,20 @@ export interface ContextSelection {
         reason: 'directly_relevant_correction' | 'matching_user_preference' | 'repo_workflow' | 'tool_guidance' | 'contradiction_resolution' | 'supporting_context';
         useHow: 'must_follow' | 'prefer' | 'consider' | 'avoid';
         confidence: number;
+        authorityDecision?: MemoryAuthorityDecisionKind;
+        authorityReasons?: string[];
+        requiredAction?: MemoryAuthorityResolution['requiredAction'];
     }>;
     omitted: Array<{
         memoryId: string;
-        reason: 'irrelevant' | 'too_general' | 'superseded' | 'low_confidence' | 'would_pollute_prompt' | 'budget';
+        reason: 'irrelevant' | 'too_general' | 'superseded' | 'low_confidence' | 'would_pollute_prompt' | 'budget' | 'stale' | 'expired' | 'confirm_needed' | 'verify_needed' | 'privacy' | 'tombstoned' | 'current_instruction_override' | 'never_use' | 'audit_only';
+        authorityDecision?: MemoryAuthorityDecisionKind;
+        authorityReasons?: string[];
     }>;
     audit: {
         promptBudgetUsedChars: number;
         risk: 'low' | 'medium' | 'high';
+        authority?: MemoryAuthorityResolution[];
     };
 }
 export type InjectionOutcome = 'pending' | 'helped' | 'accepted' | 'ignored' | 'assistant_failed_to_use' | 'user_corrected' | 'harmful' | 'tool_success' | 'tool_failure' | 'unknown';

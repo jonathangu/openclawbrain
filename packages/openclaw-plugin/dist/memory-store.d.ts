@@ -1,6 +1,6 @@
 import { type DatabaseLike } from './sqlite-driver.js';
 import { type ScopeContext } from './scope.js';
-import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, RouteDecision, RouteKind, RouteFrameV2, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, RouteFrameV3, RouteActionPrototypeV3, RoutePairExampleV3, RouteBanditFeedbackV3, RouteBanditStateV3, RoutePolicySnapshotV3, RouteShadowDecisionV3, RouteCalibrationExampleV3, RouteActionFamilyStatsV3, RoutePolicyCandidateReportV3, RouteEvalCaseV3, RouteEvalCaseLabelV3, CaptureAuditRow } from './memory-types.js';
+import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, MemoryAuthorityEvent, MemoryValidity, RouteDecision, RouteKind, RouteFrameV2, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, RouteFrameV3, RouteActionPrototypeV3, RoutePairExampleV3, RouteBanditFeedbackV3, RouteBanditStateV3, RoutePolicySnapshotV3, RouteShadowDecisionV3, RouteCalibrationExampleV3, RouteActionFamilyStatsV3, RoutePolicyCandidateReportV3, RouteEvalCaseV3, RouteEvalCaseLabelV3, CaptureAuditRow } from './memory-types.js';
 export declare const uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 export declare const now: () => string;
 export interface MemoryStoreOptions {
@@ -19,9 +19,16 @@ export declare class MemoryStore {
     }): MemoryNode;
     getMemory(id: string): MemoryNode | null;
     findMemoryByNormalizedKey(agentId: string, normalizedKey: string, scopeKind: string, scopeKey?: string): MemoryNode | null;
+    findMemoryByNormalizedKeyAny(agentId: string, normalizedKey: string, scopeKind: string, scopeKey?: string): MemoryNode | null;
+    findMemoriesByNormalizedKey(agentId: string, normalizedKey: string): MemoryNode[];
     updateMemory(id: string, updates: Partial<MemoryNode>): MemoryNode | null;
     supersedeMemory(existingId: string, supersededById: string): void;
     softDeleteMemory(id: string): void;
+    tombstoneMemory(id: string, options?: {
+        reason?: string;
+        redactContent?: boolean;
+        source?: string;
+    }): void;
     searchMemories(query: string, agentId: string, opts?: {
         limit?: number;
         offset?: number;
@@ -146,6 +153,14 @@ export declare class MemoryStore {
     }): CaptureAuditRow;
     listCaptureAudit(agentId: string, limit?: number): CaptureAuditRow[];
     countCaptureAudit(agentId: string): number;
+    getMemoryValidity(memoryId: string): MemoryValidity | null;
+    upsertMemoryValidity(validity: MemoryValidity): MemoryValidity;
+    patchMemoryValidity(memoryId: string, patch: Partial<MemoryValidity>): MemoryValidity | null;
+    insertMemoryAuthorityEvent(event: Omit<MemoryAuthorityEvent, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): MemoryAuthorityEvent;
+    listMemoryAuthorityEvents(agentId: string, limit?: number, memoryId?: string): MemoryAuthorityEvent[];
     enqueueJob(job: Omit<BackgroundJob, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'attempts' | 'startedAt' | 'finishedAt' | 'error'> & {
         id?: string;
     }): BackgroundJob;

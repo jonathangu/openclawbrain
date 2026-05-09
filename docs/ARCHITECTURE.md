@@ -1,6 +1,8 @@
 # Architecture
 
-OpenClawBrain `0.2.21` is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, and injects only bounded context back into the prompt.
+OpenClawBrain `0.2.22` is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, and injects only bounded context back into the prompt.
+
+The 0.2.22 addition is the **Memory Authority** layer. Retrieval can over-include candidates, but a memory is not allowed to influence the turn until authority resolution checks freshness, scope, privacy, supersession, current instructions, validation strategy, and risk.
 
 The core invariant is unchanged:
 
@@ -15,6 +17,7 @@ packages/openclaw-plugin/src/
 ├── index.ts                         # plugin entry, hooks, routes, memory supplements
 ├── config.ts                        # defaults + config normalization
 ├── memory-store.ts                  # SQLite schema, FTS5, graph storage, proofs, jobs
+├── memory-authority.ts              # relevance vs authority, validity, verification/confirmation decisions
 ├── route-fn.ts                      # v3-first route decision path with fallback handling
 ├── route-policy-v2.ts               # legacy learned policy fallback/rollback path
 ├── route-policy-v3*.ts              # v3 snapshots, normalization, calibration, eval, routing modes
@@ -39,7 +42,8 @@ packages/openclaw-plugin/src/
 ```text
 active valid route-policy-v3 snapshot
   -> calibrated family-aware match
-  -> bounded context injection + proof
+  -> memory authority resolver
+  -> bounded context injection, verification cue, confirmation cue, or abstention + proof
 
 v3 abstains / no safe match / invalid snapshot
   -> route-policy-v2 fallback
@@ -63,6 +67,7 @@ corrections, outcomes, route misses, handoffs
   -> action-family calibration
   -> candidate route-policy-v3 snapshots
   -> gated promotion or rollback
+  -> memory authority resolution
   -> bounded context injection or abstention
 ```
 
@@ -92,9 +97,10 @@ Flow:
 2. `RouteFn` asks active `route-policy-v3` first.
 3. If v3 abstains, v2 and legacy heuristics are fallback paths.
 4. Candidate memories come from local SQLite/FTS plus graph expansion.
-5. `ContextSelector` picks a small memory set and formats bounded prompt text.
-6. Route decisions, injections, and proofs are recorded.
-7. `agent_end`, `after_tool_call`, and the background service update outcomes, route frames, shadow decisions, replay cases, candidate reports, and policy snapshots.
+5. `MemoryAuthorityResolver` decides `inject`, `weak_context`, `verify_before_use`, `confirm_before_use`, `abstain`, `audit_only`, or `never_use`.
+6. `ContextSelector` picks a small authorized memory set and formats bounded prompt text.
+7. Route decisions, injections, authority events, and proofs are recorded.
+8. `agent_end`, `after_tool_call`, and the background service update outcomes, route frames, shadow decisions, replay cases, candidate reports, and policy snapshots.
 
 ### 2) legacy compatibility lane
 
@@ -123,7 +129,9 @@ The code follows the four-tier plan from `FINAL_PLAN.md`:
 
 ## Storage model
 
-`memory-store.ts` persists memory nodes/edges, route decisions, injection records, distillation runs, background jobs, proof events, and the v3 route-learning warehouse. Search uses SQLite FTS5 plus graph expansion and scope filters.
+`memory-store.ts` persists memory nodes/edges, route decisions, injection records, distillation runs, background jobs, proof events, memory validity rows, memory authority events, and the v3 route-learning warehouse. Search uses SQLite FTS5 plus graph expansion and scope filters.
+
+`memory_validity` keeps orthogonal state for retention, behavioral availability, temporal validity, privacy class, decay policy, validation strategy, and authority scores. `memory_authority_events` records when a memory was used, weakened, verified, confirmed, suppressed, tombstoned, superseded, or withheld.
 
 Raw transcript storage remains off; route-learning evidence is compact, redacted, scoped, and inspectable.
 

@@ -95,6 +95,13 @@ export function graphPayload(config, agentId, limit = 20) {
                 importance: node.importance,
                 confidence: node.confidence,
                 supersededBy: node.supersededBy || null,
+                validity: store.getMemoryValidity(node.id),
+                authorityEvents: store.listMemoryAuthorityEvents(agentId, 5, node.id).map((event) => ({
+                    eventType: event.eventType,
+                    source: event.source,
+                    reason: event.reason || null,
+                    createdAt: event.createdAt,
+                })),
             })),
             edges,
         };
@@ -153,6 +160,9 @@ export function explainLastPayload(config, agentId, turnId) {
         const stored = row.storedCount > 0;
         const routeDecision = store.getRecentRouteDecisions(agentId, 200).find((decision) => turnId ? decision.turnId === turnId : decision.turnId === row.turnId) || null;
         const graphSnapshot = routeDecision ? store.getRouteGraphSnapshot(routeDecision.id) : null;
+        const authorityEvents = routeDecision
+            ? store.listMemoryAuthorityEvents(agentId, 200).filter((event) => event.routeId === routeDecision.id)
+            : [];
         const teacherRun = routeDecision ? store.listRouteTeacherRuns(agentId, 200).find((run) => run.routeDecisionId === routeDecision.id) || null : null;
         const counterfactuals = routeDecision ? store.listRouteCounterfactuals(agentId, routeDecision.id, 20) : [];
         const activePolicy = store.getActivePolicySnapshotV3(agentId) || store.getActivePolicySnapshotV2(agentId);
@@ -204,6 +214,12 @@ export function explainLastPayload(config, agentId, turnId) {
                 candidateMemoryIds: graphSnapshot.candidateMemoryIds,
                 graphStats: graphSnapshot.graphStats,
             } : null,
+            authority: authorityEvents.map((event) => ({
+                memoryId: event.memoryId,
+                eventType: event.eventType,
+                reason: event.reason || null,
+                createdAt: event.createdAt,
+            })),
             teacher: teacherRun ? {
                 id: teacherRun.id,
                 verdict: teacherRun.verdict,

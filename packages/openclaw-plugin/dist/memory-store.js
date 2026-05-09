@@ -6,8 +6,9 @@ import os from 'node:os';
 import { mkdirSync } from 'node:fs';
 import { openDatabase } from './sqlite-driver.js';
 import { filterMemoriesForScope } from './scope.js';
+import { defaultValidityForMemory } from './memory-authority.js';
 // ── Schema version ────────────────────────────────────────────────────────────
-const SCHEMA_VERSION = 10;
+const SCHEMA_VERSION = 11;
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 const MIGRATIONS = {
     1: `
@@ -742,6 +743,82 @@ const MIGRATIONS = {
     CREATE INDEX IF NOT EXISTS idx_route_eval_case_labels_v3_agent ON route_eval_case_labels_v3(agent_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_route_eval_case_labels_v3_case ON route_eval_case_labels_v3(case_id, created_at);
   `,
+    11: `
+    CREATE TABLE IF NOT EXISTS memory_validity (
+      memory_id TEXT PRIMARY KEY,
+      retention_state TEXT NOT NULL DEFAULT 'stored',
+      behavioral_availability TEXT NOT NULL DEFAULT 'injectable',
+      temporal_validity TEXT NOT NULL DEFAULT 'current',
+      privacy_class TEXT NOT NULL DEFAULT 'normal',
+      decay_policy TEXT NOT NULL DEFAULT 'standard',
+      validation_strategy TEXT NOT NULL DEFAULT 'none',
+      valid_from TEXT,
+      valid_until TEXT,
+      expires_at TEXT,
+      last_confirmed_at TEXT,
+      last_verified_at TEXT,
+      last_successful_use_at TEXT,
+      last_failed_use_at TEXT,
+      last_contradicted_at TEXT,
+      revalidate_after TEXT,
+      half_life_days REAL,
+      evidence_confidence REAL NOT NULL DEFAULT 0.5,
+      current_validity_score REAL NOT NULL DEFAULT 1.0,
+      behavioral_authority_score REAL NOT NULL DEFAULT 0.85,
+      state_reason TEXT,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_memory_validity_retention ON memory_validity(retention_state);
+    CREATE INDEX IF NOT EXISTS idx_memory_validity_availability ON memory_validity(behavioral_availability);
+
+    CREATE TABLE IF NOT EXISTS memory_authority_events (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      memory_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      source TEXT NOT NULL,
+      turn_id TEXT,
+      route_id TEXT,
+      evidence_id TEXT,
+      old_value TEXT,
+      new_value TEXT,
+      reason TEXT,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_memory_authority_events_agent ON memory_authority_events(agent_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_memory_authority_events_memory ON memory_authority_events(memory_id, created_at);
+
+    INSERT OR IGNORE INTO memory_validity (
+      memory_id, retention_state, behavioral_availability, temporal_validity, privacy_class,
+      decay_policy, validation_strategy, evidence_confidence, current_validity_score,
+      behavioral_authority_score, state_reason, updated_at
+    )
+    SELECT
+      id,
+      CASE WHEN deleted_at IS NOT NULL THEN 'soft_deleted' ELSE 'stored' END,
+      CASE WHEN type = 'recall_rule' THEN 'explicit_request_only' ELSE 'injectable' END,
+      CASE WHEN freshness < 0.1 THEN 'expired' WHEN freshness < 0.35 THEN 'stale' ELSE 'current' END,
+      CASE WHEN type = 'recall_rule' THEN 'recall_only' ELSE 'normal' END,
+      CASE
+        WHEN type = 'recall_rule' THEN 'sensitive_no_decay'
+        WHEN type IN ('workflow', 'tool_convention', 'project_fact') THEN 'environment_verified'
+        WHEN type = 'preference' THEN 'soft_preference'
+        WHEN type = 'correction' THEN 'correction_lineage'
+        ELSE 'standard'
+      END,
+      CASE
+        WHEN type = 'recall_rule' THEN 'never_proactive'
+        WHEN type IN ('workflow', 'tool_convention', 'project_fact') THEN 'environment_check'
+        WHEN type IN ('correction', 'preference', 'routing_rule', 'agent_assignment') THEN 'user_confirm'
+        ELSE 'none'
+      END,
+      confidence,
+      freshness,
+      CASE WHEN type = 'recall_rule' THEN 0.55 ELSE 0.85 END,
+      'migration_v11_default',
+      updated_at
+    FROM memory_nodes;
+  `,
 };
 // ── UUID helper ───────────────────────────────────────────────────────────────
 import { randomUUID } from 'node:crypto';
@@ -833,7 +910,18 @@ export class MemoryStore {
         created_at, updated_at, last_seen_at, last_used_at, superseded_by, deleted_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(id, node.agentId, node.type, node.content, node.positive ?? null, node.negative ?? null, node.scopeKind, node.scopeKey ?? '', node.normalizedKey, JSON.stringify(node.tags), node.importance, node.freshness, node.confidence, node.useCount, node.usefulCount, node.captureCount, node.distilledByModel ?? null, node.distillerPromptVersion ?? null, node.distillationConfidence ?? null, node.evidenceKind ?? null, node.evidenceHash ?? null, node.sourceHook ?? null, node.sourceTurnId ?? null, node.sourceSessionId ?? null, ts, ts, ts, null, null, null);
-        return this.getMemory(id);
+        const inserted = this.getMemory(id);
+        this.upsertMemoryValidity(defaultValidityForMemory(inserted));
+        this.insertMemoryAuthorityEvent({
+            agentId: inserted.agentId,
+            memoryId: inserted.id,
+            eventType: 'captured',
+            source: inserted.sourceHook || 'memory_store',
+            turnId: inserted.sourceTurnId,
+            evidenceId: inserted.evidenceHash,
+            reason: 'memory_inserted',
+        });
+        return inserted;
     }
     getMemory(id) {
         const row = this.db.prepare('SELECT * FROM memory_nodes WHERE id = ?').get(id);
@@ -846,6 +934,23 @@ export class MemoryStore {
       LIMIT 1
     `).get(agentId, normalizedKey, scopeKind, scopeKey ?? '', scopeKey ?? '');
         return row ? rowToMemory(row) : null;
+    }
+    findMemoryByNormalizedKeyAny(agentId, normalizedKey, scopeKind, scopeKey) {
+        const row = this.db.prepare(`
+      SELECT * FROM memory_nodes
+      WHERE agent_id = ? AND normalized_key = ? AND scope_kind = ? AND (scope_key = ? OR (scope_key IS NULL AND ? = ''))
+      ORDER BY deleted_at IS NULL DESC, superseded_by IS NULL DESC, updated_at DESC
+      LIMIT 1
+    `).get(agentId, normalizedKey, scopeKind, scopeKey ?? '', scopeKey ?? '');
+        return row ? rowToMemory(row) : null;
+    }
+    findMemoriesByNormalizedKey(agentId, normalizedKey) {
+        return this.db.prepare(`
+      SELECT * FROM memory_nodes
+      WHERE agent_id = ? AND normalized_key = ?
+      ORDER BY deleted_at IS NULL DESC, superseded_by IS NULL DESC, updated_at DESC
+      LIMIT 50
+    `).all(agentId, normalizedKey).map(rowToMemory);
     }
     updateMemory(id, updates) {
         const existing = this.getMemory(id);
@@ -866,10 +971,78 @@ export class MemoryStore {
         return this.getMemory(id);
     }
     supersedeMemory(existingId, supersededById) {
+        const existing = this.getMemory(existingId);
         this.db.prepare('UPDATE memory_nodes SET superseded_by = ?, updated_at = ? WHERE id = ?').run(supersededById, now(), existingId);
+        if (existing) {
+            this.patchMemoryValidity(existingId, {
+                behavioralAvailability: 'never_use',
+                currentValidityScore: Math.min(existing.freshness, 0.2),
+                behavioralAuthorityScore: 0,
+                stateReason: `superseded_by:${supersededById}`,
+            });
+            this.insertMemoryAuthorityEvent({
+                agentId: existing.agentId,
+                memoryId: existingId,
+                eventType: 'superseded',
+                source: 'memory_store',
+                oldValue: existing.content,
+                newValue: supersededById,
+                reason: `superseded_by:${supersededById}`,
+            });
+        }
     }
     softDeleteMemory(id) {
+        const existing = this.getMemory(id);
         this.db.prepare('UPDATE memory_nodes SET deleted_at = ?, updated_at = ? WHERE id = ?').run(now(), now(), id);
+        if (existing) {
+            this.patchMemoryValidity(id, {
+                retentionState: 'soft_deleted',
+                behavioralAvailability: 'never_use',
+                currentValidityScore: 0,
+                behavioralAuthorityScore: 0,
+                stateReason: 'soft_deleted',
+            });
+            this.insertMemoryAuthorityEvent({
+                agentId: existing.agentId,
+                memoryId: id,
+                eventType: 'soft_deleted',
+                source: 'memory_store',
+                reason: 'soft_delete',
+            });
+        }
+    }
+    tombstoneMemory(id, options = {}) {
+        const existing = this.getMemory(id);
+        if (!existing)
+            return;
+        const ts = now();
+        if (options.redactContent) {
+            this.db.prepare(`
+        UPDATE memory_nodes
+        SET content = '[redacted tombstone]', positive = NULL, negative = NULL, deleted_at = ?, updated_at = ?
+        WHERE id = ?
+      `).run(ts, ts, id);
+        }
+        else {
+            this.db.prepare('UPDATE memory_nodes SET deleted_at = ?, updated_at = ? WHERE id = ?').run(ts, ts, id);
+        }
+        this.patchMemoryValidity(id, {
+            retentionState: 'tombstoned',
+            behavioralAvailability: 'never_use',
+            privacyClass: options.redactContent ? 'do_not_restore' : 'do_not_reveal_proactively',
+            validationStrategy: 'never_proactive',
+            currentValidityScore: 0,
+            behavioralAuthorityScore: 0,
+            stateReason: options.reason || 'tombstoned',
+        });
+        this.insertMemoryAuthorityEvent({
+            agentId: existing.agentId,
+            memoryId: id,
+            eventType: 'tombstoned',
+            source: options.source || 'memory_store',
+            oldValue: options.redactContent ? '[redacted]' : existing.content,
+            reason: options.reason || 'tombstoned',
+        });
     }
     searchMemories(query, agentId, opts = {}) {
         const limit = Math.min(50, Math.max(1, opts.limit ?? 20));
@@ -983,7 +1156,43 @@ export class MemoryStore {
         }
         const info = this.db.prepare(`UPDATE memory_injections SET outcome = ?, correction_signal = ?, resolved_at = ? WHERE ${clauses.join(' AND ')}`)
             .run(outcome, correctionSignal ?? null, now(), ...params);
-        return Number(info?.changes || 0);
+        const changes = Number(info?.changes || 0);
+        if (changes > 0) {
+            const row = this.db.prepare('SELECT * FROM memory_injections WHERE id = ?').get(injectionId);
+            if (row?.memory_id) {
+                const memory = this.getMemory(row.memory_id);
+                if (memory) {
+                    if (['helped', 'accepted', 'tool_success'].includes(outcome)) {
+                        this.patchMemoryValidity(memory.id, {
+                            lastSuccessfulUseAt: now(),
+                            currentValidityScore: Math.min(1, (this.getMemoryValidity(memory.id)?.currentValidityScore ?? memory.freshness) + 0.03),
+                            behavioralAuthorityScore: Math.min(1, (this.getMemoryValidity(memory.id)?.behavioralAuthorityScore ?? 0.85) + 0.03),
+                            stateReason: `outcome:${outcome}`,
+                        });
+                    }
+                    if (['assistant_failed_to_use', 'user_corrected', 'harmful', 'tool_failure'].includes(outcome)) {
+                        this.patchMemoryValidity(memory.id, {
+                            lastFailedUseAt: now(),
+                            lastContradictedAt: outcome === 'user_corrected' || outcome === 'harmful' ? now() : this.getMemoryValidity(memory.id)?.lastContradictedAt,
+                            currentValidityScore: Math.max(0, (this.getMemoryValidity(memory.id)?.currentValidityScore ?? memory.freshness) - 0.12),
+                            behavioralAuthorityScore: Math.max(0, (this.getMemoryValidity(memory.id)?.behavioralAuthorityScore ?? 0.85) - 0.18),
+                            stateReason: `outcome:${outcome}`,
+                        });
+                    }
+                    this.insertMemoryAuthorityEvent({
+                        agentId: memory.agentId,
+                        memoryId: memory.id,
+                        eventType: outcome === 'user_corrected' || outcome === 'harmful' ? 'user_corrected' : 'used',
+                        source: 'injection_outcome',
+                        turnId: row.turn_id,
+                        routeId: row.route_decision_id,
+                        evidenceId: injectionId,
+                        reason: correctionSignal || `outcome:${outcome}`,
+                    });
+                }
+            }
+        }
+        return changes;
     }
     getPendingInjections(agentId) {
         return this.db.prepare('SELECT * FROM memory_injections WHERE agent_id = ? AND outcome = ? ORDER BY injected_at DESC LIMIT 100').all(agentId, 'pending').map(rowToInjection);
@@ -1426,6 +1635,79 @@ export class MemoryStore {
         const row = this.db.prepare('SELECT COUNT(*) as cnt FROM capture_audit WHERE agent_id = ?').get(agentId);
         return row?.cnt ?? 0;
     }
+    // ── Memory authority and validity ──────────────────────────────────────────
+    getMemoryValidity(memoryId) {
+        const row = this.db.prepare('SELECT * FROM memory_validity WHERE memory_id = ?').get(memoryId);
+        return row ? rowToMemoryValidity(row) : null;
+    }
+    upsertMemoryValidity(validity) {
+        const updatedAt = validity.updatedAt || now();
+        this.db.prepare(`
+      INSERT INTO memory_validity (
+        memory_id, retention_state, behavioral_availability, temporal_validity, privacy_class,
+        decay_policy, validation_strategy, valid_from, valid_until, expires_at,
+        last_confirmed_at, last_verified_at, last_successful_use_at, last_failed_use_at,
+        last_contradicted_at, revalidate_after, half_life_days, evidence_confidence,
+        current_validity_score, behavioral_authority_score, state_reason, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(memory_id) DO UPDATE SET
+        retention_state = excluded.retention_state,
+        behavioral_availability = excluded.behavioral_availability,
+        temporal_validity = excluded.temporal_validity,
+        privacy_class = excluded.privacy_class,
+        decay_policy = excluded.decay_policy,
+        validation_strategy = excluded.validation_strategy,
+        valid_from = excluded.valid_from,
+        valid_until = excluded.valid_until,
+        expires_at = excluded.expires_at,
+        last_confirmed_at = excluded.last_confirmed_at,
+        last_verified_at = excluded.last_verified_at,
+        last_successful_use_at = excluded.last_successful_use_at,
+        last_failed_use_at = excluded.last_failed_use_at,
+        last_contradicted_at = excluded.last_contradicted_at,
+        revalidate_after = excluded.revalidate_after,
+        half_life_days = excluded.half_life_days,
+        evidence_confidence = excluded.evidence_confidence,
+        current_validity_score = excluded.current_validity_score,
+        behavioral_authority_score = excluded.behavioral_authority_score,
+        state_reason = excluded.state_reason,
+        updated_at = excluded.updated_at
+    `).run(validity.memoryId, validity.retentionState, validity.behavioralAvailability, validity.temporalValidity, validity.privacyClass, validity.decayPolicy, validity.validationStrategy, validity.validFrom ?? null, validity.validUntil ?? null, validity.expiresAt ?? null, validity.lastConfirmedAt ?? null, validity.lastVerifiedAt ?? null, validity.lastSuccessfulUseAt ?? null, validity.lastFailedUseAt ?? null, validity.lastContradictedAt ?? null, validity.revalidateAfter ?? null, validity.halfLifeDays ?? null, validity.evidenceConfidence, validity.currentValidityScore, validity.behavioralAuthorityScore, validity.stateReason ?? null, updatedAt);
+        return this.getMemoryValidity(validity.memoryId);
+    }
+    patchMemoryValidity(memoryId, patch) {
+        const memory = this.getMemory(memoryId);
+        if (!memory)
+            return null;
+        const existing = this.getMemoryValidity(memoryId) ?? defaultValidityForMemory(memory);
+        return this.upsertMemoryValidity({
+            ...existing,
+            ...patch,
+            memoryId,
+            evidenceConfidence: clamp01(patch.evidenceConfidence ?? existing.evidenceConfidence),
+            currentValidityScore: clamp01(patch.currentValidityScore ?? existing.currentValidityScore),
+            behavioralAuthorityScore: clamp01(patch.behavioralAuthorityScore ?? existing.behavioralAuthorityScore),
+            updatedAt: now(),
+        });
+    }
+    insertMemoryAuthorityEvent(event) {
+        const id = event.id || uuid();
+        const ts = event.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO memory_authority_events (
+        id, agent_id, memory_id, event_type, source, turn_id, route_id,
+        evidence_id, old_value, new_value, reason, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, event.agentId, event.memoryId, event.eventType, event.source, event.turnId ?? null, event.routeId ?? null, event.evidenceId ?? null, event.oldValue ?? null, event.newValue ?? null, event.reason ?? null, ts);
+        return { ...event, id, createdAt: ts };
+    }
+    listMemoryAuthorityEvents(agentId, limit = 50, memoryId) {
+        const safeLimit = Math.min(500, Math.max(1, limit));
+        const rows = memoryId
+            ? this.db.prepare('SELECT * FROM memory_authority_events WHERE agent_id = ? AND memory_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, memoryId, safeLimit)
+            : this.db.prepare('SELECT * FROM memory_authority_events WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, safeLimit);
+        return rows.map(rowToMemoryAuthorityEvent);
+    }
     // ── Job queue ───────────────────────────────────────────────────────────────
     enqueueJob(job) {
         if (job.agentId !== this.ownerAgentId)
@@ -1804,6 +2086,48 @@ function rowToMemory(r) {
         sourceHook: r.source_hook, sourceTurnId: r.source_turn_id, sourceSessionId: r.source_session_id,
         createdAt: r.created_at, updatedAt: r.updated_at, lastSeenAt: r.last_seen_at,
         lastUsedAt: r.last_used_at, supersededBy: r.superseded_by, deletedAt: r.deleted_at,
+    };
+}
+function rowToMemoryValidity(r) {
+    return {
+        memoryId: r.memory_id,
+        retentionState: r.retention_state,
+        behavioralAvailability: r.behavioral_availability,
+        temporalValidity: r.temporal_validity,
+        privacyClass: r.privacy_class,
+        decayPolicy: r.decay_policy,
+        validationStrategy: r.validation_strategy,
+        validFrom: r.valid_from,
+        validUntil: r.valid_until,
+        expiresAt: r.expires_at,
+        lastConfirmedAt: r.last_confirmed_at,
+        lastVerifiedAt: r.last_verified_at,
+        lastSuccessfulUseAt: r.last_successful_use_at,
+        lastFailedUseAt: r.last_failed_use_at,
+        lastContradictedAt: r.last_contradicted_at,
+        revalidateAfter: r.revalidate_after,
+        halfLifeDays: r.half_life_days == null ? undefined : Number(r.half_life_days),
+        evidenceConfidence: Number(r.evidence_confidence ?? 0),
+        currentValidityScore: Number(r.current_validity_score ?? 0),
+        behavioralAuthorityScore: Number(r.behavioral_authority_score ?? 0),
+        stateReason: r.state_reason,
+        updatedAt: r.updated_at,
+    };
+}
+function rowToMemoryAuthorityEvent(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        memoryId: r.memory_id,
+        eventType: r.event_type,
+        source: r.source,
+        turnId: r.turn_id,
+        routeId: r.route_id,
+        evidenceId: r.evidence_id,
+        oldValue: r.old_value,
+        newValue: r.new_value,
+        reason: r.reason,
+        createdAt: r.created_at,
     };
 }
 function rowToInjection(r) {

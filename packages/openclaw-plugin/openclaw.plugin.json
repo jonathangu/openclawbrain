@@ -1,8 +1,8 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.21",
-  "description": "Aggressive-but-safe local memory graph for OpenClaw: conservative retrieval, audited capture, strict scoped storage, bounded injection, and SQLite proof surfaces.",
+  "version": "0.2.22",
+  "description": "Aggressive-but-safe local memory graph for OpenClaw: learned routing, Memory Authority resolution, audited capture, tombstone-aware forgetting, bounded injection, and SQLite proof surfaces.",
   "kind": "memory",
   "activation": {
     "onStartup": true
@@ -818,7 +818,7 @@
     },
     "capture.mode": {
       "label": "Capture Mode",
-              "help": "v0.2.21 defaults to aggressive capture consideration. This evaluates durable instructions broadly while strict validators still decide what can be stored."
+              "help": "v0.2.22 defaults to aggressive capture consideration and Memory Authority resolution. This evaluates durable instructions broadly while strict validators decide what can be stored and whether retrieved memories can influence a turn."
     },
     "routing.maxInjectedMemories": {
       "label": "Max Injected Memories",
@@ -830,7 +830,7 @@
     },
     "memory": {
       "label": "Aggressive Memory Policy",
-      "help": "Separates retrieval from capture; stores only distilled, scoped, safe memories; recall values disclose only on explicit request."
+      "help": "Separates retrieval from authority, and authority from capture; stores only distilled, scoped, safe memories; recall values disclose only on explicit request."
     },
     "memory.sensitiveRecall": {
       "label": "Sensitive Recall Rules",

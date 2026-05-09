@@ -23,4 +23,7 @@ export declare class MemoryOperationApplier {
     private applyDeleteOrSuppress;
     private isSafeToStore;
     private upsertCandidate;
+    private canonicalExistingMemory;
+    private createMemory;
+    private isBlockedByTombstone;
 }

@@ -1,4 +1,4 @@
-import { redactText } from './redact.js';
+import { redactText, shortHash } from './redact.js';
 import { captureStoreThreshold, classifySensitiveValue } from './capture-intent.js';
 import { scopeContextFromPacket } from './scope.js';
 export class MemoryOperationApplier {
@@ -31,6 +31,11 @@ export class MemoryOperationApplier {
                 if (!this.isSafeToStore(candidate)) {
                     rejectedCandidates += 1;
                     rejectionReasons.push(candidate.type === 'recall_rule' ? 'recall_rule_missing_explicit_authorization' : 'sensitive_secret_blocked');
+                    continue;
+                }
+                if (this.isBlockedByTombstone(candidate, packet)) {
+                    rejectedCandidates += 1;
+                    rejectionReasons.push('tombstoned_memory_blocked');
                     continue;
                 }
                 const node = this.upsertCandidate(candidate, packet);
@@ -80,10 +85,25 @@ export class MemoryOperationApplier {
     }
     applyDeleteOrSuppress(packet) {
         const query = deletionQuery(packet.latestUserMessageRedacted || '');
-        const matches = this.store.searchMemories(query, packet.agentId, { limit: 10, scopeContext: scopeContextFromPacket(packet) });
-        for (const memory of matches)
-            this.store.softDeleteMemory(memory.id);
-        return matches.length;
+        const scopeContext = scopeContextFromPacket(packet);
+        const matches = this.store.searchMemories(query, packet.agentId, { limit: 10, scopeContext });
+        const finalMatches = matches.length > 0
+            ? matches
+            : this.store.listMemories(packet.agentId, { limit: 50, scopeContext }).filter((memory) => deletionQueryMatchesMemory(query, memory));
+        const tombstone = shouldCreateTombstone(packet.latestUserMessageRedacted || '');
+        for (const memory of finalMatches) {
+            if (tombstone) {
+                this.store.tombstoneMemory(memory.id, {
+                    reason: 'user_requested_forget_or_do_not_store',
+                    redactContent: shouldRedactTombstone(packet.latestUserMessageRedacted || '', memory.content),
+                    source: packet.sourceHook || 'delete_or_suppress',
+                });
+            }
+            else {
+                this.store.softDeleteMemory(memory.id);
+            }
+        }
+        return finalMatches.length;
     }
     isSafeToStore(candidate) {
         const risk = classifySensitiveValue(`${candidate.distilledText} ${candidate.positive ?? ''}`, candidate.type === 'recall_rule' ? 'recall_rule' : undefined);
@@ -100,22 +120,77 @@ export class MemoryOperationApplier {
         return true;
     }
     upsertCandidate(candidate, packet) {
-        const existing = this.store.findMemoryByNormalizedKey(packet.agentId, candidate.normalizedKey, candidate.scope.kind, candidate.scope.key);
-        if (existing) {
+        const existing = this.canonicalExistingMemory(candidate, packet);
+        if (existing && sameMemoryContent(existing, candidate)) {
             const mergedTags = [...new Set([...(existing.tags || []), ...(candidate.tags || [])])];
-            return this.store.updateMemory(existing.id, {
-                content: redactText(candidate.distilledText, 2000),
-                positive: candidate.positive ? redactText(candidate.positive, 500) : undefined,
-                negative: candidate.negative ? redactText(candidate.negative, 500) : undefined,
+            const updated = this.store.updateMemory(existing.id, {
                 tags: mergedTags,
                 importance: Math.max(existing.importance, clamp01(candidate.importanceHint)),
                 confidence: Math.max(existing.confidence, clamp01(candidate.confidence)),
+                freshness: Math.max(existing.freshness, 0.85),
                 captureCount: existing.captureCount + 1,
                 lastSeenAt: new Date().toISOString(),
                 sourceHook: packet.sourceHook,
                 sourceTurnId: packet.turnId,
                 sourceSessionId: packet.sessionId,
             }) || existing;
+            this.store.patchMemoryValidity(updated.id, {
+                evidenceConfidence: Math.max(updated.confidence, clamp01(candidate.confidence)),
+                currentValidityScore: Math.max(updated.freshness, 0.85),
+                behavioralAuthorityScore: Math.max(this.store.getMemoryValidity(updated.id)?.behavioralAuthorityScore ?? 0.85, 0.85),
+                stateReason: 'reinforced_same_key_same_value',
+            });
+            this.store.insertMemoryAuthorityEvent({
+                agentId: packet.agentId,
+                memoryId: updated.id,
+                eventType: 'reinforced',
+                source: packet.sourceHook || 'memory_operation',
+                turnId: packet.turnId,
+                evidenceId: String(packet.metadata.promptHash || ''),
+                reason: 'same_key_same_value',
+            });
+            return updated;
+        }
+        if (existing) {
+            const replacement = this.createMemory(candidate, packet, revisionKey(candidate.normalizedKey, candidate.distilledText));
+            this.store.supersedeMemory(existing.id, replacement.id);
+            this.store.upsertEdge(packet.agentId, existing.id, replacement.id, 'supersedes');
+            this.store.insertMemoryAuthorityEvent({
+                agentId: packet.agentId,
+                memoryId: replacement.id,
+                eventType: 'captured',
+                source: packet.sourceHook || 'memory_operation',
+                turnId: packet.turnId,
+                evidenceId: String(packet.metadata.promptHash || ''),
+                oldValue: existing.content,
+                newValue: replacement.content,
+                reason: 'same_key_changed_value_revision',
+            });
+            return replacement;
+        }
+        return this.createMemory(candidate, packet);
+    }
+    canonicalExistingMemory(candidate, packet) {
+        let existing = this.store.findMemoryByNormalizedKey(packet.agentId, candidate.normalizedKey, candidate.scope.kind, candidate.scope.key);
+        const seen = new Set();
+        while (existing?.supersededBy && !seen.has(existing.id)) {
+            seen.add(existing.id);
+            const next = this.store.getMemory(existing.supersededBy);
+            if (!next || next.deletedAt)
+                break;
+            existing = next;
+        }
+        return existing;
+    }
+    createMemory(candidate, packet, normalizedKey = candidate.normalizedKey) {
+        const existingRevision = this.store.findMemoryByNormalizedKey(packet.agentId, normalizedKey, candidate.scope.kind, candidate.scope.key);
+        if (existingRevision) {
+            return this.store.updateMemory(existingRevision.id, {
+                captureCount: existingRevision.captureCount + 1,
+                lastSeenAt: new Date().toISOString(),
+                importance: Math.max(existingRevision.importance, clamp01(candidate.importanceHint)),
+                confidence: Math.max(existingRevision.confidence, clamp01(candidate.confidence)),
+            }) || existingRevision;
         }
         return this.store.insertMemory({
             agentId: packet.agentId,
@@ -125,7 +200,7 @@ export class MemoryOperationApplier {
             negative: candidate.negative ? redactText(candidate.negative, 500) : undefined,
             scopeKind: candidate.scope.kind,
             scopeKey: candidate.scope.key,
-            normalizedKey: candidate.normalizedKey,
+            normalizedKey,
             tags: candidate.tags,
             importance: clamp01(candidate.importanceHint),
             freshness: 1,
@@ -143,6 +218,15 @@ export class MemoryOperationApplier {
             sourceSessionId: packet.sessionId,
         });
     }
+    isBlockedByTombstone(candidate, packet) {
+        const existing = this.store.findMemoryByNormalizedKeyAny(packet.agentId, candidate.normalizedKey, candidate.scope.kind, candidate.scope.key);
+        if (!existing)
+            return false;
+        const validity = this.store.getMemoryValidity(existing.id);
+        return validity?.retentionState === 'tombstoned'
+            || validity?.privacyClass === 'do_not_restore'
+            || validity?.behavioralAvailability === 'never_use' && validity?.stateReason?.includes('tombstone');
+    }
 }
 function deletionQuery(text) {
     return text
@@ -155,4 +239,30 @@ function clamp01(value) {
     if (!Number.isFinite(value))
         return 0;
     return Math.max(0, Math.min(1, value));
+}
+function sameMemoryContent(existing, candidate) {
+    return normalizeMemoryText(existing.content) === normalizeMemoryText(candidate.distilledText)
+        && normalizeMemoryText(existing.positive || '') === normalizeMemoryText(candidate.positive || '')
+        && normalizeMemoryText(existing.negative || '') === normalizeMemoryText(candidate.negative || '');
+}
+function normalizeMemoryText(value) {
+    return redactText(value || '', 2000).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+function revisionKey(normalizedKey, content) {
+    return `${normalizedKey}:rev:${shortHash(content)}`;
+}
+function shouldCreateTombstone(text) {
+    return /\b(do not store|don't store|never store|do not remember|don't remember|tombstone|hard delete|codeword|passphrase|secret|password|token)\b/i.test(text);
+}
+function shouldRedactTombstone(requestText, memoryText) {
+    return /\b(codeword|passphrase|secret|password|token|api key|private key)\b/i.test(`${requestText} ${memoryText}`);
+}
+function deletionQueryMatchesMemory(query, memory) {
+    const tokens = query.toLowerCase().match(/[a-z][a-z0-9_-]{2,}/g) || [];
+    const meaningful = tokens.filter((token) => !new Set(['anymore', 'memory', 'rule', 'old', 'this', 'that', 'the']).has(token));
+    if (meaningful.length === 0)
+        return false;
+    const haystack = `${memory.content} ${memory.normalizedKey} ${(memory.tags || []).join(' ')}`.toLowerCase();
+    const hits = meaningful.filter((token) => haystack.includes(token)).length;
+    return hits >= Math.min(2, meaningful.length);
 }

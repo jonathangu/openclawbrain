@@ -76,6 +76,13 @@ export declare function graphPayload(config: any, agentId: string, limit?: numbe
         importance: number;
         confidence: number;
         supersededBy: string | null;
+        validity: import("./memory-types.js").MemoryValidity | null;
+        authorityEvents: {
+            eventType: import("./memory-types.js").MemoryAuthorityEventType;
+            source: string;
+            reason: string | null;
+            createdAt: string;
+        }[];
     }[];
     edges: any[];
 };
@@ -171,6 +178,12 @@ export declare function explainLastPayload(config: any, agentId: string, turnId?
             maxDepth: number;
         };
     } | null;
+    authority: {
+        memoryId: string;
+        eventType: import("./memory-types.js").MemoryAuthorityEventType;
+        reason: string | null;
+        createdAt: string;
+    }[];
     teacher: {
         id: string;
         verdict: import("./memory-types.js").RouteTeacherVerdict;

@@ -8,13 +8,13 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 ![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and injected context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-`0.2.21` makes `route-policy-v3` the production route brain: active v3 snapshots route first, abstention is a first-class production decision, and `route-policy-v2`/heuristics are explicit fallback or rollback paths. The product claim is no longer just "remember useful facts." It is: learn a compact, inspectable route function that decides when memory should matter.
+`0.2.22` adds the Memory Authority layer: retrieval now separates semantic relevance from whether a memory still has authority in the current turn. `route-policy-v3` remains the production route brain, but candidate memories pass through authority resolution before prompt injection: current, scoped, safe, non-superseded memories can be injected; stale workflow facts can ask for verification; soft preferences can become weak context; tombstoned or private memories stay out.
 
 ## Short version
 
 An agent should not remember everything all the time. It should learn when memory actually matters.
 
-OpenClawBrain turns corrections, accepted or rejected help, route misses, tool outcomes, and handoff decisions into local evidence. A teacher distills that evidence into redacted route frames. Candidate policies are tested in shadow, replayed against eval cases, calibrated by action family, then promoted only when deterministic gates pass. At runtime, the active `route-policy-v3` route_fn either injects a small relevant context slice or abstains and keeps the prompt clean.
+OpenClawBrain turns corrections, accepted or rejected help, route misses, tool outcomes, and handoff decisions into local evidence. A teacher distills that evidence into redacted route frames. Candidate policies are tested in shadow, replayed against eval cases, calibrated by action family, then promoted only when deterministic gates pass. At runtime, the active `route-policy-v3` route_fn decides whether memory should participate; the Memory Authority resolver decides whether each retrieved memory is authorized, current, applicable, and safe enough to influence the turn.
 
 The trust boundary is the spine:
 
@@ -29,6 +29,7 @@ feedback and outcomes
   -> shadow decisions and replay cases
   -> calibrated candidate snapshots
   -> active route-policy-v3 route_fn
+  -> memory authority resolution
   -> bounded context injection or abstention
 ```
 
@@ -46,7 +47,7 @@ Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
 
 Install/upgrade if you already run OpenClaw:
-openclaw plugins install clawhub:openclawbrain@0.2.21 --force
+openclaw plugins install clawhub:openclawbrain@0.2.22 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -56,7 +57,7 @@ openclaw gateway restart
 Requires OpenClaw `2026.5.2` or later. Use the same command for a fresh install or an upgrade; `--force` is safe when replacing an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.21 --force
+openclaw plugins install clawhub:openclawbrain@0.2.22 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -64,9 +65,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.21.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.21/openclawbrain-0.2.21.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.21.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.22.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.22/openclawbrain-0.2.22.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.22.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -194,7 +195,8 @@ before_prompt_build
   → redact current turn
   → route_fn decides whether memory should participate
   → SQLite FTS + graph search finds candidates
-  → context selector chooses a small set
+  → memory authority resolver separates relevance from authority
+  → context selector chooses a small authorized set
   → inject bounded prompt context
 
 agent_end / after_tool_call
@@ -207,7 +209,7 @@ agent_end / after_tool_call
   → structured route-policy-v2/v3 snapshots update deterministic route_fn
 ```
 
-The graph stores scoped memory nodes and edges: corrections, preferences, workflows, context, route examples, outcomes, and superseded facts.
+The graph stores scoped memory nodes and edges: corrections, preferences, workflows, context, route examples, outcomes, and superseded facts. The authority layer adds side tables for validity and authority events so `/graph` and `/explain-last` can show not only what matched, but why it was injected, weakened, verified, confirmed, suppressed, superseded, or withheld.
 
 ## Privacy and safety
 
@@ -215,6 +217,7 @@ The graph stores scoped memory nodes and edges: corrections, preferences, workfl
 - Raw transcript upload is hard-disabled
 - Redaction happens before storage and before model use
 - The model does not write directly to memory
+- Relevance is not authority: stale, superseded, private, tombstoned, or locally overridden memories are not silently obeyed
 - SQLite stores the graph and evidence locally
 - Plugin failure should not block the main agent
 
@@ -224,6 +227,7 @@ The graph stores scoped memory nodes and edges: corrections, preferences, workfl
 - [Proof](https://openclawbrain.ai/proof/)
 - [How it works](https://openclawbrain.ai/how-it-works/)
 - [Ultimate guide](docs/ULTIMATE_GUIDE.md)
+- [Memory Authority design](docs/MEMORY_STALENESS_DECAY_AND_FORGETTING.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Canonical route-fn learning system master plan](docs/ROUTE_FN_LEARNING_SYSTEM_MASTER_PLAN.md)
 - [Vision](VISION.md)
