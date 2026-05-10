@@ -1,12 +1,14 @@
 # OpenClaw Codex Continuity Bridge Operator Guide
 
-Status: implemented in the local OpenClaw `codex` bundled plugin.
+Status: prototype implemented once in a local OpenClaw `codex` bundled plugin branch; durable deployment should move to an OpenClawBrain-owned external plugin/tool package.
 
 ## Product Contract
 
 Codex UI remains the high-bandwidth coding workbench. OpenClaw and Telegram are the low-bandwidth operator surface. OpenClawBrain is the authority layer that decides what state matters, what should stay quiet, and what should become durable memory.
 
 The bridge is intentionally not a second coding UI. It exposes concise status, explicit watched completion notifications, evidence-separated handoff briefs, and a gated write path that is disabled by default.
+
+The bridge must not require Jonathan's personal OpenClaw checkout to carry local core edits. Personal OpenClaw should stay stock/upstream-trackable so it can be upgraded freely.
 
 ## Operator Workflow
 
@@ -18,7 +20,7 @@ The bridge is intentionally not a second coding UI. It exposes concise status, e
 
 ## API Routes
 
-All routes are registered by the Codex plugin and require gateway authentication.
+Prototype routes were registered by the bundled Codex plugin and require gateway authentication. The target implementation should expose equivalent routes from an OpenClawBrain-owned plugin or companion service.
 
 - `GET /codex/status`
 - `GET /codex/threads`
@@ -62,7 +64,7 @@ SQLite is read-only fallback only. It is never used as a write path.
 Example disabled-by-default config:
 
 ```toml
-[plugins.entries.codex.config.codexBridge]
+[plugins.entries.openclawbrain-codex-bridge.config]
 enabled = true
 notifyChannel = "telegram"
 notifyTarget = "<telegram-chat-id>"
@@ -75,7 +77,7 @@ confirmedWriteMethods = []
 Example future write-mode config:
 
 ```toml
-[plugins.entries.codex.config.codexBridge]
+[plugins.entries.openclawbrain-codex-bridge.config]
 enabled = true
 notifyChannel = "telegram"
 notifyTarget = "<telegram-chat-id>"
@@ -116,3 +118,4 @@ Current explicit instruction still overrides these durable defaults.
 - Telegram account compromise is still a remote-control risk; high-risk actions should require local Mac approval before write mode is enabled.
 - The bridge does not independently verify Codex claims unless it observes supporting evidence.
 - Live notification delivery depends on the OpenClaw gateway/plugin service being loaded and the Telegram outbound adapter being healthy.
+- If a future feature truly needs a new OpenClaw host capability, ship it through a small upstream PR; do not block the personal bridge workflow on a long-lived OpenClaw fork.

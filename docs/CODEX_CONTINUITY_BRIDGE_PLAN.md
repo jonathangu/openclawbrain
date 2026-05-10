@@ -135,9 +135,9 @@ Observed on the Mac mini:
 
 This is enough to build read-only awareness and watched completion notifications. It is not yet enough to safely build Telegram-to-Codex control.
 
-## Deployment And Permission Constraint
+## Deployment And Upgrade Constraint
 
-Important constraint discovered during cleanup:
+Important constraints discovered during cleanup:
 
 Jonathan's current GitHub credentials can push to Jonathan-owned repos and forks, including:
 
@@ -146,22 +146,28 @@ Jonathan's current GitHub credentials can push to Jonathan-owned repos and forks
 
 They cannot directly push, merge, or enable auto-merge on upstream `openclaw/openclaw` branches such as `main`, `master`, or `release/2026.5.7`.
 
-That means the bridge plan must not assume "edit OpenClaw master and deploy." The safe deployment model is:
+Jonathan's personal OpenClaw install should also stay easy to upgrade to the latest upstream OpenClaw. It should not require a long-lived OpenClaw fork, local core edits, stashes, or rebases just to keep the Codex continuity bridge working.
 
-1. Implement OpenClaw changes locally.
-2. Push them to Jonathan's writable fork.
-3. Open a PR against upstream `openclaw/openclaw`.
-4. Treat upstream merge as maintainer-owned.
-5. Keep OpenClawBrain docs and Jonathan-owned site/docs repos directly publishable by Jonathan's credentials.
+That means the bridge plan must not assume "edit OpenClaw master and deploy." It also should not assume "run a forked OpenClaw forever." The safe deployment model is:
+
+1. Keep `/Users/guclaw/openclaw` on a clean upstream-tracking OpenClaw branch.
+2. Put Codex continuity code in an OpenClawBrain-owned external plugin/tool package.
+3. Install or update that plugin through normal OpenClaw extension/plugin configuration.
+4. Use a fork/PR against upstream OpenClaw only when a small host capability is truly missing.
+5. Treat upstream OpenClaw merge as maintainer-owned and optional, not required for Jonathan's local workflow.
+6. Keep OpenClawBrain docs and Jonathan-owned site/docs/tool repos directly publishable by Jonathan's credentials.
 
 Operationally, OpenClawBrain should remember:
 
 - OpenClaw upstream is not directly writable from this environment.
-- Fork branches and PRs are the correct path for OpenClaw code changes.
+- Jonathan's personal OpenClaw checkout should remain stock/upstream-trackable.
+- Local OpenClaw core edits are prototype/reference only, not the product deployment path.
+- OpenClawBrain-owned tools/plugins are the correct path for controlled shipping.
+- Fork branches and PRs are the fallback path for OpenClaw host changes.
 - Do not promise an upstream OpenClaw merge unless a maintainer with permission has merged it.
-- Local installs can still use the fork/local checkout before upstream merge.
+- Do not make the local OpenClaw upgrade path depend on stashing or rebasing bridge edits.
 
-The Codex Continuity Bridge can be built and proven locally, and it can be packaged as a PR, but "merged to OpenClaw master" is outside this agent's current authority.
+The Codex Continuity Bridge can be prototyped against OpenClaw internals, and the prototype can be packaged as a PR, but the durable product should live under OpenClawBrain control. "Merged to OpenClaw master" is outside this agent's current authority and should not be required for Jonathan to use the bridge.
 
 ## MVP Definition
 
@@ -222,9 +228,9 @@ flowchart LR
   Brain --> Bridge
 ```
 
-The bridge should be implemented as an OpenClaw plugin/service, separate from OpenClawBrain.
+The bridge should be implemented as an OpenClawBrain-owned external OpenClaw plugin/service or companion tool package, not as a patch to OpenClaw core.
 
-OpenClawBrain stores policies and durable memories. The bridge stores transient event/watch state.
+OpenClawBrain stores policies and durable memories. The bridge stores transient event/watch state. OpenClaw provides the host runtime, command ingress, and Telegram transport, but should remain stock and easy to upgrade.
 
 ## Read-Only Protocol Compatibility Strategy
 
@@ -872,7 +878,7 @@ Deliverable:
 
 ### Phase 1A: Read-Only Snapshot
 
-Build bridge plugin:
+Build bridge plugin under OpenClawBrain ownership:
 
 - app-server client
 - protocol capability map
@@ -880,6 +886,7 @@ Build bridge plugin:
 - `GET /codex/status`
 - `GET /codex/threads`
 - Telegram status command
+- install/update path that does not modify OpenClaw core
 
 Tests:
 
