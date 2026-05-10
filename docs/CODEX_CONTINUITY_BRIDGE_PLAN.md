@@ -135,6 +135,34 @@ Observed on the Mac mini:
 
 This is enough to build read-only awareness and watched completion notifications. It is not yet enough to safely build Telegram-to-Codex control.
 
+## Deployment And Permission Constraint
+
+Important constraint discovered during cleanup:
+
+Jonathan's current GitHub credentials can push to Jonathan-owned repos and forks, including:
+
+- `jonathangu/openclawbrain`
+- `jonathangu/opencormorant`
+
+They cannot directly push, merge, or enable auto-merge on upstream `openclaw/openclaw` branches such as `main`, `master`, or `release/2026.5.7`.
+
+That means the bridge plan must not assume "edit OpenClaw master and deploy." The safe deployment model is:
+
+1. Implement OpenClaw changes locally.
+2. Push them to Jonathan's writable fork.
+3. Open a PR against upstream `openclaw/openclaw`.
+4. Treat upstream merge as maintainer-owned.
+5. Keep OpenClawBrain docs and Jonathan-owned site/docs repos directly publishable by Jonathan's credentials.
+
+Operationally, OpenClawBrain should remember:
+
+- OpenClaw upstream is not directly writable from this environment.
+- Fork branches and PRs are the correct path for OpenClaw code changes.
+- Do not promise an upstream OpenClaw merge unless a maintainer with permission has merged it.
+- Local installs can still use the fork/local checkout before upstream merge.
+
+The Codex Continuity Bridge can be built and proven locally, and it can be packaged as a PR, but "merged to OpenClaw master" is outside this agent's current authority.
+
 ## MVP Definition
 
 The MVP should be split into two milestones.
