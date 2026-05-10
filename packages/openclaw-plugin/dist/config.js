@@ -2,7 +2,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { safeString } from './redact.js';
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.26';
+export const PLUGIN_VERSION = '0.2.27';
 export const DEFAULT_CONFIG = Object.freeze({
     enabled: true,
     mode: 'balanced',
