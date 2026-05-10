@@ -124,4 +124,10 @@ pnpm install:local-openclaw
 openclaw gateway restart
 ```
 
-That copies the built plugin into `~/.openclaw/extensions/openclawbrain` and updates `~/.openclaw/plugins/installs.json`. It does not edit `/Users/guclaw/openclaw`.
+That copies the built plugin into `~/.openclaw/extensions/openclawbrain`, installs runtime dependencies inside the extension directory, and updates `~/.openclaw/plugins/installs.json`. It does not edit `/Users/guclaw/openclaw`.
+
+To update every local OpenClaw home that already has OpenClawBrain installed:
+
+```bash
+pnpm install:local-openclaw:all
+```

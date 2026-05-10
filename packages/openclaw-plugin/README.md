@@ -138,6 +138,12 @@ pnpm install:local-openclaw
 openclaw gateway restart
 ```
 
+To update every local OpenClaw home that already has OpenClawBrain installed, use:
+
+```bash
+pnpm install:local-openclaw:all
+```
+
 ## What you can inspect
 
 | Endpoint | What it shows |
