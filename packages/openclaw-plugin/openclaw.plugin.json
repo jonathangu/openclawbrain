@@ -1,8 +1,8 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.22",
-  "description": "Aggressive-but-safe local memory graph for OpenClaw: learned routing, Memory Authority resolution, audited capture, tombstone-aware forgetting, bounded injection, and SQLite proof surfaces.",
+  "version": "0.2.23",
+  "description": "Aggressive-but-safe local memory graph for OpenClaw: learned routing, Memory Authority resolution, audited capture, tombstone-aware forgetting, bounded memory context, and SQLite proof surfaces.",
   "kind": "memory",
   "activation": {
     "onStartup": true
@@ -818,7 +818,7 @@
     },
     "capture.mode": {
       "label": "Capture Mode",
-              "help": "v0.2.22 defaults to aggressive capture consideration and Memory Authority resolution. This evaluates durable instructions broadly while strict validators decide what can be stored and whether retrieved memories can influence a turn."
+              "help": "v0.2.23 defaults to aggressive capture consideration and Memory Authority resolution. This evaluates durable memory candidates broadly while strict validators decide what can be stored and whether retrieved memories can influence a turn."
     },
     "routing.maxInjectedMemories": {
       "label": "Max Injected Memories",
@@ -826,7 +826,7 @@
     },
     "routing.maxInjectedChars": {
       "label": "Max Injected Characters",
-      "help": "Default 2500: injected context remains sparse and relevance-gated."
+      "help": "Default 2500: memory context remains sparse and relevance-gated."
     },
     "memory": {
       "label": "Aggressive Memory Policy",

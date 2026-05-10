@@ -6,9 +6,9 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 > **LLM decides semantic meaning. Code enforces trust boundaries. SQLite stores the graph and evidence.**
 
-![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and injected context.](docs/assets/openclawbrain-memory-graph.jpg)
+![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and bounded memory context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-`0.2.22` adds the Memory Authority layer: retrieval now separates semantic relevance from whether a memory still has authority in the current turn. `route-policy-v3` remains the production route brain, but candidate memories pass through authority resolution before prompt injection: current, scoped, safe, non-superseded memories can be injected; stale workflow facts can ask for verification; soft preferences can become weak context; tombstoned or private memories stay out.
+`0.2.23` keeps the Memory Authority layer: retrieval now separates semantic relevance from whether a memory still has authority in the current turn. `route-policy-v3` remains the production route brain, but candidate memories pass through authority resolution before any memory context is attached: current, scoped, safe, non-superseded memories can be used; stale workflow facts can ask for verification; soft preferences can become weak context; tombstoned or private memories stay out.
 
 ## Short version
 
@@ -30,7 +30,7 @@ feedback and outcomes
   -> calibrated candidate snapshots
   -> active route-policy-v3 route_fn
   -> memory authority resolution
-  -> bounded context injection or abstention
+  -> bounded memory context or abstention
 ```
 
 ## Shareable blurb
@@ -47,7 +47,7 @@ Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
 
 Install/upgrade if you already run OpenClaw:
-openclaw plugins install clawhub:openclawbrain@0.2.22 --force
+openclaw plugins install clawhub:openclawbrain@0.2.23 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -57,7 +57,7 @@ openclaw gateway restart
 Requires OpenClaw `2026.5.2` or later. Use the same command for a fresh install or an upgrade; `--force` is safe when replacing an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.22 --force
+openclaw plugins install clawhub:openclawbrain@0.2.23 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -65,9 +65,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.22.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.22/openclawbrain-0.2.22.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.22.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.23.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.23/openclawbrain-0.2.23.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.23.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -120,7 +120,7 @@ Relevant memory:
 </openclawbrain_context>
 ```
 
-That is the product claim: capture a durable correction, retrieve it later, inject it inside budget, and leave proof behind.
+That is the product claim: capture a durable correction, retrieve it later, attach only the relevant bounded context, and leave proof behind.
 
 ## Configuration
 
@@ -157,7 +157,7 @@ openclaw config validate
 openclaw gateway restart
 ```
 
-If local model calls are unavailable, the main agent keeps working. Known memories can still be searched and injected; background learning gets quieter or retries later.
+If local model calls are unavailable, the main agent keeps working. Known memories can still be searched and used as bounded context; background learning gets quieter or retries later.
 
 ### Multiple agents
 
@@ -176,7 +176,7 @@ Use your real agent ids. Single-agent installs can skip this.
 |---|---|
 | `/plugins/openclawbrain/status` | whether the plugin is enabled, loaded, and how the runtime is behaving |
 | `/plugins/openclawbrain/doctor` | SQLite + FTS health under the current Node runtime |
-| `/plugins/openclawbrain/proof?limit=20` | recent redacted proof, route, and injection events |
+| `/plugins/openclawbrain/proof?limit=20` | recent redacted proof, route, and memory-context events |
 | `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
 | `/plugins/openclawbrain/graph?limit=50` | redacted memory nodes and memory edges |
 | `/plugins/openclawbrain/learn?limit=50` | route examples and current learning state |
@@ -197,7 +197,7 @@ before_prompt_build
   → SQLite FTS + graph search finds candidates
   → memory authority resolver separates relevance from authority
   → context selector chooses a small authorized set
-  → inject bounded prompt context
+  → attach bounded memory context
 
 agent_end / after_tool_call
   → distill durable feedback
@@ -209,7 +209,7 @@ agent_end / after_tool_call
   → structured route-policy-v2/v3 snapshots update deterministic route_fn
 ```
 
-The graph stores scoped memory nodes and edges: corrections, preferences, workflows, context, route examples, outcomes, and superseded facts. The authority layer adds side tables for validity and authority events so `/graph` and `/explain-last` can show not only what matched, but why it was injected, weakened, verified, confirmed, suppressed, superseded, or withheld.
+The graph stores scoped memory nodes and edges: corrections, preferences, workflows, context, route examples, outcomes, and superseded facts. The authority layer adds side tables for validity and authority events so `/graph` and `/explain-last` can show not only what matched, but why it was attached, weakened, verified, confirmed, suppressed, superseded, or withheld.
 
 ## Privacy and safety
 

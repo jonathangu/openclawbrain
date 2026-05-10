@@ -13,8 +13,8 @@ Imagine an agent that understands “close it out” means evidence, not vibes. 
 ## What it does
 
 - **Remembers durable lessons.** Corrections, preferences, workflows, and context become scoped local memory nodes instead of disappearing at the end of a session.
-- **Keeps prompts small.** It does not dump your whole history into every turn. It retrieves candidates locally and injects only a bounded XML slice when memory is likely to help.
-- **Checks authority before injection.** Retrieved memories can be injected, weakened, verified, confirmed, suppressed, or kept audit-only depending on staleness, scope, privacy, supersession, and current user instructions.
+- **Keeps turn context small.** It does not dump your whole history into every turn. It retrieves candidates locally and attaches only a bounded XML memory slice when memory is likely to help.
+- **Checks authority before use.** Retrieved memories can be attached, weakened, verified, confirmed, suppressed, or kept audit-only depending on staleness, scope, privacy, supersession, and current user guidance.
 - **Stays local-first.** SQLite stores the graph and evidence. FTS5 powers local search. Raw transcript upload is hard-disabled.
 - **Shows its work.** You can check status, run health checks, inspect proof events, search memory, view the graph, and review route decisions.
 - **Learns on the standard local path.** OpenClawBrain points at local Ollama by default. Local models propose structured JSON; code validates, redacts, scopes, thresholds, and writes.
@@ -23,29 +23,29 @@ Imagine an agent that understands “close it out” means evidence, not vibes. 
 
 Most agents are smart but forgetful. They can do good work inside one turn, then make the same mistake again tomorrow.
 
-The usual fix is to keep stuffing more text into the prompt. That works badly. Prompts get bloated, latency goes up, and the agent still lacks accountable memory.
+The usual fix is to stuff more text into every turn. That works badly. Context gets bloated, latency goes up, and the agent still lacks accountable memory.
 
 OpenClawBrain takes a different approach:
 
 1. route first: should memory participate?
 2. search SQLite FTS locally
 3. resolve whether retrieved memories still have authority
-4. rank and inject only a small bounded block
+4. rank and attach only a small bounded memory block
 5. record outcomes so memory can improve
 6. show proof instead of asking for blind trust
 
 ## Current release
 
-- **Current package release:** `0.2.22`
+- **Current package release:** `0.2.23`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.5.2` or later
-- **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded prompt injection
-- **Current loop:** first-class OpenClaw memory registration, v3 production route learning, Memory Authority decisions, conservative fallback, aggressive audited capture, strict scoped storage, sparse injection
+- **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded memory context
+- **Current loop:** first-class OpenClaw memory registration, v3 production route learning, Memory Authority decisions, conservative fallback, aggressive audited capture, strict scoped storage, sparse context use
 
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.22
+openclaw plugins install clawhub:openclawbrain@0.2.23
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -53,9 +53,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.22.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.22/openclawbrain-0.2.22.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.22.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.23.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.23/openclawbrain-0.2.23.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.23.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -100,7 +100,7 @@ openclaw config validate
 openclaw gateway restart
 ```
 
-If local model calls are unavailable, the main agent keeps working. Known memories can still be searched and injected; background learning simply gets quieter or retries later.
+If local model calls are unavailable, the main agent keeps working. Known memories can still be searched and used as bounded context; background learning simply gets quieter or retries later.
 
 ## Check that it is live
 
@@ -123,7 +123,7 @@ openclaw doctor
 |---|---|
 | `/plugins/openclawbrain/status` | whether the plugin is enabled, loaded, and how the runtime is behaving |
 | `/plugins/openclawbrain/doctor` | SQLite + FTS health under the current Node runtime |
-| `/plugins/openclawbrain/proof?limit=20` | recent redacted proof, route, and injection events |
+| `/plugins/openclawbrain/proof?limit=20` | recent redacted proof, route, and memory-context events |
 | `/plugins/openclawbrain/graph?limit=50` | redacted memory nodes and memory edges |
 | `/plugins/openclawbrain/learn?limit=50` | route examples and current learning state |
 | `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
@@ -136,7 +136,7 @@ openclaw doctor
 - Raw transcript upload is hard-disabled
 - Redaction happens before storage and before model use
 - The model does not write directly to memory
-- Stale, superseded, private, tombstoned, or locally overridden memories do not silently become instructions
+- Stale, superseded, private, tombstoned, or locally overridden memories do not silently become guidance
 - Plugin failure does not block the main agent
 - Local-first by default
 
