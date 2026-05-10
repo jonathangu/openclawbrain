@@ -36,7 +36,7 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.24`
+- **Current package release:** `0.2.25`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.5.2` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded memory context
@@ -45,7 +45,7 @@ OpenClawBrain takes a different approach:
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.24
+openclaw plugins install clawhub:openclawbrain@0.2.25
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -53,9 +53,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.24.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.24/openclawbrain-0.2.24.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.24.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.25.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.25/openclawbrain-0.2.25.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.25.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -120,7 +120,7 @@ openclaw doctor
 
 ## Codex continuity bridge
 
-`0.2.24` also adds an OpenClawBrain-owned Codex continuity bridge. It does not patch OpenClaw core. It reads local Codex app-server state when available, falls back to read-only Codex SQLite with an explicit stale label, and exposes quiet operator surfaces:
+`0.2.25` also adds an OpenClawBrain-owned Codex continuity bridge. It does not patch OpenClaw core. The public-safe default reads local Codex SQLite in read-only mode with an explicit stale label; host-provided app-server readers can be enabled later without bundling shell/process control inside the package. It exposes quiet operator surfaces:
 
 ```text
 /brain codex status
@@ -156,7 +156,7 @@ pnpm install:local-openclaw:all
 | `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
 | `/plugins/openclawbrain/audit?limit=20` | recent capture/store/reject decisions and rejection distribution |
 | `/plugins/openclawbrain/explain-last` | compact postmortem for the latest route and memory authority decision |
-| `/plugins/openclawbrain/codex/status` | read-only Codex continuity status with app-server or stale SQLite source labeling |
+| `/plugins/openclawbrain/codex/status` | read-only Codex continuity status with stale SQLite source labeling, plus host app-server readers when configured |
 | `/plugins/openclawbrain/codex/threads` | recent local Codex threads and visible goals |
 | `/plugins/openclawbrain/codex/handoff` | evidence-separated Codex handoff brief |
 | `/plugins/openclawbrain/codex/watches` | bridge-local watch registry and redacted audit events |

@@ -1,6 +1,6 @@
 # Getting Started with OpenClawBrain
 
-This is the fastest honest path to a working OpenClawBrain `0.2.24` install.
+This is the fastest honest path to a working OpenClawBrain `0.2.25` install.
 
 ## What you are installing
 
@@ -8,7 +8,7 @@ OpenClawBrain is a native OpenClaw plugin that gives agents local, inspectable m
 
 The production route brain is `route-policy-v3`: a compact learned route function backed by redacted route frames, SQLite evidence, shadow decisions, replay/eval cases, calibration, gated promotion, and rollback lineage.
 
-The 0.2.24 runtime includes Memory Authority resolution and an OpenClawBrain-owned Codex continuity bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The Codex bridge reads local Codex state, exposes quiet Telegram-facing status/watch/handoff commands, and keeps Telegram-to-Codex writes disabled by default.
+The 0.2.25 runtime includes Memory Authority resolution and an OpenClawBrain-owned Codex continuity bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The Codex bridge reads local Codex state, exposes quiet Telegram-facing status/watch/handoff commands, and keeps Telegram-to-Codex writes disabled by default.
 
 ## Before you start
 
@@ -23,16 +23,16 @@ You need:
 Use the same command for a fresh install or an upgrade. `--force` replaces an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.24 --force
+openclaw plugins install clawhub:openclawbrain@0.2.25 --force
 openclaw plugins enable openclawbrain
 ```
 
 If ClawHub metadata is still propagating, install the GitHub release archive:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.24.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.24/openclawbrain-0.2.24.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.24.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.25.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.25/openclawbrain-0.2.25.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.25.tgz --force
 openclaw plugins enable openclawbrain
 ```
 

@@ -1,12 +1,10 @@
-import { spawn } from 'node:child_process';
 import { randomUUID, createHash } from 'node:crypto';
 import { existsSync, mkdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { createInterface } from 'node:readline';
 import { createRequire } from 'node:module';
 import { openDatabase, type DatabaseLike } from './sqlite-driver.js';
-import { clipText, hashText, redactText, safeString } from './redact.js';
+import { clipText, redactText, safeString } from './redact.js';
 
 const require = createRequire(import.meta.url);
 
@@ -158,7 +156,7 @@ export const DEFAULT_CODEX_BRIDGE_CONFIG: CodexBridgeConfig = Object.freeze({
   enabled: true,
   statePaths: Object.freeze(['~/.codex/state_5.sqlite']) as unknown as string[],
   bridgeStatePath: '~/.openclawbrain/activation/${agentId}/codex-continuity.sqlite',
-  preferAppServer: true,
+  preferAppServer: false,
   appServerCommand: 'codex',
   appServerArgs: Object.freeze(['app-server', 'proxy']) as unknown as string[],
   appServerTimeoutMs: 1200,
@@ -186,7 +184,7 @@ export function normalizeCodexBridgeConfig(source: any = {}): CodexBridgeConfig 
     enabled: input.enabled !== false,
     statePaths: statePaths.length ? statePaths : [...DEFAULT_CODEX_BRIDGE_CONFIG.statePaths],
     bridgeStatePath: nonEmptyString(input.bridgeStatePath) || DEFAULT_CODEX_BRIDGE_CONFIG.bridgeStatePath,
-    preferAppServer: input.preferAppServer !== false,
+    preferAppServer: input.preferAppServer === true,
     appServerCommand: nonEmptyString(input.appServerCommand) || DEFAULT_CODEX_BRIDGE_CONFIG.appServerCommand,
     appServerArgs: appServerArgs.length ? appServerArgs : [...DEFAULT_CODEX_BRIDGE_CONFIG.appServerArgs],
     appServerTimeoutMs: clampInteger(input.appServerTimeoutMs, DEFAULT_CODEX_BRIDGE_CONFIG.appServerTimeoutMs, 100, 30000),
@@ -217,10 +215,9 @@ export async function buildCodexBridgeStatus(config: any, agentId = 'main', deps
 
   const errors: string[] = [];
   let appServerAvailable = false;
-  if (bridgeConfig.preferAppServer) {
+  if (bridgeConfig.preferAppServer && deps.appServerReader) {
     try {
-      const reader = deps.appServerReader ?? new CodexProxyAppServerReader(bridgeConfig);
-      const response = await reader.listThreads({ limit: bridgeConfig.maxThreads, timeoutMs: bridgeConfig.appServerTimeoutMs });
+      const response = await deps.appServerReader.listThreads({ limit: bridgeConfig.maxThreads, timeoutMs: bridgeConfig.appServerTimeoutMs });
       const threads = normalizeAppServerThreads(response, deps.nowMs?.() ?? Date.now());
       if (threads.length > 0) {
         appServerAvailable = true;
@@ -240,6 +237,8 @@ export async function buildCodexBridgeStatus(config: any, agentId = 'main', deps
     } catch (error: any) {
       errors.push(`app_server_unavailable:${clipText(String(error?.message || error), 160)}`);
     }
+  } else if (bridgeConfig.preferAppServer) {
+    errors.push('app_server_unavailable:no_host_reader_configured');
   }
 
   const sqlite = readCodexThreadsFromSqlite(bridgeConfig, { limit: bridgeConfig.maxThreads, nowMs: deps.nowMs?.() ?? Date.now() });
@@ -633,72 +632,6 @@ export class CodexBridgeStore {
       CREATE UNIQUE INDEX IF NOT EXISTS idx_codex_bridge_events_dedupe ON codex_bridge_events(agent_id, dedupe_key);
       CREATE INDEX IF NOT EXISTS idx_codex_bridge_events_agent ON codex_bridge_events(agent_id, created_at);
     `);
-  }
-}
-
-class CodexProxyAppServerReader implements CodexAppServerReader {
-  private config: CodexBridgeConfig;
-
-  constructor(config: CodexBridgeConfig) {
-    this.config = config;
-  }
-
-  async listThreads(options: { limit: number; searchTerm?: string; timeoutMs: number }): Promise<unknown> {
-    const client = new OneShotJsonRpcProxy({
-      command: this.config.appServerCommand,
-      args: this.config.appServerArgs,
-      timeoutMs: options.timeoutMs,
-    });
-    try {
-      await client.request('initialize', {
-        clientInfo: { name: 'openclawbrain', title: 'OpenClawBrain Codex Continuity', version: '0.2' },
-        capabilities: { experimentalApi: true },
-      });
-      return await client.request('thread/list', {
-        limit: options.limit,
-        ...(options.searchTerm ? { searchTerm: options.searchTerm } : {}),
-      });
-    } finally {
-      client.close();
-    }
-  }
-}
-
-class OneShotJsonRpcProxy {
-  private child;
-  private timeoutMs: number;
-  private nextId = 1;
-
-  constructor(options: { command: string; args: string[]; timeoutMs: number }) {
-    this.child = spawn(options.command, options.args, { stdio: ['pipe', 'pipe', 'pipe'] });
-    this.timeoutMs = options.timeoutMs;
-  }
-
-  async request(method: string, params?: unknown): Promise<unknown> {
-    const id = this.nextId++;
-    const lineReader = createInterface({ input: this.child.stdout });
-    const timeout = setTimeout(() => {
-      this.child.kill();
-    }, this.timeoutMs);
-    timeout.unref?.();
-    try {
-      this.child.stdin.write(`${JSON.stringify({ id, method, params })}\n`);
-      for await (const line of lineReader) {
-        if (!line.trim()) continue;
-        const parsed = JSON.parse(line);
-        if (parsed.id !== id) continue;
-        if (parsed.error) throw new Error(parsed.error.message || `${method} failed`);
-        return parsed.result;
-      }
-      throw new Error(`${method} returned no response`);
-    } finally {
-      clearTimeout(timeout);
-      lineReader.close();
-    }
-  }
-
-  close() {
-    try { this.child.kill(); } catch { /* ignore */ }
   }
 }
 

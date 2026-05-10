@@ -3,7 +3,7 @@ import path from 'node:path';
 import { safeString } from './redact.js';
 
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.24';
+export const PLUGIN_VERSION = '0.2.25';
 export const DEFAULT_CONFIG: any = Object.freeze({
   enabled: true,
   mode: 'balanced',
@@ -131,7 +131,7 @@ export const DEFAULT_CONFIG: any = Object.freeze({
     enabled: true,
     statePaths: Object.freeze(['~/.codex/state_5.sqlite']),
     bridgeStatePath: '~/.openclawbrain/activation/${agentId}/codex-continuity.sqlite',
-    preferAppServer: true,
+    preferAppServer: false,
     appServerCommand: 'codex',
     appServerArgs: Object.freeze(['app-server', 'proxy']),
     appServerTimeoutMs: 1200,
@@ -321,7 +321,7 @@ function normalizeCodexBridgeConfig(codexBridge: any = {}) {
     enabled: source.enabled !== false,
     statePaths: statePaths.length ? statePaths : [...DEFAULT_CONFIG.codexBridge.statePaths],
     bridgeStatePath: nonEmptyString(source.bridgeStatePath) || DEFAULT_CONFIG.codexBridge.bridgeStatePath,
-    preferAppServer: source.preferAppServer !== false,
+    preferAppServer: source.preferAppServer === true,
     appServerCommand: nonEmptyString(source.appServerCommand) || DEFAULT_CONFIG.codexBridge.appServerCommand,
     appServerArgs: appServerArgs.length ? appServerArgs : [...DEFAULT_CONFIG.codexBridge.appServerArgs],
     appServerTimeoutMs: clampInteger(source.appServerTimeoutMs, DEFAULT_CONFIG.codexBridge.appServerTimeoutMs, 100, 30000),

@@ -98,7 +98,7 @@ Observed on the Mac mini:
 
 - Codex UI is running a native `codex app-server` process.
 - Codex exposes an experimental app-server protocol.
-- Codex has a `codex app-server proxy` command that proxies stdio bytes to the running app-server control socket.
+- Codex has a `codex app-server proxy` command, but the public OpenClawBrain package should not spawn it directly. App-server access should come from a host-provided reader/capability so ClawHub can scan the package without a bundled process-control surface.
 - Codex generated protocol bindings include request methods such as:
   - `initialize`
   - `thread/list`
@@ -240,7 +240,7 @@ Codex app-server is experimental. The bridge must isolate protocol risk.
 
 On startup:
 
-1. Connect through `codex app-server proxy` or a configured Unix socket.
+1. Prefer a host-provided app-server reader/capability when OpenClaw exposes one. Do not bundle direct process spawning in the public package.
 2. Send `initialize`.
 3. Record protocol/server version if available.
 4. Build a capability map:

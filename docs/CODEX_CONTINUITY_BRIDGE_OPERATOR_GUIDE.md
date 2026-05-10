@@ -1,6 +1,6 @@
 # OpenClaw Codex Continuity Bridge Operator Guide
 
-Status: implemented in `openclawbrain@0.2.24` as an OpenClawBrain-owned external plugin surface. The older local OpenClaw bundled-plugin branch is prototype/reference only.
+Status: implemented in `openclawbrain@0.2.25` as an OpenClawBrain-owned external plugin surface. The older local OpenClaw bundled-plugin branch is prototype/reference only.
 
 ## Product Contract
 
@@ -12,7 +12,7 @@ The bridge must not require Jonathan's personal OpenClaw checkout to carry local
 
 ## Operator Workflow
 
-1. From Telegram, ask `/brain codex status` to see whether Codex is active, what the latest thread is, and whether the bridge is reading live app-server state or stale SQLite fallback.
+1. From Telegram, ask `/brain codex status` to see what local Codex threads/goals are visible through the public-safe read-only SQLite fallback, or through a host-provided app-server reader if one is configured later.
 2. Ask `/brain codex threads` to list recent Codex threads with thread ids.
 3. Ask `/brain codex watch <thread-id>` when you want one completion, failure, blocker, approval-needed, or auth-failure notification for a thread.
 4. Ask `/brain codex handoff <thread-id>` when returning to the Mac and wanting a brief that separates observed facts from Codex-reported claims.
@@ -27,7 +27,7 @@ Routes are registered by the `openclawbrain` plugin and require gateway authenti
 - `GET /plugins/openclawbrain/codex/handoff`
 - `GET /plugins/openclawbrain/codex/watches`
 
-The write path is intentionally not exposed as a mutating route in `0.2.24`. `/brain codex goal` and `/brain codex steer` refuse by default.
+The write path is intentionally not exposed as a mutating route in `0.2.25`. `/brain codex goal` and `/brain codex steer` refuse by default.
 
 ## Telegram Commands
 
@@ -108,7 +108,7 @@ Current explicit instruction still overrides these durable defaults.
 
 ## Remaining Risks
 
-- Codex app-server protocol is experimental; the bridge falls back to SQLite and labels that state stale.
+- Codex app-server protocol is experimental; the public package does not spawn app-server proxy processes and instead uses SQLite fallback unless a host app-server reader is explicitly injected later.
 - Thread selection for writes remains conservative and may refuse ambiguous requests.
 - Telegram account compromise is still a remote-control risk; high-risk actions should require local Mac approval before write mode is enabled.
 - The bridge does not independently verify Codex claims unless it observes supporting evidence.

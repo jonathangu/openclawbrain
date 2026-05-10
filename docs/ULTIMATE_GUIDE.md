@@ -8,7 +8,7 @@ The short version is:
 
 > An agent should not remember everything all the time. It should learn when memory actually matters.
 
-The current release, `openclawbrain@0.2.24`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, Memory Authority resolution between retrieval and injection, and now a Codex continuity bridge owned entirely by OpenClawBrain rather than by OpenClaw core.
+The current release, `openclawbrain@0.2.25`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, Memory Authority resolution between retrieval and injection, and now a Codex continuity bridge owned entirely by OpenClawBrain rather than by OpenClaw core.
 
 The most important lesson is not "use a graph." It is:
 
@@ -838,11 +838,11 @@ existing memory. Same-key changed-value captures create lineage instead of
 overwriting history. Sensitive "forget" requests create tombstones so the system
 does not delete a memory and then quietly recapture it later.
 
-## The 0.2.24 Upgrade: Codex Continuity
+## The 0.2.25 Upgrade: Codex Continuity
 
 The practical workflow changed too. Jonathan now uses Codex UI as the high-bandwidth coding workbench and OpenClaw/Telegram as the mobile operator surface. OpenClawBrain should therefore remember the operating context and expose a quiet control plane without turning Telegram into a second coding UI.
 
-The 0.2.24 bridge is deliberately OpenClawBrain-owned:
+The 0.2.25 bridge is deliberately OpenClawBrain-owned:
 
 ```text
 Codex UI does deep local work
@@ -867,7 +867,7 @@ It stores only redacted bridge audit events and durable operating truths. It doe
 Install or upgrade:
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.24 --force
+openclaw plugins install clawhub:openclawbrain@0.2.25 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -910,10 +910,10 @@ You want to see:
 
 ## Current Public Truth
 
-As of `0.2.24`:
+As of `0.2.25`:
 
-- The latest package is `openclawbrain@0.2.24`.
-- The source tag is `v0.2.24`.
+- The latest package is `openclawbrain@0.2.25`.
+- The source tag is `v0.2.25`.
 - The production route brain is route-policy-v3.
 - Memory Authority now separates relevance from authority before injection.
 - v2 and heuristics are fallback/rollback paths.

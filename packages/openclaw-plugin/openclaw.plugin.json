@@ -1,7 +1,7 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.24",
+  "version": "0.2.25",
   "description": "Aggressive-but-safe local memory graph for OpenClaw: learned routing, Memory Authority resolution, audited capture, tombstone-aware forgetting, bounded memory context, and SQLite proof surfaces.",
   "kind": "memory",
   "activation": {
@@ -563,8 +563,12 @@
           },
           "statePaths": {
             "type": "array",
-            "items": { "type": "string" },
-            "default": ["~/.codex/state_5.sqlite"]
+            "items": {
+              "type": "string"
+            },
+            "default": [
+              "~/.codex/state_5.sqlite"
+            ]
           },
           "bridgeStatePath": {
             "type": "string",
@@ -572,7 +576,7 @@
           },
           "preferAppServer": {
             "type": "boolean",
-            "default": true
+            "default": false
           },
           "appServerCommand": {
             "type": "string",
@@ -580,8 +584,13 @@
           },
           "appServerArgs": {
             "type": "array",
-            "items": { "type": "string" },
-            "default": ["app-server", "proxy"]
+            "items": {
+              "type": "string"
+            },
+            "default": [
+              "app-server",
+              "proxy"
+            ]
           },
           "appServerTimeoutMs": {
             "type": "integer",
@@ -613,12 +622,16 @@
           },
           "trustedTelegramSenders": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "default": []
           },
           "repoAllowlist": {
             "type": "array",
-            "items": { "type": "string" },
+            "items": {
+              "type": "string"
+            },
             "default": []
           },
           "notifyChannel": {
@@ -632,11 +645,16 @@
         },
         "default": {
           "enabled": true,
-          "statePaths": ["~/.codex/state_5.sqlite"],
+          "statePaths": [
+            "~/.codex/state_5.sqlite"
+          ],
           "bridgeStatePath": "~/.openclawbrain/activation/${agentId}/codex-continuity.sqlite",
-          "preferAppServer": true,
+          "preferAppServer": false,
           "appServerCommand": "codex",
-          "appServerArgs": ["app-server", "proxy"],
+          "appServerArgs": [
+            "app-server",
+            "proxy"
+          ],
           "appServerTimeoutMs": 1200,
           "staleAfterMs": 600000,
           "maxThreads": 10,
@@ -761,35 +779,154 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "enabled": { "type": "boolean", "default": true },
+              "enabled": {
+                "type": "boolean",
+                "default": true
+              },
               "updateMode": {
                 "type": "string",
-                "enum": ["collect_only", "distill_shadow", "gated_active", "manual_review_required"],
+                "enum": [
+                  "collect_only",
+                  "distill_shadow",
+                  "gated_active",
+                  "manual_review_required"
+                ],
                 "default": "gated_active"
               },
-              "shadowBeforeActivate": { "type": "boolean", "default": false },
-              "activationCooldownMs": { "type": "integer", "minimum": 0, "maximum": 604800000, "default": 0 },
-              "coldStartMinSamples": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 3 },
-              "minFrames": { "type": "integer", "minimum": 1, "maximum": 5000, "default": 3 },
-              "maxSyncPlannerRate": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.1 },
-              "maxHarmRate": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.2 },
-              "explorationAlpha": { "type": "number", "minimum": 0, "maximum": 5, "default": 0.35 },
-              "minRuleConfidence": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.55 },
-              "maxRules": { "type": "integer", "minimum": 1, "maximum": 500, "default": 32 },
-              "maxRulesPerRoute": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 },
-              "maxRuleSignals": { "type": "integer", "minimum": 1, "maximum": 50, "default": 8 },
-              "holdoutFraction": { "type": "number", "minimum": 0.05, "maximum": 0.8, "default": 0.3 },
-              "minHoldoutFrames": { "type": "integer", "minimum": 1, "maximum": 500, "default": 2 },
-              "minRouteThresholdSamples": { "type": "integer", "minimum": 1, "maximum": 100, "default": 3 },
-              "minCalibratedConfidence": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.62 },
-              "abstainMargin": { "type": "number", "minimum": 0, "maximum": 0.5, "default": 0.05 },
-              "calibrationBuckets": { "type": "integer", "minimum": 3, "maximum": 10, "default": 5 },
-              "storeShadowDecisions": { "type": "boolean", "default": true },
-              "maxShadowSnapshots": { "type": "integer", "minimum": 0, "maximum": 20, "default": 3 },
-              "minProjectedImprovement": { "type": "number", "minimum": -1, "maximum": 1, "default": -0.01 },
-              "compactnessMaxDuplicateRate": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.35 },
-              "prototypeRetirementHarmRate": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.7 },
-              "prototypeRetirementMinCount": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 3 }
+              "shadowBeforeActivate": {
+                "type": "boolean",
+                "default": false
+              },
+              "activationCooldownMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 604800000,
+                "default": 0
+              },
+              "coldStartMinSamples": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000,
+                "default": 3
+              },
+              "minFrames": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5000,
+                "default": 3
+              },
+              "maxSyncPlannerRate": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.1
+              },
+              "maxHarmRate": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.2
+              },
+              "explorationAlpha": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 5,
+                "default": 0.35
+              },
+              "minRuleConfidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.55
+              },
+              "maxRules": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 500,
+                "default": 32
+              },
+              "maxRulesPerRoute": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 10
+              },
+              "maxRuleSignals": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 50,
+                "default": 8
+              },
+              "holdoutFraction": {
+                "type": "number",
+                "minimum": 0.05,
+                "maximum": 0.8,
+                "default": 0.3
+              },
+              "minHoldoutFrames": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 500,
+                "default": 2
+              },
+              "minRouteThresholdSamples": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 3
+              },
+              "minCalibratedConfidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.62
+              },
+              "abstainMargin": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 0.5,
+                "default": 0.05
+              },
+              "calibrationBuckets": {
+                "type": "integer",
+                "minimum": 3,
+                "maximum": 10,
+                "default": 5
+              },
+              "storeShadowDecisions": {
+                "type": "boolean",
+                "default": true
+              },
+              "maxShadowSnapshots": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 20,
+                "default": 3
+              },
+              "minProjectedImprovement": {
+                "type": "number",
+                "minimum": -1,
+                "maximum": 1,
+                "default": -0.01
+              },
+              "compactnessMaxDuplicateRate": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.35
+              },
+              "prototypeRetirementHarmRate": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.7
+              },
+              "prototypeRetirementMinCount": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000,
+                "default": 3
+              }
             },
             "default": {
               "enabled": true,
@@ -913,7 +1050,7 @@
     },
     "capture.mode": {
       "label": "Capture Mode",
-              "help": "v0.2.24 defaults to aggressive capture consideration and Memory Authority resolution. This evaluates durable memory candidates broadly while strict validators decide what can be stored and whether retrieved memories can influence a turn."
+      "help": "v0.2.25 defaults to aggressive capture consideration and Memory Authority resolution. This evaluates durable memory candidates broadly while strict validators decide what can be stored and whether retrieved memories can influence a turn."
     },
     "routing.maxInjectedMemories": {
       "label": "Max Injected Memories",
