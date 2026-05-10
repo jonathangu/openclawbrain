@@ -36,7 +36,7 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.25`
+- **Current package release:** `0.2.26`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.5.2` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded memory context
@@ -45,7 +45,7 @@ OpenClawBrain takes a different approach:
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.25
+openclaw plugins install clawhub:openclawbrain@0.2.26
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -53,9 +53,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.25.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.25/openclawbrain-0.2.25.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.25.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.26.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.26/openclawbrain-0.2.26.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.26.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -120,7 +120,7 @@ openclaw doctor
 
 ## Codex continuity bridge
 
-`0.2.25` also adds an OpenClawBrain-owned Codex continuity bridge. It does not patch OpenClaw core. The public-safe default reads local Codex SQLite in read-only mode with an explicit stale label; host-provided app-server readers can be enabled later without bundling shell/process control inside the package. It exposes quiet operator surfaces:
+`0.2.26` also adds an OpenClawBrain-owned Codex continuity bridge. It does not patch OpenClaw core. The public-safe default reads local Codex SQLite in read-only mode with an explicit stale label; host-provided app-server readers can be enabled later without bundling shell/process control inside the package. It exposes quiet operator surfaces:
 
 ```text
 /brain codex status

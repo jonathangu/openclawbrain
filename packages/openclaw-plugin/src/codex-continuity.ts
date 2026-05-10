@@ -2,11 +2,8 @@ import { randomUUID, createHash } from 'node:crypto';
 import { existsSync, mkdirSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { createRequire } from 'node:module';
 import { openDatabase, type DatabaseLike } from './sqlite-driver.js';
 import { clipText, redactText, safeString } from './redact.js';
-
-const require = createRequire(import.meta.url);
 
 export type CodexBridgeSource = 'app_server' | 'sqlite_fallback' | 'none' | 'mock';
 export type CodexBridgeEventClass =
@@ -900,9 +897,7 @@ function rowToEvent(row: any): CodexBridgeEvent {
 }
 
 function openReadOnlyBetterSqlite(filename: string): any {
-  const mod = require('better-sqlite3');
-  const BetterSqlite3 = mod.default || mod;
-  return new BetterSqlite3(filename, { readonly: true, fileMustExist: true });
+  return openDatabase(filename, { readonly: true, fileMustExist: true }).db;
 }
 
 function expandPathTemplate(template: string, agentId: string) {

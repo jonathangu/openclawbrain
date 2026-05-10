@@ -16,5 +16,8 @@ export interface OpenDatabaseResult {
     db: DatabaseLike;
     engine: 'better-sqlite3' | 'node:sqlite';
 }
-export declare function openDatabase(filename: string): OpenDatabaseResult;
+export declare function openDatabase(filename: string, options?: {
+    readonly?: boolean;
+    fileMustExist?: boolean;
+}): OpenDatabaseResult;
 export declare function isNativeBindingFailure(error: any): boolean;

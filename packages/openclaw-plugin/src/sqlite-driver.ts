@@ -21,15 +21,15 @@ export interface OpenDatabaseResult {
 
 const require = createRequire(import.meta.url);
 
-export function openDatabase(filename: string): OpenDatabaseResult {
+export function openDatabase(filename: string, options: { readonly?: boolean; fileMustExist?: boolean } = {}): OpenDatabaseResult {
   try {
     const mod = require('better-sqlite3');
     const BetterSqlite3 = mod.default || mod;
-    return { db: new BetterSqlite3(filename), engine: 'better-sqlite3' };
+    return { db: new BetterSqlite3(filename, { readonly: options.readonly === true, fileMustExist: options.fileMustExist === true }), engine: 'better-sqlite3' };
   } catch (error: any) {
     if (!isNativeBindingFailure(error)) throw error;
     const sqlite = require('node:sqlite');
-    return { db: new NodeSqliteAdapter(new sqlite.DatabaseSync(filename)), engine: 'node:sqlite' };
+    return { db: new NodeSqliteAdapter(new sqlite.DatabaseSync(filename, { readOnly: options.readonly === true, open: true })), engine: 'node:sqlite' };
   }
 }
 
