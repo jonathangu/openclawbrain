@@ -1,8 +1,8 @@
 # Architecture
 
-OpenClawBrain `0.2.22` is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, and injects only bounded context back into the prompt.
+OpenClawBrain `0.2.24` is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, injects only bounded context back into the prompt, and exposes a quiet Codex continuity bridge without patching OpenClaw core.
 
-The 0.2.22 addition is the **Memory Authority** layer. Retrieval can over-include candidates, but a memory is not allowed to influence the turn until authority resolution checks freshness, scope, privacy, supersession, current instructions, validation strategy, and risk.
+The central runtime addition is the **Memory Authority** layer. Retrieval can over-include candidates, but a memory is not allowed to influence the turn until authority resolution checks freshness, scope, privacy, supersession, current instructions, validation strategy, and risk. The Codex continuity bridge applies the same stance to local Codex state: useful status and handoff facts are surfaced, but raw telemetry is not captured as durable memory.
 
 The core invariant is unchanged:
 
@@ -29,6 +29,7 @@ packages/openclaw-plugin/src/
 ├── memory-operations.ts             # validates/applies distillation output
 ├── memory-planner.ts                # bounded planner for ambiguous/high-signal turns
 ├── context-selector.ts              # selects and formats bounded context
+├── codex-continuity.ts              # read-only Codex status/watch/handoff bridge
 ├── learning.ts                      # outcome learning, freshness decay, pruning
 ├── search.ts                        # graph/learn/search payloads + memory supplements
 ├── proof-store.ts                   # proof mirror and status persistence
@@ -115,6 +116,24 @@ This preserves the older activation-file behavior by reading:
 - `tool-guidance.md`
 
 That lane remains for backward compatibility, but it is no longer the product center.
+
+### 3) Codex continuity lane
+
+Used when:
+
+- `config.codexBridge.enabled` is true
+- Jonathan wants Telegram/OpenClaw to be the low-bandwidth operator surface around Codex UI
+- local Codex state is readable through app-server or SQLite fallback
+
+Flow:
+
+1. The bridge tries the Codex app-server first and records a capability map when available.
+2. If app-server is unavailable, it reads Codex SQLite state in read-only mode and labels the result stale.
+3. `/brain codex status`, `/brain codex threads`, `/brain codex watch`, and `/brain codex handoff` expose concise operator views.
+4. Watch processing dedupes terminal events and only notifies completion, failure, blocker, approval-needed, or auth-failure events.
+5. Handoff briefs separate observed facts from Codex-reported claims.
+6. Raw Codex telemetry is not stored as durable OpenClawBrain memory.
+7. Telegram-to-Codex writes remain disabled unless explicitly feature-flagged with trusted sender, repo allowlist, provenance, risk, and confirmation controls.
 
 ## Latency model
 

@@ -2,6 +2,7 @@ export { normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 export { redactText, hashText } from './redact.js';
 export { decidePolicy, classifyTurn } from './policy.js';
 export { readActivationContext } from './context-files.js';
+export { buildCodexBridgeStatus, buildCodexHandoff, CodexBridgeStore, formatCodexStatus, formatCodexThreads, formatHandoffBrief, handleBrainCommand, normalizeCodexBridgeConfig, processCodexBridgeWatches, } from './codex-continuity.js';
 export { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 export { buildStatus } from './status.js';
 export { FakeLlmClient, OllamaNativeLlmClient, OpenAICompatibleLlmClient, isOllamaLoopbackBaseUrl } from './llm-client.js';

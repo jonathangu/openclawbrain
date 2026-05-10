@@ -1,6 +1,6 @@
 # OpenClaw Codex Continuity Bridge Operator Guide
 
-Status: prototype implemented once in a local OpenClaw `codex` bundled plugin branch; durable deployment should move to an OpenClawBrain-owned external plugin/tool package.
+Status: implemented in `openclawbrain@0.2.24` as an OpenClawBrain-owned external plugin surface. The older local OpenClaw bundled-plugin branch is prototype/reference only.
 
 ## Product Contract
 
@@ -12,35 +12,32 @@ The bridge must not require Jonathan's personal OpenClaw checkout to carry local
 
 ## Operator Workflow
 
-1. From Telegram, ask `/codex status` to see whether Codex is active, what the latest thread is, and whether the bridge is reading live app-server state or stale SQLite fallback.
-2. Ask `/codex threads` to list recent Codex threads with thread ids.
-3. Ask `/codex watch <thread-id>` when you want exactly one completion, failure, blocker, approval-needed, or auth-failure notification for a thread.
-4. Ask `/codex handoff <thread-id>` when returning to the Mac and wanting a brief that separates observed facts from Codex-reported claims.
+1. From Telegram, ask `/brain codex status` to see whether Codex is active, what the latest thread is, and whether the bridge is reading live app-server state or stale SQLite fallback.
+2. Ask `/brain codex threads` to list recent Codex threads with thread ids.
+3. Ask `/brain codex watch <thread-id>` when you want one completion, failure, blocker, approval-needed, or auth-failure notification for a thread.
+4. Ask `/brain codex handoff <thread-id>` when returning to the Mac and wanting a brief that separates observed facts from Codex-reported claims.
 5. Keep Telegram-to-Codex writes disabled until repo allowlists, trusted senders, provenance, and app-server write capabilities are explicitly configured.
 
 ## API Routes
 
-Prototype routes were registered by the bundled Codex plugin and require gateway authentication. The target implementation should expose equivalent routes from an OpenClawBrain-owned plugin or companion service.
+Routes are registered by the `openclawbrain` plugin and require gateway authentication.
 
-- `GET /codex/status`
-- `GET /codex/threads`
-- `POST /codex/watch`
-- `POST /codex/watch/check`
-- `POST /codex/handoff`
-- `POST /codex/goal`
-- `POST /codex/steer`
+- `GET /plugins/openclawbrain/codex/status`
+- `GET /plugins/openclawbrain/codex/threads`
+- `GET /plugins/openclawbrain/codex/handoff`
+- `GET /plugins/openclawbrain/codex/watches`
 
-The write routes exist for the final phase but refuse by default unless the feature flag and all safety gates pass.
+The write path is intentionally not exposed as a mutating route in `0.2.24`. `/brain codex goal` and `/brain codex steer` refuse by default.
 
 ## Telegram Commands
 
-- `/codex status`
-- `/codex threads`
-- `/codex watch [thread-id]`
-- `/codex handoff [thread-id]`
-- `/codex goal <goal text>`
+- `/brain codex status`
+- `/brain codex threads [filter]`
+- `/brain codex watch [thread-id|--latest]`
+- `/brain codex handoff [thread-id]`
+- `/brain codex goal <goal text>`
 
-`/codex goal` is present but rejected by default because `codexBridge.enableTelegramWrites` defaults to `false`. Existing `/codex steer` behavior remains owned by the native Codex conversation binding; the bridge write route for steering is the authenticated HTTP route.
+`/brain codex goal` is present but rejected by default because `codexBridge.enableTelegramWrites` defaults to `false`. Existing `/codex steer` behavior remains owned by the native Codex conversation binding; OpenClawBrain does not replace that control path.
 
 ## Safety Model
 
@@ -50,7 +47,7 @@ Telegram-to-Codex writes require:
 
 - `codexBridge.enableTelegramWrites = true`
 - trusted sender match when `trustedTelegramSenders` is configured
-- repo path under `allowedRepos`
+- repo path under `repoAllowlist`
 - provenance metadata with `requestedBy` and `requestId`
 - acceptable risk class
 - confirmation for risky wording
@@ -64,27 +61,25 @@ SQLite is read-only fallback only. It is never used as a write path.
 Example disabled-by-default config:
 
 ```toml
-[plugins.entries.openclawbrain-codex-bridge.config]
+[plugins.entries.openclawbrain.config.codexBridge]
 enabled = true
 notifyChannel = "telegram"
 notifyTarget = "<telegram-chat-id>"
 enableTelegramWrites = false
-allowedRepos = []
+repoAllowlist = []
 trustedTelegramSenders = []
-confirmedWriteMethods = []
 ```
 
 Example future write-mode config:
 
 ```toml
-[plugins.entries.openclawbrain-codex-bridge.config]
+[plugins.entries.openclawbrain.config.codexBridge]
 enabled = true
 notifyChannel = "telegram"
 notifyTarget = "<telegram-chat-id>"
 enableTelegramWrites = true
-allowedRepos = ["/Users/guclaw/openclaw", "/Users/guclaw/.openclaw/workspace/openclawbrain"]
+repoAllowlist = ["/Users/guclaw/openclaw", "/Users/guclaw/.openclaw/workspace/openclawbrain"]
 trustedTelegramSenders = ["<jonathan-telegram-user-id>"]
-confirmedWriteMethods = ["turn/start"]
 ```
 
 Keep write mode off unless the threat model is acceptable for the machine.
@@ -119,3 +114,14 @@ Current explicit instruction still overrides these durable defaults.
 - The bridge does not independently verify Codex claims unless it observes supporting evidence.
 - Live notification delivery depends on the OpenClaw gateway/plugin service being loaded and the Telegram outbound adapter being healthy.
 - If a future feature truly needs a new OpenClaw host capability, ship it through a small upstream PR; do not block the personal bridge workflow on a long-lived OpenClaw fork.
+
+## Local Install / Update
+
+Use the OpenClawBrain-owned installer from this repo:
+
+```bash
+pnpm install:local-openclaw
+openclaw gateway restart
+```
+
+That copies the built plugin into `~/.openclaw/extensions/openclawbrain` and updates `~/.openclaw/plugins/installs.json`. It does not edit `/Users/guclaw/openclaw`.

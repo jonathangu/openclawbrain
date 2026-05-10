@@ -2,7 +2,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { safeString } from './redact.js';
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.22';
+export const PLUGIN_VERSION = '0.2.24';
 export const DEFAULT_CONFIG = Object.freeze({
     enabled: true,
     mode: 'balanced',
@@ -125,6 +125,23 @@ export const DEFAULT_CONFIG = Object.freeze({
             safePreviewOnly: true,
             enableMemoryPostmortem: true,
         }),
+    }),
+    codexBridge: Object.freeze({
+        enabled: true,
+        statePaths: Object.freeze(['~/.codex/state_5.sqlite']),
+        bridgeStatePath: '~/.openclawbrain/activation/${agentId}/codex-continuity.sqlite',
+        preferAppServer: true,
+        appServerCommand: 'codex',
+        appServerArgs: Object.freeze(['app-server', 'proxy']),
+        appServerTimeoutMs: 1200,
+        staleAfterMs: 600000,
+        maxThreads: 10,
+        watchPollIntervalMs: 60000,
+        enableTelegramWrites: false,
+        trustedTelegramSenders: Object.freeze([]),
+        repoAllowlist: Object.freeze([]),
+        notifyChannel: 'telegram',
+        notifyTarget: '',
     }),
 });
 const MODES = new Set(['off', 'proof-only', 'conservative', 'active', 'balanced', 'aggressive']);
@@ -282,6 +299,35 @@ export function normalizePluginConfig(input = {}) {
             storeDistillationOutputs: source.privacy?.storeDistillationOutputs !== false,
         },
         memory: normalizeMemoryPolicy(source.memory),
+        codexBridge: normalizeCodexBridgeConfig(source.codexBridge),
+    };
+}
+function normalizeCodexBridgeConfig(codexBridge = {}) {
+    const source = codexBridge && typeof codexBridge === 'object' ? codexBridge : {};
+    const statePaths = Array.isArray(source.statePaths)
+        ? source.statePaths.map((item) => safeString(item)).filter(Boolean)
+        : typeof source.statePath === 'string'
+            ? [source.statePath]
+            : [...DEFAULT_CONFIG.codexBridge.statePaths];
+    const appServerArgs = Array.isArray(source.appServerArgs)
+        ? source.appServerArgs.map((item) => safeString(item)).filter(Boolean)
+        : [...DEFAULT_CONFIG.codexBridge.appServerArgs];
+    return {
+        enabled: source.enabled !== false,
+        statePaths: statePaths.length ? statePaths : [...DEFAULT_CONFIG.codexBridge.statePaths],
+        bridgeStatePath: nonEmptyString(source.bridgeStatePath) || DEFAULT_CONFIG.codexBridge.bridgeStatePath,
+        preferAppServer: source.preferAppServer !== false,
+        appServerCommand: nonEmptyString(source.appServerCommand) || DEFAULT_CONFIG.codexBridge.appServerCommand,
+        appServerArgs: appServerArgs.length ? appServerArgs : [...DEFAULT_CONFIG.codexBridge.appServerArgs],
+        appServerTimeoutMs: clampInteger(source.appServerTimeoutMs, DEFAULT_CONFIG.codexBridge.appServerTimeoutMs, 100, 30000),
+        staleAfterMs: clampInteger(source.staleAfterMs, DEFAULT_CONFIG.codexBridge.staleAfterMs, 1000, 86400000),
+        maxThreads: clampInteger(source.maxThreads, DEFAULT_CONFIG.codexBridge.maxThreads, 1, 100),
+        watchPollIntervalMs: clampInteger(source.watchPollIntervalMs, DEFAULT_CONFIG.codexBridge.watchPollIntervalMs, 5000, 86400000),
+        enableTelegramWrites: source.enableTelegramWrites === true,
+        trustedTelegramSenders: Array.isArray(source.trustedTelegramSenders) ? source.trustedTelegramSenders.map((item) => safeString(item)).filter(Boolean) : [],
+        repoAllowlist: Array.isArray(source.repoAllowlist) ? source.repoAllowlist.map((item) => safeString(item)).filter(Boolean) : [],
+        notifyChannel: nonEmptyString(source.notifyChannel) || DEFAULT_CONFIG.codexBridge.notifyChannel,
+        notifyTarget: nonEmptyString(source.notifyTarget) || DEFAULT_CONFIG.codexBridge.notifyTarget,
     };
 }
 function normalizeMemoryPolicy(memory = {}) {

@@ -1,6 +1,6 @@
 # Getting Started with OpenClawBrain
 
-This is the fastest honest path to a working OpenClawBrain `0.2.22` install.
+This is the fastest honest path to a working OpenClawBrain `0.2.24` install.
 
 ## What you are installing
 
@@ -8,7 +8,7 @@ OpenClawBrain is a native OpenClaw plugin that gives agents local, inspectable m
 
 The production route brain is `route-policy-v3`: a compact learned route function backed by redacted route frames, SQLite evidence, shadow decisions, replay/eval cases, calibration, gated promotion, and rollback lineage.
 
-The 0.2.22 runtime also includes Memory Authority resolution. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. Stale tool/workflow memories can be marked for verification; user-owned facts can require confirmation; soft preferences can become weak context instead of hard instructions.
+The 0.2.24 runtime includes Memory Authority resolution and an OpenClawBrain-owned Codex continuity bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The Codex bridge reads local Codex state, exposes quiet Telegram-facing status/watch/handoff commands, and keeps Telegram-to-Codex writes disabled by default.
 
 ## Before you start
 
@@ -23,16 +23,16 @@ You need:
 Use the same command for a fresh install or an upgrade. `--force` replaces an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.22 --force
+openclaw plugins install clawhub:openclawbrain@0.2.24 --force
 openclaw plugins enable openclawbrain
 ```
 
 If ClawHub metadata is still propagating, install the GitHub release archive:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.22.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.22/openclawbrain-0.2.22.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.22.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.24.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.24/openclawbrain-0.2.24.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.24.tgz --force
 openclaw plugins enable openclawbrain
 ```
 
@@ -102,7 +102,20 @@ What you want to see:
 
 HTTP plugin routes are authenticated on normal OpenClaw installs. Use the authenticated dashboard/client, or pass your gateway auth header when using curl.
 
-## 6) Try it
+## 6) Try Codex continuity from Telegram/OpenClaw
+
+OpenClawBrain owns these commands without modifying the OpenClaw core checkout:
+
+```text
+/brain codex status
+/brain codex threads
+/brain codex watch --latest
+/brain codex handoff
+```
+
+The bridge only sends explicit watched terminal events such as completion, failure, blocker, approval-needed, or auth-failure. `/brain codex goal` and `/brain codex steer` are present but refuse by default unless `codexBridge.enableTelegramWrites` is explicitly enabled later with trusted sender and repo allowlist controls.
+
+## 7) Try memory
 
 Teach the agent something small and practical, for example:
 

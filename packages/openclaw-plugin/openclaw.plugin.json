@@ -1,7 +1,7 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.23",
+  "version": "0.2.24",
   "description": "Aggressive-but-safe local memory graph for OpenClaw: learned routing, Memory Authority resolution, audited capture, tombstone-aware forgetting, bounded memory context, and SQLite proof surfaces.",
   "kind": "memory",
   "activation": {
@@ -553,6 +553,101 @@
           }
         }
       },
+      "codexBridge": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "statePaths": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": ["~/.codex/state_5.sqlite"]
+          },
+          "bridgeStatePath": {
+            "type": "string",
+            "default": "~/.openclawbrain/activation/${agentId}/codex-continuity.sqlite"
+          },
+          "preferAppServer": {
+            "type": "boolean",
+            "default": true
+          },
+          "appServerCommand": {
+            "type": "string",
+            "default": "codex"
+          },
+          "appServerArgs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": ["app-server", "proxy"]
+          },
+          "appServerTimeoutMs": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 30000,
+            "default": 1200
+          },
+          "staleAfterMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 86400000,
+            "default": 600000
+          },
+          "maxThreads": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+          },
+          "watchPollIntervalMs": {
+            "type": "integer",
+            "minimum": 5000,
+            "maximum": 86400000,
+            "default": 60000
+          },
+          "enableTelegramWrites": {
+            "type": "boolean",
+            "default": false
+          },
+          "trustedTelegramSenders": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": []
+          },
+          "repoAllowlist": {
+            "type": "array",
+            "items": { "type": "string" },
+            "default": []
+          },
+          "notifyChannel": {
+            "type": "string",
+            "default": "telegram"
+          },
+          "notifyTarget": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "default": {
+          "enabled": true,
+          "statePaths": ["~/.codex/state_5.sqlite"],
+          "bridgeStatePath": "~/.openclawbrain/activation/${agentId}/codex-continuity.sqlite",
+          "preferAppServer": true,
+          "appServerCommand": "codex",
+          "appServerArgs": ["app-server", "proxy"],
+          "appServerTimeoutMs": 1200,
+          "staleAfterMs": 600000,
+          "maxThreads": 10,
+          "watchPollIntervalMs": 60000,
+          "enableTelegramWrites": false,
+          "trustedTelegramSenders": [],
+          "repoAllowlist": [],
+          "notifyChannel": "telegram",
+          "notifyTarget": ""
+        }
+      },
       "routeLearning": {
         "type": "object",
         "additionalProperties": false,
@@ -818,7 +913,7 @@
     },
     "capture.mode": {
       "label": "Capture Mode",
-              "help": "v0.2.23 defaults to aggressive capture consideration and Memory Authority resolution. This evaluates durable memory candidates broadly while strict validators decide what can be stored and whether retrieved memories can influence a turn."
+              "help": "v0.2.24 defaults to aggressive capture consideration and Memory Authority resolution. This evaluates durable memory candidates broadly while strict validators decide what can be stored and whether retrieved memories can influence a turn."
     },
     "routing.maxInjectedMemories": {
       "label": "Max Injected Memories",
@@ -835,6 +930,14 @@
     "memory.sensitiveRecall": {
       "label": "Sensitive Recall Rules",
       "help": "Allows user-authorized benign recall rules while blocking credential plaintext and proactive disclosure."
+    },
+    "codexBridge": {
+      "label": "Codex Continuity Bridge",
+      "help": "OpenClawBrain-owned read-only Codex status, watches, and handoff briefs. Telegram-to-Codex writes stay disabled by default."
+    },
+    "codexBridge.enableTelegramWrites": {
+      "label": "Enable Telegram Codex Writes",
+      "help": "Off by default. Requires trusted senders, repo allowlists, provenance, risk classification, and confirmation before any future write path may run."
     }
   }
 }

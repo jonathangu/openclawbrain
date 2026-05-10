@@ -8,7 +8,7 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 ![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and bounded memory context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-`0.2.23` keeps the Memory Authority layer: retrieval now separates semantic relevance from whether a memory still has authority in the current turn. `route-policy-v3` remains the production route brain, but candidate memories pass through authority resolution before any memory context is attached: current, scoped, safe, non-superseded memories can be used; stale workflow facts can ask for verification; soft preferences can become weak context; tombstoned or private memories stay out.
+`0.2.24` keeps the Memory Authority layer and adds the OpenClawBrain-owned Codex continuity bridge. Retrieval separates semantic relevance from whether a memory still has authority in the current turn, and Codex status/watch/handoff surfaces now live in the OpenClawBrain plugin without patching OpenClaw core.
 
 ## Short version
 
@@ -47,7 +47,7 @@ Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
 
 Install/upgrade if you already run OpenClaw:
-openclaw plugins install clawhub:openclawbrain@0.2.23 --force
+openclaw plugins install clawhub:openclawbrain@0.2.24 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -57,7 +57,7 @@ openclaw gateway restart
 Requires OpenClaw `2026.5.2` or later. Use the same command for a fresh install or an upgrade; `--force` is safe when replacing an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.23 --force
+openclaw plugins install clawhub:openclawbrain@0.2.24 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -65,9 +65,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.23.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.23/openclawbrain-0.2.23.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.23.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.24.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.24/openclawbrain-0.2.24.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.24.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```

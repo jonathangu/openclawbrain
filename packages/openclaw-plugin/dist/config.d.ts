@@ -1,5 +1,5 @@
 export declare const PLUGIN_ID = "openclawbrain";
-export declare const PLUGIN_VERSION = "0.2.22";
+export declare const PLUGIN_VERSION = "0.2.24";
 export declare const DEFAULT_CONFIG: any;
 export declare function resolveOpenClawBrainConfig(api?: any): {
     enabled: boolean;
@@ -145,6 +145,23 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
             safePreviewOnly: boolean;
             enableMemoryPostmortem: boolean;
         };
+    };
+    codexBridge: {
+        enabled: boolean;
+        statePaths: any;
+        bridgeStatePath: any;
+        preferAppServer: boolean;
+        appServerCommand: any;
+        appServerArgs: any;
+        appServerTimeoutMs: number;
+        staleAfterMs: number;
+        maxThreads: number;
+        watchPollIntervalMs: number;
+        enableTelegramWrites: boolean;
+        trustedTelegramSenders: any;
+        repoAllowlist: any;
+        notifyChannel: any;
+        notifyTarget: any;
     };
 };
 export declare function livePluginEntry(api?: any): any;
@@ -292,6 +309,23 @@ export declare function normalizePluginConfig(input?: any): {
             safePreviewOnly: boolean;
             enableMemoryPostmortem: boolean;
         };
+    };
+    codexBridge: {
+        enabled: boolean;
+        statePaths: any;
+        bridgeStatePath: any;
+        preferAppServer: boolean;
+        appServerCommand: any;
+        appServerArgs: any;
+        appServerTimeoutMs: number;
+        staleAfterMs: number;
+        maxThreads: number;
+        watchPollIntervalMs: number;
+        enableTelegramWrites: boolean;
+        trustedTelegramSenders: any;
+        repoAllowlist: any;
+        notifyChannel: any;
+        notifyTarget: any;
     };
 };
 export declare function normalizeScopes(scopes?: any): {

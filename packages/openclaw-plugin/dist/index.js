@@ -1,6 +1,7 @@
 import { DEFAULT_CONFIG, PLUGIN_ID, PLUGIN_VERSION, isAgentAllowed, normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 import { buildInjectionText, ensureActivationRoot, readActivationContext } from './context-files.js';
 import { CaptureOrchestrator } from './capture.js';
+import { buildCodexBridgeStatus, buildCodexHandoff, CodexBridgeStore, handleBrainCommand, processCodexBridgeWatches, } from './codex-continuity.js';
 import { ContextSelector } from './context-selector.js';
 import { FeedbackDistiller } from './feedback-distiller.js';
 import { BackgroundLearner } from './learning.js';
@@ -28,6 +29,7 @@ export { normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 export { redactText, hashText } from './redact.js';
 export { decidePolicy, classifyTurn } from './policy.js';
 export { readActivationContext } from './context-files.js';
+export { buildCodexBridgeStatus, buildCodexHandoff, CodexBridgeStore, formatCodexStatus, formatCodexThreads, formatHandoffBrief, handleBrainCommand, normalizeCodexBridgeConfig, processCodexBridgeWatches, } from './codex-continuity.js';
 export { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 export { buildStatus } from './status.js';
 export { FakeLlmClient, OllamaNativeLlmClient, OpenAICompatibleLlmClient, isOllamaLoopbackBaseUrl } from './llm-client.js';
@@ -303,12 +305,28 @@ function registerFirstClassSurfaces(api, resolve) {
                     });
                 }, config.learning.intervalMs);
             }
+            if (config.codexBridge?.enabled === true) {
+                serviceState.codexTimer = setInterval(() => {
+                    void processCodexBridgeWatches(resolve(), api).catch((error) => {
+                        api.logger?.warn?.({ error }, 'OpenClawBrain Codex bridge watch processing failed');
+                    });
+                }, config.codexBridge.watchPollIntervalMs);
+            }
         },
         stop: async () => {
             if (serviceState.timer)
                 clearInterval(serviceState.timer);
+            if (serviceState.codexTimer)
+                clearInterval(serviceState.codexTimer);
             await writeGatewayStatus('service_stop', {}, resolve(), api);
         }
+    });
+    api.registerCommand?.({
+        name: 'brain',
+        description: 'OpenClawBrain memory and Codex continuity commands',
+        acceptsArgs: true,
+        requireAuth: true,
+        handler: async (ctx) => handleBrainCommand(ctx, resolve(), api),
     });
     api.registerHttpRoute?.({
         path: '/plugins/openclawbrain/status',
@@ -323,6 +341,34 @@ function registerFirstClassSurfaces(api, resolve) {
         match: 'exact',
         replaceExisting: true,
         handler: async (_req, res) => writeJson(res, doctorPayload(resolve()))
+    });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/codex/status',
+        auth: 'gateway',
+        match: 'exact',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, await codexStatusPayload(resolve(), req))
+    });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/codex/threads',
+        auth: 'gateway',
+        match: 'exact',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, await codexThreadsPayload(resolve(), req))
+    });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/codex/handoff',
+        auth: 'gateway',
+        match: 'exact',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, await codexHandoffPayload(resolve(), req))
+    });
+    api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/codex/watches',
+        auth: 'gateway',
+        match: 'exact',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, codexWatchesPayload(resolve(), req))
     });
     api.registerHttpRoute?.({
         path: '/plugins/openclawbrain/proof',
@@ -563,6 +609,42 @@ async function statusPayload(config, req = {}) {
         details = { nativeSqlite };
     }
     return { ...buildStatus(config, { agentId, ...details }), persisted };
+}
+async function codexStatusPayload(config, req = {}) {
+    const agentId = agentIdFromRequest(req, config);
+    if (!isAgentAllowed(config, agentId))
+        return { ok: false, agentId, reason: 'agent_not_allowed' };
+    return buildCodexBridgeStatus(config, agentId);
+}
+async function codexThreadsPayload(config, req = {}) {
+    const status = await codexStatusPayload(config, req);
+    const query = safeString(req.query?.q ?? req.query?.query ?? '').toLowerCase();
+    const threads = Array.isArray(status.latestThreads)
+        ? status.latestThreads.filter((thread) => !query || `${thread.title} ${thread.cwd} ${thread.goal?.objective || ''}`.toLowerCase().includes(query))
+        : [];
+    return { ok: status.ok, source: status.source, stale: status.stale, staleReason: status.staleReason, threads };
+}
+async function codexHandoffPayload(config, req = {}) {
+    const status = await codexStatusPayload(config, req);
+    const threadId = safeString(req.query?.threadId ?? req.query?.thread ?? '');
+    return buildCodexHandoff(status, threadId || undefined);
+}
+function codexWatchesPayload(config, req = {}) {
+    const agentId = agentIdFromRequest(req, config);
+    if (!isAgentAllowed(config, agentId))
+        return { ok: false, agentId, reason: 'agent_not_allowed' };
+    const store = new CodexBridgeStore({ config, agentId });
+    try {
+        return {
+            ok: true,
+            agentId,
+            watches: store.listWatches(agentId, { activeOnly: req.query?.active !== 'false' }),
+            events: store.listEvents(agentId, limitFromRequest(req)),
+        };
+    }
+    finally {
+        store.close();
+    }
 }
 function doctorPayload(config) {
     const nativeSqlite = nativeSqliteSmokeTest();

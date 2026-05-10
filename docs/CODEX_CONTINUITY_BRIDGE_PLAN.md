@@ -177,12 +177,12 @@ The MVP should be split into two milestones.
 
 Build:
 
-- `GET /codex/status`
-- `GET /codex/threads`
+- `GET /plugins/openclawbrain/codex/status`
+- `GET /plugins/openclawbrain/codex/threads`
 - app-server connection
 - SQLite read-only fallback
 - normalized thread/goal status
-- Telegram command: "What is Codex doing?"
+- Telegram command: `/brain codex status`
 
 No watcher. No Telegram push notifications. No write path.
 
@@ -571,7 +571,7 @@ The bridge HTTP API should:
 - log every mutating request
 - disable dev/test notification routes by default
 
-`POST /codex/notify/test` must be dev-only or admin-token-only.
+Any future notification test route must be dev-only or admin-token-only.
 
 ## Provenance For Mutating APIs
 
@@ -774,7 +774,7 @@ If durable memory says "Telegram summaries should be concise" and Jonathan asks 
 
 ### Read-Only MVP Routes
 
-#### `GET /codex/status`
+#### `GET /plugins/openclawbrain/codex/status`
 
 Returns current status.
 
@@ -789,7 +789,7 @@ Required response fields:
 - `latestThread`
 - `warnings`
 
-#### `GET /codex/threads`
+#### `GET /plugins/openclawbrain/codex/threads`
 
 Returns recent threads.
 
@@ -801,9 +801,9 @@ Filters:
 - `updatedSince`
 - `watched`
 
-#### `POST /codex/watch`
+#### `/brain codex watch`
 
-Registers a watch. This is not a Codex write; it writes bridge-local state only.
+Registers a watch through the OpenClawBrain plugin command. This is not a Codex write; it writes bridge-local state only.
 
 Requires:
 
@@ -816,8 +816,8 @@ Requires:
 
 Feature-flagged only:
 
-- `POST /codex/goal`
-- `POST /codex/steer`
+- `/brain codex goal`
+- `/brain codex steer`
 
 Must require provenance and confirmation metadata.
 
@@ -849,7 +849,7 @@ If Telegram send fails:
 - record `telegram_send_failed`
 - retry with bounded backoff
 - do not duplicate after success
-- expose failure in `/codex/status`
+- expose failure in `/brain codex status` and `/plugins/openclawbrain/codex/status`
 
 ### Watch Expiration
 
@@ -883,9 +883,9 @@ Build bridge plugin under OpenClawBrain ownership:
 - app-server client
 - protocol capability map
 - SQLite fallback reader
-- `GET /codex/status`
-- `GET /codex/threads`
-- Telegram status command
+- `GET /plugins/openclawbrain/codex/status`
+- `GET /plugins/openclawbrain/codex/threads`
+- `/brain codex status` Telegram command
 - install/update path that does not modify OpenClaw core
 
 Tests:
@@ -923,7 +923,8 @@ Tests:
 
 Add:
 
-- `POST /codex/handoff`
+- `GET /plugins/openclawbrain/codex/handoff`
+- `/brain codex handoff`
 - evidence-separated brief writer
 - optional artifact path
 - direct observed evidence versus Codex claim separation
@@ -947,8 +948,8 @@ Only after prior phases are reliable.
 
 Add:
 
-- `POST /codex/goal`
-- `POST /codex/steer`
+- `/brain codex goal`
+- `/brain codex steer`
 - thread selection model
 - repo allowlist
 - provenance metadata
@@ -1023,32 +1024,32 @@ The most important tests are quietness and refusal tests:
 For MVP:
 
 ```text
-/codex status
+/brain codex status
 What is Codex doing?
 ```
 
 ```text
-/codex threads
+/brain codex threads
 Show recent Codex threads.
 ```
 
 ```text
-/codex watch
+/brain codex watch
 Tell me when this Codex thread finishes.
 ```
 
 After Phase 2:
 
 ```text
-/codex handoff
+/brain codex handoff
 Make a handoff brief.
 ```
 
 After Phase 3, feature-flagged:
 
 ```text
-/codex goal Finish the OpenClawBrain scan cleanup.
-/codex steer Add the ClawHub scan caveat to the final answer.
+/brain codex goal Finish the OpenClawBrain scan cleanup.
+/brain codex steer Add the ClawHub scan caveat to the final answer.
 ```
 
 ## First Build Goal Command
@@ -1056,7 +1057,7 @@ After Phase 3, feature-flagged:
 Use this for the first implementation:
 
 ```text
-/goal Build Phase 1A of the OpenClaw Codex Continuity Bridge. In /Users/guclaw/openclaw and /Users/guclaw/.openclaw/workspace/openclawbrain, audit the OpenClaw plugin/service architecture, Telegram command/send path, Codex app-server protocol, and local Codex SQLite state. Implement a read-only bridge plugin/service that connects to Codex app-server when available, detects protocol capabilities, exposes /codex/status and /codex/threads, and falls back to read-only SQLite with explicit stale labeling. Add a Telegram-facing status command that answers "what is Codex doing?" without sending any push notifications and without any Telegram-to-Codex write path. Store only durable operating truths in OpenClawBrain, not raw Codex telemetry. Add focused tests for app-server available/unavailable, method missing, multiple active threads, no active thread, stale SQLite fallback, and redaction. Verify local plugin loading and document Phase 1B watched completion mirror as the next step.
+/goal Build Phase 1A of the OpenClawBrain-owned Codex Continuity Bridge. In /Users/guclaw/.openclaw/workspace/openclawbrain, audit the OpenClaw plugin/service architecture, Telegram command/send path, Codex app-server protocol, and local Codex SQLite state. Implement a read-only bridge plugin/service that connects to Codex app-server when available, detects protocol capabilities, exposes /plugins/openclawbrain/codex/status and /plugins/openclawbrain/codex/threads, and falls back to read-only SQLite with explicit stale labeling. Add /brain codex status so Telegram can ask "what is Codex doing?" without sending push notifications and without any Telegram-to-Codex write path. Store only durable operating truths in OpenClawBrain, not raw Codex telemetry. Add focused tests for app-server available/unavailable, method missing, multiple active threads, no active thread, stale SQLite fallback, and redaction. Verify local plugin loading and document Phase 1B watched completion mirror as the next step.
 ```
 
 Use this only after Phase 1A is stable:
