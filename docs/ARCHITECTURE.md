@@ -1,6 +1,6 @@
 # Architecture
 
-OpenClawBrain `0.2.28` is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, injects only bounded context back into the prompt, exposes a quiet Codex continuity bridge, and maintains graph health without patching OpenClaw core.
+OpenClawBrain `0.2.29` is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, injects only bounded context back into the prompt, exposes a quiet Codex continuity bridge, and maintains graph health without patching OpenClaw core.
 
 The central runtime addition is the **Memory Authority** layer. Retrieval can over-include candidates, but a memory is not allowed to influence the turn until authority resolution checks freshness, scope, privacy, supersession, current instructions, validation strategy, and risk. The Memory Graph Maintenance layer is separate: it curates graph structure and evidence over time, but it never directly decides turn-level authority. The Codex continuity bridge applies the same stance to local Codex state: useful status and handoff facts are surfaced, but raw telemetry is not captured as durable memory.
 
@@ -140,17 +140,19 @@ Flow:
 
 Used when:
 
+- the service runs passive background graph maintenance on a timer
 - an operator asks `/brain graph health`, `/brain graph dry-run`, or the corresponding authenticated HTTP routes
 - the system needs to inspect duplicate nodes, bad edges, stale high-authority memories, tombstone recapture risk, scoped exception candidates, or feedback observations
-- a low-risk deterministic proposal is explicitly applied
+- a low-risk deterministic proposal is applied automatically or explicitly
 
 Flow:
 
 1. `GraphMaintenanceEngine` snapshots memory nodes, validity rows, memory edges, authority events, and route teacher signals.
 2. It computes graph health metrics and compiles redacted proposals.
-3. Low-risk deterministic proposals, such as exact duplicate consolidation or bad edge retirement, can be applied transactionally.
-4. Semantic merges, stale authority changes, scoped exceptions, privacy changes, supersession, and tombstone recapture remain review-gated.
-5. Applied mutations write proof, node lineage, and edge observation rows.
+3. The passive service loop records dry-run/proposal history on a timer.
+4. Low-risk deterministic proposals, such as exact duplicate consolidation, bad edge retirement, or observation-only feedback rows, can be applied transactionally.
+5. Semantic merges, stale authority changes, scoped exceptions, privacy changes, supersession, and tombstone recapture remain review-gated.
+6. Applied mutations write proof, node lineage, and edge observation rows.
 
 Boundary:
 

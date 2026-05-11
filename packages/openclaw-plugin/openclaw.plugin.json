@@ -1,7 +1,7 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.28",
+  "version": "0.2.29",
   "description": "Aggressive-but-safe local memory graph for OpenClaw: learned routing, Memory Authority resolution, audited capture, tombstone-aware forgetting, bounded memory context, and SQLite proof surfaces.",
   "kind": "memory",
   "activation": {
@@ -384,6 +384,68 @@
             "maximum": 1000000,
             "default": 5000
           }
+        }
+      },
+      "graphMaintenance": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "off",
+              "passive",
+              "dry_run",
+              "safe_auto"
+            ],
+            "default": "passive"
+          },
+          "intervalMs": {
+            "type": "integer",
+            "minimum": 60000,
+            "maximum": 86400000,
+            "default": 900000
+          },
+          "runOnStartup": {
+            "type": "boolean",
+            "default": true
+          },
+          "startupDelayMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3600000,
+            "default": 30000
+          },
+          "maxNodesPerRun": {
+            "type": "integer",
+            "minimum": 50,
+            "maximum": 100000,
+            "default": 1000
+          },
+          "safeAutoApply": {
+            "type": "boolean",
+            "default": true
+          },
+          "maxSafeAutoApplyPerRun": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 5
+          }
+        },
+        "default": {
+          "enabled": true,
+          "mode": "passive",
+          "intervalMs": 900000,
+          "runOnStartup": true,
+          "startupDelayMs": 30000,
+          "maxNodesPerRun": 1000,
+          "safeAutoApply": true,
+          "maxSafeAutoApplyPerRun": 5
         }
       },
       "privacy": {
@@ -1050,7 +1112,7 @@
     },
     "capture.mode": {
       "label": "Capture Mode",
-      "help": "v0.2.28 defaults to aggressive capture consideration, Memory Authority resolution, and conservative Memory Graph Maintenance. This evaluates durable memory candidates broadly while strict validators decide what can be stored, whether retrieved memories can influence a turn, and which graph changes require review."
+      "help": "v0.2.29 defaults to aggressive capture consideration, Memory Authority resolution, and conservative Memory Graph Maintenance. This evaluates durable memory candidates broadly while strict validators decide what can be stored, whether retrieved memories can influence a turn, and which graph changes require review."
     },
     "routing.maxInjectedMemories": {
       "label": "Max Injected Memories",
@@ -1067,6 +1129,14 @@
     "memory.sensitiveRecall": {
       "label": "Sensitive Recall Rules",
       "help": "Allows user-authorized benign recall rules while blocking credential plaintext and proactive disclosure."
+    },
+    "graphMaintenance": {
+      "label": "Memory Graph Maintenance",
+      "help": "Runs passively in the background. Creates dry-run/proposal records and only auto-applies deterministic low-risk cleanup unless you turn that off."
+    },
+    "graphMaintenance.safeAutoApply": {
+      "label": "Safe Auto Apply",
+      "help": "When enabled, only exact duplicate consolidation, bad-edge retirement, and observation-only feedback rows can apply automatically. Authority, privacy, tombstone, scope, and semantic changes remain review-gated."
     },
     "codexBridge": {
       "label": "Codex Continuity Bridge",

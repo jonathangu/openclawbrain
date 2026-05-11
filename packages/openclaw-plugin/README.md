@@ -37,7 +37,7 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.28`
+- **Current package release:** `0.2.29`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.5.2` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded memory context
@@ -46,7 +46,7 @@ OpenClawBrain takes a different approach:
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.28 --force
+openclaw plugins install clawhub:openclawbrain@0.2.29 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -54,9 +54,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.28.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.28/openclawbrain-0.2.28.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.28.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.29.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.29/openclawbrain-0.2.29.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.29.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -121,7 +121,7 @@ openclaw doctor
 
 ## Codex continuity bridge
 
-`0.2.28` keeps the OpenClawBrain-owned Codex continuity bridge. It does not patch OpenClaw core. The public-safe default reads local Codex SQLite in read-only mode with an explicit stale label; host-provided app-server readers can be enabled later without bundling shell/process control inside the package. It exposes quiet operator surfaces:
+`0.2.29` keeps the OpenClawBrain-owned Codex continuity bridge. It does not patch OpenClaw core. The public-safe default reads local Codex SQLite in read-only mode with an explicit stale label; host-provided app-server readers can be enabled later without bundling shell/process control inside the package. It exposes quiet operator surfaces:
 
 ```text
 /brain codex status
@@ -134,7 +134,7 @@ Telegram-to-Codex writes stay disabled by default. `/brain codex goal` and `/bra
 
 ## Memory graph maintenance
 
-Memory Authority decides turn-level use. Graph Maintenance curates long-term graph evolution.
+Memory Authority decides turn-level use. Graph Maintenance curates long-term graph evolution. It now runs passively as part of the OpenClawBrain service: the timer creates dry-run/proposal records automatically, applies only deterministic low-risk cleanup when configured, and leaves stale authority, privacy, tombstone, scope, and semantic changes for explicit review.
 
 ```text
 /brain graph health

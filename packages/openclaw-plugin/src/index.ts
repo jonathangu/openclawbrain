@@ -342,7 +342,7 @@ function registerLifecycleHooks(api: any, resolve: any) {
 }
 
 function registerFirstClassSurfaces(api: any, resolve: any) {
-  const serviceState: { timer?: NodeJS.Timeout; codexTimer?: NodeJS.Timeout } = {};
+  const serviceState: { timer?: NodeJS.Timeout; codexTimer?: NodeJS.Timeout; graphTimer?: NodeJS.Timeout; graphStartupTimer?: NodeJS.Timeout } = {};
   api.registerService?.({
     id: PLUGIN_ID,
     start: async () => {
@@ -362,10 +362,23 @@ function registerFirstClassSurfaces(api: any, resolve: any) {
           });
         }, config.codexBridge.watchPollIntervalMs);
       }
+      if (config.graphMaintenance?.enabled === true) {
+        const runGraphMaintenance = () => {
+          void processAutomaticGraphMaintenance(resolve(), api).catch((error: any) => {
+            api.logger?.warn?.({ error }, 'OpenClawBrain graph maintenance processing failed');
+          });
+        };
+        if (config.graphMaintenance.runOnStartup !== false) {
+          serviceState.graphStartupTimer = setTimeout(runGraphMaintenance, config.graphMaintenance.startupDelayMs);
+        }
+        serviceState.graphTimer = setInterval(runGraphMaintenance, config.graphMaintenance.intervalMs);
+      }
     },
     stop: async () => {
       if (serviceState.timer) clearInterval(serviceState.timer);
       if (serviceState.codexTimer) clearInterval(serviceState.codexTimer);
+      if (serviceState.graphTimer) clearInterval(serviceState.graphTimer);
+      if (serviceState.graphStartupTimer) clearTimeout(serviceState.graphStartupTimer);
       await writeGatewayStatus('service_stop', {}, resolve(), api);
     }
   });
@@ -889,6 +902,35 @@ async function processBackgroundJobs(config: any = {}, api: any = {}) {
   if (config.capture?.enabled !== true && config.learning?.enabled !== true && config.routeLearning?.enabled !== true) return;
   const agents = Array.isArray(config.scopes?.agents) && config.scopes.agents.length ? config.scopes.agents : ['main'];
   for (const agentId of agents) await processBackgroundJobsForAgent(config, api, agentId);
+}
+
+export async function processAutomaticGraphMaintenance(config: any = {}, api: any = {}) {
+  if (config.graphMaintenance?.enabled !== true) return;
+  const agents = Array.isArray(config.scopes?.agents) && config.scopes.agents.length ? config.scopes.agents : ['main'];
+  const mode = config.graphMaintenance.mode || 'passive';
+  const safeAutoApply = mode === 'safe_auto' || (mode === 'passive' && config.graphMaintenance.safeAutoApply !== false);
+  for (const agentId of agents) {
+    if (!isAgentAllowed(config, agentId)) continue;
+    const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+    try {
+      const report = new GraphMaintenanceEngine({ store, config }).runAutomatic(agentId, {
+        limit: config.graphMaintenance.maxNodesPerRun,
+        safeAutoApply,
+        maxSafeAutoApply: config.graphMaintenance.maxSafeAutoApplyPerRun,
+      });
+      if (report.proposals.length > 0 || report.applied.length > 0) {
+        api.logger?.info?.({
+          agentId,
+          runId: report.run.id,
+          proposals: report.proposals.length,
+          applied: report.applied.filter((item) => item.ok).length,
+          safeAutoApply,
+        }, 'OpenClawBrain graph maintenance cycle completed');
+      }
+    } finally {
+      store.close();
+    }
+  }
 }
 
 async function processBackgroundJobsForAgent(config: any = {}, api: any = {}, agentId = 'main') {

@@ -10,7 +10,7 @@ import { LatencyController } from './latency-controller.js';
 import { OllamaNativeLlmClient, OpenAICompatibleLlmClient, isOllamaLoopbackBaseUrl } from './llm-client.js';
 import { MemoryPlanner } from './memory-planner.js';
 import { MemoryOperationApplier } from './memory-operations.js';
-import { graphMaintenancePayload } from './graph-maintenance.js';
+import { GraphMaintenanceEngine, graphMaintenancePayload } from './graph-maintenance.js';
 import { authorityEventTypeForDecision } from './memory-authority.js';
 import { MemoryStore } from './memory-store.js';
 import { decidePolicy } from './policy.js';
@@ -314,12 +314,27 @@ function registerFirstClassSurfaces(api, resolve) {
                     });
                 }, config.codexBridge.watchPollIntervalMs);
             }
+            if (config.graphMaintenance?.enabled === true) {
+                const runGraphMaintenance = () => {
+                    void processAutomaticGraphMaintenance(resolve(), api).catch((error) => {
+                        api.logger?.warn?.({ error }, 'OpenClawBrain graph maintenance processing failed');
+                    });
+                };
+                if (config.graphMaintenance.runOnStartup !== false) {
+                    serviceState.graphStartupTimer = setTimeout(runGraphMaintenance, config.graphMaintenance.startupDelayMs);
+                }
+                serviceState.graphTimer = setInterval(runGraphMaintenance, config.graphMaintenance.intervalMs);
+            }
         },
         stop: async () => {
             if (serviceState.timer)
                 clearInterval(serviceState.timer);
             if (serviceState.codexTimer)
                 clearInterval(serviceState.codexTimer);
+            if (serviceState.graphTimer)
+                clearInterval(serviceState.graphTimer);
+            if (serviceState.graphStartupTimer)
+                clearTimeout(serviceState.graphStartupTimer);
             await writeGatewayStatus('service_stop', {}, resolve(), api);
         }
     });
@@ -842,6 +857,37 @@ async function processBackgroundJobs(config = {}, api = {}) {
     const agents = Array.isArray(config.scopes?.agents) && config.scopes.agents.length ? config.scopes.agents : ['main'];
     for (const agentId of agents)
         await processBackgroundJobsForAgent(config, api, agentId);
+}
+export async function processAutomaticGraphMaintenance(config = {}, api = {}) {
+    if (config.graphMaintenance?.enabled !== true)
+        return;
+    const agents = Array.isArray(config.scopes?.agents) && config.scopes.agents.length ? config.scopes.agents : ['main'];
+    const mode = config.graphMaintenance.mode || 'passive';
+    const safeAutoApply = mode === 'safe_auto' || (mode === 'passive' && config.graphMaintenance.safeAutoApply !== false);
+    for (const agentId of agents) {
+        if (!isAgentAllowed(config, agentId))
+            continue;
+        const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });
+        try {
+            const report = new GraphMaintenanceEngine({ store, config }).runAutomatic(agentId, {
+                limit: config.graphMaintenance.maxNodesPerRun,
+                safeAutoApply,
+                maxSafeAutoApply: config.graphMaintenance.maxSafeAutoApplyPerRun,
+            });
+            if (report.proposals.length > 0 || report.applied.length > 0) {
+                api.logger?.info?.({
+                    agentId,
+                    runId: report.run.id,
+                    proposals: report.proposals.length,
+                    applied: report.applied.filter((item) => item.ok).length,
+                    safeAutoApply,
+                }, 'OpenClawBrain graph maintenance cycle completed');
+            }
+        }
+        finally {
+            store.close();
+        }
+    }
 }
 async function processBackgroundJobsForAgent(config = {}, api = {}, agentId = 'main') {
     const store = new MemoryStore({ activationRoot: config.activationRoot, agentId });

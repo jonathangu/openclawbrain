@@ -8,7 +8,7 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 ![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and bounded memory context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-`0.2.28` adds Memory Graph Maintenance on top of Memory Authority and the OpenClawBrain-owned Codex continuity bridge. Retrieval separates semantic relevance from whether a memory still has authority in the current turn. Graph maintenance then curates what the graph becomes over time: fewer duplicate nodes, safer edges, stale-memory proposals, scoped exceptions, tombstone-aware forgetting, and local proof for every applied mutation.
+`0.2.29` adds Memory Graph Maintenance on top of Memory Authority and the OpenClawBrain-owned Codex continuity bridge. Retrieval separates semantic relevance from whether a memory still has authority in the current turn. Graph maintenance then curates what the graph becomes over time: fewer duplicate nodes, safer edges, stale-memory proposals, scoped exceptions, tombstone-aware forgetting, and local proof for every applied mutation.
 
 ## Short version
 
@@ -47,7 +47,7 @@ Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
 
 Install/upgrade if you already run OpenClaw:
-openclaw plugins install clawhub:openclawbrain@0.2.28 --force
+openclaw plugins install clawhub:openclawbrain@0.2.29 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -57,7 +57,7 @@ openclaw gateway restart
 Requires OpenClaw `2026.5.2` or later. Use the same command for a fresh install or an upgrade; `--force` is safe when replacing an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.28 --force
+openclaw plugins install clawhub:openclawbrain@0.2.29 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -65,9 +65,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.28.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.28/openclawbrain-0.2.28.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.28.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.29.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.29/openclawbrain-0.2.29.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.29.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -198,7 +198,7 @@ Memory Authority answers: "Can this retrieved memory influence this turn?"
 
 Memory Graph Maintenance answers: "After many turns, corrections, route decisions, and stale facts, how should the graph evolve?"
 
-The new engine is deliberately conservative. It can compile and apply deterministic low-risk proposals like exact duplicate consolidation and bad edge retirement. It can also propose stale high-authority review, tombstone recapture blocking, scoped exceptions, and feedback observations. Those review-gated proposals do not quietly become authority. Memory Authority still recomputes turn-level use every time.
+The engine is deliberately conservative. It runs passively in the background so maintenance does not depend on an operator remembering a chore. Each cycle records dry-run/proposal history and may apply only deterministic low-risk repairs like exact duplicate consolidation, bad edge retirement, and observation-only feedback rows. It can also propose stale high-authority review, tombstone recapture blocking, scoped exceptions, and feedback observations. Those review-gated proposals do not quietly become authority. Memory Authority still recomputes turn-level use every time.
 
 Telegram/operator commands:
 

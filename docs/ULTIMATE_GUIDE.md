@@ -8,7 +8,7 @@ The short version is:
 
 > An agent should not remember everything all the time. It should learn when memory actually matters.
 
-The current release, `openclawbrain@0.2.28`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, Memory Authority resolution between retrieval and injection, Codex continuity owned entirely by OpenClawBrain rather than OpenClaw core, and now Memory Graph Maintenance for long-term graph health.
+The current release, `openclawbrain@0.2.29`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, Memory Authority resolution between retrieval and injection, Codex continuity owned entirely by OpenClawBrain rather than OpenClaw core, and now Memory Graph Maintenance for long-term graph health.
 
 The most important lesson is not "use a graph." It is:
 
@@ -862,7 +862,7 @@ The bridge provides:
 
 It stores only redacted bridge audit events and durable operating truths. It does not store raw Codex messages, full command output, full diffs, or temporary telemetry as durable memory. Telegram-to-Codex writes are disabled by default and must stay feature-flagged behind trusted sender, repo allowlist, provenance, risk classification, and confirmation controls.
 
-## The 0.2.28 Upgrade: Memory Graph Maintenance
+## The 0.2.29 Upgrade: Memory Graph Maintenance
 
 Memory Authority fixed the runtime question:
 
@@ -913,7 +913,7 @@ The product lesson is simple:
 Install or upgrade:
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.28 --force
+openclaw plugins install clawhub:openclawbrain@0.2.29 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -959,10 +959,10 @@ You want to see:
 
 ## Current Public Truth
 
-As of `0.2.28`:
+As of `0.2.29`:
 
-- The latest package is `openclawbrain@0.2.28`.
-- The source tag is `v0.2.28`.
+- The latest package is `openclawbrain@0.2.29`.
+- The source tag is `v0.2.29`.
 - The production route brain is route-policy-v3.
 - Memory Authority now separates relevance from authority before injection.
 - Memory Graph Maintenance keeps the graph healthier through dry-run proposals, canonical lineage, edge observations, tombstone recapture checks, and proofed deterministic repairs.

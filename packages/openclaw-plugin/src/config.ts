@@ -3,7 +3,7 @@ import path from 'node:path';
 import { safeString } from './redact.js';
 
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.28';
+export const PLUGIN_VERSION = '0.2.29';
 export const DEFAULT_CONFIG: any = Object.freeze({
   enabled: true,
   mode: 'balanced',
@@ -63,6 +63,16 @@ export const DEFAULT_CONFIG: any = Object.freeze({
     maxNegativeExamples: 25,
     pruneIntervalMs: 3600000,
     maxMemoryNodesPerAgent: 5000,
+  }),
+  graphMaintenance: Object.freeze({
+    enabled: true,
+    mode: 'passive',
+    intervalMs: 900000,
+    runOnStartup: true,
+    startupDelayMs: 30000,
+    maxNodesPerRun: 1000,
+    safeAutoApply: true,
+    maxSafeAutoApplyPerRun: 5,
   }),
   routeLearning: Object.freeze({
     enabled: true,
@@ -245,6 +255,7 @@ export function normalizePluginConfig(input: any = {}) {
       pruneIntervalMs: clampInteger(source.learning?.pruneIntervalMs, DEFAULT_CONFIG.learning.pruneIntervalMs, 1000, 86400000),
       maxMemoryNodesPerAgent: clampInteger(source.learning?.maxMemoryNodesPerAgent, DEFAULT_CONFIG.learning.maxMemoryNodesPerAgent, 1, 1000000),
     },
+    graphMaintenance: normalizeGraphMaintenanceConfig(source.graphMaintenance),
     routeLearning: {
       enabled: source.routeLearning?.enabled !== false,
       teacher: {
@@ -304,6 +315,23 @@ export function normalizePluginConfig(input: any = {}) {
     },
     memory: normalizeMemoryPolicy(source.memory),
     codexBridge: normalizeCodexBridgeConfig(source.codexBridge),
+  };
+}
+
+function normalizeGraphMaintenanceConfig(graphMaintenance: any = {}) {
+  const source = graphMaintenance && typeof graphMaintenance === 'object' ? graphMaintenance : {};
+  const mode = ['off', 'passive', 'dry_run', 'safe_auto'].includes(String(source.mode || ''))
+    ? String(source.mode)
+    : DEFAULT_CONFIG.graphMaintenance.mode;
+  return {
+    enabled: source.enabled !== false && mode !== 'off',
+    mode,
+    intervalMs: clampInteger(source.intervalMs, DEFAULT_CONFIG.graphMaintenance.intervalMs, 60000, 86400000),
+    runOnStartup: source.runOnStartup !== false,
+    startupDelayMs: clampInteger(source.startupDelayMs, DEFAULT_CONFIG.graphMaintenance.startupDelayMs, 0, 3600000),
+    maxNodesPerRun: clampInteger(source.maxNodesPerRun, DEFAULT_CONFIG.graphMaintenance.maxNodesPerRun, 50, 100000),
+    safeAutoApply: source.safeAutoApply !== false,
+    maxSafeAutoApplyPerRun: clampInteger(source.maxSafeAutoApplyPerRun, DEFAULT_CONFIG.graphMaintenance.maxSafeAutoApplyPerRun, 0, 100),
   };
 }
 

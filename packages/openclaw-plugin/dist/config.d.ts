@@ -1,5 +1,5 @@
 export declare const PLUGIN_ID = "openclawbrain";
-export declare const PLUGIN_VERSION = "0.2.28";
+export declare const PLUGIN_VERSION = "0.2.29";
 export declare const DEFAULT_CONFIG: any;
 export declare function resolveOpenClawBrainConfig(api?: any): {
     enabled: boolean;
@@ -67,6 +67,16 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
         maxNegativeExamples: number;
         pruneIntervalMs: number;
         maxMemoryNodesPerAgent: number;
+    };
+    graphMaintenance: {
+        enabled: boolean;
+        mode: any;
+        intervalMs: number;
+        runOnStartup: boolean;
+        startupDelayMs: number;
+        maxNodesPerRun: number;
+        safeAutoApply: boolean;
+        maxSafeAutoApplyPerRun: number;
     };
     routeLearning: {
         enabled: boolean;
@@ -231,6 +241,16 @@ export declare function normalizePluginConfig(input?: any): {
         maxNegativeExamples: number;
         pruneIntervalMs: number;
         maxMemoryNodesPerAgent: number;
+    };
+    graphMaintenance: {
+        enabled: boolean;
+        mode: any;
+        intervalMs: number;
+        runOnStartup: boolean;
+        startupDelayMs: number;
+        maxNodesPerRun: number;
+        safeAutoApply: boolean;
+        maxSafeAutoApplyPerRun: number;
     };
     routeLearning: {
         enabled: boolean;

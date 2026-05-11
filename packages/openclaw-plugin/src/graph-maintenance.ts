@@ -50,6 +50,11 @@ export interface GraphMaintenanceDryRunReport {
   proposals: GraphMaintenanceProposal[];
 }
 
+export interface GraphMaintenanceAutomaticReport extends GraphMaintenanceDryRunReport {
+  safeAutoApply: boolean;
+  applied: Array<{ proposalId: string; proposalType: string; ok: boolean; reason?: string }>;
+}
+
 type LoadedGraph = {
   nodes: MemoryNode[];
   activeNodes: MemoryNode[];
@@ -111,13 +116,13 @@ export class GraphMaintenanceEngine {
     };
   }
 
-  dryRun(agentId: string, options: { limit?: number } = {}): GraphMaintenanceDryRunReport {
+  dryRun(agentId: string, options: { limit?: number; mode?: GraphMaintenanceRun['mode'] } = {}): GraphMaintenanceDryRunReport {
     const limit = options.limit ?? 1000;
     const graph = this.loadGraph(agentId, limit);
     const health = this.health(agentId, limit);
     const run = this.store.insertGraphMaintenanceRun({
       agentId,
-      mode: 'dry_run',
+      mode: options.mode || 'dry_run',
       status: 'running',
       nodesScanned: graph.nodes.length,
       edgesScanned: graph.edges.length,
@@ -159,6 +164,60 @@ export class GraphMaintenanceEngine {
       }),
     });
     return { ok: true, agentId, run: finished, health, proposals };
+  }
+
+  runAutomatic(agentId: string, options: { limit?: number; safeAutoApply?: boolean; maxSafeAutoApply?: number } = {}): GraphMaintenanceAutomaticReport {
+    const safeAutoApply = options.safeAutoApply !== false;
+    const report = this.dryRun(agentId, {
+      limit: options.limit,
+      mode: safeAutoApply ? 'safe_auto' : 'dry_run',
+    });
+    const maxSafeAutoApply = Math.max(0, Math.min(100, Math.trunc(Number(options.maxSafeAutoApply ?? 5))));
+    const applied: GraphMaintenanceAutomaticReport['applied'] = [];
+    if (safeAutoApply && maxSafeAutoApply > 0) {
+      const candidates = report.proposals
+        .filter((proposal) => proposal.status !== 'applied' && proposal.status !== 'rejected' && isSafeApplyProposal(proposal))
+        .slice(0, maxSafeAutoApply);
+      for (const proposal of candidates) {
+        const result = this.applyProposal(agentId, proposal.id);
+        applied.push({
+          proposalId: proposal.id,
+          proposalType: proposal.proposalType,
+          ok: result.ok,
+          reason: result.reason,
+        });
+      }
+    }
+    const appliedCount = applied.filter((item) => item.ok).length;
+    const finished = this.store.finishGraphMaintenanceRun(report.run.id, {
+      status: 'completed',
+      proposalsApplied: appliedCount,
+      riskSummary: {
+        ...riskSummaryFor(report.proposals),
+        safe_auto_applied: appliedCount,
+      },
+      metrics: {
+        ...report.health.counts,
+        safeAutoApply,
+        safeAutoApplied: appliedCount,
+      },
+    }) || report.run;
+    if (report.proposals.length > 0 || applied.length > 0 || report.health.topIssues.length > 0) {
+      this.store.insertProofEvent({
+        agentId,
+        kind: 'graph_maintenance_auto_cycle',
+        rawTranscriptStored: false,
+        payload: redactJsonValue({
+          runId: report.run.id,
+          proposals: report.proposals.length,
+          safeAutoApply,
+          applied,
+          counts: report.health.counts,
+          invariant: 'automatic_graph_maintenance_is_proposal_first_and_only_safe_low_risk_mutations_auto_apply',
+        }),
+      });
+    }
+    return { ...report, run: finished, safeAutoApply, applied };
   }
 
   applyProposal(agentId: string, proposalId: string): { ok: boolean; proposal?: GraphMaintenanceProposal | null; reason?: string } {

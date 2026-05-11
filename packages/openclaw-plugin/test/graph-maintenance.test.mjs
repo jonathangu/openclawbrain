@@ -9,6 +9,7 @@ import plugin, {
   graphMaintenancePayload,
   handleBrainCommand,
   normalizePluginConfig,
+  processAutomaticGraphMaintenance,
 } from '../dist/index.js';
 import { MemoryStore } from '../dist/memory-store.js';
 
@@ -268,6 +269,67 @@ test('graph routes and /brain graph commands are available through the plugin su
     assert.equal(payload.ok, true);
     const commandResult = await handleBrainCommand({ args: 'graph health', agentId: 'main' }, cfg, {});
     assert.match(commandResult.text, /graph health/i);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('automatic graph maintenance proposes passively and only auto-applies safe low-risk repairs', async () => {
+  const root = await tempRoot();
+  try {
+    const cfg = normalizePluginConfig({
+      activationRoot: root,
+      scopes: { agents: ['main'] },
+      graphMaintenance: {
+        enabled: true,
+        mode: 'passive',
+        safeAutoApply: true,
+        maxSafeAutoApplyPerRun: 5,
+      },
+    });
+    let store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const first = insertMemory(store, {
+      content: 'Use pnpm in this repo.',
+      scopeKind: 'repo',
+      scopeKey: 'openclawbrain',
+      normalizedKey: 'repo:openclawbrain:pkg:first',
+      importance: 0.9,
+    });
+    const duplicate = insertMemory(store, {
+      content: 'Use pnpm in this repo.',
+      scopeKind: 'repo',
+      scopeKey: 'openclawbrain',
+      normalizedKey: 'repo:openclawbrain:pkg:duplicate',
+      importance: 0.4,
+    });
+    const stale = insertMemory(store, {
+      type: 'workflow',
+      content: 'Deploy with the old release script.',
+      scopeKind: 'repo',
+      scopeKey: 'openclawbrain',
+      normalizedKey: 'repo:openclawbrain:old-deploy-script',
+      importance: 0.95,
+      freshness: 0.1,
+    });
+    store.patchMemoryValidity(stale.id, {
+      temporalValidity: 'stale',
+      behavioralAuthorityScore: 0.92,
+      validationStrategy: 'environment_check',
+      stateReason: 'test_stale_high_authority',
+    });
+    store.close();
+
+    await processAutomaticGraphMaintenance(cfg, { logger: { info() {}, warn() {} } });
+
+    store = new MemoryStore({ activationRoot: root, agentId: 'main' });
+    const firstAfter = store.getMemory(first.id);
+    const duplicateAfter = store.getMemory(duplicate.id);
+    assert.equal([firstAfter.supersededBy, duplicateAfter.supersededBy].filter(Boolean).length, 1);
+    assert.equal(store.getMemoryValidity(stale.id).behavioralAuthorityScore, 0.92);
+    assert.ok(store.listGraphMaintenanceRuns('main').some((run) => run.mode === 'safe_auto' && run.proposalsApplied >= 1));
+    assert.ok(store.listGraphMaintenanceProposals('main', { status: 'pending_review' }).some((proposal) => proposal.proposalType === 'mark_stale_high_authority'));
+    assert.ok(store.getProofEvents('main', 20).some((event) => event.kind === 'graph_maintenance_auto_cycle'));
+    store.close();
   } finally {
     await rm(root, { recursive: true, force: true });
   }

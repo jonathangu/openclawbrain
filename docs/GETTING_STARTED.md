@@ -1,6 +1,6 @@
 # Getting Started with OpenClawBrain
 
-This is the fastest honest path to a working OpenClawBrain `0.2.28` install.
+This is the fastest honest path to a working OpenClawBrain `0.2.29` install.
 
 ## What you are installing
 
@@ -8,7 +8,7 @@ OpenClawBrain is a native OpenClaw plugin that gives agents local, inspectable m
 
 The production route brain is `route-policy-v3`: a compact learned route function backed by redacted route frames, SQLite evidence, shadow decisions, replay/eval cases, calibration, gated promotion, and rollback lineage.
 
-The 0.2.28 runtime includes Memory Authority resolution, Memory Graph Maintenance, and an OpenClawBrain-owned Codex continuity bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The graph maintenance layer then keeps long-lived memory healthy with dry-run proposals, deterministic duplicate/edge cleanup, tombstone-aware recapture checks, and proof. The Codex bridge reads local Codex state, exposes quiet Telegram-facing status/watch/handoff commands, and keeps Telegram-to-Codex writes disabled by default.
+The 0.2.29 runtime includes Memory Authority resolution, Memory Graph Maintenance, and an OpenClawBrain-owned Codex continuity bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The graph maintenance layer then keeps long-lived memory healthy with dry-run proposals, deterministic duplicate/edge cleanup, tombstone-aware recapture checks, and proof. The Codex bridge reads local Codex state, exposes quiet Telegram-facing status/watch/handoff commands, and keeps Telegram-to-Codex writes disabled by default.
 
 ## Before you start
 
@@ -23,16 +23,16 @@ You need:
 Use the same command for a fresh install or an upgrade. `--force` replaces an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.28 --force
+openclaw plugins install clawhub:openclawbrain@0.2.29 --force
 openclaw plugins enable openclawbrain
 ```
 
 If ClawHub metadata is still propagating, install the GitHub release archive:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.28.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.28/openclawbrain-0.2.28.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.28.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.29.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.29/openclawbrain-0.2.29.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.29.tgz --force
 openclaw plugins enable openclawbrain
 ```
 
@@ -138,6 +138,8 @@ A later test/build turn should receive a small bounded context block, not a tran
 
 Graph maintenance is separate from Memory Authority. It curates the graph over time; it does not decide turn-level use.
 
+By default, the service also runs graph maintenance passively in the background. The automatic loop creates dry-run/proposal records and may apply only deterministic low-risk repairs, such as exact duplicate consolidation, bad-edge retirement, and observation-only feedback rows. Anything that could change authority, scope, privacy, tombstones, or meaning remains review-gated.
+
 ```text
 /brain graph health
 /brain graph dry-run
@@ -155,7 +157,7 @@ HTTP equivalents:
 /plugins/openclawbrain/graph/explain?proposalId=...
 ```
 
-Only low-risk deterministic proposals are safe to apply automatically. Stale high-authority memories, scoped exceptions, semantic changes, privacy changes, and tombstone recapture proposals stay review-gated.
+The explicit commands are still useful when you want to inspect what the background loop found, force a dry-run immediately, or approve/reject review-gated proposals.
 
 ## Compatibility note
 

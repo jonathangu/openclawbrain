@@ -41,6 +41,15 @@ export interface GraphMaintenanceDryRunReport {
     health: GraphMaintenanceHealth;
     proposals: GraphMaintenanceProposal[];
 }
+export interface GraphMaintenanceAutomaticReport extends GraphMaintenanceDryRunReport {
+    safeAutoApply: boolean;
+    applied: Array<{
+        proposalId: string;
+        proposalType: string;
+        ok: boolean;
+        reason?: string;
+    }>;
+}
 export declare class GraphMaintenanceEngine {
     private store;
     private config;
@@ -48,7 +57,13 @@ export declare class GraphMaintenanceEngine {
     health(agentId: string, limit?: number): GraphMaintenanceHealth;
     dryRun(agentId: string, options?: {
         limit?: number;
+        mode?: GraphMaintenanceRun['mode'];
     }): GraphMaintenanceDryRunReport;
+    runAutomatic(agentId: string, options?: {
+        limit?: number;
+        safeAutoApply?: boolean;
+        maxSafeAutoApply?: number;
+    }): GraphMaintenanceAutomaticReport;
     applyProposal(agentId: string, proposalId: string): {
         ok: boolean;
         proposal?: GraphMaintenanceProposal | null;

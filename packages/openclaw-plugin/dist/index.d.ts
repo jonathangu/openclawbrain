@@ -129,3 +129,4 @@ export declare function buildMemoryCapability(resolve: any): {
         closeAllMemorySearchManagers(): Promise<undefined>;
     };
 };
+export declare function processAutomaticGraphMaintenance(config?: any, api?: any): Promise<void>;
