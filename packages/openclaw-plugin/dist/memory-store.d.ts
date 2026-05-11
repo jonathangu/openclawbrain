@@ -1,6 +1,6 @@
 import { type DatabaseLike } from './sqlite-driver.js';
 import { type ScopeContext } from './scope.js';
-import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, MemoryAuthorityEvent, MemoryValidity, RouteDecision, RouteKind, RouteFrameV2, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, RouteFrameV3, RouteActionPrototypeV3, RoutePairExampleV3, RouteBanditFeedbackV3, RouteBanditStateV3, RoutePolicySnapshotV3, RouteShadowDecisionV3, RouteCalibrationExampleV3, RouteActionFamilyStatsV3, RoutePolicyCandidateReportV3, RouteEvalCaseV3, RouteEvalCaseLabelV3, CaptureAuditRow } from './memory-types.js';
+import type { MemoryNode, MemoryType, MemoryEdge, EdgeRelation, MemoryAuthorityEvent, MemoryValidity, RouteDecision, RouteKind, RouteFrameV2, InjectionEvent, InjectionOutcome, BackgroundJob, JobKind, ProofEvent, DistillationRun, RouteExample, RoutePolicySnapshot, RouteGraphSnapshot, RouteTeacherRun, RouteCounterfactual, RouteTrainingExampleV2, RoutePolicySnapshotV2, RouteFrameV3, RouteActionPrototypeV3, RoutePairExampleV3, RouteBanditFeedbackV3, RouteBanditStateV3, RoutePolicySnapshotV3, RouteShadowDecisionV3, RouteCalibrationExampleV3, RouteActionFamilyStatsV3, RoutePolicyCandidateReportV3, RouteEvalCaseV3, RouteEvalCaseLabelV3, CaptureAuditRow, GraphMaintenanceRun, GraphMaintenanceProposal, MemoryNodeLineage, MemoryEdgeObservation } from './memory-types.js';
 export declare const uuid: () => `${string}-${string}-${string}-${string}-${string}`;
 export declare const now: () => string;
 export interface MemoryStoreOptions {
@@ -182,6 +182,37 @@ export declare class MemoryStore {
     getRouteExamplesByPolarity(agentId: string, polarity: 'positive' | 'negative', limit?: number): any[];
     getConnectedMemories(memoryId: string, maxDepth?: number, agentId?: string, scopeContext?: ScopeContext): MemoryNode[];
     countEdgesForAgent(agentId: string): number;
+    listAllMemoriesForMaintenance(agentId: string, limit?: number): MemoryNode[];
+    listEdgesForAgent(agentId: string, limit?: number): MemoryEdge[];
+    deleteEdge(edgeId: string, agentId?: string): boolean;
+    insertGraphMaintenanceRun(run: Omit<GraphMaintenanceRun, 'id' | 'startedAt'> & {
+        id?: string;
+        startedAt?: string;
+    }): GraphMaintenanceRun;
+    finishGraphMaintenanceRun(runId: string, patch: Partial<GraphMaintenanceRun>): GraphMaintenanceRun | null;
+    getGraphMaintenanceRun(runId: string): GraphMaintenanceRun | null;
+    listGraphMaintenanceRuns(agentId: string, limit?: number): GraphMaintenanceRun[];
+    insertGraphMaintenanceProposal(proposal: Omit<GraphMaintenanceProposal, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): GraphMaintenanceProposal;
+    getGraphMaintenanceProposal(proposalId: string): GraphMaintenanceProposal | null;
+    listGraphMaintenanceProposals(agentId: string, opts?: {
+        status?: string;
+        limit?: number;
+        runId?: string;
+    }): GraphMaintenanceProposal[];
+    updateGraphMaintenanceProposal(proposalId: string, patch: Partial<GraphMaintenanceProposal>): GraphMaintenanceProposal | null;
+    insertMemoryNodeLineage(lineage: Omit<MemoryNodeLineage, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): MemoryNodeLineage;
+    listMemoryNodeLineage(agentId: string, memoryId?: string, limit?: number): MemoryNodeLineage[];
+    insertMemoryEdgeObservation(observation: Omit<MemoryEdgeObservation, 'id' | 'createdAt'> & {
+        id?: string;
+        createdAt?: string;
+    }): MemoryEdgeObservation;
+    listMemoryEdgeObservations(agentId: string, limit?: number, edgeId?: string): MemoryEdgeObservation[];
     insertRouteGraphSnapshot(snapshot: Omit<RouteGraphSnapshot, 'id' | 'createdAt'> & {
         id?: string;
         createdAt?: string;

@@ -1,8 +1,8 @@
 # Architecture
 
-OpenClawBrain `0.2.25` is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, injects only bounded context back into the prompt, and exposes a quiet Codex continuity bridge without patching OpenClaw core.
+OpenClawBrain `0.2.28` is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, injects only bounded context back into the prompt, exposes a quiet Codex continuity bridge, and maintains graph health without patching OpenClaw core.
 
-The central runtime addition is the **Memory Authority** layer. Retrieval can over-include candidates, but a memory is not allowed to influence the turn until authority resolution checks freshness, scope, privacy, supersession, current instructions, validation strategy, and risk. The Codex continuity bridge applies the same stance to local Codex state: useful status and handoff facts are surfaced, but raw telemetry is not captured as durable memory.
+The central runtime addition is the **Memory Authority** layer. Retrieval can over-include candidates, but a memory is not allowed to influence the turn until authority resolution checks freshness, scope, privacy, supersession, current instructions, validation strategy, and risk. The Memory Graph Maintenance layer is separate: it curates graph structure and evidence over time, but it never directly decides turn-level authority. The Codex continuity bridge applies the same stance to local Codex state: useful status and handoff facts are surfaced, but raw telemetry is not captured as durable memory.
 
 The core invariant is unchanged:
 
@@ -18,6 +18,7 @@ packages/openclaw-plugin/src/
 ├── config.ts                        # defaults + config normalization
 ├── memory-store.ts                  # SQLite schema, FTS5, graph storage, proofs, jobs
 ├── memory-authority.ts              # relevance vs authority, validity, verification/confirmation decisions
+├── graph-maintenance.ts             # graph health, proposals, lineage, edge observations, safe mutations
 ├── route-fn.ts                      # v3-first route decision path with fallback handling
 ├── route-policy-v2.ts               # legacy learned policy fallback/rollback path
 ├── route-policy-v3*.ts              # v3 snapshots, normalization, calibration, eval, routing modes
@@ -135,6 +136,34 @@ Flow:
 6. Raw Codex telemetry is not stored as durable OpenClawBrain memory.
 7. Telegram-to-Codex writes remain disabled unless explicitly feature-flagged with trusted sender, repo allowlist, provenance, risk, and confirmation controls.
 
+### 4) graph maintenance lane
+
+Used when:
+
+- an operator asks `/brain graph health`, `/brain graph dry-run`, or the corresponding authenticated HTTP routes
+- the system needs to inspect duplicate nodes, bad edges, stale high-authority memories, tombstone recapture risk, scoped exception candidates, or feedback observations
+- a low-risk deterministic proposal is explicitly applied
+
+Flow:
+
+1. `GraphMaintenanceEngine` snapshots memory nodes, validity rows, memory edges, authority events, and route teacher signals.
+2. It computes graph health metrics and compiles redacted proposals.
+3. Low-risk deterministic proposals, such as exact duplicate consolidation or bad edge retirement, can be applied transactionally.
+4. Semantic merges, stale authority changes, scoped exceptions, privacy changes, supersession, and tombstone recapture remain review-gated.
+5. Applied mutations write proof, node lineage, and edge observation rows.
+
+Boundary:
+
+> Graph Maintenance can provide features. `MemoryAuthorityResolver` recomputes the turn-level verdict.
+
+Important invariants:
+
+- current user instruction outranks old memory
+- connectivity is not authority
+- behavioral edges are not epistemic evidence
+- implicit route success cannot raise evidence confidence
+- tombstoned or hard-deleted content cannot be revived by merge, proof, proposal, or LLM distillation
+
 ## Latency model
 
 OpenClawBrain is designed so memory does **not** add a blocking model call to every turn.
@@ -148,9 +177,11 @@ The code follows the four-tier plan from `FINAL_PLAN.md`:
 
 ## Storage model
 
-`memory-store.ts` persists memory nodes/edges, route decisions, injection records, distillation runs, background jobs, proof events, memory validity rows, memory authority events, and the v3 route-learning warehouse. Search uses SQLite FTS5 plus graph expansion and scope filters.
+`memory-store.ts` persists memory nodes/edges, route decisions, injection records, distillation runs, background jobs, proof events, memory validity rows, memory authority events, graph maintenance runs/proposals, memory node lineage, memory edge observations, and the v3 route-learning warehouse. Search uses SQLite FTS5 plus graph expansion and scope filters.
 
 `memory_validity` keeps orthogonal state for retention, behavioral availability, temporal validity, privacy class, decay policy, validation strategy, and authority scores. `memory_authority_events` records when a memory was used, weakened, verified, confirmed, suppressed, tombstoned, superseded, or withheld.
+
+`graph_maintenance_runs` and `graph_maintenance_proposals` keep dry-run and apply history. Proposal rows include preconditions, risk factors, redacted evidence, applied diffs, rollback hints, and status. `memory_node_lineage` preserves canonical merge/split/supersession lineage. `memory_edge_observations` records behavioral, lineage, retention, temporal, scope, and epistemic observations without treating every edge weight as authority.
 
 Raw transcript storage remains off; route-learning evidence is compact, redacted, scoped, and inspectable.
 
@@ -181,6 +212,15 @@ Registered HTTP routes include:
 - `/plugins/openclawbrain/doctor`
 - `/plugins/openclawbrain/proof`
 - `/plugins/openclawbrain/graph`
+- `/plugins/openclawbrain/graph/health`
+- `/plugins/openclawbrain/graph/dry-run`
+- `/plugins/openclawbrain/graph/proposals`
+- `/plugins/openclawbrain/graph/apply`
+- `/plugins/openclawbrain/graph/reject`
+- `/plugins/openclawbrain/graph/stale`
+- `/plugins/openclawbrain/graph/clusters`
+- `/plugins/openclawbrain/graph/tombstones`
+- `/plugins/openclawbrain/graph/explain`
 - `/plugins/openclawbrain/learn`
 - `/plugins/openclawbrain/search`
 - `/plugins/openclawbrain/route-teacher`

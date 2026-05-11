@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { openDatabase } from './sqlite-driver.js';
 import { clipText, redactText, safeString } from './redact.js';
+import { graphHelpText, handleGraphBrainCommand } from './graph-maintenance.js';
 export const DEFAULT_CODEX_BRIDGE_CONFIG = Object.freeze({
     enabled: true,
     statePaths: Object.freeze(['~/.codex/state_5.sqlite']),
@@ -237,6 +238,8 @@ export async function handleBrainCommand(ctx, config, api = {}) {
     const [namespace = 'help', subcommand = 'status', ...rest] = args;
     if (namespace === 'help' || namespace === '--help')
         return { text: brainHelpText() };
+    if (namespace === 'graph')
+        return handleGraphBrainCommand(ctx, [subcommand, ...rest], config);
     if (namespace !== 'codex')
         return { text: brainHelpText() };
     const agentId = safeString(ctx.agentId ?? config.scopes?.agents?.[0] ?? 'main') || 'main';
@@ -649,6 +652,8 @@ function brainHelpText() {
         '- /brain codex watch [thread-id|--latest]',
         '- /brain codex handoff [thread-id]',
         '- /brain codex goal ... (disabled by default)',
+        '',
+        graphHelpText(),
     ].join('\n');
 }
 function splitArgs(input) {

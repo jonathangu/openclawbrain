@@ -101,6 +101,89 @@ export interface MemoryEdge {
     createdAt: string;
     updatedAt: string;
 }
+export type GraphMaintenanceRunMode = 'health' | 'dry_run' | 'safe_auto' | 'manual_apply';
+export type GraphMaintenanceRunStatus = 'running' | 'completed' | 'failed';
+export type GraphMaintenanceProposalStatus = 'drafted' | 'guard_rejected' | 'pending_review' | 'approved' | 'applied' | 'rejected' | 'expired' | 'superseded' | 'failed_apply' | 'stale';
+export type GraphMaintenanceProposalType = 'merge_exact_duplicate_nodes' | 'retire_bad_edge' | 'mark_stale_high_authority' | 'block_tombstone_recapture' | 'propose_scoped_exception' | 'record_feedback_edge_observation';
+export type GraphMaintenanceRisk = 'low' | 'medium' | 'high';
+export type GraphMaintenanceEdgeFamily = 'epistemic' | 'temporal' | 'scope' | 'behavioral' | 'lineage' | 'retention';
+export type GraphMaintenanceEdgeState = 'candidate' | 'active' | 'weakened' | 'retired' | 'blocked' | 'structural';
+export interface GraphMaintenanceRun {
+    id: string;
+    agentId: string;
+    mode: GraphMaintenanceRunMode;
+    status: GraphMaintenanceRunStatus;
+    startedAt: string;
+    finishedAt?: string;
+    inputWindowStart?: string;
+    inputWindowEnd?: string;
+    nodesScanned: number;
+    edgesScanned: number;
+    proposalsCreated: number;
+    proposalsApplied: number;
+    proposalsRejected: number;
+    riskSummary: Record<string, unknown>;
+    metrics: Record<string, unknown>;
+}
+export interface GraphMaintenanceProposal {
+    id: string;
+    runId: string;
+    agentId: string;
+    proposalType: GraphMaintenanceProposalType;
+    targetKind: 'node' | 'edge' | 'graph' | 'validity' | 'tombstone';
+    targetIds: string[];
+    proposedPatch: Record<string, unknown>;
+    evidence: Record<string, unknown>;
+    preconditions: Record<string, unknown>;
+    appliedDiff: Record<string, unknown>;
+    rollbackPatch?: Record<string, unknown>;
+    riskFactors: Record<string, unknown>;
+    confidence: number;
+    risk: GraphMaintenanceRisk;
+    status: GraphMaintenanceProposalStatus;
+    reason: string;
+    reviewRequiredReason?: string;
+    reviewedBy?: string;
+    reviewedAt?: string;
+    proposalHash: string;
+    expiresAt?: string;
+    graphSnapshotId?: string;
+    graphVersion: number;
+    createdAt: string;
+    appliedAt?: string;
+    rejectedAt?: string;
+}
+export interface MemoryNodeLineage {
+    id: string;
+    agentId: string;
+    childMemoryId: string;
+    parentMemoryId: string;
+    relation: 'duplicate_of' | 'canonical_for' | 'merged_into' | 'derived_from' | 'split_from' | 'superseded_by';
+    proposalId?: string;
+    evidence: Record<string, unknown>;
+    createdAt: string;
+}
+export interface MemoryEdgeObservation {
+    id: string;
+    agentId: string;
+    edgeId?: string;
+    fromId?: string;
+    toId?: string;
+    relation: string;
+    edgeFamily: GraphMaintenanceEdgeFamily;
+    edgeState: GraphMaintenanceEdgeState;
+    observationType: string;
+    delta: number;
+    sourceType: 'user_statement' | 'user_correction' | 'tool_result' | 'environment_check' | 'route_teacher' | 'inferred_outcome' | 'llm_judgment' | 'maintenance';
+    sourceIndependence: 'independent' | 'same_origin' | 'derived' | 'self_reinforcing';
+    signalStrength: 'explicit' | 'implicit' | 'inferred' | 'weak';
+    polarity: 'supports' | 'contradicts' | 'scopes' | 'supersedes' | 'irrelevant';
+    causalAttribution: 'memory_helped' | 'memory_harmed' | 'memory_irrelevant' | 'unknown';
+    routeId?: string;
+    proofEventId?: string;
+    reason: string;
+    createdAt: string;
+}
 export type TaskType = 'coding' | 'planning' | 'debugging' | 'writing' | 'preference_update' | 'correction' | 'general_question' | 'other';
 export interface ActiveObject {
     kind: 'repo' | 'file' | 'tool' | 'preference' | 'plan' | 'person' | 'concept';

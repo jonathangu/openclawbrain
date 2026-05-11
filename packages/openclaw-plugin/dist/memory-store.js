@@ -8,7 +8,7 @@ import { openDatabase } from './sqlite-driver.js';
 import { filterMemoriesForScope } from './scope.js';
 import { defaultValidityForMemory } from './memory-authority.js';
 // ── Schema version ────────────────────────────────────────────────────────────
-const SCHEMA_VERSION = 11;
+const SCHEMA_VERSION = 12;
 // ── Schema SQL ────────────────────────────────────────────────────────────────
 const MIGRATIONS = {
     1: `
@@ -818,6 +818,100 @@ const MIGRATIONS = {
       'migration_v11_default',
       updated_at
     FROM memory_nodes;
+  `,
+    12: `
+    CREATE TABLE IF NOT EXISTS graph_maintenance_runs (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      mode TEXT NOT NULL,
+      status TEXT NOT NULL,
+      started_at TEXT NOT NULL,
+      finished_at TEXT,
+      input_window_start TEXT,
+      input_window_end TEXT,
+      nodes_scanned INTEGER NOT NULL DEFAULT 0,
+      edges_scanned INTEGER NOT NULL DEFAULT 0,
+      proposals_created INTEGER NOT NULL DEFAULT 0,
+      proposals_applied INTEGER NOT NULL DEFAULT 0,
+      proposals_rejected INTEGER NOT NULL DEFAULT 0,
+      risk_summary_json TEXT NOT NULL DEFAULT '{}',
+      metrics_json TEXT NOT NULL DEFAULT '{}'
+    );
+    CREATE INDEX IF NOT EXISTS idx_graph_maintenance_runs_agent ON graph_maintenance_runs(agent_id, started_at);
+    CREATE INDEX IF NOT EXISTS idx_graph_maintenance_runs_status ON graph_maintenance_runs(agent_id, status);
+
+    CREATE TABLE IF NOT EXISTS graph_maintenance_proposals (
+      id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL,
+      agent_id TEXT NOT NULL,
+      proposal_type TEXT NOT NULL,
+      target_kind TEXT NOT NULL,
+      target_ids_json TEXT NOT NULL DEFAULT '[]',
+      proposed_patch_json TEXT NOT NULL DEFAULT '{}',
+      evidence_json TEXT NOT NULL DEFAULT '{}',
+      precondition_json TEXT NOT NULL DEFAULT '{}',
+      applied_diff_json TEXT NOT NULL DEFAULT '{}',
+      rollback_patch_json TEXT,
+      risk_factors_json TEXT NOT NULL DEFAULT '{}',
+      confidence REAL NOT NULL DEFAULT 0.5,
+      risk TEXT NOT NULL DEFAULT 'medium',
+      status TEXT NOT NULL DEFAULT 'pending_review',
+      reason TEXT NOT NULL,
+      review_required_reason TEXT,
+      reviewed_by TEXT,
+      reviewed_at TEXT,
+      proposal_hash TEXT NOT NULL,
+      expires_at TEXT,
+      graph_snapshot_id TEXT,
+      graph_version INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      applied_at TEXT,
+      rejected_at TEXT,
+      UNIQUE(agent_id, proposal_hash)
+    );
+    CREATE INDEX IF NOT EXISTS idx_graph_maintenance_proposals_run ON graph_maintenance_proposals(run_id);
+    CREATE INDEX IF NOT EXISTS idx_graph_maintenance_proposals_agent_status ON graph_maintenance_proposals(agent_id, status, risk);
+    CREATE INDEX IF NOT EXISTS idx_graph_maintenance_proposals_type ON graph_maintenance_proposals(agent_id, proposal_type, created_at);
+
+    CREATE TABLE IF NOT EXISTS memory_node_lineage (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      child_memory_id TEXT NOT NULL,
+      parent_memory_id TEXT NOT NULL,
+      relation TEXT NOT NULL,
+      proposal_id TEXT,
+      evidence_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      UNIQUE(agent_id, child_memory_id, parent_memory_id, relation)
+    );
+    CREATE INDEX IF NOT EXISTS idx_memory_node_lineage_child ON memory_node_lineage(agent_id, child_memory_id);
+    CREATE INDEX IF NOT EXISTS idx_memory_node_lineage_parent ON memory_node_lineage(agent_id, parent_memory_id);
+    CREATE INDEX IF NOT EXISTS idx_memory_node_lineage_relation ON memory_node_lineage(agent_id, relation);
+
+    CREATE TABLE IF NOT EXISTS memory_edge_observations (
+      id TEXT PRIMARY KEY,
+      agent_id TEXT NOT NULL,
+      edge_id TEXT,
+      from_id TEXT,
+      to_id TEXT,
+      relation TEXT NOT NULL,
+      edge_family TEXT NOT NULL,
+      edge_state TEXT NOT NULL,
+      observation_type TEXT NOT NULL,
+      delta REAL NOT NULL DEFAULT 0,
+      source_type TEXT NOT NULL,
+      source_independence TEXT NOT NULL,
+      signal_strength TEXT NOT NULL,
+      polarity TEXT NOT NULL,
+      causal_attribution TEXT NOT NULL,
+      route_id TEXT,
+      proof_event_id TEXT,
+      reason TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_memory_edge_observations_edge ON memory_edge_observations(agent_id, edge_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_memory_edge_observations_pair ON memory_edge_observations(agent_id, from_id, to_id, relation);
+    CREATE INDEX IF NOT EXISTS idx_memory_edge_observations_type ON memory_edge_observations(agent_id, observation_type, created_at);
   `,
 };
 // ── UUID helper ───────────────────────────────────────────────────────────────
@@ -1904,6 +1998,139 @@ export class MemoryStore {
         const row = this.db.prepare('SELECT COUNT(*) as cnt FROM memory_edges WHERE agent_id = ?').get(agentId);
         return row?.cnt ?? 0;
     }
+    listAllMemoriesForMaintenance(agentId, limit = 1000) {
+        return this.db.prepare('SELECT * FROM memory_nodes WHERE agent_id = ? ORDER BY updated_at DESC LIMIT ?').all(agentId, Math.min(5000, Math.max(1, limit))).map(rowToMemory);
+    }
+    listEdgesForAgent(agentId, limit = 1000) {
+        return this.db.prepare('SELECT * FROM memory_edges WHERE agent_id = ? ORDER BY updated_at DESC LIMIT ?').all(agentId, Math.min(5000, Math.max(1, limit))).map(rowToEdge);
+    }
+    deleteEdge(edgeId, agentId) {
+        const info = agentId
+            ? this.db.prepare('DELETE FROM memory_edges WHERE id = ? AND agent_id = ?').run(edgeId, agentId)
+            : this.db.prepare('DELETE FROM memory_edges WHERE id = ?').run(edgeId);
+        return Number(info?.changes || 0) > 0;
+    }
+    // ── Graph maintenance ─────────────────────────────────────────────────────
+    insertGraphMaintenanceRun(run) {
+        const id = run.id || uuid();
+        const startedAt = run.startedAt || now();
+        this.db.prepare(`
+      INSERT INTO graph_maintenance_runs (
+        id, agent_id, mode, status, started_at, finished_at, input_window_start, input_window_end,
+        nodes_scanned, edges_scanned, proposals_created, proposals_applied, proposals_rejected,
+        risk_summary_json, metrics_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, run.agentId, run.mode, run.status, startedAt, run.finishedAt ?? null, run.inputWindowStart ?? null, run.inputWindowEnd ?? null, run.nodesScanned ?? 0, run.edgesScanned ?? 0, run.proposalsCreated ?? 0, run.proposalsApplied ?? 0, run.proposalsRejected ?? 0, JSON.stringify(run.riskSummary ?? {}), JSON.stringify(run.metrics ?? {}));
+        return this.getGraphMaintenanceRun(id);
+    }
+    finishGraphMaintenanceRun(runId, patch) {
+        const ts = patch.finishedAt || now();
+        this.db.prepare(`
+      UPDATE graph_maintenance_runs SET
+        status = COALESCE(?, status),
+        finished_at = ?,
+        nodes_scanned = COALESCE(?, nodes_scanned),
+        edges_scanned = COALESCE(?, edges_scanned),
+        proposals_created = COALESCE(?, proposals_created),
+        proposals_applied = COALESCE(?, proposals_applied),
+        proposals_rejected = COALESCE(?, proposals_rejected),
+        risk_summary_json = COALESCE(?, risk_summary_json),
+        metrics_json = COALESCE(?, metrics_json)
+      WHERE id = ?
+    `).run(patch.status ?? null, ts, patch.nodesScanned ?? null, patch.edgesScanned ?? null, patch.proposalsCreated ?? null, patch.proposalsApplied ?? null, patch.proposalsRejected ?? null, patch.riskSummary ? JSON.stringify(patch.riskSummary) : null, patch.metrics ? JSON.stringify(patch.metrics) : null, runId);
+        return this.getGraphMaintenanceRun(runId);
+    }
+    getGraphMaintenanceRun(runId) {
+        const row = this.db.prepare('SELECT * FROM graph_maintenance_runs WHERE id = ?').get(runId);
+        return row ? rowToGraphMaintenanceRun(row) : null;
+    }
+    listGraphMaintenanceRuns(agentId, limit = 20) {
+        return this.db.prepare('SELECT * FROM graph_maintenance_runs WHERE agent_id = ? ORDER BY started_at DESC LIMIT ?').all(agentId, Math.min(200, Math.max(1, limit))).map(rowToGraphMaintenanceRun);
+    }
+    insertGraphMaintenanceProposal(proposal) {
+        const id = proposal.id || uuid();
+        const createdAt = proposal.createdAt || now();
+        this.db.prepare(`
+      INSERT OR IGNORE INTO graph_maintenance_proposals (
+        id, run_id, agent_id, proposal_type, target_kind, target_ids_json,
+        proposed_patch_json, evidence_json, precondition_json, applied_diff_json,
+        rollback_patch_json, risk_factors_json, confidence, risk, status, reason,
+        review_required_reason, reviewed_by, reviewed_at, proposal_hash, expires_at,
+        graph_snapshot_id, graph_version, created_at, applied_at, rejected_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, proposal.runId, proposal.agentId, proposal.proposalType, proposal.targetKind, JSON.stringify(proposal.targetIds ?? []), JSON.stringify(proposal.proposedPatch ?? {}), JSON.stringify(proposal.evidence ?? {}), JSON.stringify(proposal.preconditions ?? {}), JSON.stringify(proposal.appliedDiff ?? {}), proposal.rollbackPatch ? JSON.stringify(proposal.rollbackPatch) : null, JSON.stringify(proposal.riskFactors ?? {}), proposal.confidence, proposal.risk, proposal.status, proposal.reason, proposal.reviewRequiredReason ?? null, proposal.reviewedBy ?? null, proposal.reviewedAt ?? null, proposal.proposalHash, proposal.expiresAt ?? null, proposal.graphSnapshotId ?? null, proposal.graphVersion ?? 1, createdAt, proposal.appliedAt ?? null, proposal.rejectedAt ?? null);
+        const row = this.db.prepare('SELECT * FROM graph_maintenance_proposals WHERE agent_id = ? AND proposal_hash = ?').get(proposal.agentId, proposal.proposalHash);
+        return rowToGraphMaintenanceProposal(row);
+    }
+    getGraphMaintenanceProposal(proposalId) {
+        const row = this.db.prepare('SELECT * FROM graph_maintenance_proposals WHERE id = ?').get(proposalId);
+        return row ? rowToGraphMaintenanceProposal(row) : null;
+    }
+    listGraphMaintenanceProposals(agentId, opts = {}) {
+        const limit = Math.min(500, Math.max(1, opts.limit ?? 50));
+        if (opts.runId) {
+            return this.db.prepare('SELECT * FROM graph_maintenance_proposals WHERE agent_id = ? AND run_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, opts.runId, limit).map(rowToGraphMaintenanceProposal);
+        }
+        if (opts.status) {
+            return this.db.prepare('SELECT * FROM graph_maintenance_proposals WHERE agent_id = ? AND status = ? ORDER BY created_at DESC LIMIT ?').all(agentId, opts.status, limit).map(rowToGraphMaintenanceProposal);
+        }
+        return this.db.prepare('SELECT * FROM graph_maintenance_proposals WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, limit).map(rowToGraphMaintenanceProposal);
+    }
+    updateGraphMaintenanceProposal(proposalId, patch) {
+        const existing = this.getGraphMaintenanceProposal(proposalId);
+        if (!existing)
+            return null;
+        this.db.prepare(`
+      UPDATE graph_maintenance_proposals SET
+        status = COALESCE(?, status),
+        applied_diff_json = COALESCE(?, applied_diff_json),
+        rollback_patch_json = COALESCE(?, rollback_patch_json),
+        reason = COALESCE(?, reason),
+        reviewed_by = COALESCE(?, reviewed_by),
+        reviewed_at = COALESCE(?, reviewed_at),
+        applied_at = COALESCE(?, applied_at),
+        rejected_at = COALESCE(?, rejected_at)
+      WHERE id = ?
+    `).run(patch.status ?? null, patch.appliedDiff ? JSON.stringify(patch.appliedDiff) : null, patch.rollbackPatch ? JSON.stringify(patch.rollbackPatch) : null, patch.reason ?? null, patch.reviewedBy ?? null, patch.reviewedAt ?? null, patch.appliedAt ?? null, patch.rejectedAt ?? null, proposalId);
+        return this.getGraphMaintenanceProposal(proposalId);
+    }
+    insertMemoryNodeLineage(lineage) {
+        const id = lineage.id || uuid();
+        const createdAt = lineage.createdAt || now();
+        this.db.prepare(`
+      INSERT OR IGNORE INTO memory_node_lineage (
+        id, agent_id, child_memory_id, parent_memory_id, relation, proposal_id, evidence_json, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, lineage.agentId, lineage.childMemoryId, lineage.parentMemoryId, lineage.relation, lineage.proposalId ?? null, JSON.stringify(lineage.evidence ?? {}), createdAt);
+        const row = this.db.prepare('SELECT * FROM memory_node_lineage WHERE agent_id = ? AND child_memory_id = ? AND parent_memory_id = ? AND relation = ?').get(lineage.agentId, lineage.childMemoryId, lineage.parentMemoryId, lineage.relation);
+        return rowToMemoryNodeLineage(row);
+    }
+    listMemoryNodeLineage(agentId, memoryId, limit = 100) {
+        const safeLimit = Math.min(500, Math.max(1, limit));
+        const rows = memoryId
+            ? this.db.prepare('SELECT * FROM memory_node_lineage WHERE agent_id = ? AND (child_memory_id = ? OR parent_memory_id = ?) ORDER BY created_at DESC LIMIT ?').all(agentId, memoryId, memoryId, safeLimit)
+            : this.db.prepare('SELECT * FROM memory_node_lineage WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, safeLimit);
+        return rows.map(rowToMemoryNodeLineage);
+    }
+    insertMemoryEdgeObservation(observation) {
+        const id = observation.id || uuid();
+        const createdAt = observation.createdAt || now();
+        this.db.prepare(`
+      INSERT INTO memory_edge_observations (
+        id, agent_id, edge_id, from_id, to_id, relation, edge_family, edge_state,
+        observation_type, delta, source_type, source_independence, signal_strength,
+        polarity, causal_attribution, route_id, proof_event_id, reason, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, observation.agentId, observation.edgeId ?? null, observation.fromId ?? null, observation.toId ?? null, observation.relation, observation.edgeFamily, observation.edgeState, observation.observationType, observation.delta, observation.sourceType, observation.sourceIndependence, observation.signalStrength, observation.polarity, observation.causalAttribution, observation.routeId ?? null, observation.proofEventId ?? null, observation.reason, createdAt);
+        return { ...observation, id, createdAt };
+    }
+    listMemoryEdgeObservations(agentId, limit = 100, edgeId) {
+        const safeLimit = Math.min(500, Math.max(1, limit));
+        const rows = edgeId
+            ? this.db.prepare('SELECT * FROM memory_edge_observations WHERE agent_id = ? AND edge_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, edgeId, safeLimit)
+            : this.db.prepare('SELECT * FROM memory_edge_observations WHERE agent_id = ? ORDER BY created_at DESC LIMIT ?').all(agentId, safeLimit);
+        return rows.map(rowToMemoryEdgeObservation);
+    }
     // ── Route teacher, counterfactuals, and policy v2 ─────────────────────────
     insertRouteGraphSnapshot(snapshot) {
         const id = snapshot.id || uuid();
@@ -2071,6 +2298,90 @@ function consolidationGroupKey(memory) {
         ? parts.slice(0, 3).join(':')
         : memory.normalizedKey;
     return `${memory.type}:${memory.scopeKind}:${memory.scopeKey ?? ''}:${normalizedRoot}`;
+}
+function rowToGraphMaintenanceRun(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        mode: r.mode,
+        status: r.status,
+        startedAt: r.started_at,
+        finishedAt: r.finished_at,
+        inputWindowStart: r.input_window_start,
+        inputWindowEnd: r.input_window_end,
+        nodesScanned: Number(r.nodes_scanned ?? 0),
+        edgesScanned: Number(r.edges_scanned ?? 0),
+        proposalsCreated: Number(r.proposals_created ?? 0),
+        proposalsApplied: Number(r.proposals_applied ?? 0),
+        proposalsRejected: Number(r.proposals_rejected ?? 0),
+        riskSummary: JSON.parse(r.risk_summary_json ?? '{}'),
+        metrics: JSON.parse(r.metrics_json ?? '{}'),
+    };
+}
+function rowToGraphMaintenanceProposal(r) {
+    return {
+        id: r.id,
+        runId: r.run_id,
+        agentId: r.agent_id,
+        proposalType: r.proposal_type,
+        targetKind: r.target_kind,
+        targetIds: JSON.parse(r.target_ids_json ?? '[]'),
+        proposedPatch: JSON.parse(r.proposed_patch_json ?? '{}'),
+        evidence: JSON.parse(r.evidence_json ?? '{}'),
+        preconditions: JSON.parse(r.precondition_json ?? '{}'),
+        appliedDiff: JSON.parse(r.applied_diff_json ?? '{}'),
+        rollbackPatch: r.rollback_patch_json ? JSON.parse(r.rollback_patch_json) : undefined,
+        riskFactors: JSON.parse(r.risk_factors_json ?? '{}'),
+        confidence: Number(r.confidence ?? 0),
+        risk: r.risk,
+        status: r.status,
+        reason: r.reason,
+        reviewRequiredReason: r.review_required_reason,
+        reviewedBy: r.reviewed_by,
+        reviewedAt: r.reviewed_at,
+        proposalHash: r.proposal_hash,
+        expiresAt: r.expires_at,
+        graphSnapshotId: r.graph_snapshot_id,
+        graphVersion: Number(r.graph_version ?? 1),
+        createdAt: r.created_at,
+        appliedAt: r.applied_at,
+        rejectedAt: r.rejected_at,
+    };
+}
+function rowToMemoryNodeLineage(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        childMemoryId: r.child_memory_id,
+        parentMemoryId: r.parent_memory_id,
+        relation: r.relation,
+        proposalId: r.proposal_id,
+        evidence: JSON.parse(r.evidence_json ?? '{}'),
+        createdAt: r.created_at,
+    };
+}
+function rowToMemoryEdgeObservation(r) {
+    return {
+        id: r.id,
+        agentId: r.agent_id,
+        edgeId: r.edge_id,
+        fromId: r.from_id,
+        toId: r.to_id,
+        relation: r.relation,
+        edgeFamily: r.edge_family,
+        edgeState: r.edge_state,
+        observationType: r.observation_type,
+        delta: Number(r.delta ?? 0),
+        sourceType: r.source_type,
+        sourceIndependence: r.source_independence,
+        signalStrength: r.signal_strength,
+        polarity: r.polarity,
+        causalAttribution: r.causal_attribution,
+        routeId: r.route_id,
+        proofEventId: r.proof_event_id,
+        reason: r.reason,
+        createdAt: r.created_at,
+    };
 }
 function rowToMemory(r) {
     return {

@@ -8,7 +8,7 @@ The short version is:
 
 > An agent should not remember everything all the time. It should learn when memory actually matters.
 
-The current release, `openclawbrain@0.2.25`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, Memory Authority resolution between retrieval and injection, and now a Codex continuity bridge owned entirely by OpenClawBrain rather than by OpenClaw core.
+The current release, `openclawbrain@0.2.28`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, Memory Authority resolution between retrieval and injection, Codex continuity owned entirely by OpenClawBrain rather than OpenClaw core, and now Memory Graph Maintenance for long-term graph health.
 
 The most important lesson is not "use a graph." It is:
 
@@ -862,12 +862,58 @@ The bridge provides:
 
 It stores only redacted bridge audit events and durable operating truths. It does not store raw Codex messages, full command output, full diffs, or temporary telemetry as durable memory. Telegram-to-Codex writes are disabled by default and must stay feature-flagged behind trusted sender, repo allowlist, provenance, risk classification, and confirmation controls.
 
+## The 0.2.28 Upgrade: Memory Graph Maintenance
+
+Memory Authority fixed the runtime question:
+
+```text
+This memory is relevant, but can it influence this turn?
+```
+
+Memory Graph Maintenance fixes the long-term graph question:
+
+```text
+After many turns, corrections, stale facts, tombstones, and outcomes,
+how should the graph itself evolve?
+```
+
+The important boundary is that graph maintenance can provide features and proposals, but it cannot inject memory or certify authority. `MemoryAuthorityResolver` still recomputes turn-level use every time.
+
+The first implementation is deliberately conservative:
+
+- health metrics for duplicates, bad edges, stale high-authority nodes, tombstones, and scoped exception candidates
+- dry-run proposals before mutation
+- exact duplicate consolidation with canonical lineage
+- bad edge retirement with edge observations
+- stale high-authority detection as review-gated proposals
+- tombstone recapture detection without leaking tombstoned content
+- scoped exception proposals for repeated current-instruction overrides
+- route-teacher feedback recorded as behavioral observations only, not truth evidence
+
+Operator commands:
+
+```text
+/brain graph health
+/brain graph dry-run
+/brain graph proposals
+/brain graph apply <proposalId>
+/brain graph reject <proposalId>
+/brain graph stale
+/brain graph clusters
+/brain graph tombstones
+/brain graph explain <proposalId>
+```
+
+The product lesson is simple:
+
+> Generic memory retrieves old context. OpenClawBrain governs memory as evidence: provenance, scope, validity, correction, forgetting, and proof.
+
 ## The Practical Operator Model
 
 Install or upgrade:
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.25 --force
+openclaw plugins install clawhub:openclawbrain@0.2.28 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -887,6 +933,9 @@ Then inspect the memory surfaces through the authenticated OpenClaw client:
 /plugins/openclawbrain/proof?limit=10
 /plugins/openclawbrain/search?query=pnpm&limit=10
 /plugins/openclawbrain/graph?limit=50
+/plugins/openclawbrain/graph/health
+/plugins/openclawbrain/graph/dry-run
+/plugins/openclawbrain/graph/proposals
 /plugins/openclawbrain/route-policy
 /plugins/openclawbrain/explain-last
 /plugins/openclawbrain/codex/status
@@ -910,12 +959,13 @@ You want to see:
 
 ## Current Public Truth
 
-As of `0.2.25`:
+As of `0.2.28`:
 
-- The latest package is `openclawbrain@0.2.25`.
-- The source tag is `v0.2.25`.
+- The latest package is `openclawbrain@0.2.28`.
+- The source tag is `v0.2.28`.
 - The production route brain is route-policy-v3.
 - Memory Authority now separates relevance from authority before injection.
+- Memory Graph Maintenance keeps the graph healthier through dry-run proposals, canonical lineage, edge observations, tombstone recapture checks, and proofed deterministic repairs.
 - v2 and heuristics are fallback/rollback paths.
 - SQLite stores the graph and evidence locally.
 - Prompt injection is bounded and proofed.
@@ -943,6 +993,8 @@ local evidence graph
   + learned route_fn
   + calibrated abstention
   + bounded prompt injection
+  + memory authority
+  + graph maintenance
   + proof and rollback
 ```
 

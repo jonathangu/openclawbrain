@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>OpenClawBrain — Evidence, not vibes, for agent memory</title>
+  <title>OpenClawBrain - Trustworthy local memory for AI agents</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="OpenClawBrain is a local memory layer for OpenClaw agents: SQLite stores the graph and evidence, Ollama proposes, and code disposes.">
-  <meta property="og:title" content="OpenClawBrain — Evidence, not vibes, for agent memory">
-  <meta property="og:description" content="A native OpenClaw plugin for accountable local agent memory: bounded retrieval, SQLite evidence, local Ollama semantics, and proof you can inspect.">
+  <meta name="description" content="OpenClawBrain is a local memory authority layer for AI agents: continuity, stale-memory handling, graph maintenance, quiet Codex-to-Telegram workflows, and proof you can inspect.">
+  <meta property="og:title" content="OpenClawBrain - Trustworthy local memory for AI agents">
+  <meta property="og:description" content="Local agent memory that knows when to remember, when to ask, when to forget, and when to stay quiet.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://openclawbrain.ai/">
   <meta name="twitter:card" content="summary_large_image">
@@ -113,6 +113,7 @@
       <div class="navlinks">
         <a href="/">Home</a>
         <a href="/how-it-works/">How it works</a>
+        <a href="/graph-maintenance/">Graph maintenance</a>
         <a href="/install/">Install</a>
         <a href="/proof/">Proof</a>
         <a href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">GitHub</a>
@@ -120,67 +121,84 @@
     </div>
 
     <section class="hero">
-      <div class="eyebrow">Memory for OpenClaw</div>
-      <h1>Evidence, not vibes, for agent memory.</h1>
-      <p class="lead">OpenClawBrain helps OpenClaw agents understand that “close it out” means evidence, not vibes — and that the same correction should not have to be taught twice.</p>
-      <p class="sublead">It is the difference between magic memory and an accountable local system: selective routing, SQLite search, bounded XML prompt injection, and proof surfaces you can inspect. The spine is simple: <strong>LLM decides semantic meaning. Code enforces trust boundaries. SQLite stores the graph and evidence.</strong></p>
-      <blockquote><strong>Ollama proposes; code disposes.</strong> Local models propose structured JSON. Code validates, redacts, scopes, thresholds, and decides what gets stored or injected.</blockquote>
+      <div class="eyebrow">Local memory authority for AI agents</div>
+      <h1>Give your agents memory with judgment.</h1>
+      <p class="lead">OpenClawBrain helps local AI agents remember the durable things that matter without blindly obeying old context.</p>
+      <p class="sublead">Generic memory retrieves old notes. OpenClawBrain governs memory as evidence: what was said, where it applies, whether it is stale, what superseded it, what should be forgotten, and why a memory was used or withheld.</p>
+      <blockquote><strong>The difference:</strong> relevance is not authority. A memory can match the turn and still be too old, too broad, private, superseded, or unsafe to inject.</blockquote>
       <div class="actions">
         <a class="btn btn-primary" href="/install/">Install OpenClawBrain</a>
         <a class="btn" href="/how-it-works/">Read how it works</a>
-        <a class="btn" href="/proof/">Verify it locally</a>
+        <a class="btn" href="/graph-maintenance/">Memory graph maintenance</a>
       </div>
       <div class="chips">
-        <span class="chip">Current release: v0.2.15</span>
+        <span class="chip">Current release: v0.2.28</span>
         <span class="chip">Native OpenClaw plugin</span>
-        <span class="chip">Local SQLite + FTS graph</span>
-        <span class="chip">Aggressive capture; conservative injection</span>
+        <span class="chip">Memory Authority</span>
+        <span class="chip">Graph Maintenance</span>
+        <span class="chip">Codex-to-Telegram continuity</span>
       </div>
     </section>
 
     <section class="section">
-      <h2>What it actually does</h2>
+      <h2>What it does</h2>
       <div class="grid">
         <div class="card">
           <h3>Remembers durable lessons</h3>
-          <p>Corrections, preferences, workflows, and context become scoped memory nodes — not raw transcript dumps.</p>
+          <p>Corrections, preferences, workflows, project facts, and operating rules become scoped memories, not raw transcript dumps.</p>
         </div>
         <div class="card">
-          <h3>Keeps prompts small</h3>
-          <p>Most memories stay silent. When a turn needs help, OpenClawBrain retrieves and injects only the small slice that matters now.</p>
+          <h3>Uses memory with judgment</h3>
+          <p>Memory Authority checks whether a memory is current, scoped, safe, non-superseded, and compatible with the current instruction.</p>
         </div>
         <div class="card">
-          <h3>Shows its work</h3>
-          <p>Status, doctor, proof, graph, search, route decisions, and injection records make memory inspectable instead of mystical.</p>
+          <h3>Maintains the graph</h3>
+          <p>Graph Maintenance proposes duplicate cleanup, bad edge retirement, stale-memory review, scoped exceptions, and tombstone-safe forgetting.</p>
+        </div>
+        <div class="card">
+          <h3>Bridges Codex from Telegram</h3>
+          <p>Ask your OpenClaw agent what Codex UI is doing, watch a goal finish, or get a clean handoff without turning Telegram into a noisy coding UI.</p>
+        </div>
+        <div class="card">
+          <h3>Leaves local proof</h3>
+          <p>Status, proof, graph, search, route decisions, proposals, lineage, and edge observations make memory inspectable.</p>
         </div>
       </div>
     </section>
 
     <section class="section">
-      <h2>One worked turn</h2>
+      <h2>One memory loop</h2>
       <p>You correct the agent: <strong>“Actually, use pnpm in this repo.”</strong></p>
       <p>OpenClawBrain distills that into a scoped correction. Later, when you say <strong>“Run the tests,”</strong> SQLite FTS retrieves the correction, ContextSelector ranks it, and the prompt receives a bounded block:</p>
       <pre><code>&lt;openclawbrain_context&gt;
 Relevant memory:
 - Must follow: Use pnpm in this repo.
 &lt;/openclawbrain_context&gt;</code></pre>
-      <p>The agent runs <code>pnpm test</code> without you re-teaching the convention. Afterward, OpenClawBrain records whether the memory helped, failed, was ignored, or got corrected.</p>
+      <p>The agent runs <code>pnpm test</code> without you re-teaching the convention. Afterward, OpenClawBrain records whether the memory helped, failed, was ignored, or got corrected. Later, graph maintenance can consolidate duplicates or flag stale high-authority tool memories for review.</p>
     </section>
 
     <section class="section">
-      <h2>What is live today</h2>
-      <p>OpenClawBrain is a real plugin today, not a concept page. The current release is <strong>v0.2.15</strong>. The core live loop now separates retrieval from aggressive capture: durable instructions, corrections, workflows, routing rules, outcomes, explicit recall rules, and multi-agent scoped activation get evaluated, while strict validators still block raw secrets and junk memory.</p>
-      <p>That does not mean every edge case is done. It is best described as production-dogfood beta: the core capture/store/retrieve/inject path works, while route-learning quality, status polish, and long-term organic runtime still deserve more miles.</p>
+      <h2>Codex on your computer, OpenClaw in your pocket</h2>
+      <p>Jonathan's current workflow uses Codex UI as the high-bandwidth coding workbench at the computer, and OpenClaw/Telegram as the mobile operator surface. OpenClawBrain sits between them as the continuity layer.</p>
+      <pre><code>/brain codex status
+/brain codex threads
+/brain codex watch --latest
+/brain codex handoff</code></pre>
+      <p>That lets you ask from your phone: what is Codex working on, did it finish, is it blocked, what changed, and what should I check when I get back to the machine?</p>
     </section>
 
     <section class="section">
-      <h2>Latency shape</h2>
-      <p>The current loop keeps retrieval conservative while making capture hungry: memory-worthy turns are audited and distilled off the prompt path, then only the few relevant memories are injected later.</p>
-      <pre><code>retrieval: conservative and bounded
-capture: aggressive and audited
-storage: strict, scoped, local
-injection: sparse and relevance-gated</code></pre>
-      <p class="fine">Feedback distillation can take longer because it runs off the prompt path. Audit and explain-last surfaces show whether capture was skipped, rejected, stored, or blocked by safety policy.</p>
+      <h2>Memory graph maintenance</h2>
+      <p>OpenClawBrain does not just remember more. It maintains what it remembers.</p>
+      <pre><code>/brain graph health
+/brain graph dry-run
+/brain graph proposals
+/brain graph explain &lt;proposalId&gt;
+/brain graph apply &lt;proposalId&gt;</code></pre>
+      <p class="fine">Safe automatic changes are intentionally narrow: exact duplicates, bad edges, and observation-only feedback. Semantic merges, scoped exceptions, privacy changes, and stale high-authority changes stay review-gated.</p>
+      <div class="actions">
+        <a class="btn" href="/graph-maintenance/">Read the graph maintenance article</a>
+      </div>
     </section>
 
     <section class="section">

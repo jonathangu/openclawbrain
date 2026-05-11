@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { openDatabase, type DatabaseLike } from './sqlite-driver.js';
 import { clipText, redactText, safeString } from './redact.js';
+import { graphHelpText, handleGraphBrainCommand } from './graph-maintenance.js';
 
 export type CodexBridgeSource = 'app_server' | 'sqlite_fallback' | 'none' | 'mock';
 export type CodexBridgeEventClass =
@@ -385,6 +386,7 @@ export async function handleBrainCommand(ctx: any, config: any, api: any = {}): 
   const args = splitArgs(ctx.args || '');
   const [namespace = 'help', subcommand = 'status', ...rest] = args;
   if (namespace === 'help' || namespace === '--help') return { text: brainHelpText() };
+  if (namespace === 'graph') return handleGraphBrainCommand(ctx, [subcommand, ...rest], config);
   if (namespace !== 'codex') return { text: brainHelpText() };
   const agentId = safeString(ctx.agentId ?? config.scopes?.agents?.[0] ?? 'main') || 'main';
   const bridgeConfig = normalizeCodexBridgeConfig(config.codexBridge);
@@ -848,6 +850,8 @@ function brainHelpText() {
     '- /brain codex watch [thread-id|--latest]',
     '- /brain codex handoff [thread-id]',
     '- /brain codex goal ... (disabled by default)',
+    '',
+    graphHelpText(),
   ].join('\n');
 }
 

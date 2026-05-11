@@ -108,6 +108,7 @@
       <div class="navlinks">
         <a href="/">Home</a>
         <a href="/how-it-works/">How it works</a>
+        <a href="/graph-maintenance/">Graph maintenance</a>
         <a href="/install/">Install</a>
         <a href="/proof/">Proof</a>
         <a href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">GitHub</a>
@@ -124,12 +125,12 @@
 
     <section class="panel">
       <h2>1) Install the plugin</h2>
-      <pre><code>openclaw plugins install clawhub:openclawbrain@0.2.16
+      <pre><code>openclaw plugins install clawhub:openclawbrain@0.2.28 --force
 openclaw plugins enable openclawbrain</code></pre>
       <p class="muted">If ClawHub is rate-limited or package metadata is still propagating, install the release archive fallback:</p>
-      <pre><code>curl -L -o /tmp/openclawbrain-0.2.16.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.16/openclawbrain-0.2.16.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.16.tgz --force
+      <pre><code>curl -L -o /tmp/openclawbrain-0.2.28.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.28/openclawbrain-0.2.28.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.28.tgz --force
 openclaw plugins enable openclawbrain</code></pre>
     </section>
 
@@ -191,7 +192,9 @@ openclaw gateway restart</code></pre>
       <p>Then inspect what happened:</p>
       <pre><code># authenticated route: /plugins/openclawbrain/proof?limit=10
 # authenticated route: /plugins/openclawbrain/search?query=pnpm&amp;limit=10
-# authenticated route: /plugins/openclawbrain/graph?agentId=main&amp;limit=10</code></pre>
+# authenticated route: /plugins/openclawbrain/graph?agentId=main&amp;limit=10
+# authenticated route: /plugins/openclawbrain/graph/health
+# authenticated route: /plugins/openclawbrain/graph/dry-run</code></pre>
       <p>If the system is doing its job, the win should feel almost invisible: you stop repeating yourself, and the agent quietly does the right thing.</p>
     </section>
   </div>

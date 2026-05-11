@@ -15,6 +15,7 @@ Imagine an agent that understands “close it out” means evidence, not vibes. 
 - **Remembers durable lessons.** Corrections, preferences, workflows, and context become scoped local memory nodes instead of disappearing at the end of a session.
 - **Keeps turn context small.** It does not dump your whole history into every turn. It retrieves candidates locally and attaches only a bounded XML memory slice when memory is likely to help.
 - **Checks authority before use.** Retrieved memories can be attached, weakened, verified, confirmed, suppressed, or kept audit-only depending on staleness, scope, privacy, supersession, and current user guidance.
+- **Maintains the graph.** Dry-run proposals find exact duplicates, bad edges, stale high-authority memories, scoped exception candidates, and tombstone recapture risks before long-lived memory drifts.
 - **Stays local-first.** SQLite stores the graph and evidence. FTS5 powers local search. Raw transcript upload is hard-disabled.
 - **Shows its work.** You can check status, run health checks, inspect proof events, search memory, view the graph, and review route decisions.
 - **Learns on the standard local path.** OpenClawBrain points at local Ollama by default. Local models propose structured JSON; code validates, redacts, scopes, thresholds, and writes.
@@ -36,16 +37,16 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.27`
+- **Current package release:** `0.2.28`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.5.2` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded memory context
-- **Current loop:** first-class OpenClaw memory registration, v3 production route learning, Memory Authority decisions, Codex continuity status/watch/handoff surfaces, conservative fallback, aggressive audited capture, strict scoped storage, sparse context use
+- **Current loop:** first-class OpenClaw memory registration, v3 production route learning, Memory Authority decisions, Memory Graph Maintenance proposals, Codex continuity status/watch/handoff surfaces, conservative fallback, aggressive audited capture, strict scoped storage, sparse context use
 
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.27
+openclaw plugins install clawhub:openclawbrain@0.2.28 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -53,9 +54,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.27.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.27/openclawbrain-0.2.27.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.27.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.28.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.28/openclawbrain-0.2.28.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.28.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -120,7 +121,7 @@ openclaw doctor
 
 ## Codex continuity bridge
 
-`0.2.27` also adds an OpenClawBrain-owned Codex continuity bridge. It does not patch OpenClaw core. The public-safe default reads local Codex SQLite in read-only mode with an explicit stale label; host-provided app-server readers can be enabled later without bundling shell/process control inside the package. It exposes quiet operator surfaces:
+`0.2.28` keeps the OpenClawBrain-owned Codex continuity bridge. It does not patch OpenClaw core. The public-safe default reads local Codex SQLite in read-only mode with an explicit stale label; host-provided app-server readers can be enabled later without bundling shell/process control inside the package. It exposes quiet operator surfaces:
 
 ```text
 /brain codex status
@@ -130,6 +131,24 @@ openclaw doctor
 ```
 
 Telegram-to-Codex writes stay disabled by default. `/brain codex goal` and `/brain codex steer` refuse unless a later write path is explicitly feature-flagged, sender-gated, repo-allowlisted, provenance-tagged, risk-classified, and confirmed.
+
+## Memory graph maintenance
+
+Memory Authority decides turn-level use. Graph Maintenance curates long-term graph evolution.
+
+```text
+/brain graph health
+/brain graph dry-run
+/brain graph proposals
+/brain graph apply <proposalId>
+/brain graph reject <proposalId>
+/brain graph stale
+/brain graph clusters
+/brain graph tombstones
+/brain graph explain <proposalId>
+```
+
+The safety boundary is intentional: graph maintenance can provide features and proposals, but `MemoryAuthorityResolver` still recomputes whether a memory can influence the current turn. Connectivity is not authority, behavioral edges are not truth evidence, and tombstoned content cannot be revived by merge, proof, proposal, or LLM distillation.
 
 For local development or Jonathan's personal Mac, update the external OpenClawBrain extension without dirtying the OpenClaw checkout:
 
@@ -152,6 +171,11 @@ pnpm install:local-openclaw:all
 | `/plugins/openclawbrain/doctor` | SQLite + FTS health under the current Node runtime |
 | `/plugins/openclawbrain/proof?limit=20` | recent redacted proof, route, and memory-context events |
 | `/plugins/openclawbrain/graph?limit=50` | redacted memory nodes and memory edges |
+| `/plugins/openclawbrain/graph/health` | graph health metrics |
+| `/plugins/openclawbrain/graph/dry-run` | redacted maintenance proposals without mutation |
+| `/plugins/openclawbrain/graph/proposals` | graph maintenance proposal list |
+| `/plugins/openclawbrain/graph/apply?proposalId=...` | apply low-risk deterministic proposals |
+| `/plugins/openclawbrain/graph/explain?proposalId=...` | explain proposal evidence and safety boundary |
 | `/plugins/openclawbrain/learn?limit=50` | route examples and current learning state |
 | `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
 | `/plugins/openclawbrain/audit?limit=20` | recent capture/store/reject decisions and rejection distribution |

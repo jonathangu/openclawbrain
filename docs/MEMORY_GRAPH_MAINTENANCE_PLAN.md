@@ -1,6 +1,6 @@
 # OpenClawBrain Memory Graph Maintenance Plan
 
-Status: design plan  
+Status: hardened implementation plan  
 Date: 2026-05-10  
 Scope: OpenClawBrain-owned graph maintenance, consolidation, repair, and feedback-driven graph evolution.
 
@@ -76,7 +76,295 @@ The missing piece is a durable maintenance loop that uses these primitives to im
 
 Today, many changes happen at capture time or authority-resolution time. Maintenance should run after the fact, over accumulated evidence.
 
-## 4. Conceptual Model
+## 4. Hard Invariants Before Implementation
+
+The maintenance engine must be powerful enough to improve the graph, but narrow enough that it cannot become a hidden authority system.
+
+Core invariants:
+
+- Current user instruction always outranks old memory.
+- Memory Authority decides turn-level use. Graph Maintenance never injects memory directly.
+- Graph Maintenance may update graph structure, evidence summaries, validity features, retrieval hints, lineage, and proposals. It must not produce final turn-level authority verdicts.
+- Connectivity is never evidence of authority. A connected memory may be easier to find, but it is not more trustworthy merely because it is connected.
+- A behavioral edge is not epistemic evidence.
+- A retrieval-success signal is not a truth-confirmation signal.
+- A memory cannot become authoritative merely because it was repeatedly retrieved.
+- Self-derived evidence cannot raise authority above its prior ceiling.
+- Implicit success signals can only adjust low-impact retrieval hints slowly, never evidence confidence.
+- No privacy class may be downgraded automatically.
+- No tombstoned or hard-deleted content may be revived by merge, split, summarization, proof, proposal, route learning, or LLM distillation.
+- Every graph mutation must have a proposal, precondition check, transaction, proof event, and redacted explanation.
+- Every apply operation must be idempotent or safely fail as stale.
+- No cross-agent node, edge, lineage, or proposal operation is allowed unless explicitly modeled and authorized.
+- Lineage and supersession graphs must remain acyclic.
+- A narrower scoped exception must not be collapsed into a broader global memory.
+- LLM judgments may classify relations over supplied evidence. They may not independently create authority.
+
+The most important boundary:
+
+> Graph Maintenance can provide features. Memory Authority recomputes the verdict.
+
+## 5. Relation Families
+
+Edges should not all behave like the same kind of weighted relationship. A single universal `weight` field is too easy to misuse. OpenClawBrain should treat relation family as part of edge meaning.
+
+Relation families:
+
+| Family | Relations | Meaning | Weight Means |
+|---|---|---|---|
+| `epistemic` | `supports`, `contradicts`, `verified_by` | Evidence about truth or reliability | strength of evidence, never behavioral usefulness |
+| `temporal` | `supersedes`, `valid_after`, `expired_by` | Time/version ordering | transition confidence |
+| `scope` | `applies_to`, `exception_to`, `scope_refines`, `overrides_in_scope` | Scope applicability and precedence | specificity confidence |
+| `behavioral` | `used_with`, `failed_with`, `co_retrieved`, `co_injected` | Retrieval/action association | usefulness hint, not truth |
+| `lineage` | `duplicate_of`, `canonical_for`, `merged_into`, `derived_from`, `split_from` | Provenance and consolidation | structural confidence |
+| `retention` | `tombstone_blocks`, `redacted_from` | Privacy and forgetting semantics | blocking strength |
+
+Implementation rule:
+
+> The existing `memory_edges` table can keep compatibility relations, but maintenance-specific semantics should be recorded in `memory_edge_observations` with an explicit `edge_family` or relation-family field. Do not overload old `memory_edges.weight` with authority.
+
+## 6. State Models
+
+Avoid one overloaded memory status enum. Use orthogonal state axes.
+
+Node axes:
+
+| Axis | Values | Purpose |
+|---|---|---|
+| `retention_state` | `stored`, `redacted`, `soft_deleted`, `tombstoned`, `hard_deleted` | Does the content exist and may it be retained? |
+| `retrieval_state` | `retrievable`, `canonical_only`, `audit_only`, `blocked` | May search/retrieval surface it? |
+| `truth_state` | `unverified`, `supported`, `contradicted`, `superseded`, `expired`, `context_dependent` | Is the claim historically/currently valid? |
+| `authority_floor` | `inject_allowed`, `weak_only`, `verify_before_use`, `confirm_before_use`, `audit_only`, `never_use` | The maximum proactive use maintenance permits as a feature input. |
+
+Edge axes:
+
+| Axis | Values |
+|---|---|
+| `edge_state` | `candidate`, `active`, `weakened`, `retired`, `blocked`, `structural` |
+| `edge_family` | `epistemic`, `temporal`, `scope`, `behavioral`, `lineage`, `retention` |
+
+Proposal lifecycle:
+
+```mermaid
+stateDiagram-v2
+  [*] --> drafted
+  drafted --> guard_rejected
+  drafted --> pending_review
+  drafted --> approved
+  approved --> applied
+  approved --> failed_apply
+  pending_review --> approved
+  pending_review --> rejected
+  pending_review --> expired
+  applied --> [*]
+  rejected --> [*]
+  expired --> [*]
+  failed_apply --> [*]
+  guard_rejected --> [*]
+```
+
+## 7. Scope Lattice
+
+Scoped exceptions are central. They need executable semantics, not prose.
+
+Scope object:
+
+```json
+{
+  "agent_id": "jonathan",
+  "user_id": "jonathan",
+  "workspace_id": "openclaw",
+  "project": "OpenClawBrain",
+  "repo": "openclawbrain",
+  "channel": "telegram",
+  "tool": "codex",
+  "task_kind": "deep_critique",
+  "time_window": null
+}
+```
+
+Precedence:
+
+```text
+current explicit instruction
+> current turn/task scope
+> session scope
+> repo scope
+> project scope
+> tool/channel scope
+> agent scope
+> global user scope
+> inferred habit
+> historical observation
+```
+
+Rules:
+
+- Scope A refines scope B only if A has all constraints of B plus additional compatible constraints.
+- A narrower memory may override a broader memory only inside the narrower scope.
+- A broader memory may never automatically supersede a narrower exception.
+- Cross-scope merges require review unless the scopes are identical or one is canonical-only lineage.
+- A global preference plus a task-specific exception should remain two memories connected by a scope edge, not one stronger global rule.
+
+## 8. Evidence Reliability And Anti-Drift
+
+Evidence count is not evidence quality. Repeated retrieval from the same system is not independent confirmation.
+
+Evidence dimensions:
+
+| Field | Values |
+|---|---|
+| `source_type` | `user_statement`, `user_correction`, `tool_result`, `environment_check`, `route_teacher`, `inferred_outcome`, `llm_judgment` |
+| `source_independence` | `independent`, `same_origin`, `derived`, `self_reinforcing` |
+| `signal_strength` | `explicit`, `implicit`, `inferred`, `weak` |
+| `polarity` | `supports`, `contradicts`, `scopes`, `supersedes`, `irrelevant` |
+| `causal_attribution` | `memory_helped`, `memory_harmed`, `memory_irrelevant`, `unknown` |
+
+Reliability rules:
+
+- A user correction outweighs many implicit "no correction observed" signals.
+- A deterministic tool or environment check outweighs an LLM semantic guess.
+- An LLM distillation is not independent evidence for the truth of its own claim. It is a transformation of prior evidence.
+- `co_injected_success` is not allowed without causal attribution. Use `co_injected_outcome_observed` plus `causal_attribution`.
+- Implicit signals may update behavioral retrieval hints only within caps.
+- Epistemic confidence can rise only from explicit user confirmation, user correction resolution, deterministic environment/tool verification, or reviewed evidence.
+
+Anti-loop rule:
+
+> A maintenance event may not count a memory as useful merely because the graph made it more likely to be retrieved.
+
+Replay/shadow evaluation should compare retrieval with and without graph expansion. If graph expansion adds tokens without improving teacher or user-confirmed outcomes, weaken behavioral edges.
+
+## 9. Proposal Preconditions And Safe Apply
+
+Every proposal needs enough metadata to apply safely later.
+
+Required proposal fields beyond the human-readable patch:
+
+- `precondition_json`
+- `applied_diff_json`
+- `rollback_patch_json`
+- `risk_factors_json`
+- `review_required_reason`
+- `reviewed_by`
+- `reviewed_at`
+- `proposal_hash`
+- `expires_at`
+- `graph_snapshot_id`
+- `graph_version`
+
+Apply-time rule:
+
+```text
+BEGIN IMMEDIATE
+  reload target rows
+  verify graph_version / updated_at / retention_state / scope / privacy / tombstone guards
+  reject as stale if preconditions fail
+  apply deterministic patch
+  write lineage / edge observations
+  write redacted proof
+  update proposal status
+COMMIT
+```
+
+Safe auto may apply only:
+
+- exact duplicate, same key/value/scope/privacy consolidation
+- edges pointing to deleted, tombstoned, hard-deleted, or missing nodes
+- FTS/index repair
+- stale low-weight behavioral edge retirement
+
+Everything else is dry-run or review-required:
+
+- semantic merges
+- splits
+- privacy changes
+- supersession
+- cross-scope changes
+- high-impact authority-feature changes
+- LLM-involved graph edits
+
+## 10. Tombstone And Privacy Mechanics
+
+Forgetting must block recapture without preserving sensitive content.
+
+Tombstone blocking should use safe keys:
+
+```text
+tombstone_subject_hash = HMAC(secret, normalized_subject_key)
+tombstone_predicate_hash = HMAC(secret, normalized_predicate_key)
+tombstone_scope_hash = HMAC(secret, normalized_scope_key)
+safe_category = credential_like | private_preference | private_contact | private_project | other_sensitive
+```
+
+Rules:
+
+- A tombstone may preserve enough information to block recapture, but not enough to reconstruct forgotten content.
+- Maintenance proposals must never include raw tombstoned content in `evidence_json`, `proposed_patch_json`, logs, metrics, proof, or operator UI.
+- Embeddings for tombstones are sensitive and should not be used unless access-controlled, encrypted, and explicitly treated as private data.
+- Hard-deleted content cannot be reconstructed by lineage, merge, split, route replay, proof, or LLM summarization.
+
+## 11. Bounded LLM Semantic Judge
+
+The LLM may help classify relations. It may not be a graph editor.
+
+Allowed output shape:
+
+```json
+{
+  "classification": "duplicate",
+  "confidence": 0.82,
+  "claim_text": "redacted/public-safe claim only",
+  "scope": {},
+  "supporting_evidence_ids": ["proof_..."],
+  "contradicting_evidence_ids": [],
+  "privacy_class": "normal"
+}
+```
+
+Code must reject semantic output when:
+
+- evidence ids are missing
+- evidence ids do not exist
+- claim text contains redacted or tombstoned content
+- scope is broader than the supplied evidence supports
+- privacy class is lower than any source evidence
+- the LLM creates a claim not entailed by evidence
+- the operation would create a lineage/supersession cycle
+
+The semantic judge may propose. It may not certify truth.
+
+## 12. Temporal Semantics
+
+Historical truth and current applicability are separate.
+
+Important timestamps:
+
+- `observed_at`: when OpenClawBrain saw the evidence
+- `asserted_at`: when the source made the claim
+- `valid_from`: when the claim started being true
+- `valid_until`: when the claim stopped being true
+- `superseded_at`: when another memory replaced it
+- `last_verified_at`: last deterministic check
+- `expires_at`: when revalidation is required
+
+Example:
+
+> "Repo uses npm"
+
+That may have been true in 2024, captured in 2025, contradicted in 2026, and still historically valid for old audit. Do not collapse that into one freshness score.
+
+## 13. Build Target After Hardening
+
+The first implementation target should be intentionally narrow:
+
+> Build a conservative graph-maintenance proposal compiler with explicit relation families, scoped validity, lineage, redacted proof, tombstone blocking, deterministic duplicate/edge repair, and replayable evaluation. Feedback-driven and semantic maintenance remain bounded, feature-capped, and review-gated until the invariants hold.
+
+The public product line:
+
+> Generic memory stores retrieve old context. OpenClawBrain governs memory as evidence: provenance, scope, validity, correction, forgetting, and proof.
+
+## 14. Conceptual Model
 
 OpenClawBrain should have three loops:
 
@@ -100,7 +388,7 @@ The three loops have separate jobs:
 - Memory Authority decides which retrieved memories have turn-level authority.
 - Graph Maintenance decides how the stored graph should evolve after evidence accumulates.
 
-## 5. What Graph Maintenance Should Do
+## 15. What Graph Maintenance Should Do
 
 ### 5.1 Merge Duplicate Nodes
 
@@ -283,7 +571,7 @@ Graph maintenance should measure:
 - number of injected memories corrected by user
 - number of relevant memories withheld but later needed
 
-## 6. Proposed Component: GraphMaintenanceEngine
+## 16. Proposed Component: GraphMaintenanceEngine
 
 Add a new component:
 
@@ -342,7 +630,7 @@ It should be explicitly separate from `MemoryAuthorityResolver`.
 4. Off:
    - only collect graph health metrics
 
-## 7. Proposed Schema Additions
+## 17. Proposed Schema Additions
 
 ### 7.1 Graph Maintenance Runs
 
@@ -457,7 +745,7 @@ Observation types:
 - `scope_exception_seen`
 - `duplicate_seen`
 
-## 8. Maintenance Pipeline
+## 18. Maintenance Pipeline
 
 ```mermaid
 flowchart TD
@@ -565,7 +853,7 @@ Every applied proposal writes:
 - lineage row if nodes merged/split/derived
 - edge observation rows if edge weight changed
 
-## 9. Feedback-Driven Edge Learning
+## 19. Feedback-Driven Edge Learning
 
 The realized route matters.
 
@@ -638,7 +926,7 @@ Maintenance should:
 
 This connects route learning with graph learning.
 
-## 10. Node Merge Policy
+## 20. Node Merge Policy
 
 Merging should be conservative.
 
@@ -683,7 +971,7 @@ Never merge when:
 - merge would erase a user override
 - merge would collapse a scoped exception into a global preference
 
-## 11. Split Policy
+## 21. Split Policy
 
 Split when a node is too broad.
 
@@ -702,7 +990,7 @@ Action:
 - connect with `exception_to` or `scope_refines`
 - lower broad node behavioral authority for matching exception scope
 
-## 12. Edge Deletion Policy
+## 22. Edge Deletion Policy
 
 Edges should age too.
 
@@ -723,36 +1011,39 @@ Do not retire:
 
 Those are structural history, not retrieval boosters.
 
-## 13. Graph Health Commands
+## 23. Graph Health Commands
 
 Add Telegram/operator commands:
 
 ```text
 /brain graph health
-/brain graph maintenance dry-run
-/brain graph maintenance apply <proposal-id>
-/brain graph maintenance reject <proposal-id>
+/brain graph dry-run
+/brain graph proposals
+/brain graph apply <proposal-id>
+/brain graph reject <proposal-id>
 /brain graph clusters
 /brain graph stale
 /brain graph tombstones
-/brain graph explain <memory-id>
+/brain graph explain <proposal-id>
 ```
 
 Add HTTP routes:
 
 ```text
 GET  /plugins/openclawbrain/graph/health
-GET  /plugins/openclawbrain/graph/maintenance/runs
-POST /plugins/openclawbrain/graph/maintenance/dry-run
-POST /plugins/openclawbrain/graph/maintenance/apply
-POST /plugins/openclawbrain/graph/maintenance/reject
-GET  /plugins/openclawbrain/graph/clusters
+GET  /plugins/openclawbrain/graph/dry-run
 GET  /plugins/openclawbrain/graph/proposals
+GET  /plugins/openclawbrain/graph/apply?proposalId=...
+GET  /plugins/openclawbrain/graph/reject?proposalId=...
+GET  /plugins/openclawbrain/graph/clusters
+GET  /plugins/openclawbrain/graph/stale
+GET  /plugins/openclawbrain/graph/tombstones
+GET  /plugins/openclawbrain/graph/explain?proposalId=...
 ```
 
 Mutation routes must require gateway/admin auth.
 
-## 14. Public-Safe Explanation
+## 24. Public-Safe Explanation
 
 Public copy should say:
 
@@ -772,7 +1063,7 @@ This is a key differentiator from generic memory stores:
 
 > Generic memory systems retrieve. OpenClawBrain governs and maintains.
 
-## 15. Implementation Phases
+## 25. Implementation Phases
 
 ### Phase 1: Graph Health and Dry-Run Proposals
 
@@ -783,7 +1074,7 @@ Add:
 - proposal table
 - dry-run route
 - `/brain graph health`
-- `/brain graph maintenance dry-run`
+- `/brain graph dry-run`
 
 No mutation yet except proposal writes.
 
@@ -894,7 +1185,7 @@ Config example:
 }
 ```
 
-## 16. Evaluation Plan
+## 26. Evaluation Plan
 
 The graph maintenance loop should be evaluated against replayable route/proof history.
 
@@ -939,7 +1230,7 @@ Privacy tests:
 3. Later candidate tries to recapture.
 4. Maintenance blocks candidate.
 
-## 17. The Key Design Choice
+## 27. The Key Design Choice
 
 Do not make the graph maintenance engine an eager editor.
 
@@ -962,7 +1253,7 @@ It is:
 
 > Fewer better nodes, stronger justified edges, stale authority decay, scoped exceptions, privacy-safe forgetting, and proof for every meaningful change.
 
-## 18. Suggested Goal Command
+## 28. Suggested Goal Command
 
 ```text
 /goal Implement the OpenClawBrain Memory Graph Maintenance system. Start by reading docs/MEMORY_GRAPH_MAINTENANCE_PLAN.md, docs/MEMORY_STALENESS_DECAY_AND_FORGETTING.md, docs/LLM_ROUTE_ARCHITECTURE.md, and the current memory-store, memory-authority, memory-operations, route-learning, and proof-store code. Build a GraphMaintenanceEngine that is separate from MemoryAuthorityResolver and uses proof events, authority events, route frames, route outcomes, memory nodes, memory edges, tombstones, and validity state to maintain the graph. Add graph health metrics, dry-run maintenance proposals, node lineage, edge observations, deterministic safe maintenance for exact duplicates and bad edges, feedback-driven edge learning from realized routes, scoped split proposals for over-broad memories, tombstone recapture blocking, proof/audit events for every mutation, Telegram/operator commands under /brain graph, authenticated HTTP routes, focused tests, and docs. Keep raw telemetry out of durable memory, preserve privacy and audit boundaries, keep OpenClaw core untouched, verify locally, and publish OpenClawBrain-owned docs/site updates when complete.

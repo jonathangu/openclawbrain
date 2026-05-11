@@ -108,6 +108,7 @@
       <div class="navlinks">
         <a href="/">Home</a>
         <a href="/how-it-works/">How it works</a>
+        <a href="/graph-maintenance/">Graph maintenance</a>
         <a href="/install/">Install</a>
         <a href="/proof/">Proof</a>
         <a href="https://github.com/jonathangu/openclawbrain" target="_blank" rel="noopener">GitHub</a>
@@ -138,6 +139,8 @@ curl http://127.0.0.1:18789/plugins/openclawbrain/doctor</code></pre>
         <tr><td><code>/plugins/openclawbrain/doctor</code></td><td>Whether SQLite and FTS are healthy under the current Node runtime.</td></tr>
         <tr><td><code>/plugins/openclawbrain/proof?limit=20</code></td><td>Recent redacted proof, route, and injection events.</td></tr>
         <tr><td><code>/plugins/openclawbrain/graph?limit=50</code></td><td>Redacted memory nodes and memory edges.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/graph/health</code></td><td>Graph maintenance health: duplicates, bad edges, stale high-authority memories, and tombstone checks.</td></tr>
+        <tr><td><code>/plugins/openclawbrain/graph/dry-run</code></td><td>Compile maintenance proposals without mutating the graph.</td></tr>
         <tr><td><code>/plugins/openclawbrain/learn?limit=50</code></td><td>Route examples and current learning state.</td></tr>
         <tr><td><code>/plugins/openclawbrain/search?query=...&amp;limit=20</code></td><td>Local SQLite FTS memory search.</td></tr>
       </table>

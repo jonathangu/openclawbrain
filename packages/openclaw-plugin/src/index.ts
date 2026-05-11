@@ -20,6 +20,7 @@ import { LatencyController } from './latency-controller.js';
 import { FakeLlmClient, OllamaNativeLlmClient, OpenAICompatibleLlmClient, isOllamaLoopbackBaseUrl } from './llm-client.js';
 import { MemoryPlanner } from './memory-planner.js';
 import { MemoryOperationApplier } from './memory-operations.js';
+import { GraphMaintenanceEngine, graphMaintenancePayload } from './graph-maintenance.js';
 import { authorityEventTypeForDecision } from './memory-authority.js';
 import { MemoryStore } from './memory-store.js';
 import { decidePolicy } from './policy.js';
@@ -59,6 +60,7 @@ export { JsonParseError, JsonTimeoutError, JsonValidationError, runJsonWithValid
 export { CaptureOrchestrator, sanitizeToolEvent } from './capture.js';
 export { FeedbackDistiller, validateFeedbackDistillation } from './feedback-distiller.js';
 export { MemoryOperationApplier } from './memory-operations.js';
+export { GraphMaintenanceEngine, graphMaintenancePayload, handleGraphBrainCommand } from './graph-maintenance.js';
 export { MemoryAuthorityResolver, authorityEventTypeForDecision, defaultValidityForMemory } from './memory-authority.js';
 export { JobQueue } from './job-queue.js';
 export { LatencyController } from './latency-controller.js';
@@ -423,6 +425,25 @@ function registerFirstClassSurfaces(api: any, resolve: any) {
     replaceExisting: true,
     handler: async (req: any, res: any) => writeJson(res, await proofPayload(resolve(), limitFromRequest(req)))
   });
+  for (const [path, action] of [
+    ['/plugins/openclawbrain/graph/health', 'health'],
+    ['/plugins/openclawbrain/graph/dry-run', 'dry-run'],
+    ['/plugins/openclawbrain/graph/proposals', 'proposals'],
+    ['/plugins/openclawbrain/graph/apply', 'apply'],
+    ['/plugins/openclawbrain/graph/reject', 'reject'],
+    ['/plugins/openclawbrain/graph/stale', 'stale'],
+    ['/plugins/openclawbrain/graph/clusters', 'clusters'],
+    ['/plugins/openclawbrain/graph/tombstones', 'tombstones'],
+    ['/plugins/openclawbrain/graph/explain', 'explain'],
+  ] as Array<[string, string]>) {
+    api.registerHttpRoute?.({
+      path,
+      auth: 'gateway',
+      match: 'exact',
+      replaceExisting: true,
+      handler: async (req: any, res: any) => writeJson(res, graphMaintenancePayload(resolve(), req, action))
+    });
+  }
   api.registerHttpRoute?.({
     path: '/plugins/openclawbrain/graph',
     auth: 'gateway',

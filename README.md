@@ -8,7 +8,7 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 ![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and bounded memory context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-`0.2.27` keeps the Memory Authority layer and adds the OpenClawBrain-owned Codex continuity bridge. Retrieval separates semantic relevance from whether a memory still has authority in the current turn, and Codex status/watch/handoff surfaces now live in the OpenClawBrain plugin without patching OpenClaw core.
+`0.2.28` adds Memory Graph Maintenance on top of Memory Authority and the OpenClawBrain-owned Codex continuity bridge. Retrieval separates semantic relevance from whether a memory still has authority in the current turn. Graph maintenance then curates what the graph becomes over time: fewer duplicate nodes, safer edges, stale-memory proposals, scoped exceptions, tombstone-aware forgetting, and local proof for every applied mutation.
 
 ## Short version
 
@@ -38,16 +38,16 @@ feedback and outcomes
 ```text
 OpenClawBrain is my local-first memory system for AI agents.
 
-The core idea: an agent should not just "remember everything." It should learn when memory actually matters. OpenClawBrain turns corrections, outcomes, misses, and handoffs into local evidence, then learns a small routing policy that decides when to bring the right memory into a future turn — or abstain when it is not confident.
+The core idea: an agent should not just "remember everything." It should learn when memory actually matters, and maintain what it remembers. OpenClawBrain turns corrections, outcomes, misses, and handoffs into local evidence, then learns a small routing policy that decides when to bring the right memory into a future turn - or abstain when it is not confident.
 
-The trust boundary is the important part: the LLM proposes meaning, but code owns validation, storage, calibration, promotion, and rollback. SQLite keeps the graph and evidence local and inspectable.
+The trust boundary is the important part: the LLM proposes meaning, but code owns validation, storage, calibration, promotion, rollback, and graph maintenance. SQLite keeps the graph and evidence local and inspectable.
 
 How it works: https://openclawbrain.ai/how-it-works/
 Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
 
 Install/upgrade if you already run OpenClaw:
-openclaw plugins install clawhub:openclawbrain@0.2.27 --force
+openclaw plugins install clawhub:openclawbrain@0.2.28 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -57,7 +57,7 @@ openclaw gateway restart
 Requires OpenClaw `2026.5.2` or later. Use the same command for a fresh install or an upgrade; `--force` is safe when replacing an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.27 --force
+openclaw plugins install clawhub:openclawbrain@0.2.28 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -65,9 +65,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.27.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.27/openclawbrain-0.2.27.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.27.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.28.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.28/openclawbrain-0.2.28.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.28.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -179,12 +179,48 @@ Use your real agent ids. Single-agent installs can skip this.
 | `/plugins/openclawbrain/proof?limit=20` | recent redacted proof, route, and memory-context events |
 | `/plugins/openclawbrain/search?query=...&limit=20` | local memory search |
 | `/plugins/openclawbrain/graph?limit=50` | redacted memory nodes and memory edges |
+| `/plugins/openclawbrain/graph/health` | graph health: duplicates, bad edges, tombstones, stale high-authority memories |
+| `/plugins/openclawbrain/graph/dry-run` | creates redacted graph-maintenance proposals without mutation |
+| `/plugins/openclawbrain/graph/proposals` | pending/applied/rejected maintenance proposals |
+| `/plugins/openclawbrain/graph/apply?proposalId=...` | applies only low-risk deterministic proposals |
+| `/plugins/openclawbrain/graph/reject?proposalId=...` | rejects a proposal without mutating the graph |
+| `/plugins/openclawbrain/graph/explain?proposalId=...` | explains a proposal, its evidence, and why it is or is not safe to apply |
 | `/plugins/openclawbrain/learn?limit=50` | route examples and current learning state |
 | `/plugins/openclawbrain/route-teacher?limit=20` | LLM/deterministic route teacher critiques of actual route decisions |
 | `/plugins/openclawbrain/route-counterfactuals?decisionId=...` | no-memory, alternate-memory, graph-depth, memory-type, stay-silent, and latency counterfactuals |
 | `/plugins/openclawbrain/route-policy` | active structured `route-policy-v2` + `route-policy-v3` snapshots, v3 route frames, prototypes, and route training examples |
 | `/plugins/openclawbrain/audit?limit=20` | recent capture/store/reject decisions and rejection distribution |
 | `/plugins/openclawbrain/explain-last` | compact postmortem for the latest memory decision |
+
+## Memory graph maintenance
+
+Memory Authority answers: "Can this retrieved memory influence this turn?"
+
+Memory Graph Maintenance answers: "After many turns, corrections, route decisions, and stale facts, how should the graph evolve?"
+
+The new engine is deliberately conservative. It can compile and apply deterministic low-risk proposals like exact duplicate consolidation and bad edge retirement. It can also propose stale high-authority review, tombstone recapture blocking, scoped exceptions, and feedback observations. Those review-gated proposals do not quietly become authority. Memory Authority still recomputes turn-level use every time.
+
+Telegram/operator commands:
+
+```text
+/brain graph health
+/brain graph dry-run
+/brain graph proposals
+/brain graph apply <proposalId>
+/brain graph reject <proposalId>
+/brain graph stale
+/brain graph clusters
+/brain graph tombstones
+/brain graph explain <proposalId>
+```
+
+The core invariants:
+
+- Current user instruction outranks memory.
+- Connectivity is not authority.
+- A behavioral edge is not proof that a fact is true.
+- Tombstoned content cannot be revived by merge, proof, proposal, or LLM distillation.
+- Every mutation goes through a proposal, precondition check, transaction, redacted proof event, and lineage/observation record.
 
 ## How it works
 
@@ -226,6 +262,7 @@ The graph stores scoped memory nodes and edges: corrections, preferences, workfl
 - [Install](https://openclawbrain.ai/install/)
 - [Proof](https://openclawbrain.ai/proof/)
 - [How it works](https://openclawbrain.ai/how-it-works/)
+- [Memory graph maintenance](https://openclawbrain.ai/graph-maintenance/)
 - [Ultimate guide](docs/ULTIMATE_GUIDE.md)
 - [Memory Authority design](docs/MEMORY_STALENESS_DECAY_AND_FORGETTING.md)
 - [Memory Graph Maintenance plan](docs/MEMORY_GRAPH_MAINTENANCE_PLAN.md)
