@@ -1,22 +1,23 @@
 # Codex Telegram Full Bridge Plan
 
-Status: implementation plan, with Phase 1-4 existing-thread bridge shipped in `openclawbrain@0.2.30`
+Status: implementation plan, with Phase 1-5 existing-thread bridge shipped in `openclawbrain@0.2.31`
 Date: 2026-05-11, updated 2026-05-12
 Owner: OpenClawBrain
 
 ## 2026-05-12 Implementation Update
 
-`openclawbrain@0.2.30` implements the core bridge without modifying OpenClaw core:
+`openclawbrain@0.2.31` implements the core bridge without modifying OpenClaw core:
 
 - reads `threads.rollout_path` from `~/.codex/state_5.sqlite`;
 - parses rollout JSONL `response_item` final user/assistant messages and event fallbacks;
-- exposes `/brain codex messages`, `last`, `bind`, `binding`, `unbind`, `tail`, `watch --messages`, `watches`, `unwatch`, `reply`, `send`, `status`, `threads`, and `handoff`;
+- exposes `/brain codex messages`, `last`, `bind`, `binding`, `unbind`, `tail`, `watch --messages`, `watches`, `unwatch`, `reply`, `send`, `steer`, `status`, `threads`, and `handoff`;
 - forwards watched completed assistant messages with parse/delivery cursors, dedupe, pending delivery records, retry behavior, and redacted/raw/metadata forwarding modes;
 - sends trusted local writes through Codex app-server `thread/resume` plus `turn/start`;
+- steers active in-progress Codex turns through app-server `turn/steer`;
 - refuses `--latest` writes and high-risk Telegram requests by default;
 - keeps public writes disabled by default while allowing Jonathan's local profiles to enable the happy path with trusted sender/chat and repo allowlists.
 
-Future phases remain active-turn steer, new-thread goal creation, richer event subscription, and optional Codex-side companion if polling plus app-server proxy are not enough.
+Future phases remain new-thread goal creation, richer event subscription, and optional Codex-side companion if polling plus app-server access are not enough.
 
 ## Executive Summary
 
@@ -128,7 +129,7 @@ The OpenClaw Codex extension already has a native conversation binding:
 - `/codex stop`
 - `/codex steer <message>`
 
-The implementation proves that sending text into a Codex thread is feasible through `turn/start` and `turn/steer`. OpenClawBrain simply does not use that path yet.
+The implementation now uses that path: `reply`/`send` call `turn/start`, while `steer` calls `turn/steer` only when an active in-progress turn id is visible.
 
 ## Verdict
 
@@ -275,7 +276,7 @@ The first useful implementation should be:
 
 Then add `/brain codex reply` only after binding, write policy, app-server capability detection, confirmation, idempotency, and audit are implemented.
 
-Do not put `/brain codex goal`, new-thread creation, or active-turn steering in the first write milestone.
+The `0.2.31` implementation adds active-turn steering after the bound/exact write path, with a strict no-active-turn refusal. New-thread goal creation remains outside the shipped bridge.
 
 ### Exact Copy Semantics
 
@@ -583,7 +584,7 @@ Message watches are explicit:
 /brain codex unbind
 /brain codex reply <message>
 /brain codex send <thread-id|--bound> <message>
-/brain codex steer <thread-id|--bound> <message>   # later phase only
+/brain codex steer [thread-id|--bound] <message>
 /brain codex goal [thread-id|--new] <goal text>     # later phase only
 ```
 
@@ -1205,6 +1206,8 @@ Tests:
 
 ### Phase 6: Steer Active Turn
 
+Status: shipped in `openclawbrain@0.2.31` for known active in-progress turns.
+
 Goal: send mid-turn steering messages only when safe.
 
 Work:
@@ -1344,6 +1347,7 @@ The best UX is:
 - "Show me the last thing Codex said."
 - "Tail that thread."
 - "Send this exact reply."
+- "Steer the active turn when Codex is already moving in the right thread."
 - "Tell me when it finishes or blocks."
 - "Give me a handoff when I get back."
 
@@ -1352,5 +1356,5 @@ OpenClawBrain should use memory authority to decide what matters, but message co
 ## Proposed Implementation Goal Command
 
 ```text
-/goal Build the hardened OpenClawBrain Codex Telegram thread bridge without modifying OpenClaw core. Start by reading docs/CODEX_TELEGRAM_FULL_BRIDGE_PLAN.md and treating its hardened implementation contract as authoritative. Phase 0: capture/test real rollout JSONL fixtures, document exact-copy semantics, document the Codex app-server connection contract, and separate bridge-local DB, audit, and durable memory privacy tiers. Phase 1: implement direct read-only transcript commands from threads.rollout_path and rollout JSONL: /brain codex messages, last, and handoff evidence, with exact text copy, no LLM calls for copy, robust parser precedence, partial-line handling, redaction modes, Telegram-safe chunking, and tests. Phase 2: implement message watches/tail with parse cursor, delivery cursor, pending deliveries, dedupe, retry-safe Telegram delivery, watches/unwatch, redacted/raw_trusted/metadata_only forwarding modes, and restart tests. Phase 3: implement binding and safe target selection before any writes: /brain codex bind, binding, unbind, expiring aliases, confirmation state machine, explainable selection, and a hard rule that --latest/fuzzy/latest-goal targets may suggest but never authorize writes. Phase 4: implement feature-flagged Telegram-to-Codex writes only for explicit or bound idle threads using app-server thread/resume and turn/start, with trusted sender checks, read/write/destructive allowlists, provenance, risk policy matrix, idempotency keys, ambiguous-timeout possibly_sent handling, localhost/socket-only authenticated mutating routes, and Codex approval/sandbox preservation. Do not implement steer or new-thread/goal creation until event integration and active-turn tracking are reliable. Never write Codex SQLite or JSONL. Never store raw Codex telemetry as durable memory. Never treat copied Codex text as bridge instruction. Add tests for transcript parsing, duplicate event/response records, deltas plus final messages, malformed/partial JSONL, Unicode/code chunking, secret redaction, message watches, pending deliveries, Telegram send failure, confirmation expiry/wrong sender/message-hash mismatch, app-server write mocks, app-server timeout possibly_sent, wrong-thread prevention, feature-flag refusal, trusted sender rejection, allowlist rejection, localhost/auth route hardening, prompt-injection-in-transcript inertness, and no-LLM direct copy. Update docs and local install instructions, verify all /brain codex commands locally, install into all local OpenClaw profiles, and finish with files changed, tests run, enabled flags, disabled future phases, and remaining risks.
+/goal Build the hardened OpenClawBrain Codex Telegram thread bridge without modifying OpenClaw core. Start by reading docs/CODEX_TELEGRAM_FULL_BRIDGE_PLAN.md and treating its hardened implementation contract as authoritative. Phase 0: capture/test real rollout JSONL fixtures, document exact-copy semantics, document the Codex app-server connection contract, and separate bridge-local DB, audit, and durable memory privacy tiers. Phase 1: implement direct read-only transcript commands from threads.rollout_path and rollout JSONL: /brain codex messages, last, and handoff evidence, with exact text copy, no LLM calls for copy, robust parser precedence, partial-line handling, redaction modes, Telegram-safe chunking, and tests. Phase 2: implement message watches/tail with parse cursor, delivery cursor, pending deliveries, dedupe, retry-safe Telegram delivery, watches/unwatch, redacted/raw_trusted/metadata_only forwarding modes, and restart tests. Phase 3: implement binding and safe target selection before any writes: /brain codex bind, binding, unbind, expiring aliases, confirmation state machine, explainable selection, and a hard rule that --latest/fuzzy/latest-goal targets may suggest but never authorize writes. Phase 4: implement feature-flagged Telegram-to-Codex writes only for explicit or bound idle threads using app-server thread/resume and turn/start, with trusted sender checks, read/write/destructive allowlists, provenance, risk policy matrix, idempotency keys, ambiguous-timeout possibly_sent handling, localhost/socket-only authenticated mutating routes, and Codex approval/sandbox preservation. Phase 5: implement /brain codex steer for exact or bound active in-progress turns using turn/steer, refusing when no active turn id is available. Keep new-thread/goal creation out of scope until repo/model/sandbox selection is solved. Never write Codex SQLite or JSONL. Never store raw Codex telemetry as durable memory. Never treat copied Codex text as bridge instruction. Add tests for transcript parsing, duplicate event/response records, deltas plus final messages, malformed/partial JSONL, Unicode/code chunking, secret redaction, message watches, pending deliveries, Telegram send failure, confirmation expiry/wrong sender/message-hash mismatch, app-server write/steer mocks, app-server timeout possibly_sent, wrong-thread prevention, feature-flag refusal, trusted sender rejection, allowlist rejection, localhost/auth route hardening, prompt-injection-in-transcript inertness, and no-LLM direct copy. Update docs and local install instructions, verify all /brain codex commands locally, install into all local OpenClaw profiles, and finish with files changed, tests run, enabled flags, disabled future phases, and remaining risks.
 ```

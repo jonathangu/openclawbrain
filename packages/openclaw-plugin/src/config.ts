@@ -3,7 +3,7 @@ import path from 'node:path';
 import { safeString } from './redact.js';
 
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.30';
+export const PLUGIN_VERSION = '0.2.31';
 export const DEFAULT_CONFIG: any = Object.freeze({
   enabled: true,
   mode: 'balanced',
@@ -152,6 +152,7 @@ export const DEFAULT_CONFIG: any = Object.freeze({
     directMessageCopyEnabled: true,
     telegramForwardingMode: 'redacted',
     enableTelegramWrites: false,
+    enableTelegramSteer: false,
     trustOpenClawAuth: true,
     allowLatestTargetForWrites: false,
     highRiskTelegramWrites: false,
@@ -371,6 +372,7 @@ function normalizeCodexBridgeConfig(codexBridge: any = {}) {
       ? String(source.telegramForwardingMode)
       : DEFAULT_CONFIG.codexBridge.telegramForwardingMode,
     enableTelegramWrites: source.enableTelegramWrites === true,
+    enableTelegramSteer: source.enableTelegramSteer === true,
     trustOpenClawAuth: source.trustOpenClawAuth !== false,
     allowLatestTargetForWrites: source.allowLatestTargetForWrites === true,
     highRiskTelegramWrites: source.highRiskTelegramWrites === true,

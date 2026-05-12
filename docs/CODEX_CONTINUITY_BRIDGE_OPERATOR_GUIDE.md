@@ -1,6 +1,6 @@
 # OpenClawBrain Codex Telegram Bridge Operator Guide
 
-Status: implemented in `openclawbrain@0.2.30` as an OpenClawBrain-owned plugin surface. It does not modify OpenClaw core.
+Status: implemented in `openclawbrain@0.2.31` as an OpenClawBrain-owned plugin surface. It does not modify OpenClaw core.
 
 ## Product Contract
 
@@ -9,7 +9,7 @@ Codex UI is the high-bandwidth coding workbench when Jonathan is at the computer
 The bridge has two lanes:
 
 - **Transcript lane:** read recent messages from Codex SQLite `threads.rollout_path` plus rollout JSONL, copy final user/assistant text directly, and forward watched assistant messages to Telegram.
-- **Control lane:** write a user message into a specific Codex thread through Codex app-server `thread/resume` plus `turn/start`.
+- **Control lane:** write a user message into a specific Codex thread through Codex app-server `thread/resume` plus `turn/start`, or steer an active Codex turn through `turn/steer`.
 
 The bridge never writes Codex SQLite or rollout JSONL. It never stores raw Codex transcript as durable OpenClawBrain memory.
 
@@ -19,8 +19,9 @@ The bridge never writes Codex SQLite or rollout JSONL. It never stores raw Codex
 2. Ask `/brain codex last <thread-id>` to copy the latest assistant reply into Telegram.
 3. Ask `/brain codex bind <thread-id>` to attach this Telegram chat to that exact Codex thread.
 4. Ask `/brain codex tail --bound` when you want new completed assistant replies forwarded.
-5. Ask `/brain codex reply <message>` to send a concise instruction to the bound thread.
-6. Ask `/brain codex handoff --bound` when returning to the computer and wanting observed facts separated from Codex-reported claims.
+5. Ask `/brain codex reply <message>` to send a concise instruction to the bound idle thread.
+6. Ask `/brain codex steer <message>` only when Codex is actively working and you need to redirect the current turn.
+7. Ask `/brain codex handoff --bound` when returning to the computer and wanting observed facts separated from Codex-reported claims.
 
 ## Telegram Commands
 
@@ -39,12 +40,13 @@ The bridge never writes Codex SQLite or rollout JSONL. It never stores raw Codex
 /brain codex unwatch <watch-id|thread-id>
 /brain codex reply <message>
 /brain codex send <thread-id|--bound> <message>
+/brain codex steer [thread-id|--bound] <message>
 /brain codex handoff [thread-id|--latest|--bound]
 ```
 
 `reply` uses the bound thread. `send` requires an explicit full thread id or `--bound`. The bridge intentionally rejects `--latest` writes because wrong-thread writes are the failure mode that would destroy trust.
 
-`goal` and active-turn `steer` remain future phases. The working write path is existing-thread `reply`/`send` through app-server `turn/start`.
+`steer` also uses an exact or bound thread, but it requires a currently in-progress Codex turn. If the thread is idle, use `reply` instead. `goal` remains a future phase because new-thread creation requires repo/model/sandbox selection.
 
 ## API Routes
 
@@ -89,6 +91,7 @@ messageWatchesEnabled = true
 directMessageCopyEnabled = true
 telegramForwardingMode = "redacted"
 enableTelegramWrites = false
+enableTelegramSteer = false
 highRiskTelegramWrites = false
 repoAllowlist = []
 writeAllowlist = []
@@ -104,10 +107,12 @@ messageWatchesEnabled = true
 directMessageCopyEnabled = true
 telegramForwardingMode = "raw_trusted"
 enableTelegramWrites = true
+enableTelegramSteer = true
 highRiskTelegramWrites = false
 trustedTelegramSenders = ["<trusted-telegram-user-or-chat-id>"]
 writeAllowlist = ["/Users/guclaw"]
-appServerTimeoutMs = 15000
+appServerArgs = ["app-server", "--listen", "stdio://"]
+appServerTimeoutMs = 30000
 ```
 
 ## Memory Boundaries

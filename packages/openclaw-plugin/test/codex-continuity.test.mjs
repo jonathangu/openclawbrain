@@ -400,6 +400,63 @@ test('Brain command binds exact thread and sends trusted local Codex reply throu
   }
 });
 
+test('Brain command requires explicit steer enablement before steering active Codex work', async () => {
+  const root = await tempRoot();
+  try {
+    const dbPath = path.join(root, 'state_5.sqlite');
+    createCodexState(dbPath, [
+      { id: 'thread-steer', title: 'Steerable thread', cwd: '/repo/openclawbrain', updatedAtMs: Date.now() },
+    ]);
+    const cfg = config(root, dbPath, {
+      enableTelegramWrites: true,
+      trustedTelegramSenders: ['telegram-user'],
+      writeAllowlist: ['/repo/openclawbrain'],
+    });
+    const ctx = { channel: 'telegram', senderId: 'telegram-user', isAuthorizedSender: true, agentId: 'main' };
+    await handleBrainCommand({ ...ctx, args: 'codex bind thread-steer' }, cfg);
+    const steer = await handleBrainCommand({ ...ctx, args: 'codex steer Please stop after the parser test result.' }, cfg);
+    assert.match(steer.text, /steering is disabled/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Brain command steers a bound active Codex turn through app-server writer', async () => {
+  const root = await tempRoot();
+  try {
+    const dbPath = path.join(root, 'state_5.sqlite');
+    createCodexState(dbPath, [
+      { id: 'thread-steer', title: 'Steerable thread', cwd: '/repo/openclawbrain', updatedAtMs: Date.now() },
+    ]);
+    const cfg = config(root, dbPath, {
+      enableTelegramWrites: true,
+      enableTelegramSteer: true,
+      trustedTelegramSenders: ['telegram-user'],
+      writeAllowlist: ['/repo/openclawbrain'],
+    });
+    const ctx = { channel: 'telegram', senderId: 'telegram-user', isAuthorizedSender: true, agentId: 'main' };
+    await handleBrainCommand({ ...ctx, args: 'codex bind thread-steer' }, cfg);
+    const steers = [];
+    const result = await handleBrainCommand({ ...ctx, args: 'codex steer Please pause and report the failing test.' }, cfg, {
+      codexAppServerWriter: {
+        async sendMessage() {
+          throw new Error('sendMessage should not be called for steer');
+        },
+        async steerMessage(input) {
+          steers.push(input);
+          return { ok: true, activeTurnId: 'turn-active', turnId: 'turn-active' };
+        },
+      },
+    });
+    assert.match(result.text, /Steered Codex thread thread-steer/);
+    assert.equal(steers.length, 1);
+    assert.equal(steers[0].threadId, 'thread-steer');
+    assert.equal(steers[0].message, 'Please pause and report the failing test.');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('Brain command rejects untrusted and non-allowlisted Codex writes', async () => {
   const root = await tempRoot();
   try {

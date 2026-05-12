@@ -15,6 +15,7 @@ export interface CodexBridgeConfig {
     directMessageCopyEnabled: boolean;
     telegramForwardingMode: 'redacted' | 'raw_trusted' | 'metadata_only';
     enableTelegramWrites: boolean;
+    enableTelegramSteer: boolean;
     trustOpenClawAuth: boolean;
     allowLatestTargetForWrites: boolean;
     highRiskTelegramWrites: boolean;
@@ -147,6 +148,22 @@ export interface CodexAppServerWriter {
         ok: boolean;
         turnId?: string;
         status?: string;
+        activeTurnId?: string;
+        possiblySent?: boolean;
+        error?: string;
+    }>;
+    steerMessage?(input: {
+        threadId: string;
+        cwd?: string;
+        model?: string;
+        message: string;
+        expectedTurnId?: string;
+        timeoutMs: number;
+    }): Promise<{
+        ok: boolean;
+        turnId?: string;
+        status?: string;
+        activeTurnId?: string;
         possiblySent?: boolean;
         error?: string;
     }>;

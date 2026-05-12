@@ -42,6 +42,7 @@ export interface CodexBridgeConfig {
   directMessageCopyEnabled: boolean;
   telegramForwardingMode: 'redacted' | 'raw_trusted' | 'metadata_only';
   enableTelegramWrites: boolean;
+  enableTelegramSteer: boolean;
   trustOpenClawAuth: boolean;
   allowLatestTargetForWrites: boolean;
   highRiskTelegramWrites: boolean;
@@ -174,7 +175,15 @@ export interface CodexAppServerWriter {
     model?: string;
     message: string;
     timeoutMs: number;
-  }): Promise<{ ok: boolean; turnId?: string; status?: string; possiblySent?: boolean; error?: string }>;
+  }): Promise<{ ok: boolean; turnId?: string; status?: string; activeTurnId?: string; possiblySent?: boolean; error?: string }>;
+  steerMessage?(input: {
+    threadId: string;
+    cwd?: string;
+    model?: string;
+    message: string;
+    expectedTurnId?: string;
+    timeoutMs: number;
+  }): Promise<{ ok: boolean; turnId?: string; status?: string; activeTurnId?: string; possiblySent?: boolean; error?: string }>;
 }
 
 export interface CodexBridgeDeps {
@@ -223,6 +232,7 @@ export const DEFAULT_CODEX_BRIDGE_CONFIG: CodexBridgeConfig = Object.freeze({
   directMessageCopyEnabled: true,
   telegramForwardingMode: 'redacted',
   enableTelegramWrites: false,
+  enableTelegramSteer: false,
   trustOpenClawAuth: true,
   allowLatestTargetForWrites: false,
   highRiskTelegramWrites: false,
@@ -262,6 +272,7 @@ export function normalizeCodexBridgeConfig(source: any = {}): CodexBridgeConfig 
       ? String(input.telegramForwardingMode) as CodexBridgeConfig['telegramForwardingMode']
       : DEFAULT_CODEX_BRIDGE_CONFIG.telegramForwardingMode,
     enableTelegramWrites: input.enableTelegramWrites === true,
+    enableTelegramSteer: input.enableTelegramSteer === true,
     trustOpenClawAuth: input.trustOpenClawAuth !== false,
     allowLatestTargetForWrites: input.allowLatestTargetForWrites === true,
     highRiskTelegramWrites: input.highRiskTelegramWrites === true,
@@ -313,6 +324,7 @@ export async function buildCodexBridgeStatus(config: any, agentId = 'main', deps
           appServerAvailable,
           sqliteFallbackAvailable: true,
           writeEnabled: bridgeConfig.enableTelegramWrites,
+          steerEnabled: bridgeConfig.enableTelegramWrites && bridgeConfig.enableTelegramSteer,
         });
       }
       appServerAvailable = true;
@@ -339,6 +351,7 @@ export async function buildCodexBridgeStatus(config: any, agentId = 'main', deps
       appServerAvailable,
       sqliteFallbackAvailable: true,
       writeEnabled: bridgeConfig.enableTelegramWrites,
+      steerEnabled: bridgeConfig.enableTelegramWrites && bridgeConfig.enableTelegramSteer,
     });
   }
 
@@ -900,11 +913,11 @@ export async function handleBrainCommand(ctx: any, config: any, api: any = {}): 
       store.close();
     }
   }
-  if (subcommand === 'reply' || subcommand === 'send') {
+  if (subcommand === 'reply' || subcommand === 'send' || subcommand === 'steer') {
     return handleCodexWriteCommand({ subcommand, rest, ctx, config, bridgeConfig, status, agentId, api });
   }
-  if (subcommand === 'goal' || subcommand === 'steer') {
-    return { text: '/brain codex goal and steer are intentionally later phases. Use /brain codex bind plus /brain codex reply for the working safe path.' };
+  if (subcommand === 'goal') {
+    return { text: '/brain codex goal is still a later phase. Use /brain codex bind plus /brain codex reply or /brain codex steer for existing threads.' };
   }
   return { text: brainHelpText() };
 }
@@ -1054,6 +1067,9 @@ async function handleCodexWriteCommand(input: {
     if (!input.bridgeConfig.enableTelegramWrites) {
       return { text: 'Telegram-to-Codex writes are disabled in package defaults. Jonathan local profiles should set codexBridge.enableTelegramWrites=true.' };
     }
+    if (input.subcommand === 'steer' && !input.bridgeConfig.enableTelegramSteer) {
+      return { text: 'Codex steering is disabled in package defaults. Jonathan local profiles should set codexBridge.enableTelegramSteer=true.' };
+    }
     if (!isTrustedWriteContext(input.ctx, input.bridgeConfig)) {
       return { text: 'Codex write rejected: this Telegram sender/chat is not trusted for writes.' };
     }
@@ -1065,6 +1081,19 @@ async function handleCodexWriteCommand(input: {
       if (!target || !message) return { text: 'Usage: /brain codex send <thread-id|--bound> <message>' };
       if (target === '--latest' && !input.bridgeConfig.allowLatestTargetForWrites) {
         return { text: '--latest is not allowed for Codex writes. Use /brain codex bind <thread-id> or an explicit thread id.' };
+      }
+    } else if (input.subcommand === 'steer') {
+      const first = safeString(input.rest[0]);
+      const knownThreadId = input.status.latestThreads.some((thread) => thread.id === first);
+      if (first === '--bound' || knownThreadId || looksLikeCodexThreadId(first)) {
+        target = first;
+        message = input.rest.slice(1).join(' ').trim();
+      } else {
+        message = input.rest.join(' ').trim();
+      }
+      if (!message) return { text: 'Usage: /brain codex steer [thread-id|--bound] <message>' };
+      if (target === '--latest') {
+        return { text: '--latest is not allowed for Codex steering. Use /brain codex bind <thread-id> or an explicit thread id.' };
       }
     } else {
       message = input.rest.join(' ').trim();
@@ -1079,7 +1108,7 @@ async function handleCodexWriteCommand(input: {
     if (riskClass === 'high' && !input.bridgeConfig.highRiskTelegramWrites) {
       return { text: 'Codex write rejected: high-risk Telegram writes are disabled. Use Codex UI at the computer for publish/deploy/delete/secrets/full-access requests.' };
     }
-    const idempotencyKey = sha256(`${input.agentId}:${contextChatKey(input.ctx)}:${resolved.thread.id}:${message}`);
+    const idempotencyKey = sha256(`${input.agentId}:${contextChatKey(input.ctx)}:${input.subcommand}:${resolved.thread.id}:${message}`);
     store.recordOutbound({
       agentId: input.agentId,
       sourceChannel: safeString(input.ctx.channel) || 'telegram',
@@ -1094,13 +1123,25 @@ async function handleCodexWriteCommand(input: {
       idempotencyKey,
     });
     const writer: CodexAppServerWriter = input.api.codexAppServerWriter || defaultCodexAppServerWriter(input.bridgeConfig);
-    const result = await writer.sendMessage({
-      threadId: resolved.thread.id,
-      cwd: resolved.thread.cwd,
-      model: resolved.thread.model,
-      message,
-      timeoutMs: Math.max(input.bridgeConfig.appServerTimeoutMs, 10000),
-    });
+    const appServerMethod = input.subcommand === 'steer' ? 'turn/steer' : 'turn/start';
+    if (input.subcommand === 'steer' && typeof writer.steerMessage !== 'function') {
+      return { text: 'Codex steering failed: the configured app-server writer does not support turn/steer.' };
+    }
+    const result = input.subcommand === 'steer'
+      ? await writer.steerMessage!({
+        threadId: resolved.thread.id,
+        cwd: resolved.thread.cwd,
+        model: resolved.thread.model,
+        message,
+        timeoutMs: Math.max(input.bridgeConfig.appServerTimeoutMs, 10000),
+      })
+      : await writer.sendMessage({
+        threadId: resolved.thread.id,
+        cwd: resolved.thread.cwd,
+        model: resolved.thread.model,
+        message,
+        timeoutMs: Math.max(input.bridgeConfig.appServerTimeoutMs, 10000),
+      });
     const status = result.ok ? 'accepted' : result.possiblySent ? 'possibly_sent' : 'failed';
     store.recordOutbound({
       agentId: input.agentId,
@@ -1111,7 +1152,7 @@ async function handleCodexWriteCommand(input: {
       repoPath: resolved.thread.cwd,
       riskClass,
       confirmationState: 'not_required',
-      appServerMethod: 'turn/start',
+      appServerMethod,
       appServerTurnId: result.turnId,
       status,
       redactedPreview: message,
@@ -1126,16 +1167,26 @@ async function handleCodexWriteCommand(input: {
       threadId: resolved.thread.id,
       decision: result.ok ? 'recorded' : 'rejected',
       notified: false,
-      reason: result.ok ? 'app_server_turn_start_accepted' : (result.error || 'app_server_turn_start_failed'),
-      redactedSummary: `Telegram message sent to Codex thread ${resolved.thread.id}: ${redactText(message, 240)}`,
+      reason: result.ok ? (input.subcommand === 'steer' ? 'app_server_turn_steer_accepted' : 'app_server_turn_start_accepted') : (result.error || `${appServerMethod}_failed`),
+      redactedSummary: `Telegram ${input.subcommand === 'steer' ? 'steer' : 'message'} sent to Codex thread ${resolved.thread.id}: ${redactText(message, 240)}`,
       dedupeKey: `outbound:${idempotencyKey}:${status}`,
     });
-    if (result.ok) return { text: `Sent to Codex thread ${resolved.thread.id}${result.turnId ? ` (turn ${result.turnId})` : ''}.` };
+    if (result.ok) {
+      return {
+        text: input.subcommand === 'steer'
+          ? `Steered Codex thread ${resolved.thread.id}${result.activeTurnId ? ` (active turn ${result.activeTurnId})` : ''}${result.turnId ? `; resulting turn ${result.turnId}` : ''}.`
+          : `Sent to Codex thread ${resolved.thread.id}${result.turnId ? ` (turn ${result.turnId})` : ''}.`,
+      };
+    }
     if (result.possiblySent) return { text: `Codex app-server timed out after the write may have been accepted for ${resolved.thread.id}. Check /brain codex last before retrying.` };
-    return { text: `Codex write failed for ${resolved.thread.id}: ${result.error || 'unknown error'}` };
+    return { text: `Codex ${input.subcommand === 'steer' ? 'steer' : 'write'} failed for ${resolved.thread.id}: ${result.error || 'unknown error'}` };
   } finally {
     store.close();
   }
+}
+
+function looksLikeCodexThreadId(value: string): boolean {
+  return /^([0-9a-f]{8,}|thread[-_][\w.-]+|[A-Za-z0-9_-]{12,})$/.test(safeString(value));
 }
 
 function isTrustedWriteContext(ctx: any, config: CodexBridgeConfig): boolean {
@@ -1567,6 +1618,7 @@ function statusFromThreads(input: {
   appServerAvailable: boolean;
   sqliteFallbackAvailable: boolean;
   writeEnabled: boolean;
+  steerEnabled: boolean;
 }): CodexBridgeStatus {
   const activeGoals = input.threads.filter((thread) => thread.goal?.status === 'active');
   return {
@@ -1582,7 +1634,7 @@ function statusFromThreads(input: {
       canReadMessages: input.threads.some((thread) => Boolean(thread.rolloutPath)),
       canSubscribe: input.source === 'app_server',
       canStartTurn: input.writeEnabled,
-      canSteerTurn: false,
+      canSteerTurn: input.steerEnabled,
       canWrite: input.writeEnabled,
       appServerAvailable: input.appServerAvailable,
       sqliteFallbackAvailable: input.sqliteFallbackAvailable,
@@ -1593,7 +1645,7 @@ function statusFromThreads(input: {
     errors: input.errors,
     writeControl: {
       enabled: input.writeEnabled,
-      reason: input.writeEnabled ? 'feature_flag_enabled_but_write_path_requires_confirmation' : 'disabled_by_default',
+      reason: input.writeEnabled ? (input.steerEnabled ? 'write_and_steer_enabled_for_trusted_contexts' : 'write_enabled_steer_disabled') : 'disabled_by_default',
     },
   };
 }
@@ -1787,7 +1839,54 @@ function defaultCodexAppServerWriter(config: CodexBridgeConfig): CodexAppServerW
           ...(input.model ? { model: input.model } : {}),
         });
         const turn = response && typeof response === 'object' && !Array.isArray(response) ? (response as any).turn : undefined;
-        return { ok: true, turnId: safeString(turn?.id), status: safeString(turn?.status) };
+        return { ok: true, turnId: safeString(turn?.id ?? (response as any)?.turnId), status: safeString(turn?.status) };
+      } catch (error: any) {
+        const message = clipText(String(error?.message || error), 240);
+        return { ok: false, possiblySent: /timeout/i.test(message), error: message };
+      } finally {
+        client.close();
+      }
+    },
+    async steerMessage(input) {
+      const client = createJsonRpcProcessClient({
+        command: config.appServerCommand,
+        args: config.appServerArgs,
+        timeoutMs: input.timeoutMs || config.appServerTimeoutMs,
+      });
+      try {
+        await client.request('initialize', {
+          clientInfo: { name: 'openclawbrain-codex-telegram-bridge', version: '1' },
+          capabilities: { experimentalApi: true },
+        });
+        client.notify('initialized');
+        const resumed = await client.request('thread/resume', {
+          threadId: input.threadId,
+          persistExtendedHistory: true,
+          ...(input.model ? { model: input.model } : {}),
+        });
+        let activeTurnId = input.expectedTurnId || findActiveCodexTurnId(resumed);
+        if (!activeTurnId) {
+          try {
+            const read = await client.request('thread/read', { threadId: input.threadId, includeTurns: true });
+            activeTurnId = findActiveCodexTurnId(read);
+          } catch {
+            // If thread/read is absent, fall through to the clearer no-active-turn error.
+          }
+        }
+        if (!activeTurnId) {
+          return { ok: false, error: 'no active in-progress Codex turn found to steer; use /brain codex reply for an idle thread' };
+        }
+        const response = await client.request('turn/steer', {
+          threadId: input.threadId,
+          expectedTurnId: activeTurnId,
+          input: [{ type: 'text', text: input.message, text_elements: [] }],
+        });
+        return {
+          ok: true,
+          activeTurnId,
+          turnId: safeString((response as any)?.turnId ?? (response as any)?.turn?.id),
+          status: safeString((response as any)?.turn?.status),
+        };
       } catch (error: any) {
         const message = clipText(String(error?.message || error), 240);
         return { ok: false, possiblySent: /timeout/i.test(message), error: message };
@@ -1796,6 +1895,19 @@ function defaultCodexAppServerWriter(config: CodexBridgeConfig): CodexAppServerW
       }
     },
   };
+}
+
+function findActiveCodexTurnId(response: unknown): string {
+  const root = response && typeof response === 'object' ? response as any : {};
+  const thread = root.thread && typeof root.thread === 'object' ? root.thread : root;
+  const turns = Array.isArray(thread.turns) ? thread.turns : Array.isArray(root.turns) ? root.turns : [];
+  for (let index = turns.length - 1; index >= 0; index -= 1) {
+    const turn = turns[index];
+    if (!turn || typeof turn !== 'object') continue;
+    const status = safeString((turn as any).status);
+    if (status === 'inProgress') return safeString((turn as any).id ?? (turn as any).turnId);
+  }
+  return '';
 }
 
 function createJsonRpcProcessClient(options: { command: string; args: string[]; timeoutMs: number }) {
@@ -1880,7 +1992,8 @@ export function formatCodexStatus(status: CodexBridgeStatus): string {
     `Threads visible: ${status.counts.threads}; active goals: ${status.counts.activeGoals}; watches: ${status.counts.watched}`,
     top ? `Latest: ${top.title} [${top.id}]` : 'Latest: none',
     top?.goal ? `Goal: ${top.goal.status} - ${top.goal.objective}` : undefined,
-    `Writes: ${status.writeControl.enabled ? 'feature-flagged' : 'disabled'}`,
+    `Writes: ${status.capabilities.canStartTurn ? 'on for trusted contexts' : 'disabled'}`,
+    `Steer: ${status.capabilities.canSteerTurn ? 'on for active turns' : 'disabled'}`,
   ].filter(Boolean).join('\n');
 }
 
@@ -1940,6 +2053,7 @@ function brainHelpText() {
     '- /brain codex unwatch <watch-id|thread-id>',
     '- /brain codex reply <message>',
     '- /brain codex send <thread-id|--bound> <message>',
+    '- /brain codex steer [thread-id|--bound] <message>',
     '- /brain codex handoff [thread-id]',
     '',
     graphHelpText(),

@@ -1,7 +1,7 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.30",
+  "version": "0.2.31",
   "description": "Aggressive-but-safe local memory graph for OpenClaw: learned routing, Memory Authority resolution, audited capture, tombstone-aware forgetting, bounded memory context, and SQLite proof surfaces.",
   "kind": "memory",
   "activation": {
@@ -699,6 +699,10 @@
             "type": "boolean",
             "default": false
           },
+          "enableTelegramSteer": {
+            "type": "boolean",
+            "default": false
+          },
           "trustOpenClawAuth": {
             "type": "boolean",
             "default": true
@@ -775,6 +779,7 @@
           "directMessageCopyEnabled": true,
           "telegramForwardingMode": "redacted",
           "enableTelegramWrites": false,
+          "enableTelegramSteer": false,
           "trustOpenClawAuth": true,
           "allowLatestTargetForWrites": false,
           "highRiskTelegramWrites": false,
@@ -1171,7 +1176,7 @@
     },
     "capture.mode": {
       "label": "Capture Mode",
-      "help": "v0.2.30 defaults to aggressive capture consideration, Memory Authority resolution, and conservative Memory Graph Maintenance. This evaluates durable memory candidates broadly while strict validators decide what can be stored, whether retrieved memories can influence a turn, and which graph changes require review."
+      "help": "v0.2.31 defaults to aggressive capture consideration, Memory Authority resolution, conservative Memory Graph Maintenance, and the full Codex Telegram thread bridge. Strict validators decide what can be stored, whether retrieved memories can influence a turn, which graph changes require review, and which Codex thread writes/steers are allowed."
     },
     "routing.maxInjectedMemories": {
       "label": "Max Injected Memories",
@@ -1203,7 +1208,11 @@
     },
     "codexBridge.enableTelegramWrites": {
       "label": "Enable Telegram Codex Writes",
-      "help": "Off by default. Requires trusted senders, repo allowlists, provenance, risk classification, and confirmation before any future write path may run."
+      "help": "Off by default for public installs. When enabled with trusted senders and repo allowlists, Telegram can send exact messages into bound Codex threads."
+    },
+    "codexBridge.enableTelegramSteer": {
+      "label": "Enable Telegram Codex Steering",
+      "help": "Off by default for public installs. Jonathan local profiles can enable it so /brain codex steer sends a bounded turn/steer message to an active Codex turn."
     }
   }
 }
