@@ -1,5 +1,5 @@
 export declare const PLUGIN_ID = "openclawbrain";
-export declare const PLUGIN_VERSION = "0.2.31";
+export declare const PLUGIN_VERSION = "0.2.32";
 export declare const DEFAULT_CONFIG: any;
 export declare function resolveOpenClawBrainConfig(api?: any): {
     enabled: boolean;
@@ -163,6 +163,7 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
         preferAppServer: boolean;
         appServerCommand: any;
         appServerArgs: any;
+        appServerUrl: any;
         appServerTimeoutMs: number;
         staleAfterMs: number;
         maxThreads: number;
@@ -347,6 +348,7 @@ export declare function normalizePluginConfig(input?: any): {
         preferAppServer: boolean;
         appServerCommand: any;
         appServerArgs: any;
+        appServerUrl: any;
         appServerTimeoutMs: number;
         staleAfterMs: number;
         maxThreads: number;

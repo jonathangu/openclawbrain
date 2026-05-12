@@ -1,6 +1,6 @@
 # Getting Started with OpenClawBrain
 
-This is the fastest honest path to a working OpenClawBrain `0.2.31` install.
+This is the fastest honest path to a working OpenClawBrain `0.2.32` install.
 
 ## What you are installing
 
@@ -8,7 +8,7 @@ OpenClawBrain is a native OpenClaw plugin that gives agents local, inspectable m
 
 The production route brain is `route-policy-v3`: a compact learned route function backed by redacted route frames, SQLite evidence, shadow decisions, replay/eval cases, calibration, gated promotion, and rollback lineage.
 
-The 0.2.31 runtime includes Memory Authority resolution, automatic Memory Graph Maintenance, and the real OpenClawBrain-owned Codex Telegram bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The graph maintenance layer then keeps long-lived memory healthy with dry-run proposals, deterministic duplicate/edge cleanup, tombstone-aware recapture checks, and proof. The Codex bridge reads local Codex thread messages, tails watched replies, sends trusted local Telegram replies into exact Codex threads, and can steer active Codex turns when enabled.
+The 0.2.32 runtime includes Memory Authority resolution, automatic Memory Graph Maintenance, and the real OpenClawBrain-owned Codex Telegram bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The graph maintenance layer then keeps long-lived memory healthy with dry-run proposals, deterministic duplicate/edge cleanup, tombstone-aware recapture checks, and proof. The Codex bridge reads local Codex thread messages, tails watched replies, sends trusted local Telegram replies into exact Codex threads, and can steer active Codex turns when enabled.
 
 ## Before you start
 
@@ -23,16 +23,16 @@ You need:
 Use the same command for a fresh install or an upgrade. `--force` replaces an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.31 --force
+openclaw plugins install clawhub:openclawbrain@0.2.32 --force
 openclaw plugins enable openclawbrain
 ```
 
 If ClawHub metadata is still propagating, install the GitHub release archive:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.31.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.31/openclawbrain-0.2.31.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.31.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.32.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.32/openclawbrain-0.2.32.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.32.tgz --force
 openclaw plugins enable openclawbrain
 ```
 

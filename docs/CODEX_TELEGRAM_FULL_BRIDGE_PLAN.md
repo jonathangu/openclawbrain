@@ -1,12 +1,12 @@
 # Codex Telegram Full Bridge Plan
 
-Status: implementation plan, with Phase 1-5 existing-thread bridge shipped in `openclawbrain@0.2.31`
+Status: implementation plan, with Phase 1-5 existing-thread bridge shipped in `openclawbrain@0.2.32`
 Date: 2026-05-11, updated 2026-05-12
 Owner: OpenClawBrain
 
 ## 2026-05-12 Implementation Update
 
-`openclawbrain@0.2.31` implements the core bridge without modifying OpenClaw core:
+`openclawbrain@0.2.32` implements the core bridge without modifying OpenClaw core:
 
 - reads `threads.rollout_path` from `~/.codex/state_5.sqlite`;
 - parses rollout JSONL `response_item` final user/assistant messages and event fallbacks;
@@ -276,7 +276,7 @@ The first useful implementation should be:
 
 Then add `/brain codex reply` only after binding, write policy, app-server capability detection, confirmation, idempotency, and audit are implemented.
 
-The `0.2.31` implementation adds active-turn steering after the bound/exact write path, with a strict no-active-turn refusal. New-thread goal creation remains outside the shipped bridge.
+The `0.2.32` implementation adds active-turn steering after the bound/exact write path, with a strict no-active-turn refusal. New-thread goal creation remains outside the shipped bridge.
 
 ### Exact Copy Semantics
 
@@ -1206,7 +1206,7 @@ Tests:
 
 ### Phase 6: Steer Active Turn
 
-Status: shipped in `openclawbrain@0.2.31` for known active in-progress turns.
+Status: shipped in `openclawbrain@0.2.32` for known active in-progress turns.
 
 Goal: send mid-turn steering messages only when safe.
 

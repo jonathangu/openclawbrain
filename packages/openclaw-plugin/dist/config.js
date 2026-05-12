@@ -2,7 +2,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { safeString } from './redact.js';
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.31';
+export const PLUGIN_VERSION = '0.2.32';
 export const DEFAULT_CONFIG = Object.freeze({
     enabled: true,
     mode: 'balanced',
@@ -143,6 +143,7 @@ export const DEFAULT_CONFIG = Object.freeze({
         preferAppServer: false,
         appServerCommand: 'codex',
         appServerArgs: Object.freeze(['app-server', 'proxy']),
+        appServerUrl: '',
         appServerTimeoutMs: 1200,
         staleAfterMs: 600000,
         maxThreads: 10,
@@ -356,6 +357,7 @@ function normalizeCodexBridgeConfig(codexBridge = {}) {
         preferAppServer: source.preferAppServer === true,
         appServerCommand: nonEmptyString(source.appServerCommand) || DEFAULT_CONFIG.codexBridge.appServerCommand,
         appServerArgs: appServerArgs.length ? appServerArgs : [...DEFAULT_CONFIG.codexBridge.appServerArgs],
+        appServerUrl: nonEmptyString(source.appServerUrl) || DEFAULT_CONFIG.codexBridge.appServerUrl,
         appServerTimeoutMs: clampInteger(source.appServerTimeoutMs, DEFAULT_CONFIG.codexBridge.appServerTimeoutMs, 100, 30000),
         staleAfterMs: clampInteger(source.staleAfterMs, DEFAULT_CONFIG.codexBridge.staleAfterMs, 1000, 86400000),
         maxThreads: clampInteger(source.maxThreads, DEFAULT_CONFIG.codexBridge.maxThreads, 1, 100),

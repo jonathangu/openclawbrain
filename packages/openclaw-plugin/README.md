@@ -38,7 +38,7 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.31`
+- **Current package release:** `0.2.32`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.5.2` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded memory context
@@ -47,7 +47,7 @@ OpenClawBrain takes a different approach:
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.31 --force
+openclaw plugins install clawhub:openclawbrain@0.2.32 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -55,9 +55,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.31.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.31/openclawbrain-0.2.31.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.31.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.32.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.32/openclawbrain-0.2.32.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.32.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -122,7 +122,7 @@ openclaw doctor
 
 ## Codex continuity bridge
 
-`0.2.31` completes the OpenClawBrain-owned Codex continuity bridge into a real Telegram thread bridge. It does not patch OpenClaw core. It reads local Codex SQLite for thread metadata, follows `threads.rollout_path` into rollout JSONL, copies final user/assistant message text directly without LLM summarization, sends trusted local replies through Codex app-server `thread/resume` plus `turn/start`, and can steer active Codex turns with `turn/steer`.
+`0.2.32` completes the OpenClawBrain-owned Codex continuity bridge into a real Telegram thread bridge. It does not patch OpenClaw core. It reads local Codex SQLite for thread metadata, follows `threads.rollout_path` into rollout JSONL, copies final user/assistant message text directly without LLM summarization, sends trusted local replies through Codex app-server `thread/resume` plus `turn/start`, and can steer active Codex turns with `turn/steer`.
 
 ```text
 /brain codex status
@@ -143,6 +143,14 @@ openclaw doctor
 ```
 
 Telegram-to-Codex writes and steering stay disabled by default in the public package. Local trusted profiles can enable the happy path with `enableTelegramWrites=true`, `enableTelegramSteer=true`, trusted sender/chat, and write allowlists. The bridge refuses `--latest` writes, refuses high-risk publish/deploy/delete/secrets/full-access wording by default, and never bypasses Codex sandbox or approval behavior.
+
+The public package talks to Codex over a localhost WebSocket app-server endpoint, not by spawning shell commands. For a trusted local setup, run:
+
+```bash
+codex app-server --listen ws://127.0.0.1:53177
+```
+
+Then set `codexBridge.appServerUrl="ws://127.0.0.1:53177"` in the OpenClawBrain profile config.
 
 ## Memory graph maintenance
 

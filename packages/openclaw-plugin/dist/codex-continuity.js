@@ -1,5 +1,4 @@
 import { randomUUID, createHash } from 'node:crypto';
-import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -13,6 +12,7 @@ export const DEFAULT_CODEX_BRIDGE_CONFIG = Object.freeze({
     preferAppServer: false,
     appServerCommand: 'codex',
     appServerArgs: Object.freeze(['app-server', 'proxy']),
+    appServerUrl: '',
     appServerTimeoutMs: 1200,
     staleAfterMs: 10 * 60 * 1000,
     maxThreads: 10,
@@ -50,6 +50,7 @@ export function normalizeCodexBridgeConfig(source = {}) {
         preferAppServer: input.preferAppServer === true,
         appServerCommand: nonEmptyString(input.appServerCommand) || DEFAULT_CODEX_BRIDGE_CONFIG.appServerCommand,
         appServerArgs: appServerArgs.length ? appServerArgs : [...DEFAULT_CODEX_BRIDGE_CONFIG.appServerArgs],
+        appServerUrl: nonEmptyString(input.appServerUrl) || DEFAULT_CODEX_BRIDGE_CONFIG.appServerUrl,
         appServerTimeoutMs: clampInteger(input.appServerTimeoutMs, DEFAULT_CODEX_BRIDGE_CONFIG.appServerTimeoutMs, 100, 30000),
         staleAfterMs: clampInteger(input.staleAfterMs, DEFAULT_CODEX_BRIDGE_CONFIG.staleAfterMs, 1000, 86400000),
         maxThreads: clampInteger(input.maxThreads, DEFAULT_CODEX_BRIDGE_CONFIG.maxThreads, 1, 100),
@@ -1463,9 +1464,8 @@ function chunkTelegramText(text, maxChars = 3500) {
 function defaultCodexAppServerWriter(config) {
     return {
         async sendMessage(input) {
-            const client = createJsonRpcProcessClient({
-                command: config.appServerCommand,
-                args: config.appServerArgs,
+            const client = await createJsonRpcWebSocketClient({
+                url: config.appServerUrl,
                 timeoutMs: input.timeoutMs || config.appServerTimeoutMs,
             });
             try {
@@ -1497,9 +1497,8 @@ function defaultCodexAppServerWriter(config) {
             }
         },
         async steerMessage(input) {
-            const client = createJsonRpcProcessClient({
-                command: config.appServerCommand,
-                args: config.appServerArgs,
+            const client = await createJsonRpcWebSocketClient({
+                url: config.appServerUrl,
                 timeoutMs: input.timeoutMs || config.appServerTimeoutMs,
             });
             try {
@@ -1562,50 +1561,64 @@ function findActiveCodexTurnId(response) {
     }
     return '';
 }
-function createJsonRpcProcessClient(options) {
-    const child = spawn(options.command, options.args, { stdio: ['pipe', 'pipe', 'pipe'] });
+async function createJsonRpcWebSocketClient(options) {
+    const url = safeString(options.url);
+    if (!/^wss?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/.*)?$/i.test(url)) {
+        throw new Error('codex app-server WebSocket URL is not configured; set codexBridge.appServerUrl to a localhost ws:// endpoint');
+    }
+    const WebSocketCtor = globalThis.WebSocket;
+    if (typeof WebSocketCtor !== 'function') {
+        throw new Error('WebSocket is unavailable in this Node runtime');
+    }
+    const socket = new WebSocketCtor(url);
     let nextId = 1;
-    let stdout = '';
-    let stderr = '';
     const pending = new Map();
-    child.stdout?.on('data', (chunk) => {
-        stdout += chunk.toString('utf8');
-        const lines = stdout.split(/\r?\n/);
-        stdout = lines.pop() ?? '';
-        for (const line of lines) {
-            if (!line.trim())
-                continue;
-            let message;
-            try {
-                message = JSON.parse(line);
-            }
-            catch {
-                continue;
-            }
-            const id = Number(message.id);
-            const current = pending.get(id);
-            if (!current)
-                continue;
-            clearTimeout(current.timer);
-            pending.delete(id);
-            if (message.error) {
-                current.reject(new Error(safeString(message.error.message) || 'codex app-server rpc error'));
-            }
-            else {
-                current.resolve(message.result);
-            }
+    await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('codex app-server WebSocket connection timeout')), options.timeoutMs);
+        socket.onopen = () => {
+            clearTimeout(timer);
+            resolve();
+        };
+        socket.onerror = () => {
+            clearTimeout(timer);
+            reject(new Error('codex app-server WebSocket connection failed'));
+        };
+    });
+    socket.onmessage = (event) => {
+        let message;
+        try {
+            message = JSON.parse(String(event.data));
         }
-    });
-    child.stderr?.on('data', (chunk) => {
-        stderr += chunk.toString('utf8');
-    });
-    child.on('error', (error) => {
+        catch {
+            return;
+        }
+        const id = Number(message.id);
+        const current = pending.get(id);
+        if (!current)
+            return;
+        clearTimeout(current.timer);
+        pending.delete(id);
+        if (message.error) {
+            current.reject(new Error(safeString(message.error.message) || 'codex app-server rpc error'));
+        }
+        else {
+            current.resolve(message.result);
+        }
+    };
+    socket.onerror = () => {
         for (const [id, current] of pending) {
             clearTimeout(current.timer);
-            current.reject(error);
+            current.reject(new Error('codex app-server WebSocket error'));
             pending.delete(id);
         }
-    });
+    };
+    socket.onclose = () => {
+        for (const [id, current] of pending) {
+            clearTimeout(current.timer);
+            current.reject(new Error('codex app-server WebSocket closed'));
+            pending.delete(id);
+        }
+    };
     return {
         request(method, params) {
             const id = nextId++;
@@ -1613,28 +1626,25 @@ function createJsonRpcProcessClient(options) {
             return new Promise((resolve, reject) => {
                 const timer = setTimeout(() => {
                     pending.delete(id);
-                    reject(new Error(`codex app-server request timeout for ${method}${stderr ? `: ${clipText(stderr, 180)}` : ''}`));
+                    reject(new Error(`codex app-server request timeout for ${method}`));
                 }, options.timeoutMs);
                 pending.set(id, { resolve, reject, timer });
-                child.stdin?.write(`${payload}\n`, 'utf8', (error) => {
-                    if (error) {
-                        clearTimeout(timer);
-                        pending.delete(id);
-                        reject(error);
-                    }
-                });
+                try {
+                    socket.send(payload);
+                }
+                catch (error) {
+                    clearTimeout(timer);
+                    pending.delete(id);
+                    reject(error);
+                }
             });
         },
         notify(method, params) {
-            child.stdin?.write(`${JSON.stringify({ method, params })}\n`, 'utf8');
+            socket.send(JSON.stringify({ method, params }));
         },
         close() {
             try {
-                child.stdin?.end();
-            }
-            catch { /* ignore */ }
-            try {
-                child.kill();
+                socket.close();
             }
             catch { /* ignore */ }
             for (const [id, current] of pending) {

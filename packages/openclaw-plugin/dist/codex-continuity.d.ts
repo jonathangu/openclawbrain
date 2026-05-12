@@ -7,6 +7,7 @@ export interface CodexBridgeConfig {
     preferAppServer: boolean;
     appServerCommand: string;
     appServerArgs: string[];
+    appServerUrl: string;
     appServerTimeoutMs: number;
     staleAfterMs: number;
     maxThreads: number;

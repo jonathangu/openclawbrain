@@ -1,6 +1,6 @@
 # OpenClawBrain Codex Telegram Bridge Operator Guide
 
-Status: implemented in `openclawbrain@0.2.31` as an OpenClawBrain-owned plugin surface. It does not modify OpenClaw core.
+Status: implemented in `openclawbrain@0.2.32` as an OpenClawBrain-owned plugin surface. It does not modify OpenClaw core.
 
 ## Product Contract
 
@@ -111,8 +111,14 @@ enableTelegramSteer = true
 highRiskTelegramWrites = false
 trustedTelegramSenders = ["<trusted-telegram-user-or-chat-id>"]
 writeAllowlist = ["/Users/guclaw"]
-appServerArgs = ["app-server", "--listen", "stdio://"]
+appServerUrl = "ws://127.0.0.1:53177"
 appServerTimeoutMs = 30000
+```
+
+Run Codex app-server beside OpenClaw with:
+
+```bash
+codex app-server --listen ws://127.0.0.1:53177
 ```
 
 ## Memory Boundaries

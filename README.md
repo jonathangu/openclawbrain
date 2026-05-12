@@ -8,7 +8,7 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 ![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and bounded memory context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-`0.2.31` completes the real Codex Telegram bridge on top of Memory Graph Maintenance and Memory Authority. OpenClawBrain can read recent Codex UI thread messages from local rollout JSONL, tail selected completed assistant replies into Telegram, bind a Telegram chat to an exact Codex thread, send trusted local replies back through Codex app-server, and steer an active Codex turn without modifying OpenClaw core.
+`0.2.32` completes the real Codex Telegram bridge on top of Memory Graph Maintenance and Memory Authority. OpenClawBrain can read recent Codex UI thread messages from local rollout JSONL, tail selected completed assistant replies into Telegram, bind a Telegram chat to an exact Codex thread, send trusted local replies back through Codex app-server, and steer an active Codex turn without modifying OpenClaw core.
 
 ## Short version
 
@@ -47,7 +47,7 @@ Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
 
 Install/upgrade if you already run OpenClaw:
-openclaw plugins install clawhub:openclawbrain@0.2.31 --force
+openclaw plugins install clawhub:openclawbrain@0.2.32 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -57,7 +57,7 @@ openclaw gateway restart
 Requires OpenClaw `2026.5.2` or later. Use the same command for a fresh install or an upgrade; `--force` is safe when replacing an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.31 --force
+openclaw plugins install clawhub:openclawbrain@0.2.32 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -65,9 +65,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.31.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.31/openclawbrain-0.2.31.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.31.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.32.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.32/openclawbrain-0.2.32.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.32.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -249,6 +249,14 @@ The important commands:
 Recent-message copy is direct transport from Codex rollout records, not an LLM summary. Message watches forward only new completed assistant messages and retry after Telegram delivery failures. Writes and active-turn steering are safe by default in the public package, and can be enabled for Jonathan's trusted local profiles with exact-thread binding, sender checks, repo allowlists, idempotent outbound audit, high-risk refusal, and Codex sandbox/approval preservation.
 
 The bridge refuses `--latest` writes. Reads may use latest/bound targets because they are informational; writes must be exact or bound so a Telegram message does not land in the wrong Codex thread.
+
+Trusted local write/steer mode uses a localhost Codex app-server WebSocket endpoint, for example:
+
+```bash
+codex app-server --listen ws://127.0.0.1:53177
+```
+
+Then set `codexBridge.appServerUrl="ws://127.0.0.1:53177"` in the local OpenClawBrain profile config.
 
 ## How it works
 
