@@ -8,7 +8,7 @@ The short version is:
 
 > An agent should not remember everything all the time. It should learn when memory actually matters.
 
-The current release, `openclawbrain@0.2.29`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, Memory Authority resolution between retrieval and injection, Codex continuity owned entirely by OpenClawBrain rather than OpenClaw core, and now Memory Graph Maintenance for long-term graph health.
+The current release, `openclawbrain@0.2.30`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, Memory Authority resolution between retrieval and injection, Codex continuity owned entirely by OpenClawBrain rather than OpenClaw core, and now Memory Graph Maintenance for long-term graph health.
 
 The most important lesson is not "use a graph." It is:
 
@@ -908,12 +908,38 @@ The product lesson is simple:
 
 > Generic memory retrieves old context. OpenClawBrain governs memory as evidence: provenance, scope, validity, correction, forgetting, and proof.
 
+## The 0.2.30 Upgrade: Codex Thread Bridge
+
+The first Codex continuity bridge answered "what is Codex doing?" The 0.2.30 bridge answers the two mobile operator questions that actually matter:
+
+```text
+What did Codex just say in that UI thread?
+Send this exact message into that Codex UI thread.
+```
+
+The bridge now reads `threads.rollout_path` from local Codex SQLite, parses rollout JSONL for final user/assistant messages, and exposes direct-copy commands:
+
+- `/brain codex messages`
+- `/brain codex last`
+- `/brain codex tail`
+- `/brain codex watch --messages`
+
+It also adds exact-thread binding and trusted local replies:
+
+- `/brain codex bind <thread-id>`
+- `/brain codex binding`
+- `/brain codex unbind`
+- `/brain codex reply <message>`
+- `/brain codex send <thread-id|--bound> <message>`
+
+Reads may use latest or bound targets. Writes must be exact or bound. The bridge refuses `--latest` writes, refuses high-risk Telegram wording by default, writes only through Codex app-server `thread/resume` plus `turn/start`, and never writes Codex SQLite or rollout JSONL.
+
 ## The Practical Operator Model
 
 Install or upgrade:
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.29 --force
+openclaw plugins install clawhub:openclawbrain@0.2.30 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -959,10 +985,10 @@ You want to see:
 
 ## Current Public Truth
 
-As of `0.2.29`:
+As of `0.2.30`:
 
-- The latest package is `openclawbrain@0.2.29`.
-- The source tag is `v0.2.29`.
+- The latest package is `openclawbrain@0.2.30`.
+- The source tag is `v0.2.30`.
 - The production route brain is route-policy-v3.
 - Memory Authority now separates relevance from authority before injection.
 - Memory Graph Maintenance keeps the graph healthier through dry-run proposals, canonical lineage, edge observations, tombstone recapture checks, and proofed deterministic repairs.

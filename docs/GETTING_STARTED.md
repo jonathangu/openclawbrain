@@ -1,6 +1,6 @@
 # Getting Started with OpenClawBrain
 
-This is the fastest honest path to a working OpenClawBrain `0.2.29` install.
+This is the fastest honest path to a working OpenClawBrain `0.2.30` install.
 
 ## What you are installing
 
@@ -8,7 +8,7 @@ OpenClawBrain is a native OpenClaw plugin that gives agents local, inspectable m
 
 The production route brain is `route-policy-v3`: a compact learned route function backed by redacted route frames, SQLite evidence, shadow decisions, replay/eval cases, calibration, gated promotion, and rollback lineage.
 
-The 0.2.29 runtime includes Memory Authority resolution, Memory Graph Maintenance, and an OpenClawBrain-owned Codex continuity bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The graph maintenance layer then keeps long-lived memory healthy with dry-run proposals, deterministic duplicate/edge cleanup, tombstone-aware recapture checks, and proof. The Codex bridge reads local Codex state, exposes quiet Telegram-facing status/watch/handoff commands, and keeps Telegram-to-Codex writes disabled by default.
+The 0.2.30 runtime includes Memory Authority resolution, automatic Memory Graph Maintenance, and the real OpenClawBrain-owned Codex Telegram bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The graph maintenance layer then keeps long-lived memory healthy with dry-run proposals, deterministic duplicate/edge cleanup, tombstone-aware recapture checks, and proof. The Codex bridge reads local Codex thread messages, tails watched replies, and can send trusted local Telegram replies into exact Codex threads when enabled.
 
 ## Before you start
 
@@ -23,16 +23,16 @@ You need:
 Use the same command for a fresh install or an upgrade. `--force` replaces an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.29 --force
+openclaw plugins install clawhub:openclawbrain@0.2.30 --force
 openclaw plugins enable openclawbrain
 ```
 
 If ClawHub metadata is still propagating, install the GitHub release archive:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.29.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.29/openclawbrain-0.2.29.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.29.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.30.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.30/openclawbrain-0.2.30.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.30.tgz --force
 openclaw plugins enable openclawbrain
 ```
 
@@ -109,11 +109,15 @@ OpenClawBrain owns these commands without modifying the OpenClaw core checkout:
 ```text
 /brain codex status
 /brain codex threads
-/brain codex watch --latest
-/brain codex handoff
+/brain codex last --latest
+/brain codex messages --latest --limit 5
+/brain codex bind <thread-id>
+/brain codex tail --bound
+/brain codex reply Please continue and tell me when tests pass.
+/brain codex handoff --bound
 ```
 
-The bridge only sends explicit watched terminal events such as completion, failure, blocker, approval-needed, or auth-failure. `/brain codex goal` and `/brain codex steer` are present but refuse by default unless `codexBridge.enableTelegramWrites` is explicitly enabled later with trusted sender and repo allowlist controls.
+Recent-message copy is direct transport from Codex rollout JSONL, not an LLM summary. The public package keeps Telegram-to-Codex writes disabled by default; Jonathan's local profiles can enable them with trusted sender checks, exact bound threads, write allowlists, and high-risk refusal.
 
 ## 7) Try memory
 

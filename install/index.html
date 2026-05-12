@@ -125,12 +125,12 @@
 
     <section class="panel">
       <h2>1) Install the plugin</h2>
-      <pre><code>openclaw plugins install clawhub:openclawbrain@0.2.29 --force
+      <pre><code>openclaw plugins install clawhub:openclawbrain@0.2.30 --force
 openclaw plugins enable openclawbrain</code></pre>
       <p class="muted">If ClawHub is rate-limited or package metadata is still propagating, install the release archive fallback:</p>
-      <pre><code>curl -L -o /tmp/openclawbrain-0.2.29.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.29/openclawbrain-0.2.29.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.29.tgz --force
+      <pre><code>curl -L -o /tmp/openclawbrain-0.2.30.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.30/openclawbrain-0.2.30.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.30.tgz --force
 openclaw plugins enable openclawbrain</code></pre>
     </section>
 
@@ -196,6 +196,18 @@ openclaw gateway restart</code></pre>
 # authenticated route: /plugins/openclawbrain/graph/health
 # authenticated route: /plugins/openclawbrain/graph/dry-run</code></pre>
       <p>If the system is doing its job, the win should feel almost invisible: you stop repeating yourself, and the agent quietly does the right thing.</p>
+    </section>
+
+    <section class="panel">
+      <h2>7) Try Codex continuity</h2>
+      <p>When Codex UI is doing the deep work on the Mac, OpenClawBrain lets Telegram act as the low-bandwidth operator surface.</p>
+      <pre><code>/brain codex status
+/brain codex threads
+/brain codex last --latest
+/brain codex bind &lt;thread-id&gt;
+/brain codex tail --bound
+/brain codex reply Please continue and send a concise final update.</code></pre>
+      <p class="muted">Public installs keep Telegram-to-Codex writes off by default. Trusted local profiles can turn on <code>codexBridge.enableTelegramWrites</code>, set a trusted sender/chat, and set <code>writeAllowlist</code>. Reads and tails work through local Codex transcript files; writes use Codex app-server and never edit Codex SQLite or JSONL.</p>
     </section>
   </div>
 </body>

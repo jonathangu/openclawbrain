@@ -2,7 +2,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { safeString } from './redact.js';
 export const PLUGIN_ID = 'openclawbrain';
-export const PLUGIN_VERSION = '0.2.29';
+export const PLUGIN_VERSION = '0.2.30';
 export const DEFAULT_CONFIG = Object.freeze({
     enabled: true,
     mode: 'balanced',
@@ -147,9 +147,18 @@ export const DEFAULT_CONFIG = Object.freeze({
         staleAfterMs: 600000,
         maxThreads: 10,
         watchPollIntervalMs: 60000,
+        messageWatchesEnabled: true,
+        directMessageCopyEnabled: true,
+        telegramForwardingMode: 'redacted',
         enableTelegramWrites: false,
+        trustOpenClawAuth: true,
+        allowLatestTargetForWrites: false,
+        highRiskTelegramWrites: false,
         trustedTelegramSenders: Object.freeze([]),
         repoAllowlist: Object.freeze([]),
+        readAllowlist: Object.freeze([]),
+        writeAllowlist: Object.freeze([]),
+        destructiveWriteAllowlist: Object.freeze([]),
         notifyChannel: 'telegram',
         notifyTarget: '',
     }),
@@ -350,9 +359,20 @@ function normalizeCodexBridgeConfig(codexBridge = {}) {
         staleAfterMs: clampInteger(source.staleAfterMs, DEFAULT_CONFIG.codexBridge.staleAfterMs, 1000, 86400000),
         maxThreads: clampInteger(source.maxThreads, DEFAULT_CONFIG.codexBridge.maxThreads, 1, 100),
         watchPollIntervalMs: clampInteger(source.watchPollIntervalMs, DEFAULT_CONFIG.codexBridge.watchPollIntervalMs, 5000, 86400000),
+        messageWatchesEnabled: source.messageWatchesEnabled !== false,
+        directMessageCopyEnabled: source.directMessageCopyEnabled !== false,
+        telegramForwardingMode: ['redacted', 'raw_trusted', 'metadata_only'].includes(String(source.telegramForwardingMode))
+            ? String(source.telegramForwardingMode)
+            : DEFAULT_CONFIG.codexBridge.telegramForwardingMode,
         enableTelegramWrites: source.enableTelegramWrites === true,
+        trustOpenClawAuth: source.trustOpenClawAuth !== false,
+        allowLatestTargetForWrites: source.allowLatestTargetForWrites === true,
+        highRiskTelegramWrites: source.highRiskTelegramWrites === true,
         trustedTelegramSenders: Array.isArray(source.trustedTelegramSenders) ? source.trustedTelegramSenders.map((item) => safeString(item)).filter(Boolean) : [],
         repoAllowlist: Array.isArray(source.repoAllowlist) ? source.repoAllowlist.map((item) => safeString(item)).filter(Boolean) : [],
+        readAllowlist: Array.isArray(source.readAllowlist) ? source.readAllowlist.map((item) => safeString(item)).filter(Boolean) : [],
+        writeAllowlist: Array.isArray(source.writeAllowlist) ? source.writeAllowlist.map((item) => safeString(item)).filter(Boolean) : [],
+        destructiveWriteAllowlist: Array.isArray(source.destructiveWriteAllowlist) ? source.destructiveWriteAllowlist.map((item) => safeString(item)).filter(Boolean) : [],
         notifyChannel: nonEmptyString(source.notifyChannel) || DEFAULT_CONFIG.codexBridge.notifyChannel,
         notifyTarget: nonEmptyString(source.notifyTarget) || DEFAULT_CONFIG.codexBridge.notifyTarget,
     };

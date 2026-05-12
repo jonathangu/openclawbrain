@@ -1,7 +1,7 @@
 import { DEFAULT_CONFIG, PLUGIN_ID, PLUGIN_VERSION, isAgentAllowed, normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 import { buildInjectionText, ensureActivationRoot, readActivationContext } from './context-files.js';
 import { CaptureOrchestrator } from './capture.js';
-import { buildCodexBridgeStatus, buildCodexHandoff, CodexBridgeStore, handleBrainCommand, processCodexBridgeWatches, } from './codex-continuity.js';
+import { buildCodexBridgeStatus, buildCodexHandoff, CodexBridgeStore, handleBrainCommand, processCodexBridgeWatches, readCodexTranscriptMessages, } from './codex-continuity.js';
 import { ContextSelector } from './context-selector.js';
 import { FeedbackDistiller } from './feedback-distiller.js';
 import { BackgroundLearner } from './learning.js';
@@ -30,7 +30,7 @@ export { normalizePluginConfig, resolveOpenClawBrainConfig } from './config.js';
 export { redactText, hashText } from './redact.js';
 export { decidePolicy, classifyTurn } from './policy.js';
 export { readActivationContext } from './context-files.js';
-export { buildCodexBridgeStatus, buildCodexHandoff, CodexBridgeStore, formatCodexStatus, formatCodexThreads, formatHandoffBrief, handleBrainCommand, normalizeCodexBridgeConfig, processCodexBridgeWatches, } from './codex-continuity.js';
+export { buildCodexBridgeStatus, buildCodexHandoff, CodexBridgeStore, formatCodexStatus, formatCodexMessages, formatCodexThreads, formatHandoffBrief, handleBrainCommand, normalizeCodexBridgeConfig, processCodexBridgeWatches, readCodexTranscriptMessages, } from './codex-continuity.js';
 export { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 export { buildStatus } from './status.js';
 export { FakeLlmClient, OllamaNativeLlmClient, OpenAICompatibleLlmClient, isOllamaLoopbackBaseUrl } from './llm-client.js';
@@ -374,6 +374,13 @@ function registerFirstClassSurfaces(api, resolve) {
         handler: async (req, res) => writeJson(res, await codexThreadsPayload(resolve(), req))
     });
     api.registerHttpRoute?.({
+        path: '/plugins/openclawbrain/codex/messages',
+        auth: 'gateway',
+        match: 'exact',
+        replaceExisting: true,
+        handler: async (req, res) => writeJson(res, await codexMessagesPayload(resolve(), req))
+    });
+    api.registerHttpRoute?.({
         path: '/plugins/openclawbrain/codex/handoff',
         auth: 'gateway',
         match: 'exact',
@@ -659,6 +666,32 @@ async function codexThreadsPayload(config, req = {}) {
         ? status.latestThreads.filter((thread) => !query || `${thread.title} ${thread.cwd} ${thread.goal?.objective || ''}`.toLowerCase().includes(query))
         : [];
     return { ok: status.ok, source: status.source, stale: status.stale, staleReason: status.staleReason, threads };
+}
+async function codexMessagesPayload(config, req = {}) {
+    const status = await codexStatusPayload(config, req);
+    if (!status.ok)
+        return status;
+    const threadId = safeString(req.query?.threadId ?? req.query?.thread ?? req.query?.id ?? '');
+    const role = ['assistant', 'user', 'all'].includes(String(req.query?.role)) ? String(req.query?.role) : 'all';
+    const limit = limitFromRequest(req) || 5;
+    const thread = threadId
+        ? status.latestThreads.find((item) => item.id === threadId)
+        : status.latestThreads[0];
+    if (!thread)
+        return { ok: false, reason: threadId ? `thread_not_found:${threadId}` : 'no_codex_threads' };
+    const result = readCodexTranscriptMessages(thread, { limit, role });
+    return {
+        ok: result.ok,
+        agentId: status.agentId,
+        source: status.source,
+        stale: status.stale,
+        thread: { id: thread.id, title: thread.title, cwd: thread.cwd, updatedAt: thread.updatedAt },
+        role,
+        count: result.messages.length,
+        messages: result.messages,
+        errors: result.errors,
+        truncated: result.truncated,
+    };
 }
 async function codexHandoffPayload(config, req = {}) {
     const status = await codexStatusPayload(config, req);

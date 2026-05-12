@@ -14,7 +14,7 @@ Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
 
 Install/upgrade if you already run OpenClaw:
-openclaw plugins install clawhub:openclawbrain@0.2.25 --force
+openclaw plugins install clawhub:openclawbrain@0.2.30 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -30,15 +30,15 @@ What it does: local-first memory for OpenClaw agents. It stores durable correcti
 
 Install or upgrade:
 
-openclaw plugins install clawhub:openclawbrain@0.2.25 --force
+openclaw plugins install clawhub:openclawbrain@0.2.30 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 
 If ClawHub is still rate-limited or metadata is propagating, use the release archive fallback:
 
-curl -L -o /tmp/openclawbrain-0.2.25.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.25/openclawbrain-0.2.25.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.25.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.30.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.30/openclawbrain-0.2.30.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.30.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 

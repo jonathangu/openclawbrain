@@ -1,7 +1,7 @@
 {
   "id": "openclawbrain",
   "name": "OpenClawBrain",
-  "version": "0.2.29",
+  "version": "0.2.30",
   "description": "Aggressive-but-safe local memory graph for OpenClaw: learned routing, Memory Authority resolution, audited capture, tombstone-aware forgetting, bounded memory context, and SQLite proof surfaces.",
   "kind": "memory",
   "activation": {
@@ -678,7 +678,36 @@
             "maximum": 86400000,
             "default": 60000
           },
+          "messageWatchesEnabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "directMessageCopyEnabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "telegramForwardingMode": {
+            "type": "string",
+            "enum": [
+              "redacted",
+              "raw_trusted",
+              "metadata_only"
+            ],
+            "default": "redacted"
+          },
           "enableTelegramWrites": {
+            "type": "boolean",
+            "default": false
+          },
+          "trustOpenClawAuth": {
+            "type": "boolean",
+            "default": true
+          },
+          "allowLatestTargetForWrites": {
+            "type": "boolean",
+            "default": false
+          },
+          "highRiskTelegramWrites": {
             "type": "boolean",
             "default": false
           },
@@ -690,6 +719,27 @@
             "default": []
           },
           "repoAllowlist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "readAllowlist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "writeAllowlist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          },
+          "destructiveWriteAllowlist": {
             "type": "array",
             "items": {
               "type": "string"
@@ -721,9 +771,18 @@
           "staleAfterMs": 600000,
           "maxThreads": 10,
           "watchPollIntervalMs": 60000,
+          "messageWatchesEnabled": true,
+          "directMessageCopyEnabled": true,
+          "telegramForwardingMode": "redacted",
           "enableTelegramWrites": false,
+          "trustOpenClawAuth": true,
+          "allowLatestTargetForWrites": false,
+          "highRiskTelegramWrites": false,
           "trustedTelegramSenders": [],
           "repoAllowlist": [],
+          "readAllowlist": [],
+          "writeAllowlist": [],
+          "destructiveWriteAllowlist": [],
           "notifyChannel": "telegram",
           "notifyTarget": ""
         }
@@ -1112,7 +1171,7 @@
     },
     "capture.mode": {
       "label": "Capture Mode",
-      "help": "v0.2.29 defaults to aggressive capture consideration, Memory Authority resolution, and conservative Memory Graph Maintenance. This evaluates durable memory candidates broadly while strict validators decide what can be stored, whether retrieved memories can influence a turn, and which graph changes require review."
+      "help": "v0.2.30 defaults to aggressive capture consideration, Memory Authority resolution, and conservative Memory Graph Maintenance. This evaluates durable memory candidates broadly while strict validators decide what can be stored, whether retrieved memories can influence a turn, and which graph changes require review."
     },
     "routing.maxInjectedMemories": {
       "label": "Max Injected Memories",

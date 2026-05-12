@@ -127,13 +127,25 @@
     <section class="section">
       <h2>TL;DR</h2>
       <p>OpenClawBrain is a local memory layer for OpenClaw agents: it learns durable corrections, preferences, workflows, and context, then retrieves only the small slice that matters right now. It uses selective routing, SQLite search, bounded prompt injection, and outcome learning instead of stuffing history into every prompt.</p>
-      <p>In v0.2.29, retrieval, authority, and maintenance are separate decisions. Retrieval can find candidates. Memory Authority decides what can influence the turn. Graph Maintenance runs passively and curates how the graph evolves after repeated corrections, stale facts, tombstones, and outcomes. The installed live loop is verified end to end: <strong>turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded prompt injection or abstention → automatic graph maintenance proposals</strong>.</p>
+      <p>In v0.2.30, retrieval, authority, and maintenance are separate decisions. Retrieval can find candidates. Memory Authority decides what can influence the turn. Graph Maintenance runs passively and curates how the graph evolves after repeated corrections, stale facts, tombstones, and outcomes. The installed live loop is verified end to end: <strong>turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded prompt injection or abstention → automatic graph maintenance proposals</strong>.</p>
     </section>
 
     <section class="section">
       <h2>What it is not</h2>
       <p>It is <strong>not</strong> a vector database that blindly injects nearest-neighbor chunks. It is <strong>not</strong> raw transcript storage. It is <strong>not</strong> an always-on extra model call before every turn. It is <strong>not</strong> a remote SaaS memory service by default. And it is <strong>not</strong> a replacement for the main agent model.</p>
       <p>It is a local reliability layer around the normal OpenClaw run: route, retrieve, inject a bounded memory block when useful, then learn whether that memory helped. In multi-agent OpenClaw homes, each scoped agent gets its own activation root and graph instead of sharing one global brain.</p>
+    </section>
+
+    <section class="section">
+      <h2>Codex-to-Telegram continuity</h2>
+      <p>OpenClawBrain also solves a practical operating problem: Codex UI does the deep coding work at the computer, but Telegram is how Jonathan reaches his local OpenClaw agents from the phone.</p>
+      <p>The bridge reads Codex thread metadata from local SQLite, follows the rollout path into the thread JSONL, and copies final user/assistant message text directly. No LLM summary is used when you ask for the latest Codex message.</p>
+      <pre><code>/brain codex threads
+/brain codex last &lt;thread-id&gt;
+/brain codex bind &lt;thread-id&gt;
+/brain codex tail --bound
+/brain codex reply Please continue with the failing parser test.</code></pre>
+      <p>Public defaults are safe. Jonathan's local profiles can enable trusted writes: exact bound thread, trusted sender, write allowlist, high-risk refusal, idempotent outbound audit, and Codex app-server <code>thread/resume</code> plus <code>turn/start</code>. The bridge never writes Codex SQLite or rollout JSONL.</p>
     </section>
 
     <section class="section">
@@ -193,7 +205,7 @@ inject a small block, or stay silent</code></pre>
 
     <section class="section">
       <h2>Latency</h2>
-      <p>The headline: v0.2.29 keeps prompt-time retrieval disciplined, makes authority explicit, and makes graph maintenance automatic so long-lived memory can become cleaner instead of just larger.</p>
+      <p>The headline: v0.2.30 keeps prompt-time retrieval disciplined, makes authority explicit, and makes graph maintenance automatic so long-lived memory can become cleaner instead of just larger.</p>
       <pre><code>retrieval: conservative and bounded
 capture: aggressive and audited
 storage: strict, scoped, local

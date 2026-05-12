@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -13,6 +13,7 @@ import {
   handleBrainCommand,
   normalizePluginConfig,
   processCodexBridgeWatches,
+  readCodexTranscriptMessages,
 } from '../dist/index.js';
 
 const require = createRequire(import.meta.url);
@@ -37,7 +38,9 @@ function createCodexState(dbPath, threads = []) {
       updated_at_ms INTEGER,
       archived INTEGER NOT NULL DEFAULT 0,
       model TEXT,
-      reasoning_effort TEXT
+      reasoning_effort TEXT,
+      rollout_path TEXT,
+      first_user_message TEXT
     );
     CREATE TABLE thread_goals (
       thread_id TEXT PRIMARY KEY NOT NULL,
@@ -52,8 +55,8 @@ function createCodexState(dbPath, threads = []) {
   `);
   const insertThread = db.prepare(`
     INSERT INTO threads (
-      id, title, cwd, git_branch, git_sha, updated_at, updated_at_ms, archived, model, reasoning_effort
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      id, title, cwd, git_branch, git_sha, updated_at, updated_at_ms, archived, model, reasoning_effort, rollout_path, first_user_message
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertGoal = db.prepare(`
     INSERT INTO thread_goals (
@@ -72,6 +75,8 @@ function createCodexState(dbPath, threads = []) {
       thread.archived ? 1 : 0,
       thread.model ?? 'gpt-5.5',
       thread.reasoningEffort ?? 'high',
+      thread.rolloutPath ?? null,
+      thread.firstUserMessage ?? null,
     );
     if (thread.goal) {
       insertGoal.run(
@@ -102,6 +107,10 @@ function config(root, statePath, extra = {}) {
   });
 }
 
+function rolloutLine(record) {
+  return JSON.stringify(record);
+}
+
 test('Codex bridge reads SQLite fallback, labels it stale, and separates active goals', async () => {
   const root = await tempRoot();
   try {
@@ -118,6 +127,36 @@ test('Codex bridge reads SQLite fallback, labels it stale, and separates active 
     assert.equal(status.counts.threads, 2);
     assert.equal(status.counts.activeGoals, 1);
     assert.equal(status.activeGoals[0].id, 'thread-active');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Codex transcript reader copies final messages directly and dedupes event fallbacks', async () => {
+  const root = await tempRoot();
+  try {
+    const rolloutPath = path.join(root, 'rollout.jsonl');
+    await writeFile(rolloutPath, [
+      rolloutLine({ type: 'response_item', timestamp: '2026-05-12T01:00:00.000Z', payload: { id: 'u1', type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Please continue the bridge.' }] } }),
+      rolloutLine({ type: 'event_msg', timestamp: '2026-05-12T01:00:00.001Z', payload: { type: 'user_message', message: 'Please continue the bridge.' } }),
+      rolloutLine({ type: 'response_item', timestamp: '2026-05-12T01:00:01.000Z', payload: { id: 'a1', type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'I will inspect the rollout file directly.\nNo LLM summary here.' }] } }),
+      '{"type":"response_item"',
+    ].join('\n'), 'utf8');
+    const result = readCodexTranscriptMessages({
+      id: 'thread-transcript',
+      title: 'Transcript thread',
+      cwd: '/repo/openclawbrain',
+      rolloutPath,
+      updatedAtMs: Date.now(),
+      archived: false,
+      source: 'sqlite_fallback',
+    }, { limit: 10, role: 'all' });
+    assert.equal(result.ok, true);
+    assert.equal(result.messages.length, 2);
+    assert.equal(result.messages[0].role, 'user');
+    assert.equal(result.messages[1].role, 'assistant');
+    assert.equal(result.messages[1].text, 'I will inspect the rollout file directly.\nNo LLM summary here.');
+    assert.ok(result.errors.includes('partial_trailing_jsonl_line'));
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -230,6 +269,69 @@ test('Codex watch processing dedupes completion notifications', async () => {
   }
 });
 
+test('Brain command reads latest Codex assistant message from rollout JSONL', async () => {
+  const root = await tempRoot();
+  try {
+    const rolloutPath = path.join(root, 'rollout.jsonl');
+    await writeFile(rolloutPath, [
+      rolloutLine({ type: 'response_item', timestamp: '2026-05-12T02:00:00.000Z', payload: { id: 'u1', type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Status?' }] } }),
+      rolloutLine({ type: 'response_item', timestamp: '2026-05-12T02:00:01.000Z', payload: { id: 'a1', type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'The bridge is compiling and the direct copy path is active.' }] } }),
+    ].join('\n'), 'utf8');
+    const dbPath = path.join(root, 'state_5.sqlite');
+    createCodexState(dbPath, [
+      { id: 'thread-last', title: 'Latest messages', cwd: '/repo/openclawbrain', rolloutPath, updatedAtMs: Date.now() },
+    ]);
+    const latest = await handleBrainCommand({ args: 'codex last thread-last', channel: 'telegram', isAuthorizedSender: true }, config(root, dbPath));
+    assert.match(latest.text, /Latest Codex assistant message/);
+    assert.match(latest.text, /direct copy path is active/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Codex message watches forward only new completed assistant messages and retry failures', async () => {
+  const root = await tempRoot();
+  try {
+    const rolloutPath = path.join(root, 'rollout.jsonl');
+    const initialLines = [
+      rolloutLine({ type: 'response_item', timestamp: '2026-05-12T03:00:00.000Z', payload: { id: 'a1', type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'Existing assistant message.' }] } }),
+    ];
+    await writeFile(rolloutPath, initialLines.join('\n'), 'utf8');
+    const dbPath = path.join(root, 'state_5.sqlite');
+    createCodexState(dbPath, [
+      { id: 'thread-tail', title: 'Tail thread', cwd: '/repo/openclawbrain', rolloutPath, updatedAtMs: Date.now() },
+    ]);
+    const cfg = config(root, dbPath);
+    const tail = await handleBrainCommand({ args: 'codex tail thread-tail', channel: 'telegram', from: '-123', isAuthorizedSender: true }, cfg);
+    assert.match(tail.text, /Tailing completed assistant messages/);
+    await writeFile(rolloutPath, initialLines.concat([
+      rolloutLine({ type: 'response_item', timestamp: '2026-05-12T03:01:00.000Z', payload: { id: 'a2', type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'New assistant result for Telegram.' }] } }),
+    ]).join('\n'), 'utf8');
+    let failOnce = true;
+    const sent = [];
+    const api = {
+      runtime: {
+        config: { current: () => ({}) },
+        channel: { outbound: { loadAdapter: async () => ({ sendText: async (payload) => {
+          if (failOnce) {
+            failOnce = false;
+            throw new Error('telegram offline');
+          }
+          sent.push(payload);
+        } }) } },
+      },
+    };
+    const first = await processCodexBridgeWatches(cfg, api);
+    assert.equal(first.notified, 0);
+    const second = await processCodexBridgeWatches(cfg, api);
+    assert.equal(second.notified, 1);
+    assert.equal(sent.length, 1);
+    assert.match(sent[0].text, /New assistant result for Telegram/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('Codex handoff keeps observed facts separate from Codex-reported claims', async () => {
   const root = await tempRoot();
   try {
@@ -258,8 +360,63 @@ test('Brain command exposes status and refuses write path by default', async () 
     const cfg = config(root, dbPath);
     const status = await handleBrainCommand({ args: 'codex status', channel: 'telegram', isAuthorizedSender: true }, cfg);
     assert.match(status.text, /Codex continuity:/);
-    const goal = await handleBrainCommand({ args: 'codex goal do it', channel: 'telegram', isAuthorizedSender: true }, cfg);
-    assert.match(goal.text, /disabled/);
+    const reply = await handleBrainCommand({ args: 'codex reply do it', channel: 'telegram', isAuthorizedSender: true }, cfg);
+    assert.match(reply.text, /writes are disabled/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Brain command binds exact thread and sends trusted local Codex reply through app-server writer', async () => {
+  const root = await tempRoot();
+  try {
+    const dbPath = path.join(root, 'state_5.sqlite');
+    createCodexState(dbPath, [
+      { id: 'thread-write', title: 'Writable thread', cwd: '/repo/openclawbrain', updatedAtMs: Date.now() },
+    ]);
+    const cfg = config(root, dbPath, {
+      enableTelegramWrites: true,
+      trustedTelegramSenders: ['telegram-user'],
+      writeAllowlist: ['/repo/openclawbrain'],
+    });
+    const ctx = { channel: 'telegram', from: '-123', senderId: 'telegram-user', isAuthorizedSender: true, agentId: 'main' };
+    const bind = await handleBrainCommand({ ...ctx, args: 'codex bind thread-write' }, cfg);
+    assert.match(bind.text, /Bound this Telegram chat/);
+    const writes = [];
+    const reply = await handleBrainCommand({ ...ctx, args: 'codex reply Please continue with the parser tests.' }, cfg, {
+      codexAppServerWriter: {
+        async sendMessage(input) {
+          writes.push(input);
+          return { ok: true, turnId: 'turn-123' };
+        },
+      },
+    });
+    assert.match(reply.text, /Sent to Codex thread thread-write/);
+    assert.equal(writes.length, 1);
+    assert.equal(writes[0].threadId, 'thread-write');
+    assert.equal(writes[0].message, 'Please continue with the parser tests.');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Brain command rejects untrusted and non-allowlisted Codex writes', async () => {
+  const root = await tempRoot();
+  try {
+    const dbPath = path.join(root, 'state_5.sqlite');
+    createCodexState(dbPath, [
+      { id: 'thread-write', title: 'Writable thread', cwd: '/repo/not-allowed', updatedAtMs: Date.now() },
+    ]);
+    const cfg = config(root, dbPath, {
+      enableTelegramWrites: true,
+      trustOpenClawAuth: false,
+      trustedTelegramSenders: ['telegram-user'],
+      writeAllowlist: ['/repo/openclawbrain'],
+    });
+    const untrusted = await handleBrainCommand({ args: 'codex send thread-write hello', channel: 'telegram', senderId: 'bad-user', isAuthorizedSender: true }, cfg);
+    assert.match(untrusted.text, /not trusted/);
+    const notAllowed = await handleBrainCommand({ args: 'codex send thread-write hello', channel: 'telegram', senderId: 'telegram-user', isAuthorizedSender: true }, cfg);
+    assert.match(notAllowed.text, /not in codexBridge.writeAllowlist/);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

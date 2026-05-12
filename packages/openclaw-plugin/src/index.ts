@@ -6,11 +6,13 @@ import {
   buildCodexHandoff,
   CodexBridgeStore,
   formatCodexStatus,
+  formatCodexMessages,
   formatCodexThreads,
   formatHandoffBrief,
   handleBrainCommand,
   normalizeCodexBridgeConfig,
   processCodexBridgeWatches,
+  readCodexTranscriptMessages,
 } from './codex-continuity.js';
 import { ContextSelector } from './context-selector.js';
 import { FeedbackDistiller } from './feedback-distiller.js';
@@ -47,11 +49,13 @@ export {
   buildCodexHandoff,
   CodexBridgeStore,
   formatCodexStatus,
+  formatCodexMessages,
   formatCodexThreads,
   formatHandoffBrief,
   handleBrainCommand,
   normalizeCodexBridgeConfig,
   processCodexBridgeWatches,
+  readCodexTranscriptMessages,
 } from './codex-continuity.js';
 export { appendProofEvent, readProofEvents, readStatus, writeStatus } from './proof-store.js';
 export { buildStatus } from './status.js';
@@ -418,6 +422,13 @@ function registerFirstClassSurfaces(api: any, resolve: any) {
     handler: async (req: any, res: any) => writeJson(res, await codexThreadsPayload(resolve(), req))
   });
   api.registerHttpRoute?.({
+    path: '/plugins/openclawbrain/codex/messages',
+    auth: 'gateway',
+    match: 'exact',
+    replaceExisting: true,
+    handler: async (req: any, res: any) => writeJson(res, await codexMessagesPayload(resolve(), req))
+  });
+  api.registerHttpRoute?.({
     path: '/plugins/openclawbrain/codex/handoff',
     auth: 'gateway',
     match: 'exact',
@@ -703,6 +714,31 @@ async function codexThreadsPayload(config: any, req: any = {}) {
     ? status.latestThreads.filter((thread: any) => !query || `${thread.title} ${thread.cwd} ${thread.goal?.objective || ''}`.toLowerCase().includes(query))
     : [];
   return { ok: status.ok, source: status.source, stale: status.stale, staleReason: status.staleReason, threads };
+}
+
+async function codexMessagesPayload(config: any, req: any = {}) {
+  const status = await codexStatusPayload(config, req);
+  if (!status.ok) return status;
+  const threadId = safeString(req.query?.threadId ?? req.query?.thread ?? req.query?.id ?? '');
+  const role = ['assistant', 'user', 'all'].includes(String(req.query?.role)) ? String(req.query?.role) as 'assistant' | 'user' | 'all' : 'all';
+  const limit = limitFromRequest(req) || 5;
+  const thread = threadId
+    ? status.latestThreads.find((item: any) => item.id === threadId)
+    : status.latestThreads[0];
+  if (!thread) return { ok: false, reason: threadId ? `thread_not_found:${threadId}` : 'no_codex_threads' };
+  const result = readCodexTranscriptMessages(thread, { limit, role });
+  return {
+    ok: result.ok,
+    agentId: status.agentId,
+    source: status.source,
+    stale: status.stale,
+    thread: { id: thread.id, title: thread.title, cwd: thread.cwd, updatedAt: thread.updatedAt },
+    role,
+    count: result.messages.length,
+    messages: result.messages,
+    errors: result.errors,
+    truncated: result.truncated,
+  };
 }
 
 async function codexHandoffPayload(config: any, req: any = {}) {

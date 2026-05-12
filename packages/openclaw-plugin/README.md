@@ -16,6 +16,7 @@ Imagine an agent that understands “close it out” means evidence, not vibes. 
 - **Keeps turn context small.** It does not dump your whole history into every turn. It retrieves candidates locally and attaches only a bounded XML memory slice when memory is likely to help.
 - **Checks authority before use.** Retrieved memories can be attached, weakened, verified, confirmed, suppressed, or kept audit-only depending on staleness, scope, privacy, supersession, and current user guidance.
 - **Maintains the graph.** Dry-run proposals find exact duplicates, bad edges, stale high-authority memories, scoped exception candidates, and tombstone recapture risks before long-lived memory drifts.
+- **Bridges Codex to Telegram.** It can show recent Codex UI thread messages, tail selected assistant replies, bind a Telegram chat to an exact Codex thread, and send trusted local replies through Codex app-server.
 - **Stays local-first.** SQLite stores the graph and evidence. FTS5 powers local search. Raw transcript upload is hard-disabled.
 - **Shows its work.** You can check status, run health checks, inspect proof events, search memory, view the graph, and review route decisions.
 - **Learns on the standard local path.** OpenClawBrain points at local Ollama by default. Local models propose structured JSON; code validates, redacts, scopes, thresholds, and writes.
@@ -37,16 +38,16 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.29`
+- **Current package release:** `0.2.30`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.5.2` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded memory context
-- **Current loop:** first-class OpenClaw memory registration, v3 production route learning, Memory Authority decisions, Memory Graph Maintenance proposals, Codex continuity status/watch/handoff surfaces, conservative fallback, aggressive audited capture, strict scoped storage, sparse context use
+- **Current loop:** first-class OpenClaw memory registration, v3 production route learning, Memory Authority decisions, Memory Graph Maintenance proposals, Codex Telegram transcript/watch/reply surfaces, conservative fallback, aggressive audited capture, strict scoped storage, sparse context use
 
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.29 --force
+openclaw plugins install clawhub:openclawbrain@0.2.30 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -54,9 +55,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.29.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.29/openclawbrain-0.2.29.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.29.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.30.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.30/openclawbrain-0.2.30.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.30.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -121,16 +122,26 @@ openclaw doctor
 
 ## Codex continuity bridge
 
-`0.2.29` keeps the OpenClawBrain-owned Codex continuity bridge. It does not patch OpenClaw core. The public-safe default reads local Codex SQLite in read-only mode with an explicit stale label; host-provided app-server readers can be enabled later without bundling shell/process control inside the package. It exposes quiet operator surfaces:
+`0.2.30` upgrades the OpenClawBrain-owned Codex continuity bridge into a real Telegram thread bridge. It does not patch OpenClaw core. It reads local Codex SQLite for thread metadata, follows `threads.rollout_path` into rollout JSONL, copies final user/assistant message text directly without LLM summarization, and can send trusted local replies through Codex app-server `thread/resume` plus `turn/start`.
 
 ```text
 /brain codex status
 /brain codex threads [filter]
-/brain codex watch [thread-id|--latest]
-/brain codex handoff [thread-id]
+/brain codex messages [thread-id|--latest|--bound] [--limit 5] [--role assistant|user|all]
+/brain codex last [thread-id|--latest|--bound]
+/brain codex bind <thread-id>
+/brain codex binding
+/brain codex unbind
+/brain codex tail [thread-id|--latest|--bound]
+/brain codex watch [thread-id|--latest|--bound] --messages
+/brain codex watches
+/brain codex unwatch <watch-id|thread-id>
+/brain codex reply <message>
+/brain codex send <thread-id|--bound> <message>
+/brain codex handoff [thread-id|--latest|--bound]
 ```
 
-Telegram-to-Codex writes stay disabled by default. `/brain codex goal` and `/brain codex steer` refuse unless a later write path is explicitly feature-flagged, sender-gated, repo-allowlisted, provenance-tagged, risk-classified, and confirmed.
+Telegram-to-Codex writes stay disabled by default in the public package. Local trusted profiles can enable the happy path with `enableTelegramWrites=true`, trusted sender/chat, and write allowlists. The bridge refuses `--latest` writes, refuses high-risk publish/deploy/delete/secrets/full-access wording by default, and never bypasses Codex sandbox or approval behavior.
 
 ## Memory graph maintenance
 

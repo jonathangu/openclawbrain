@@ -8,7 +8,7 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 ![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and bounded memory context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-`0.2.29` adds Memory Graph Maintenance on top of Memory Authority and the OpenClawBrain-owned Codex continuity bridge. Retrieval separates semantic relevance from whether a memory still has authority in the current turn. Graph maintenance then curates what the graph becomes over time: fewer duplicate nodes, safer edges, stale-memory proposals, scoped exceptions, tombstone-aware forgetting, and local proof for every applied mutation.
+`0.2.30` adds the real Codex Telegram bridge on top of Memory Graph Maintenance and Memory Authority. OpenClawBrain can now read recent Codex UI thread messages from local rollout JSONL, tail selected completed assistant replies into Telegram, bind a Telegram chat to an exact Codex thread, and send trusted local replies back through Codex app-server without modifying OpenClaw core.
 
 ## Short version
 
@@ -47,7 +47,7 @@ Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
 
 Install/upgrade if you already run OpenClaw:
-openclaw plugins install clawhub:openclawbrain@0.2.29 --force
+openclaw plugins install clawhub:openclawbrain@0.2.30 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -57,7 +57,7 @@ openclaw gateway restart
 Requires OpenClaw `2026.5.2` or later. Use the same command for a fresh install or an upgrade; `--force` is safe when replacing an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.29 --force
+openclaw plugins install clawhub:openclawbrain@0.2.30 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -65,9 +65,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.29.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.29/openclawbrain-0.2.29.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.29.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.30.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.30/openclawbrain-0.2.30.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.30.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -221,6 +221,33 @@ The core invariants:
 - A behavioral edge is not proof that a fact is true.
 - Tombstoned content cannot be revived by merge, proof, proposal, or LLM distillation.
 - Every mutation goes through a proposal, precondition check, transaction, redacted proof event, and lineage/observation record.
+
+## Codex Telegram bridge
+
+Codex UI stays the high-bandwidth workbench at the computer. OpenClaw/Telegram becomes the mobile operator surface. OpenClawBrain bridges the two without becoming a noisy second IDE.
+
+The important commands:
+
+```text
+/brain codex status
+/brain codex threads [filter]
+/brain codex messages [thread-id|--latest|--bound] [--limit 5] [--role assistant|user|all]
+/brain codex last [thread-id|--latest|--bound]
+/brain codex bind <thread-id>
+/brain codex binding
+/brain codex unbind
+/brain codex tail [thread-id|--latest|--bound]
+/brain codex watch [thread-id|--latest|--bound] --messages
+/brain codex watches
+/brain codex unwatch <watch-id|thread-id>
+/brain codex reply <message>
+/brain codex send <thread-id|--bound> <message>
+/brain codex handoff [thread-id|--latest|--bound]
+```
+
+Recent-message copy is direct transport from Codex rollout records, not an LLM summary. Message watches forward only new completed assistant messages and retry after Telegram delivery failures. Writes are safe by default in the public package, and can be enabled for Jonathan's trusted local profiles with exact-thread binding, sender checks, repo allowlists, idempotent outbound audit, high-risk refusal, and Codex sandbox/approval preservation.
+
+The bridge refuses `--latest` writes. Reads may use latest/bound targets because they are informational; writes must be exact or bound so a Telegram message does not land in the wrong Codex thread.
 
 ## How it works
 

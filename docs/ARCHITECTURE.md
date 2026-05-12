@@ -1,6 +1,6 @@
 # Architecture
 
-OpenClawBrain `0.2.29` is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, injects only bounded context back into the prompt, exposes a quiet Codex continuity bridge, and maintains graph health without patching OpenClaw core.
+OpenClawBrain `0.2.30` is a native OpenClaw plugin that keeps a **local SQLite memory graph**, learns from outcomes, injects only bounded context back into the prompt, exposes a quiet Codex continuity bridge, and maintains graph health without patching OpenClaw core.
 
 The central runtime addition is the **Memory Authority** layer. Retrieval can over-include candidates, but a memory is not allowed to influence the turn until authority resolution checks freshness, scope, privacy, supersession, current instructions, validation strategy, and risk. The Memory Graph Maintenance layer is separate: it curates graph structure and evidence over time, but it never directly decides turn-level authority. The Codex continuity bridge applies the same stance to local Codex state: useful status and handoff facts are surfaced, but raw telemetry is not captured as durable memory.
 

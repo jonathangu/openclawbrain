@@ -1,5 +1,5 @@
 export type CodexBridgeSource = 'app_server' | 'sqlite_fallback' | 'none' | 'mock';
-export type CodexBridgeEventClass = 'completion' | 'failure' | 'blocker' | 'approval_required' | 'auth_failure' | 'status_snapshot' | 'watch_created' | 'handoff' | 'quiet';
+export type CodexBridgeEventClass = 'completion' | 'failure' | 'blocker' | 'approval_required' | 'auth_failure' | 'assistant_message' | 'user_message' | 'turn_started' | 'turn_completed' | 'status_snapshot' | 'watch_created' | 'binding_created' | 'binding_removed' | 'outbound_write' | 'delivery_failed' | 'handoff' | 'quiet';
 export interface CodexBridgeConfig {
     enabled: boolean;
     statePaths: string[];
@@ -11,9 +11,18 @@ export interface CodexBridgeConfig {
     staleAfterMs: number;
     maxThreads: number;
     watchPollIntervalMs: number;
+    messageWatchesEnabled: boolean;
+    directMessageCopyEnabled: boolean;
+    telegramForwardingMode: 'redacted' | 'raw_trusted' | 'metadata_only';
     enableTelegramWrites: boolean;
+    trustOpenClawAuth: boolean;
+    allowLatestTargetForWrites: boolean;
+    highRiskTelegramWrites: boolean;
     trustedTelegramSenders: string[];
     repoAllowlist: string[];
+    readAllowlist: string[];
+    writeAllowlist: string[];
+    destructiveWriteAllowlist: string[];
     notifyChannel: string;
     notifyTarget: string;
 }
@@ -25,6 +34,8 @@ export interface CodexThreadSummary {
     sha?: string;
     model?: string;
     reasoningEffort?: string;
+    rolloutPath?: string;
+    firstUserMessage?: string;
     updatedAtMs: number;
     archived: boolean;
     goal?: CodexGoalSummary;
@@ -49,8 +60,10 @@ export interface CodexBridgeStatus {
     capabilities: {
         canReadThreads: boolean;
         canReadGoals: boolean;
+        canReadMessages: boolean;
         canSubscribe: boolean;
         canStartTurn: boolean;
+        canSteerTurn: boolean;
         canWrite: boolean;
         appServerAvailable: boolean;
         sqliteFallbackAvailable: boolean;
@@ -97,7 +110,7 @@ export interface CodexBridgeWatch {
     dedupeKeyLastSeen?: string;
     lastEventAt?: string;
     sensitivity: 'normal' | 'sensitive' | 'no_telegram_details';
-    verbosity: 'completion_only' | 'blockers_and_completion' | 'periodic_digest';
+    verbosity: 'completion_only' | 'blockers_and_completion' | 'periodic_digest' | 'terminal_only' | 'assistant_messages' | 'messages_and_terminal' | 'explicit_all';
     createdAt: string;
     updatedAt: string;
 }
@@ -123,9 +136,48 @@ export interface CodexAppServerReader {
         timeoutMs: number;
     }): Promise<unknown>;
 }
+export interface CodexAppServerWriter {
+    sendMessage(input: {
+        threadId: string;
+        cwd?: string;
+        model?: string;
+        message: string;
+        timeoutMs: number;
+    }): Promise<{
+        ok: boolean;
+        turnId?: string;
+        status?: string;
+        possiblySent?: boolean;
+        error?: string;
+    }>;
+}
 export interface CodexBridgeDeps {
     appServerReader?: CodexAppServerReader;
+    appServerWriter?: CodexAppServerWriter;
     nowMs?: () => number;
+}
+export interface CodexTranscriptMessage {
+    id: string;
+    threadId: string;
+    role: 'user' | 'assistant';
+    text: string;
+    timestamp: string;
+    source: 'rollout_jsonl' | 'event_msg';
+    lineNumber: number;
+    byteOffset: number;
+    messageKind: 'final_message' | 'ui_event';
+    hash: string;
+}
+export interface CodexConversationBinding {
+    id: string;
+    agentId: string;
+    chatKeyHash: string;
+    senderKeyHash: string;
+    threadId: string;
+    title?: string;
+    cwd?: string;
+    createdAt: string;
+    updatedAt: string;
 }
 export declare const DEFAULT_CODEX_BRIDGE_CONFIG: CodexBridgeConfig;
 export declare function normalizeCodexBridgeConfig(source?: any): CodexBridgeConfig;
@@ -139,6 +191,24 @@ export declare function readCodexThreadsFromSqlite(bridgeConfig: CodexBridgeConf
     sourcePath?: string;
     errors: string[];
 };
+export declare function readCodexTranscriptMessages(thread: CodexThreadSummary, options?: {
+    limit?: number;
+    role?: 'assistant' | 'user' | 'all';
+    afterLine?: number;
+}): {
+    ok: boolean;
+    messages: CodexTranscriptMessage[];
+    errors: string[];
+    truncated: boolean;
+    rolloutPath?: string;
+};
+export declare function formatCodexMessages(thread: CodexThreadSummary, result: {
+    messages: CodexTranscriptMessage[];
+    errors?: string[];
+}, options?: {
+    title?: string;
+    full?: boolean;
+}): string;
 export declare function buildCodexHandoff(status: CodexBridgeStatus, threadId?: string): CodexHandoffBrief;
 export declare function handleBrainCommand(ctx: any, config: any, api?: any): Promise<{
     text: string;
@@ -169,11 +239,58 @@ export declare class CodexBridgeStore {
         lastEventAt?: string;
         status?: CodexBridgeWatch['status'];
     }): CodexBridgeWatch | null;
+    pauseWatches(agentId: string, target: string): number;
     recordEvent(input: Omit<CodexBridgeEvent, 'id' | 'createdAt'> & {
         id?: string;
         createdAt?: string;
     }): CodexBridgeEvent;
     listEvents(agentId: string, limit?: number): CodexBridgeEvent[];
+    bindConversation(input: {
+        agentId: string;
+        chatKey: string;
+        senderKey: string;
+        thread: CodexThreadSummary;
+    }): CodexConversationBinding;
+    getBinding(agentId: string, chatKey: string): CodexConversationBinding | null;
+    unbindConversation(agentId: string, chatKey: string): boolean;
+    getMessageCursor(watchId: string, threadId: string, rolloutPath: string): any | null;
+    upsertMessageCursor(input: {
+        watchId: string;
+        agentId: string;
+        threadId: string;
+        rolloutPath: string;
+        parseCursorLine: number;
+        parseCursorByteOffset: number;
+        deliveryCursorLine: number;
+        deliveryCursorByteOffset: number;
+        lastMessageId?: string;
+        lastMessageHash?: string;
+        fileIdentity?: string;
+    }): void;
+    recordPendingDelivery(input: {
+        watchId: string;
+        threadId: string;
+        message: CodexTranscriptMessage;
+        chatKey: string;
+        status: string;
+        error?: string;
+    }): void;
+    recordOutbound(input: {
+        agentId: string;
+        sourceChannel: string;
+        sourceSender: string;
+        sourceMessageId?: string;
+        threadId: string;
+        repoPath?: string;
+        riskClass: string;
+        confirmationState: string;
+        appServerMethod?: string;
+        appServerTurnId?: string;
+        status: string;
+        redactedPreview: string;
+        error?: string;
+        idempotencyKey: string;
+    }): void;
     private migrate;
 }
 export declare function formatCodexStatus(status: CodexBridgeStatus): string;

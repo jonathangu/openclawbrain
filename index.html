@@ -132,7 +132,7 @@
         <a class="btn" href="/graph-maintenance/">Memory graph maintenance</a>
       </div>
       <div class="chips">
-        <span class="chip">Current release: v0.2.29</span>
+        <span class="chip">Current release: v0.2.30</span>
         <span class="chip">Native OpenClaw plugin</span>
         <span class="chip">Memory Authority</span>
         <span class="chip">Graph Maintenance</span>
@@ -182,9 +182,13 @@ Relevant memory:
       <p>Jonathan's current workflow uses Codex UI as the high-bandwidth coding workbench at the computer, and OpenClaw/Telegram as the mobile operator surface. OpenClawBrain sits between them as the continuity layer.</p>
       <pre><code>/brain codex status
 /brain codex threads
-/brain codex watch --latest
-/brain codex handoff</code></pre>
-      <p>That lets you ask from your phone: what is Codex working on, did it finish, is it blocked, what changed, and what should I check when I get back to the machine?</p>
+/brain codex last --latest
+/brain codex bind &lt;thread-id&gt;
+/brain codex tail --bound
+/brain codex reply Please keep going and tell me when tests pass.
+/brain codex handoff --bound</code></pre>
+      <p>That lets you ask from your phone: what did Codex just say, did it finish, is it blocked, what changed, and what exact message should I send back to the thread?</p>
+      <p class="fine">Recent-message copy is direct text transport from Codex rollout records, not an LLM summary. Writes go only to exact or bound threads, preserve Codex sandbox/approval behavior, and stay safe by default for public installs.</p>
     </section>
 
     <section class="section">

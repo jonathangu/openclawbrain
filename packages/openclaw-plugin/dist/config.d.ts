@@ -1,5 +1,5 @@
 export declare const PLUGIN_ID = "openclawbrain";
-export declare const PLUGIN_VERSION = "0.2.29";
+export declare const PLUGIN_VERSION = "0.2.30";
 export declare const DEFAULT_CONFIG: any;
 export declare function resolveOpenClawBrainConfig(api?: any): {
     enabled: boolean;
@@ -167,9 +167,18 @@ export declare function resolveOpenClawBrainConfig(api?: any): {
         staleAfterMs: number;
         maxThreads: number;
         watchPollIntervalMs: number;
+        messageWatchesEnabled: boolean;
+        directMessageCopyEnabled: boolean;
+        telegramForwardingMode: any;
         enableTelegramWrites: boolean;
+        trustOpenClawAuth: boolean;
+        allowLatestTargetForWrites: boolean;
+        highRiskTelegramWrites: boolean;
         trustedTelegramSenders: any;
         repoAllowlist: any;
+        readAllowlist: any;
+        writeAllowlist: any;
+        destructiveWriteAllowlist: any;
         notifyChannel: any;
         notifyTarget: any;
     };
@@ -341,9 +350,18 @@ export declare function normalizePluginConfig(input?: any): {
         staleAfterMs: number;
         maxThreads: number;
         watchPollIntervalMs: number;
+        messageWatchesEnabled: boolean;
+        directMessageCopyEnabled: boolean;
+        telegramForwardingMode: any;
         enableTelegramWrites: boolean;
+        trustOpenClawAuth: boolean;
+        allowLatestTargetForWrites: boolean;
+        highRiskTelegramWrites: boolean;
         trustedTelegramSenders: any;
         repoAllowlist: any;
+        readAllowlist: any;
+        writeAllowlist: any;
+        destructiveWriteAllowlist: any;
         notifyChannel: any;
         notifyTarget: any;
     };

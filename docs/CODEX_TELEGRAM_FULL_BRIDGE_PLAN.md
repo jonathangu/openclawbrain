@@ -1,8 +1,22 @@
 # Codex Telegram Full Bridge Plan
 
-Status: design plan after local code audit  
-Date: 2026-05-11  
+Status: implementation plan, with Phase 1-4 existing-thread bridge shipped in `openclawbrain@0.2.30`
+Date: 2026-05-11, updated 2026-05-12
 Owner: OpenClawBrain
+
+## 2026-05-12 Implementation Update
+
+`openclawbrain@0.2.30` implements the core bridge without modifying OpenClaw core:
+
+- reads `threads.rollout_path` from `~/.codex/state_5.sqlite`;
+- parses rollout JSONL `response_item` final user/assistant messages and event fallbacks;
+- exposes `/brain codex messages`, `last`, `bind`, `binding`, `unbind`, `tail`, `watch --messages`, `watches`, `unwatch`, `reply`, `send`, `status`, `threads`, and `handoff`;
+- forwards watched completed assistant messages with parse/delivery cursors, dedupe, pending delivery records, retry behavior, and redacted/raw/metadata forwarding modes;
+- sends trusted local writes through Codex app-server `thread/resume` plus `turn/start`;
+- refuses `--latest` writes and high-risk Telegram requests by default;
+- keeps public writes disabled by default while allowing Jonathan's local profiles to enable the happy path with trusted sender/chat and repo allowlists.
+
+Future phases remain active-turn steer, new-thread goal creation, richer event subscription, and optional Codex-side companion if polling plus app-server proxy are not enough.
 
 ## Executive Summary
 
@@ -26,13 +40,13 @@ The product target should be:
 
 > OpenClawBrain lets Telegram act as a low-bandwidth remote console for Codex UI threads: read recent Codex messages directly, forward selected new messages to Telegram, and send user messages into a specific Codex thread through the Codex app-server, without modifying OpenClaw core and without storing raw Codex telemetry as durable memory.
 
-## What The Code Shows Today
+## What The Pre-0.2.30 Code Showed
 
 ### OpenClawBrain Current State
 
 File: `/Users/guclaw/.openclaw/workspace/openclawbrain/packages/openclaw-plugin/src/codex-continuity.ts`
 
-The current bridge does these things:
+Before the 0.2.30 implementation, the bridge did these things:
 
 - Reads `~/.codex/state_5.sqlite`.
 - Queries `threads` and `thread_goals`.
@@ -45,7 +59,7 @@ The current bridge does these things:
 - Stores bridge-local watches and redacted bridge events.
 - Refuses `/brain codex goal` and `/brain codex steer` unless write feature flags are enabled, and even then the implementation still returns "not enabled in this build path."
 
-The current bridge does not:
+Before the 0.2.30 implementation, the bridge did not:
 
 - Read `threads.rollout_path`.
 - Parse the per-thread Codex transcript JSONL.
