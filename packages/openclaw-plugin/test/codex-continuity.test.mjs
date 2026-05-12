@@ -350,6 +350,117 @@ test('Codex handoff keeps observed facts separate from Codex-reported claims', a
   }
 });
 
+test('Brain command detaches a Telegram chat from binding and active watches', async () => {
+  const root = await tempRoot();
+  try {
+    const dbPath = path.join(root, 'state_5.sqlite');
+    createCodexState(dbPath, [
+      { id: 'thread-detach', title: 'Detach thread', cwd: '/repo/openclawbrain', updatedAtMs: Date.now() },
+    ]);
+    const cfg = config(root, dbPath);
+    const ctx = { channel: 'telegram', from: '8518484672', isAuthorizedSender: true, agentId: 'main' };
+    await handleBrainCommand({ ...ctx, args: 'codex bind thread-detach' }, cfg);
+    await handleBrainCommand({ ...ctx, args: 'codex tail --bound' }, cfg);
+    const detach = await handleBrainCommand({ ...ctx, args: 'codex detach' }, cfg);
+    assert.match(detach.text, /Detached Codex/);
+    assert.match(detach.text, /Paused watches: 1/);
+    const binding = await handleBrainCommand({ ...ctx, args: 'codex binding' }, cfg);
+    assert.match(binding.text, /No Codex thread is bound/);
+    const watches = await handleBrainCommand({ ...ctx, args: 'codex watches' }, cfg);
+    assert.match(watches.text, /status=paused/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Brain command stores passive Codex notes without starting a turn', async () => {
+  const root = await tempRoot();
+  try {
+    const dbPath = path.join(root, 'state_5.sqlite');
+    createCodexState(dbPath, [
+      { id: 'thread-note', title: 'Note thread', cwd: '/repo/openclawbrain', updatedAtMs: Date.now() },
+    ]);
+    const cfg = config(root, dbPath, {
+      enableTelegramWrites: true,
+      trustedTelegramSenders: ['telegram-user'],
+      writeAllowlist: ['/repo/openclawbrain'],
+    });
+    const ctx = { channel: 'telegram', from: '8518484672', senderId: 'telegram-user', isAuthorizedSender: true, agentId: 'main' };
+    await handleBrainCommand({ ...ctx, args: 'codex bind thread-note' }, cfg);
+    const note = await handleBrainCommand({ ...ctx, args: 'codex note The auth mock is probably the real issue.' }, cfg, {
+      codexAppServerWriter: {
+        async sendMessage() { throw new Error('note must not call app-server'); },
+      },
+    });
+    assert.match(note.text, /Attached passive note/);
+    assert.match(note.text, /did not start or steer Codex/);
+    const notes = await handleBrainCommand({ ...ctx, args: 'codex notes' }, cfg);
+    assert.match(notes.text, /auth mock/);
+    const handoff = await handleBrainCommand({ ...ctx, args: 'codex handoff --bound' }, cfg);
+    assert.match(handoff.text, /Operator notes:/);
+    assert.match(handoff.text, /auth mock/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Brain command acts with notes only when explicitly requested', async () => {
+  const root = await tempRoot();
+  try {
+    const dbPath = path.join(root, 'state_5.sqlite');
+    createCodexState(dbPath, [
+      { id: 'thread-act', title: 'Act thread', cwd: '/repo/openclawbrain', updatedAtMs: Date.now() },
+    ]);
+    const cfg = config(root, dbPath, {
+      enableTelegramWrites: true,
+      trustedTelegramSenders: ['telegram-user'],
+      writeAllowlist: ['/repo/openclawbrain'],
+    });
+    const ctx = { channel: 'telegram', from: '8518484672', senderId: 'telegram-user', isAuthorizedSender: true, agentId: 'main' };
+    await handleBrainCommand({ ...ctx, args: 'codex bind thread-act' }, cfg);
+    await handleBrainCommand({ ...ctx, args: 'codex note The focused failure is in parser fixtures.' }, cfg);
+    const writes = [];
+    const act = await handleBrainCommand({ ...ctx, args: 'codex act --with-notes Please fix only the focused test.' }, cfg, {
+      codexAppServerWriter: {
+        async sendMessage(input) {
+          writes.push(input);
+          return { ok: true, turnId: 'turn-act' };
+        },
+      },
+    });
+    assert.match(act.text, /Sent to Codex thread thread-act/);
+    assert.match(act.text, /Included 1 passive note/);
+    assert.match(writes[0].message, /Operator note context:/);
+    assert.match(writes[0].message, /parser fixtures/);
+    const notes = await handleBrainCommand({ ...ctx, args: 'codex notes' }, cfg);
+    assert.match(notes.text, /No active Codex operator notes/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Brain command defaults watch to quiet terminal events and tail to assistant messages', async () => {
+  const root = await tempRoot();
+  try {
+    const dbPath = path.join(root, 'state_5.sqlite');
+    createCodexState(dbPath, [
+      { id: 'thread-watch', title: 'Watch thread', cwd: '/repo/openclawbrain', updatedAtMs: Date.now() },
+    ]);
+    const cfg = config(root, dbPath);
+    const ctx = { channel: 'telegram', from: '8518484672', isAuthorizedSender: true, agentId: 'main' };
+    await handleBrainCommand({ ...ctx, args: 'codex bind thread-watch' }, cfg);
+    const watch = await handleBrainCommand({ ...ctx, args: 'codex watch --bound' }, cfg);
+    assert.match(watch.text, /stay quiet unless it completes/);
+    const tail = await handleBrainCommand({ ...ctx, args: 'codex tail --bound' }, cfg);
+    assert.match(tail.text, /Tailing completed assistant messages/);
+    const watches = await handleBrainCommand({ ...ctx, args: 'codex watches' }, cfg);
+    assert.match(watches.text, /classes=completion,failure,blocker,approval_required,auth_failure/);
+    assert.match(watches.text, /classes=assistant_message,completion,failure,blocker,approval_required,auth_failure/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('Brain command exposes status and refuses write path by default', async () => {
   const root = await tempRoot();
   try {

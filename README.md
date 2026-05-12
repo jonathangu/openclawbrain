@@ -8,7 +8,7 @@ OpenClawBrain is local, accountable memory for [OpenClaw](https://docs.openclaw.
 
 ![OpenClawBrain memory graph showing LLM update pulses, SQLite memory, learned route_fn paths, and bounded memory context.](docs/assets/openclawbrain-memory-graph.jpg)
 
-`0.2.32` completes the real Codex Telegram bridge on top of Memory Graph Maintenance and Memory Authority. OpenClawBrain can read recent Codex UI thread messages from local rollout JSONL, tail selected completed assistant replies into Telegram, bind a Telegram chat to an exact Codex thread, send trusted local replies back through Codex app-server, and steer an active Codex turn without modifying OpenClaw core.
+`0.2.33` turns the Codex Telegram bridge into a lighter operator layer. OpenClawBrain can read recent Codex UI thread messages, follow one thread briefly, attach passive notes without starting Codex, send explicit actions into a bound thread, steer an active turn, diagnose app-server readiness, and detach everything with one command without modifying OpenClaw core.
 
 ## Short version
 
@@ -47,7 +47,7 @@ Install or upgrade: https://openclawbrain.ai/install/
 Project page: https://jonathangu.com/openclawbrain/
 
 Install/upgrade if you already run OpenClaw:
-openclaw plugins install clawhub:openclawbrain@0.2.32 --force
+openclaw plugins install clawhub:openclawbrain@0.2.33 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -57,7 +57,7 @@ openclaw gateway restart
 Requires OpenClaw `2026.5.2` or later. Use the same command for a fresh install or an upgrade; `--force` is safe when replacing an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.32 --force
+openclaw plugins install clawhub:openclawbrain@0.2.33 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -65,9 +65,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.32.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.32/openclawbrain-0.2.32.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.32.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.33.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.33/openclawbrain-0.2.33.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.33.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -226,29 +226,45 @@ The core invariants:
 
 Codex UI stays the high-bandwidth workbench at the computer. OpenClaw/Telegram becomes the mobile operator surface. OpenClawBrain bridges the two without becoming a noisy second IDE.
 
-The important commands:
+The daily command model is intentionally small:
+
+```text
+Observe: /brain codex status, /brain codex last --bound
+Follow:  /brain codex tail --bound
+Note:    /brain codex note <passive context>
+Act:     /brain codex act <instruction that may edit/run tools>
+Steer:   /brain codex steer --bound <redirect active work>
+Detach:  /brain codex detach
+```
+
+Full command surface:
 
 ```text
 /brain codex status
+/brain codex doctor
 /brain codex threads [filter]
 /brain codex messages [thread-id|--latest|--bound] [--limit 5] [--role assistant|user|all]
 /brain codex last [thread-id|--latest|--bound]
 /brain codex bind <thread-id>
 /brain codex binding
 /brain codex unbind
+/brain codex detach
 /brain codex tail [thread-id|--latest|--bound]
 /brain codex watch [thread-id|--latest|--bound] --messages
 /brain codex watches
-/brain codex unwatch <watch-id|thread-id>
+/brain codex unwatch <watch-id|thread-id|latest|all>
+/brain codex note <message>
+/brain codex notes
+/brain codex act [--with-notes] <message>
 /brain codex reply <message>
 /brain codex send <thread-id|--bound> <message>
 /brain codex steer [thread-id|--bound] <message>
 /brain codex handoff [thread-id|--latest|--bound]
 ```
 
-Recent-message copy is direct transport from Codex rollout records, not an LLM summary. Message watches forward only new completed assistant messages and retry after Telegram delivery failures. Writes and active-turn steering are safe by default in the public package, and can be enabled for Jonathan's trusted local profiles with exact-thread binding, sender checks, repo allowlists, idempotent outbound audit, high-risk refusal, and Codex sandbox/approval preservation.
+Recent-message copy is direct transport from Codex rollout records, not an LLM summary. Plain watches stay quiet by default and notify only completion, blockers, failures, approval needs, or auth failures. `tail` is the explicit assistant-message forwarding mode. `note` stores passive operator context in the local bridge DB and never calls Codex app-server. `act`, `reply`, and `send` start a real Codex turn and may edit files or run tools under Codex's normal sandbox rules.
 
-The bridge refuses `--latest` writes. Reads may use latest/bound targets because they are informational; writes must be exact or bound so a Telegram message does not land in the wrong Codex thread.
+The bridge refuses `--latest` writes. Reads may use latest/bound targets because they are informational; writes must be exact or bound so a Telegram message does not land in the wrong Codex thread. `detach` removes the chat binding and pauses matching active watches when Telegram gets noisy or the session is done.
 
 Trusted local write/steer mode uses a localhost Codex app-server WebSocket endpoint, for example:
 

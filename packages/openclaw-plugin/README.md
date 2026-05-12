@@ -16,7 +16,7 @@ Imagine an agent that understands “close it out” means evidence, not vibes. 
 - **Keeps turn context small.** It does not dump your whole history into every turn. It retrieves candidates locally and attaches only a bounded XML memory slice when memory is likely to help.
 - **Checks authority before use.** Retrieved memories can be attached, weakened, verified, confirmed, suppressed, or kept audit-only depending on staleness, scope, privacy, supersession, and current user guidance.
 - **Maintains the graph.** Dry-run proposals find exact duplicates, bad edges, stale high-authority memories, scoped exception candidates, and tombstone recapture risks before long-lived memory drifts.
-- **Bridges Codex to Telegram.** It can show recent Codex UI thread messages, tail selected assistant replies, bind a Telegram chat to an exact Codex thread, and send trusted local replies through Codex app-server.
+- **Bridges Codex to Telegram.** It can show recent Codex UI thread messages, follow one thread briefly, attach passive notes, send explicit trusted actions through Codex app-server, steer active work, and detach cleanly when Telegram should go quiet.
 - **Stays local-first.** SQLite stores the graph and evidence. FTS5 powers local search. Raw transcript upload is hard-disabled.
 - **Shows its work.** You can check status, run health checks, inspect proof events, search memory, view the graph, and review route decisions.
 - **Learns on the standard local path.** OpenClawBrain points at local Ollama by default. Local models propose structured JSON; code validates, redacts, scopes, thresholds, and writes.
@@ -38,7 +38,7 @@ OpenClawBrain takes a different approach:
 
 ## Current release
 
-- **Current package release:** `0.2.32`
+- **Current package release:** `0.2.33`
 - **Recommended mode:** `balanced`
 - **Requires:** OpenClaw `2026.5.2` or later
 - **Live E2E proof:** turn → capture audit → strict distillation/storage → SQLite/FTS retrieval → authority resolution → bounded memory context
@@ -47,7 +47,7 @@ OpenClawBrain takes a different approach:
 ## Install
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.32 --force
+openclaw plugins install clawhub:openclawbrain@0.2.33 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -55,9 +55,9 @@ openclaw gateway restart
 If ClawHub is rate-limited or package metadata is still propagating, install the release archive instead:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.32.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.32/openclawbrain-0.2.32.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.32.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.33.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.33/openclawbrain-0.2.33.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.33.tgz --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -122,25 +122,32 @@ openclaw doctor
 
 ## Codex continuity bridge
 
-`0.2.32` completes the OpenClawBrain-owned Codex continuity bridge into a real Telegram thread bridge. It does not patch OpenClaw core. It reads local Codex SQLite for thread metadata, follows `threads.rollout_path` into rollout JSONL, copies final user/assistant message text directly without LLM summarization, sends trusted local replies through Codex app-server `thread/resume` plus `turn/start`, and can steer active Codex turns with `turn/steer`.
+`0.2.33` makes the OpenClawBrain-owned Codex continuity bridge usable as a lightweight Telegram operator layer. It does not patch OpenClaw core. It reads local Codex SQLite for thread metadata, follows `threads.rollout_path` into rollout JSONL, copies final user/assistant message text directly without LLM summarization, attaches passive notes without starting Codex, sends explicit trusted actions through Codex app-server `thread/resume` plus `turn/start`, can steer active Codex turns with `turn/steer`, and can detach a chat from all matching bindings/watches.
 
 ```text
 /brain codex status
+/brain codex doctor
 /brain codex threads [filter]
 /brain codex messages [thread-id|--latest|--bound] [--limit 5] [--role assistant|user|all]
 /brain codex last [thread-id|--latest|--bound]
 /brain codex bind <thread-id>
 /brain codex binding
 /brain codex unbind
+/brain codex detach
 /brain codex tail [thread-id|--latest|--bound]
 /brain codex watch [thread-id|--latest|--bound] --messages
 /brain codex watches
-/brain codex unwatch <watch-id|thread-id>
+/brain codex unwatch <watch-id|thread-id|latest|all>
+/brain codex note <message>
+/brain codex notes
+/brain codex act [--with-notes] <message>
 /brain codex reply <message>
 /brain codex send <thread-id|--bound> <message>
 /brain codex steer [thread-id|--bound] <message>
 /brain codex handoff [thread-id|--latest|--bound]
 ```
+
+Use `note` for context that should not make Codex act. Use `act`, `reply`, or `send` only when the operator intends to start a real Codex turn that may edit files, run tools, or request approvals under Codex's normal sandbox behavior. Plain watches stay quiet by default; `tail` is the explicit assistant-message forwarding mode. `detach` is the escape hatch.
 
 Telegram-to-Codex writes and steering stay disabled by default in the public package. Local trusted profiles can enable the happy path with `enableTelegramWrites=true`, `enableTelegramSteer=true`, trusted sender/chat, and write allowlists. The bridge refuses `--latest` writes, refuses high-risk publish/deploy/delete/secrets/full-access wording by default, and never bypasses Codex sandbox or approval behavior.
 

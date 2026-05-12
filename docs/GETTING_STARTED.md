@@ -1,6 +1,6 @@
 # Getting Started with OpenClawBrain
 
-This is the fastest honest path to a working OpenClawBrain `0.2.32` install.
+This is the fastest honest path to a working OpenClawBrain `0.2.33` install.
 
 ## What you are installing
 
@@ -8,7 +8,7 @@ OpenClawBrain is a native OpenClaw plugin that gives agents local, inspectable m
 
 The production route brain is `route-policy-v3`: a compact learned route function backed by redacted route frames, SQLite evidence, shadow decisions, replay/eval cases, calibration, gated promotion, and rollback lineage.
 
-The 0.2.32 runtime includes Memory Authority resolution, automatic Memory Graph Maintenance, and the real OpenClawBrain-owned Codex Telegram bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The graph maintenance layer then keeps long-lived memory healthy with dry-run proposals, deterministic duplicate/edge cleanup, tombstone-aware recapture checks, and proof. The Codex bridge reads local Codex thread messages, tails watched replies, sends trusted local Telegram replies into exact Codex threads, and can steer active Codex turns when enabled.
+The 0.2.33 runtime includes Memory Authority resolution, automatic Memory Graph Maintenance, and the real OpenClawBrain-owned Codex Telegram bridge. A retrieved memory is not automatically injected just because it is relevant. It must still be current enough, scoped correctly, safe to use, not superseded, not tombstoned, and compatible with the current user instruction. The graph maintenance layer then keeps long-lived memory healthy with dry-run proposals, deterministic duplicate/edge cleanup, tombstone-aware recapture checks, and proof. The Codex bridge reads local Codex thread messages, tails watched replies, sends trusted local Telegram replies into exact Codex threads, and can steer active Codex turns when enabled.
 
 ## Before you start
 
@@ -23,16 +23,16 @@ You need:
 Use the same command for a fresh install or an upgrade. `--force` replaces an older local copy.
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.32 --force
+openclaw plugins install clawhub:openclawbrain@0.2.33 --force
 openclaw plugins enable openclawbrain
 ```
 
 If ClawHub metadata is still propagating, install the GitHub release archive:
 
 ```bash
-curl -L -o /tmp/openclawbrain-0.2.32.tgz \
-  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.32/openclawbrain-0.2.32.tgz
-openclaw plugins install /tmp/openclawbrain-0.2.32.tgz --force
+curl -L -o /tmp/openclawbrain-0.2.33.tgz \
+  https://github.com/jonathangu/openclawbrain/releases/download/v0.2.33/openclawbrain-0.2.33.tgz
+openclaw plugins install /tmp/openclawbrain-0.2.33.tgz --force
 openclaw plugins enable openclawbrain
 ```
 
@@ -113,11 +113,14 @@ OpenClawBrain owns these commands without modifying the OpenClaw core checkout:
 /brain codex messages --latest --limit 5
 /brain codex bind <thread-id>
 /brain codex tail --bound
-/brain codex reply Please continue and tell me when tests pass.
+/brain codex note The failure looks like the auth mock.
+/brain codex act --with-notes Please fix only the focused test.
+/brain codex steer --bound Stop after this test run and report blockers.
+/brain codex detach
 /brain codex handoff --bound
 ```
 
-Recent-message copy is direct transport from Codex rollout JSONL, not an LLM summary. The public package keeps Telegram-to-Codex writes disabled by default; Jonathan's local profiles can enable them with trusted sender checks, exact bound threads, write allowlists, and high-risk refusal.
+Recent-message copy is direct transport from Codex rollout JSONL, not an LLM summary. `note` is passive and never starts Codex. `act` starts a real Codex turn that may edit files or run tools. `detach` removes the chat binding and pauses matching watches. The public package keeps Telegram-to-Codex writes disabled by default; Jonathan's local profiles can enable them with trusted sender checks, exact bound threads, write allowlists, and high-risk refusal.
 
 ## 7) Try memory
 

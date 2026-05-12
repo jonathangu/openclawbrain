@@ -1,18 +1,19 @@
 # Codex Telegram Full Bridge Plan
 
-Status: implementation plan, with Phase 1-5 existing-thread bridge shipped in `openclawbrain@0.2.32`
+Status: implementation plan, with Phase 1-5 existing-thread bridge shipped in `openclawbrain@0.2.33`
 Date: 2026-05-11, updated 2026-05-12
 Owner: OpenClawBrain
 
 ## 2026-05-12 Implementation Update
 
-`openclawbrain@0.2.32` implements the core bridge without modifying OpenClaw core:
+`openclawbrain@0.2.33` implements the core bridge without modifying OpenClaw core:
 
 - reads `threads.rollout_path` from `~/.codex/state_5.sqlite`;
 - parses rollout JSONL `response_item` final user/assistant messages and event fallbacks;
-- exposes `/brain codex messages`, `last`, `bind`, `binding`, `unbind`, `tail`, `watch --messages`, `watches`, `unwatch`, `reply`, `send`, `steer`, `status`, `threads`, and `handoff`;
-- forwards watched completed assistant messages with parse/delivery cursors, dedupe, pending delivery records, retry behavior, and redacted/raw/metadata forwarding modes;
-- sends trusted local writes through Codex app-server `thread/resume` plus `turn/start`;
+- exposes `/brain codex messages`, `last`, `bind`, `binding`, `unbind`, `detach`, `tail`, `watch --messages`, `watches`, `unwatch`, `note`, `notes`, `act`, `reply`, `send`, `steer`, `doctor`, `status`, `threads`, and `handoff`;
+- forwards watched completed assistant messages with parse/delivery cursors, dedupe, pending delivery records, retry behavior, redacted/raw/metadata forwarding modes, quieter terminal-watch defaults, and TTLs;
+- stores passive operator notes locally without starting Codex;
+- sends explicit trusted actions through Codex app-server `thread/resume` plus `turn/start`;
 - steers active in-progress Codex turns through app-server `turn/steer`;
 - refuses `--latest` writes and high-risk Telegram requests by default;
 - keeps public writes disabled by default while allowing Jonathan's local profiles to enable the happy path with trusted sender/chat and repo allowlists.
@@ -276,7 +277,7 @@ The first useful implementation should be:
 
 Then add `/brain codex reply` only after binding, write policy, app-server capability detection, confirmation, idempotency, and audit are implemented.
 
-The `0.2.32` implementation adds active-turn steering after the bound/exact write path, with a strict no-active-turn refusal. New-thread goal creation remains outside the shipped bridge.
+The `0.2.33` implementation adds active-turn steering after the bound/exact write path, with a strict no-active-turn refusal. New-thread goal creation remains outside the shipped bridge.
 
 ### Exact Copy Semantics
 
@@ -1206,7 +1207,7 @@ Tests:
 
 ### Phase 6: Steer Active Turn
 
-Status: shipped in `openclawbrain@0.2.32` for known active in-progress turns.
+Status: shipped in `openclawbrain@0.2.33` for known active in-progress turns.
 
 Goal: send mid-turn steering messages only when safe.
 

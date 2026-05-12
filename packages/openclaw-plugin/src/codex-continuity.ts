@@ -21,6 +21,8 @@ export type CodexBridgeEventClass =
   | 'watch_created'
   | 'binding_created'
   | 'binding_removed'
+  | 'note_attached'
+  | 'chat_detached'
   | 'outbound_write'
   | 'delivery_failed'
   | 'handoff'
@@ -121,6 +123,7 @@ export interface CodexHandoffBrief {
   observedFacts: string[];
   codexReportedClaims: string[];
   evidence: string[];
+  operatorNotes?: string[];
   interpretation: string[];
   nextActions: string[];
   stale: boolean;
@@ -213,6 +216,22 @@ export interface CodexConversationBinding {
   threadId: string;
   title?: string;
   cwd?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CodexOperatorNote {
+  id: string;
+  agentId: string;
+  threadId: string;
+  sourceChannel: string;
+  sourceChatKey: string;
+  sourceSenderKey?: string;
+  body?: string;
+  redactedPreview: string;
+  status: 'active' | 'included_in_action' | 'dismissed' | 'expired';
+  expiresAt?: string;
+  includedOutboundId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -310,6 +329,7 @@ export async function buildCodexBridgeStatus(config: any, agentId = 'main', deps
 
   const errors: string[] = [];
   let appServerAvailable = false;
+  let appServerUnavailableReason = '';
   if (bridgeConfig.preferAppServer && deps.appServerReader) {
     try {
       const response = await deps.appServerReader.listThreads({ limit: bridgeConfig.maxThreads, timeoutMs: bridgeConfig.appServerTimeoutMs });
@@ -325,16 +345,22 @@ export async function buildCodexBridgeStatus(config: any, agentId = 'main', deps
           errors,
           appServerAvailable,
           sqliteFallbackAvailable: true,
-          writeEnabled: bridgeConfig.enableTelegramWrites,
-          steerEnabled: bridgeConfig.enableTelegramWrites && bridgeConfig.enableTelegramSteer,
+          writeConfigured: bridgeConfig.enableTelegramWrites,
+          steerConfigured: bridgeConfig.enableTelegramWrites && bridgeConfig.enableTelegramSteer,
         });
       }
       appServerAvailable = true;
     } catch (error: any) {
-      errors.push(`app_server_unavailable:${clipText(String(error?.message || error), 160)}`);
+      appServerUnavailableReason = clipText(String(error?.message || error), 160);
+      errors.push(`app_server_unavailable:${appServerUnavailableReason}`);
     }
   } else if (bridgeConfig.preferAppServer) {
-    errors.push('app_server_unavailable:no_host_reader_configured');
+    const health = await checkCodexAppServerHealth(bridgeConfig);
+    appServerAvailable = health.ok;
+    if (!health.ok) {
+      appServerUnavailableReason = health.reason;
+      errors.push(`app_server_unavailable:${health.reason}`);
+    }
   }
 
   const sqlite = readCodexThreadsFromSqlite(bridgeConfig, { limit: bridgeConfig.maxThreads, nowMs: deps.nowMs?.() ?? Date.now() });
@@ -352,8 +378,8 @@ export async function buildCodexBridgeStatus(config: any, agentId = 'main', deps
       errors,
       appServerAvailable,
       sqliteFallbackAvailable: true,
-      writeEnabled: bridgeConfig.enableTelegramWrites,
-      steerEnabled: bridgeConfig.enableTelegramWrites && bridgeConfig.enableTelegramSteer,
+      writeConfigured: bridgeConfig.enableTelegramWrites,
+      steerConfigured: bridgeConfig.enableTelegramWrites && bridgeConfig.enableTelegramSteer,
     });
   }
 
@@ -370,6 +396,12 @@ export async function buildCodexBridgeStatus(config: any, agentId = 'main', deps
       canWrite: false,
       appServerAvailable,
       sqliteFallbackAvailable: false,
+    },
+    writeControl: {
+      enabled: false,
+      reason: bridgeConfig.enableTelegramWrites
+        ? `app_server_not_ready:${appServerUnavailableReason || 'no_codex_state_available'}`
+        : 'disabled_by_default',
     },
   };
 }
@@ -601,6 +633,15 @@ function parseRole(value: string | undefined, fallback: 'assistant' | 'user' | '
   return value === 'assistant' || value === 'user' || value === 'all' ? value : fallback;
 }
 
+function parseThreadMessage(rest: string[], status: CodexBridgeStatus, defaultTarget = '--bound'): { target: string; message: string } {
+  const first = safeString(rest[0]);
+  const knownThreadId = status.latestThreads.some((thread) => thread.id === first);
+  if (first === '--bound' || knownThreadId || looksLikeCodexThreadId(first)) {
+    return { target: first, message: rest.slice(1).join(' ').trim() };
+  }
+  return { target: defaultTarget, message: rest.join(' ').trim() };
+}
+
 function resolveThreadTarget(input: {
   status: CodexBridgeStatus;
   store: CodexBridgeStore;
@@ -635,11 +676,70 @@ function resolveThreadTarget(input: {
 }
 
 function contextChatKey(ctx: any): string {
-  return safeString(ctx.chatId ?? ctx.chat_id ?? ctx.to ?? ctx.from ?? ctx.channelId ?? ctx.message?.chat?.id ?? 'local');
+  const channel = safeString(ctx.channel) || 'telegram';
+  const rawChat = rawContextChatId(ctx);
+  const topic = safeString(ctx.messageThreadId ?? ctx.message_thread_id ?? ctx.message?.message_thread_id);
+  if (channel === 'telegram') {
+    const base = rawChat ? `telegram:${stripTelegramPrefix(rawChat)}` : 'telegram:local';
+    return topic ? `${base}:topic:${topic}` : base;
+  }
+  return rawChat ? `${channel}:${rawChat}` : `${channel}:local`;
 }
 
 function contextSenderKey(ctx: any): string {
-  return safeString(ctx.senderId ?? ctx.sender_id ?? ctx.userId ?? ctx.user_id ?? ctx.from ?? ctx.accountId ?? 'local');
+  const channel = safeString(ctx.channel) || 'telegram';
+  const rawSender = safeString(ctx.senderId ?? ctx.sender_id ?? ctx.userId ?? ctx.user_id ?? ctx.accountId ?? ctx.from ?? 'local');
+  if (channel === 'telegram') return `telegram-user:${stripTelegramUserPrefix(rawSender)}`;
+  return `${channel}-user:${rawSender}`;
+}
+
+function rawContextChatId(ctx: any): string {
+  return safeString(ctx.chatId ?? ctx.chat_id ?? ctx.to ?? ctx.from ?? ctx.channelId ?? ctx.message?.chat?.id ?? 'local');
+}
+
+function contextNotifyTarget(ctx: any): string {
+  return safeString(ctx.to ?? ctx.chatId ?? ctx.chat_id ?? ctx.from ?? ctx.message?.chat?.id ?? '');
+}
+
+function contextWatchTargetCandidates(ctx: any): string[] {
+  const raw = contextNotifyTarget(ctx) || rawContextChatId(ctx);
+  return uniqueStrings([
+    raw,
+    stripTelegramPrefix(raw),
+    contextChatKey(ctx),
+  ].filter(Boolean));
+}
+
+function canonicalChatKeyCandidates(chatKey: string): string[] {
+  const raw = safeString(chatKey);
+  const stripped = stripTelegramPrefix(raw);
+  return uniqueStrings([
+    raw,
+    stripped,
+    stripped ? `telegram:${stripped}` : '',
+  ].filter(Boolean));
+}
+
+function canonicalSenderKeyCandidates(senderKey: string): string[] {
+  const raw = safeString(senderKey);
+  const stripped = stripTelegramUserPrefix(raw);
+  return uniqueStrings([
+    raw,
+    stripped,
+    stripped ? `telegram-user:${stripped}` : '',
+  ].filter(Boolean));
+}
+
+function stripTelegramPrefix(value: string): string {
+  return safeString(value).replace(/^telegram:/, '').replace(/:topic:.*$/, '');
+}
+
+function stripTelegramUserPrefix(value: string): string {
+  return safeString(value).replace(/^telegram-user:/, '').replace(/^telegram:/, '');
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values.map((value) => safeString(value)).filter(Boolean))];
 }
 
 function formatBinding(binding: CodexConversationBinding) {
@@ -658,10 +758,11 @@ function createCodexTerminalWatch(input: { store: CodexBridgeStore; agentId: str
     scope: 'thread',
     threadId: input.thread.id,
     notifyChannel: input.config.notifyChannel || safeString(input.ctx.channel) || 'telegram',
-    notifyTarget: input.config.notifyTarget || safeString(input.ctx.to ?? input.ctx.from ?? ''),
+    notifyTarget: input.config.notifyTarget || contextNotifyTarget(input.ctx),
     accountId: safeString(input.ctx.accountId),
     messageThreadId: input.ctx.messageThreadId == null ? undefined : String(input.ctx.messageThreadId),
     allowedClasses: ['completion', 'failure', 'blocker', 'approval_required', 'auth_failure'],
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     sensitivity: 'normal',
     verbosity: 'blockers_and_completion',
   });
@@ -687,10 +788,11 @@ function createCodexMessageWatch(input: { store: CodexBridgeStore; agentId: stri
     scope: 'thread',
     threadId: input.thread.id,
     notifyChannel: input.config.notifyChannel || safeString(input.ctx.channel) || 'telegram',
-    notifyTarget: input.config.notifyTarget || safeString(input.ctx.to ?? input.ctx.from ?? ''),
+    notifyTarget: input.config.notifyTarget || contextNotifyTarget(input.ctx),
     accountId: safeString(input.ctx.accountId),
     messageThreadId: input.ctx.messageThreadId == null ? undefined : String(input.ctx.messageThreadId),
     allowedClasses: ['assistant_message', 'completion', 'failure', 'blocker', 'approval_required', 'auth_failure'],
+    expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
     sensitivity: input.config.telegramForwardingMode === 'metadata_only' ? 'no_telegram_details' : 'normal',
     verbosity: 'assistant_messages',
   });
@@ -790,6 +892,7 @@ export async function handleBrainCommand(ctx: any, config: any, api: any = {}): 
   const bridgeConfig = normalizeCodexBridgeConfig(config.codexBridge);
   const status = await buildCodexBridgeStatus(config, agentId);
   if (subcommand === 'status') return { text: formatCodexStatus(status) };
+  if (subcommand === 'doctor') return { text: formatCodexDoctor(status, bridgeConfig) };
   if (subcommand === 'threads') return { text: formatCodexThreads(status, rest.join(' ')) };
   if (subcommand === 'messages' || subcommand === 'last') {
     if (!bridgeConfig.directMessageCopyEnabled) return { text: 'Codex direct message copy is disabled.' };
@@ -808,8 +911,23 @@ export async function handleBrainCommand(ctx: any, config: any, api: any = {}): 
     }
   }
   if (subcommand === 'handoff') {
-    const brief = buildCodexHandoff(status, rest[0]);
-    return { text: formatHandoffBrief(brief) };
+    const store = new CodexBridgeStore({ config, agentId });
+    try {
+      let target = rest[0] === '--bound' ? undefined : rest[0];
+      if (rest[0] === '--bound') {
+        const resolved = resolveThreadTarget({ status, store, agentId, ctx, target: '--bound', mode: 'read' });
+        if (!resolved.thread) return { text: resolved.reason };
+        target = resolved.thread.id;
+      }
+      const brief = buildCodexHandoff(status, target);
+      if (brief.threadId) {
+        brief.operatorNotes = store.listNotes(agentId, { threadId: brief.threadId, chatKey: contextChatKey(ctx), activeOnly: true })
+          .map((note) => note.redactedPreview);
+      }
+      return { text: formatHandoffBrief(brief) };
+    } finally {
+      store.close();
+    }
   }
   if (subcommand === 'bind') {
     const target = rest[0];
@@ -867,6 +985,37 @@ export async function handleBrainCommand(ctx: any, config: any, api: any = {}): 
       store.close();
     }
   }
+  if (subcommand === 'detach') {
+    const store = new CodexBridgeStore({ config, agentId });
+    try {
+      const binding = store.getBinding(agentId, contextChatKey(ctx));
+      const result = store.detachChat(agentId, contextChatKey(ctx), contextWatchTargetCandidates(ctx));
+      store.recordEvent({
+        agentId,
+        eventType: 'chat_detached',
+        eventClass: 'chat_detached',
+        source: status.source,
+        threadId: binding?.threadId,
+        decision: 'recorded',
+        notified: false,
+        reason: 'explicit_user_detach_request',
+        redactedSummary: `Detached Codex from Telegram chat; bindingRemoved=${result.bindingRemoved}; pausedWatches=${result.pausedWatches}`,
+        dedupeKey: `detach:${sha256(contextChatKey(ctx))}:${Date.now()}`,
+      });
+      return {
+        text: [
+          'Detached Codex from this Telegram chat.',
+          '',
+          `Stopped binding: ${result.bindingRemoved ? (binding?.threadId || 'yes') : 'none'}`,
+          `Paused watches: ${result.pausedWatches}`,
+          '',
+          'Nothing else will be forwarded here unless you bind, watch, or tail again.',
+        ].join('\n'),
+      };
+    } finally {
+      store.close();
+    }
+  }
   if (subcommand === 'watches') {
     const store = new CodexBridgeStore({ config, agentId });
     try {
@@ -878,11 +1027,50 @@ export async function handleBrainCommand(ctx: any, config: any, api: any = {}): 
   }
   if (subcommand === 'unwatch') {
     const target = rest[0];
-    if (!target) return { text: 'Usage: /brain codex unwatch <watch-id|thread-id>' };
+    if (!target) return { text: 'Usage: /brain codex unwatch <watch-id|thread-id|latest|all>' };
     const store = new CodexBridgeStore({ config, agentId });
     try {
-      const removed = store.pauseWatches(agentId, target);
+      const removed = store.pauseWatches(agentId, target, { notifyTargets: contextWatchTargetCandidates(ctx) });
       return { text: removed > 0 ? `Paused ${removed} Codex watch(es).` : 'No matching active Codex watch found.' };
+    } finally {
+      store.close();
+    }
+  }
+  if (subcommand === 'note' || subcommand === 'notes') {
+    const store = new CodexBridgeStore({ config, agentId });
+    try {
+      if (subcommand === 'notes') {
+        const binding = store.getBinding(agentId, contextChatKey(ctx));
+        const notes = store.listNotes(agentId, { threadId: rest[0] || binding?.threadId, chatKey: contextChatKey(ctx), activeOnly: true });
+        if (notes.length === 0) return { text: 'No active Codex operator notes for this chat/thread.' };
+        return { text: ['Codex operator notes:', ...notes.map((note) => `- ${note.redactedPreview}`)].join('\n') };
+      }
+      const parsed = parseThreadMessage(rest, status, '--bound');
+      const message = parsed.message;
+      if (!message) return { text: 'Usage: /brain codex note <message>' };
+      const resolved = resolveThreadTarget({ status, store, agentId, ctx, target: parsed.target, mode: 'write' });
+      if (!resolved.thread) return { text: resolved.reason };
+      const note = store.createNote({
+        agentId,
+        threadId: resolved.thread.id,
+        sourceChannel: safeString(ctx.channel) || 'telegram',
+        sourceChatKey: contextChatKey(ctx),
+        sourceSenderKey: contextSenderKey(ctx),
+        body: message,
+      });
+      store.recordEvent({
+        agentId,
+        eventType: 'operator_note_attached',
+        eventClass: 'note_attached',
+        source: resolved.thread.source,
+        threadId: resolved.thread.id,
+        decision: 'recorded',
+        notified: false,
+        reason: 'explicit_user_passive_note_request',
+        redactedSummary: `Attached passive operator note to Codex thread ${resolved.thread.id}: ${note.redactedPreview}`,
+        dedupeKey: `note:${note.id}`,
+      });
+      return { text: `Attached passive note to Codex thread ${resolved.thread.id}. I did not start or steer Codex.` };
     } finally {
       store.close();
     }
@@ -915,7 +1103,7 @@ export async function handleBrainCommand(ctx: any, config: any, api: any = {}): 
       store.close();
     }
   }
-  if (subcommand === 'reply' || subcommand === 'send' || subcommand === 'steer') {
+  if (subcommand === 'reply' || subcommand === 'send' || subcommand === 'steer' || subcommand === 'act') {
     return handleCodexWriteCommand({ subcommand, rest, ctx, config, bridgeConfig, status, agentId, api });
   }
   if (subcommand === 'goal') {
@@ -1077,29 +1265,37 @@ async function handleCodexWriteCommand(input: {
     }
     let target = '--bound';
     let message = '';
+    let withNotes = false;
+    const rest = input.rest.filter((item) => {
+      if (item === '--with-notes') {
+        withNotes = true;
+        return false;
+      }
+      return true;
+    });
     if (input.subcommand === 'send') {
-      target = safeString(input.rest[0]);
-      message = input.rest.slice(1).join(' ').trim();
+      target = safeString(rest[0]);
+      message = rest.slice(1).join(' ').trim();
       if (!target || !message) return { text: 'Usage: /brain codex send <thread-id|--bound> <message>' };
       if (target === '--latest' && !input.bridgeConfig.allowLatestTargetForWrites) {
         return { text: '--latest is not allowed for Codex writes. Use /brain codex bind <thread-id> or an explicit thread id.' };
       }
     } else if (input.subcommand === 'steer') {
-      const first = safeString(input.rest[0]);
+      const first = safeString(rest[0]);
       const knownThreadId = input.status.latestThreads.some((thread) => thread.id === first);
       if (first === '--bound' || knownThreadId || looksLikeCodexThreadId(first)) {
         target = first;
-        message = input.rest.slice(1).join(' ').trim();
+        message = rest.slice(1).join(' ').trim();
       } else {
-        message = input.rest.join(' ').trim();
+        message = rest.join(' ').trim();
       }
       if (!message) return { text: 'Usage: /brain codex steer [thread-id|--bound] <message>' };
       if (target === '--latest') {
         return { text: '--latest is not allowed for Codex steering. Use /brain codex bind <thread-id> or an explicit thread id.' };
       }
     } else {
-      message = input.rest.join(' ').trim();
-      if (!message) return { text: 'Usage: /brain codex reply <message>' };
+      message = rest.join(' ').trim();
+      if (!message) return { text: input.subcommand === 'act' ? 'Usage: /brain codex act [--with-notes] <message>' : 'Usage: /brain codex reply <message>' };
     }
     const resolved = resolveThreadTarget({ status: input.status, store, agentId: input.agentId, ctx: input.ctx, target, mode: 'write' });
     if (!resolved.thread) return { text: resolved.reason };
@@ -1110,7 +1306,21 @@ async function handleCodexWriteCommand(input: {
     if (riskClass === 'high' && !input.bridgeConfig.highRiskTelegramWrites) {
       return { text: 'Codex write rejected: high-risk Telegram writes are disabled. Use Codex UI at the computer for publish/deploy/delete/secrets/full-access requests.' };
     }
-    const idempotencyKey = sha256(`${input.agentId}:${contextChatKey(input.ctx)}:${input.subcommand}:${resolved.thread.id}:${message}`);
+    if (!input.status.capabilities.canStartTurn && !input.api.codexAppServerWriter) {
+      return {
+        text: [
+          'Codex writes are not ready.',
+          `App-server: ${input.status.capabilities.appServerAvailable ? 'reachable' : 'not reachable'}`,
+          `Configured URL: ${input.bridgeConfig.appServerUrl || 'missing'}`,
+          'Reads may still work through SQLite fallback, but writes require the Codex app-server.',
+        ].join('\n'),
+      };
+    }
+    const notes = withNotes && input.subcommand !== 'steer'
+      ? store.listNotes(input.agentId, { threadId: resolved.thread.id, chatKey: contextChatKey(input.ctx), activeOnly: true })
+      : [];
+    const codexMessage = notes.length ? formatActionWithNotes(notes, message) : message;
+    const idempotencyKey = sha256(`${input.agentId}:${contextChatKey(input.ctx)}:${input.subcommand}:${resolved.thread.id}:${codexMessage}`);
     store.recordOutbound({
       agentId: input.agentId,
       sourceChannel: safeString(input.ctx.channel) || 'telegram',
@@ -1121,7 +1331,7 @@ async function handleCodexWriteCommand(input: {
       riskClass,
       confirmationState: 'not_required',
       status: 'validated',
-      redactedPreview: message,
+      redactedPreview: codexMessage,
       idempotencyKey,
     });
     const writer: CodexAppServerWriter = input.api.codexAppServerWriter || defaultCodexAppServerWriter(input.bridgeConfig);
@@ -1134,14 +1344,14 @@ async function handleCodexWriteCommand(input: {
         threadId: resolved.thread.id,
         cwd: resolved.thread.cwd,
         model: resolved.thread.model,
-        message,
+        message: codexMessage,
         timeoutMs: Math.max(input.bridgeConfig.appServerTimeoutMs, 10000),
       })
       : await writer.sendMessage({
         threadId: resolved.thread.id,
         cwd: resolved.thread.cwd,
         model: resolved.thread.model,
-        message,
+        message: codexMessage,
         timeoutMs: Math.max(input.bridgeConfig.appServerTimeoutMs, 10000),
       });
     const status = result.ok ? 'accepted' : result.possiblySent ? 'possibly_sent' : 'failed';
@@ -1157,10 +1367,13 @@ async function handleCodexWriteCommand(input: {
       appServerMethod,
       appServerTurnId: result.turnId,
       status,
-      redactedPreview: message,
+      redactedPreview: codexMessage,
       error: result.error,
       idempotencyKey,
     });
+    if (result.ok && notes.length) {
+      store.markNotesIncluded(input.agentId, notes.map((note) => note.id), idempotencyKey);
+    }
     store.recordEvent({
       agentId: input.agentId,
       eventType: 'outbound_write',
@@ -1170,14 +1383,18 @@ async function handleCodexWriteCommand(input: {
       decision: result.ok ? 'recorded' : 'rejected',
       notified: false,
       reason: result.ok ? (input.subcommand === 'steer' ? 'app_server_turn_steer_accepted' : 'app_server_turn_start_accepted') : (result.error || `${appServerMethod}_failed`),
-      redactedSummary: `Telegram ${input.subcommand === 'steer' ? 'steer' : 'message'} sent to Codex thread ${resolved.thread.id}: ${redactText(message, 240)}`,
+      redactedSummary: `Telegram ${input.subcommand === 'steer' ? 'steer' : 'action'} sent to Codex thread ${resolved.thread.id}: ${redactText(codexMessage, 240)}`,
       dedupeKey: `outbound:${idempotencyKey}:${status}`,
     });
     if (result.ok) {
       return {
         text: input.subcommand === 'steer'
           ? `Steered Codex thread ${resolved.thread.id}${result.activeTurnId ? ` (active turn ${result.activeTurnId})` : ''}${result.turnId ? `; resulting turn ${result.turnId}` : ''}.`
-          : `Sent to Codex thread ${resolved.thread.id}${result.turnId ? ` (turn ${result.turnId})` : ''}.`,
+          : [
+            `Sent to Codex thread ${resolved.thread.id}${result.turnId ? ` (turn ${result.turnId})` : ''} as an action.`,
+            'Codex may edit files, run tools, or request approvals under its normal sandbox rules.',
+            notes.length ? `Included ${notes.length} passive note(s).` : 'Use /brain codex note <message> for passive context that should not start Codex.',
+          ].join('\n'),
       };
     }
     if (result.possiblySent) return { text: `Codex app-server timed out after the write may have been accepted for ${resolved.thread.id}. Check /brain codex last before retrying.` };
@@ -1195,7 +1412,14 @@ function isTrustedWriteContext(ctx: any, config: CodexBridgeConfig): boolean {
   if (config.trustOpenClawAuth && ctx.isAuthorizedSender === true) return true;
   const trusted = config.trustedTelegramSenders;
   if (trusted.includes('*')) return true;
-  const candidates = [contextSenderKey(ctx), contextChatKey(ctx), safeString(ctx.from), safeString(ctx.to), safeString(ctx.accountId)].filter(Boolean);
+  const rawSender = safeString(ctx.senderId ?? ctx.sender_id ?? ctx.userId ?? ctx.user_id ?? ctx.accountId ?? ctx.from);
+  const candidates = [
+    contextSenderKey(ctx),
+    ...canonicalSenderKeyCandidates(rawSender),
+    contextChatKey(ctx),
+    ...contextWatchTargetCandidates(ctx),
+    safeString(ctx.accountId),
+  ].filter(Boolean);
   return trusted.some((item) => candidates.includes(item));
 }
 
@@ -1215,6 +1439,20 @@ function classifyWriteRisk(message: string): 'low' | 'medium' | 'high' {
   }
   if (/\b(edit|patch|fix|write|run|test|commit|push|merge|pr|pull request)\b/i.test(message)) return 'medium';
   return 'low';
+}
+
+function formatActionWithNotes(notes: CodexOperatorNote[], message: string): string {
+  const noteLines = notes
+    .slice()
+    .reverse()
+    .map((note) => `- ${note.body || note.redactedPreview}`);
+  return [
+    'Operator note context:',
+    ...noteLines,
+    '',
+    'Instruction:',
+    message,
+  ].join('\n');
 }
 
 export class CodexBridgeStore {
@@ -1267,6 +1505,7 @@ export class CodexBridgeStore {
   }
 
   listWatches(agentId: string, options: { activeOnly?: boolean } = {}): CodexBridgeWatch[] {
+    this.expireDueWatches(agentId);
     const rows = options.activeOnly
       ? this.db.prepare("SELECT * FROM codex_bridge_watches WHERE agent_id = ? AND status = 'active' ORDER BY created_at DESC").all(agentId) as any[]
       : this.db.prepare('SELECT * FROM codex_bridge_watches WHERE agent_id = ? ORDER BY created_at DESC').all(agentId) as any[];
@@ -1290,14 +1529,42 @@ export class CodexBridgeStore {
     return this.getWatch(id);
   }
 
-  pauseWatches(agentId: string, target: string): number {
+  pauseWatches(agentId: string, target: string, options: { notifyTargets?: string[] } = {}): number {
     const ts = new Date().toISOString();
-    const result = this.db.prepare(`
-      UPDATE codex_bridge_watches
-      SET status = 'paused', updated_at = ?
-      WHERE agent_id = ? AND status = 'active' AND (id = ? OR thread_id = ?)
-    `).run(ts, agentId, target, target) as any;
+    const notifyTargets = uniqueStrings(options.notifyTargets || []);
+    const targetText = safeString(target);
+    if (targetText === 'latest') {
+      const rows = notifyTargets.length
+        ? this.db.prepare(`SELECT id FROM codex_bridge_watches WHERE agent_id = ? AND status = 'active' AND notify_target IN (${placeholders(notifyTargets.length)}) ORDER BY created_at DESC LIMIT 1`).all(agentId, ...notifyTargets) as any[]
+        : this.db.prepare("SELECT id FROM codex_bridge_watches WHERE agent_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1").all(agentId) as any[];
+      const id = safeString(rows[0]?.id);
+      if (!id) return 0;
+      return Number((this.db.prepare("UPDATE codex_bridge_watches SET status = 'paused', updated_at = ? WHERE id = ? AND status = 'active'").run(ts, id) as any)?.changes || 0);
+    }
+    if (targetText === 'all') {
+      const result = notifyTargets.length
+        ? this.db.prepare(`UPDATE codex_bridge_watches SET status = 'paused', updated_at = ? WHERE agent_id = ? AND status = 'active' AND notify_target IN (${placeholders(notifyTargets.length)})`).run(ts, agentId, ...notifyTargets) as any
+        : this.db.prepare("UPDATE codex_bridge_watches SET status = 'paused', updated_at = ? WHERE agent_id = ? AND status = 'active'").run(ts, agentId) as any;
+      return Number(result?.changes || 0);
+    }
+    const result = notifyTargets.length
+      ? this.db.prepare(`
+        UPDATE codex_bridge_watches
+        SET status = 'paused', updated_at = ?
+        WHERE agent_id = ? AND status = 'active' AND notify_target IN (${placeholders(notifyTargets.length)}) AND (id = ? OR thread_id = ?)
+      `).run(ts, agentId, ...notifyTargets, targetText, targetText) as any
+      : this.db.prepare(`
+        UPDATE codex_bridge_watches
+        SET status = 'paused', updated_at = ?
+        WHERE agent_id = ? AND status = 'active' AND (id = ? OR thread_id = ?)
+      `).run(ts, agentId, targetText, targetText) as any;
     return Number(result?.changes || 0);
+  }
+
+  detachChat(agentId: string, chatKey: string, notifyTargets: string[]): { bindingRemoved: boolean; pausedWatches: number } {
+    const bindingRemoved = this.unbindConversation(agentId, chatKey);
+    const pausedWatches = this.pauseWatches(agentId, 'all', { notifyTargets });
+    return { bindingRemoved, pausedWatches };
   }
 
   recordEvent(input: Omit<CodexBridgeEvent, 'id' | 'createdAt'> & { id?: string; createdAt?: string }): CodexBridgeEvent {
@@ -1336,8 +1603,10 @@ export class CodexBridgeStore {
   bindConversation(input: { agentId: string; chatKey: string; senderKey: string; thread: CodexThreadSummary }): CodexConversationBinding {
     const id = randomUUID();
     const ts = new Date().toISOString();
-    const chatKeyHash = sha256(input.chatKey);
-    const senderKeyHash = sha256(input.senderKey);
+    const canonicalChat = canonicalChatKeyCandidates(input.chatKey).find((item) => item.startsWith('telegram:')) || input.chatKey;
+    const canonicalSender = canonicalSenderKeyCandidates(input.senderKey).find((item) => item.startsWith('telegram-user:')) || input.senderKey;
+    const chatKeyHash = sha256(canonicalChat);
+    const senderKeyHash = sha256(canonicalSender);
     this.db.prepare(`
       INSERT INTO codex_conversation_bindings (
         id, agent_id, chat_key_hash, sender_key_hash, thread_id, title, cwd, created_at, updated_at
@@ -1349,17 +1618,94 @@ export class CodexBridgeStore {
         cwd = excluded.cwd,
         updated_at = excluded.updated_at
     `).run(id, input.agentId, chatKeyHash, senderKeyHash, input.thread.id, input.thread.title, input.thread.cwd, ts, ts);
+    const legacyHashes = canonicalChatKeyCandidates(input.chatKey).map(sha256).filter((hash) => hash !== chatKeyHash);
+    if (legacyHashes.length) {
+      this.db.prepare(`DELETE FROM codex_conversation_bindings WHERE agent_id = ? AND chat_key_hash IN (${placeholders(legacyHashes.length)})`).run(input.agentId, ...legacyHashes);
+    }
     return this.getBinding(input.agentId, input.chatKey)!;
   }
 
   getBinding(agentId: string, chatKey: string): CodexConversationBinding | null {
-    const row = this.db.prepare('SELECT * FROM codex_conversation_bindings WHERE agent_id = ? AND chat_key_hash = ?').get(agentId, sha256(chatKey)) as any;
+    const hashes = canonicalChatKeyCandidates(chatKey).map(sha256);
+    const row = this.db.prepare(`SELECT * FROM codex_conversation_bindings WHERE agent_id = ? AND chat_key_hash IN (${placeholders(hashes.length)}) ORDER BY updated_at DESC LIMIT 1`).get(agentId, ...hashes) as any;
     return row ? rowToBinding(row) : null;
   }
 
   unbindConversation(agentId: string, chatKey: string): boolean {
-    const result = this.db.prepare('DELETE FROM codex_conversation_bindings WHERE agent_id = ? AND chat_key_hash = ?').run(agentId, sha256(chatKey)) as any;
+    const hashes = canonicalChatKeyCandidates(chatKey).map(sha256);
+    const result = this.db.prepare(`DELETE FROM codex_conversation_bindings WHERE agent_id = ? AND chat_key_hash IN (${placeholders(hashes.length)})`).run(agentId, ...hashes) as any;
     return Number(result?.changes || 0) > 0;
+  }
+
+  createNote(input: {
+    agentId: string;
+    threadId: string;
+    sourceChannel: string;
+    sourceChatKey: string;
+    sourceSenderKey?: string;
+    body: string;
+    expiresAt?: string;
+  }): CodexOperatorNote {
+    const id = randomUUID();
+    const ts = new Date().toISOString();
+    const canonicalChat = canonicalChatKeyCandidates(input.sourceChatKey).find((item) => item.startsWith('telegram:')) || input.sourceChatKey;
+    const canonicalSender = input.sourceSenderKey
+      ? canonicalSenderKeyCandidates(input.sourceSenderKey).find((item) => item.startsWith('telegram-user:')) || input.sourceSenderKey
+      : '';
+    this.db.prepare(`
+      INSERT INTO codex_operator_notes (
+        id, agent_id, thread_id, source_channel, source_chat_key, source_sender_key,
+        body, redacted_preview, status, expires_at, included_outbound_id, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, NULL, ?, ?)
+    `).run(
+      id,
+      input.agentId,
+      input.threadId,
+      input.sourceChannel,
+      sha256(canonicalChat),
+      canonicalSender ? sha256(canonicalSender) : null,
+      input.body,
+      redactText(input.body, 500),
+      input.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      ts,
+      ts,
+    );
+    return this.getNote(id)!;
+  }
+
+  getNote(id: string): CodexOperatorNote | null {
+    const row = this.db.prepare('SELECT * FROM codex_operator_notes WHERE id = ?').get(id) as any;
+    return row ? rowToNote(row) : null;
+  }
+
+  listNotes(agentId: string, options: { threadId?: string; chatKey?: string; activeOnly?: boolean } = {}): CodexOperatorNote[] {
+    this.expireDueNotes(agentId);
+    const clauses = ['agent_id = ?'];
+    const args: any[] = [agentId];
+    if (options.threadId) {
+      clauses.push('thread_id = ?');
+      args.push(options.threadId);
+    }
+    if (options.chatKey) {
+      const hashes = canonicalChatKeyCandidates(options.chatKey).map(sha256);
+      clauses.push(`source_chat_key IN (${placeholders(hashes.length)})`);
+      args.push(...hashes);
+    }
+    if (options.activeOnly !== false) clauses.push("status = 'active'");
+    const rows = this.db.prepare(`SELECT * FROM codex_operator_notes WHERE ${clauses.join(' AND ')} ORDER BY created_at DESC LIMIT 20`).all(...args) as any[];
+    return rows.map(rowToNote);
+  }
+
+  markNotesIncluded(agentId: string, noteIds: string[], outboundId: string): number {
+    const ids = uniqueStrings(noteIds);
+    if (!ids.length) return 0;
+    const ts = new Date().toISOString();
+    const result = this.db.prepare(`
+      UPDATE codex_operator_notes
+      SET status = 'included_in_action', included_outbound_id = ?, updated_at = ?
+      WHERE agent_id = ? AND id IN (${placeholders(ids.length)}) AND status = 'active'
+    `).run(outboundId, ts, agentId, ...ids) as any;
+    return Number(result?.changes || 0);
   }
 
   getMessageCursor(watchId: string, threadId: string, rolloutPath: string): any | null {
@@ -1605,7 +1951,41 @@ export class CodexBridgeStore {
         updated_at TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_codex_outbound_agent ON codex_outbound_messages(agent_id, updated_at);
+
+      CREATE TABLE IF NOT EXISTS codex_operator_notes (
+        id TEXT PRIMARY KEY,
+        agent_id TEXT NOT NULL,
+        thread_id TEXT NOT NULL,
+        source_channel TEXT NOT NULL,
+        source_chat_key TEXT NOT NULL,
+        source_sender_key TEXT,
+        body TEXT,
+        redacted_preview TEXT NOT NULL,
+        status TEXT NOT NULL,
+        expires_at TEXT,
+        included_outbound_id TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_codex_operator_notes_thread ON codex_operator_notes(agent_id, thread_id, status, created_at);
+      CREATE INDEX IF NOT EXISTS idx_codex_operator_notes_chat ON codex_operator_notes(agent_id, source_chat_key, status, created_at);
     `);
+  }
+
+  private expireDueWatches(agentId: string) {
+    this.db.prepare(`
+      UPDATE codex_bridge_watches
+      SET status = 'expired', updated_at = ?
+      WHERE agent_id = ? AND status = 'active' AND expires_at IS NOT NULL AND expires_at <= ?
+    `).run(new Date().toISOString(), agentId, new Date().toISOString());
+  }
+
+  private expireDueNotes(agentId: string) {
+    this.db.prepare(`
+      UPDATE codex_operator_notes
+      SET status = 'expired', updated_at = ?
+      WHERE agent_id = ? AND status = 'active' AND expires_at IS NOT NULL AND expires_at <= ?
+    `).run(new Date().toISOString(), agentId, new Date().toISOString());
   }
 }
 
@@ -1619,10 +1999,12 @@ function statusFromThreads(input: {
   errors: string[];
   appServerAvailable: boolean;
   sqliteFallbackAvailable: boolean;
-  writeEnabled: boolean;
-  steerEnabled: boolean;
+  writeConfigured: boolean;
+  steerConfigured: boolean;
 }): CodexBridgeStatus {
   const activeGoals = input.threads.filter((thread) => thread.goal?.status === 'active');
+  const writeReady = input.writeConfigured && input.appServerAvailable;
+  const steerReady = input.steerConfigured && input.appServerAvailable;
   return {
     ok: true,
     bridge: 'openclawbrain-codex-continuity',
@@ -1635,9 +2017,9 @@ function statusFromThreads(input: {
       canReadGoals: true,
       canReadMessages: input.threads.some((thread) => Boolean(thread.rolloutPath)),
       canSubscribe: input.source === 'app_server',
-      canStartTurn: input.writeEnabled,
-      canSteerTurn: input.steerEnabled,
-      canWrite: input.writeEnabled,
+      canStartTurn: writeReady,
+      canSteerTurn: steerReady,
+      canWrite: writeReady,
       appServerAvailable: input.appServerAvailable,
       sqliteFallbackAvailable: input.sqliteFallbackAvailable,
     },
@@ -1646,8 +2028,12 @@ function statusFromThreads(input: {
     activeGoals,
     errors: input.errors,
     writeControl: {
-      enabled: input.writeEnabled,
-      reason: input.writeEnabled ? (input.steerEnabled ? 'write_and_steer_enabled_for_trusted_contexts' : 'write_enabled_steer_disabled') : 'disabled_by_default',
+      enabled: writeReady,
+      reason: writeReady
+        ? (steerReady ? 'write_and_steer_ready_for_trusted_contexts' : 'write_ready_steer_disabled')
+        : input.writeConfigured
+          ? 'app_server_not_ready'
+          : 'disabled_by_default',
     },
   };
 }
@@ -1813,6 +2199,28 @@ function chunkTelegramText(text: string, maxChars = 3500): string[] {
     chunks.push(clean.slice(offset, offset + maxChars));
   }
   return chunks.map((chunk, index) => `[${index + 1}/${chunks.length}]\n${chunk}`);
+}
+
+async function checkCodexAppServerHealth(config: CodexBridgeConfig): Promise<{ ok: boolean; reason: string }> {
+  if (!config.appServerUrl) return { ok: false, reason: 'app_server_url_missing' };
+  try {
+    const client = await createJsonRpcWebSocketClient({
+      url: config.appServerUrl,
+      timeoutMs: Math.min(config.appServerTimeoutMs, 1500),
+    });
+    try {
+      await client.request('initialize', {
+        clientInfo: { name: 'openclawbrain-codex-status-check', version: '1' },
+        capabilities: { experimentalApi: true },
+      });
+      client.notify('initialized');
+      return { ok: true, reason: 'reachable' };
+    } finally {
+      client.close();
+    }
+  } catch (error: any) {
+    return { ok: false, reason: clipText(String(error?.message || error), 160) };
+  }
 }
 
 function defaultCodexAppServerWriter(config: CodexBridgeConfig): CodexAppServerWriter {
@@ -2003,12 +2411,37 @@ export function formatCodexStatus(status: CodexBridgeStatus): string {
   const top = status.activeGoals[0] ?? status.latestThreads[0];
   return [
     `Codex continuity: ${status.source}${status.stale ? ' (read-only/stale-labeled)' : ''}`,
+    `Reads: ${status.capabilities.canReadThreads ? 'ready' : 'not ready'}${status.capabilities.sqliteFallbackAvailable && status.source === 'sqlite_fallback' ? ' via SQLite fallback' : ''}`,
+    `App-server: ${status.capabilities.appServerAvailable ? 'reachable' : 'not reachable'}`,
     `Threads visible: ${status.counts.threads}; active goals: ${status.counts.activeGoals}; watches: ${status.counts.watched}`,
     top ? `Latest: ${top.title} [${top.id}]` : 'Latest: none',
     top?.goal ? `Goal: ${top.goal.status} - ${top.goal.objective}` : undefined,
-    `Writes: ${status.capabilities.canStartTurn ? 'on for trusted contexts' : 'disabled'}`,
-    `Steer: ${status.capabilities.canSteerTurn ? 'on for active turns' : 'disabled'}`,
+    `Writes: ${status.capabilities.canStartTurn ? 'ready for trusted contexts' : status.writeControl.reason}`,
+    `Steer: ${status.capabilities.canSteerTurn ? 'ready for active turns' : 'not ready'}`,
+    status.errors.length ? `Diagnostics: ${status.errors.slice(0, 3).join('; ')}` : undefined,
   ].filter(Boolean).join('\n');
+}
+
+export function formatCodexDoctor(status: CodexBridgeStatus, config: CodexBridgeConfig): string {
+  return [
+    'Codex continuity doctor:',
+    `- Plugin bridge: ${config.enabled ? 'enabled' : 'disabled'}`,
+    `- Reads: ${status.capabilities.canReadThreads ? `ready via ${status.source}` : 'not ready'}`,
+    `- SQLite fallback: ${status.capabilities.sqliteFallbackAvailable ? 'available' : 'not available'}`,
+    `- App-server URL: ${config.appServerUrl || 'missing'}`,
+    `- App-server: ${status.capabilities.appServerAvailable ? 'reachable' : 'not reachable'}`,
+    `- Writes configured: ${config.enableTelegramWrites ? 'yes' : 'no'}`,
+    `- Writes ready: ${status.capabilities.canStartTurn ? 'yes' : 'no'}`,
+    `- Steering configured: ${config.enableTelegramSteer ? 'yes' : 'no'}`,
+    `- Steering ready: ${status.capabilities.canSteerTurn ? 'yes' : 'no'}`,
+    `- Visible threads: ${status.counts.threads}`,
+    `- Active watches: ${status.counts.watched}`,
+    status.errors.length ? `- Errors: ${status.errors.join('; ')}` : '- Errors: none',
+    '',
+    status.capabilities.canStartTurn
+      ? 'Write path is ready. Use /brain codex act for a real Codex turn, /brain codex note for passive context, and /brain codex steer for active work.'
+      : 'If writes should be enabled, make sure Codex Desktop app-server is listening on the configured localhost WebSocket and restart the gateway.',
+  ].join('\n');
 }
 
 export function formatCodexThreads(status: CodexBridgeStatus, filter = ''): string {
@@ -2046,6 +2479,9 @@ export function formatHandoffBrief(brief: CodexHandoffBrief): string {
     'Evidence:',
     ...brief.evidence.map((item) => `- ${item}`),
     '',
+    'Operator notes:',
+    ...((brief.operatorNotes && brief.operatorNotes.length) ? brief.operatorNotes : ['None active.']).map((item) => `- ${item}`),
+    '',
     'Next actions:',
     ...brief.nextActions.map((item) => `- ${item}`),
   ].join('\n');
@@ -2055,17 +2491,22 @@ function brainHelpText() {
   return [
     'OpenClawBrain commands:',
     '- /brain codex status',
+    '- /brain codex doctor',
     '- /brain codex threads [filter]',
     '- /brain codex messages [thread-id|--latest|--bound] [--limit N] [--role assistant|user|all]',
     '- /brain codex last [thread-id|--latest|--bound]',
     '- /brain codex bind <thread-id>',
     '- /brain codex binding',
     '- /brain codex unbind',
+    '- /brain codex detach',
     '- /brain codex tail [thread-id|--latest|--bound]',
     '- /brain codex watch [thread-id|--latest|--bound] [--messages]',
     '- /brain codex watches',
-    '- /brain codex unwatch <watch-id|thread-id>',
-    '- /brain codex reply <message>',
+    '- /brain codex unwatch <watch-id|thread-id|latest|all>',
+    '- /brain codex note <message>',
+    '- /brain codex notes',
+    '- /brain codex act [--with-notes] <message>',
+    '- /brain codex reply <message> (compatibility alias for action)',
     '- /brain codex send <thread-id|--bound> <message>',
     '- /brain codex steer [thread-id|--bound] <message>',
     '- /brain codex handoff [thread-id]',
@@ -2128,6 +2569,24 @@ function rowToBinding(row: any): CodexConversationBinding {
     threadId: safeString(row.thread_id),
     title: safeString(row.title) || undefined,
     cwd: safeString(row.cwd) || undefined,
+    createdAt: safeString(row.created_at),
+    updatedAt: safeString(row.updated_at),
+  };
+}
+
+function rowToNote(row: any): CodexOperatorNote {
+  return {
+    id: safeString(row.id),
+    agentId: safeString(row.agent_id),
+    threadId: safeString(row.thread_id),
+    sourceChannel: safeString(row.source_channel),
+    sourceChatKey: safeString(row.source_chat_key),
+    sourceSenderKey: safeString(row.source_sender_key) || undefined,
+    body: safeString(row.body) || undefined,
+    redactedPreview: safeString(row.redacted_preview),
+    status: safeString(row.status) as CodexOperatorNote['status'],
+    expiresAt: safeString(row.expires_at) || undefined,
+    includedOutboundId: safeString(row.included_outbound_id) || undefined,
     createdAt: safeString(row.created_at),
     updatedAt: safeString(row.updated_at),
   };
@@ -2198,11 +2657,17 @@ function isEventClass(value: string): value is CodexBridgeEventClass {
     'watch_created',
     'binding_created',
     'binding_removed',
+    'note_attached',
+    'chat_detached',
     'outbound_write',
     'delivery_failed',
     'handoff',
     'quiet',
   ].includes(value);
+}
+
+function placeholders(count: number) {
+  return Array.from({ length: Math.max(1, count) }, () => '?').join(', ');
 }
 
 function nonEmptyString(value: unknown) {

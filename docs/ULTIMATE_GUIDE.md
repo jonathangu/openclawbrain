@@ -8,7 +8,7 @@ The short version is:
 
 > An agent should not remember everything all the time. It should learn when memory actually matters.
 
-The current release, `openclawbrain@0.2.32`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, Memory Authority resolution between retrieval and injection, Codex continuity owned entirely by OpenClawBrain rather than OpenClaw core, and now Memory Graph Maintenance for long-term graph health.
+The current release, `openclawbrain@0.2.33`, is the result of several failed and partially-successful attempts to build that idea. The final architecture is not what the first plan expected. The project started with a strong belief in graph memory and simulation proof. It went through Python mechanism experiments, an eval-heavy V5 system, a native OpenClaw plugin, a flat-file v0.1 memory injector, a v0.2 SQLite graph, an aggressive capture loop, a route teacher, route-policy-v2, route-policy-v3 as the production route brain, Memory Authority resolution between retrieval and injection, Codex continuity owned entirely by OpenClawBrain rather than OpenClaw core, and now Memory Graph Maintenance for long-term graph health.
 
 The most important lesson is not "use a graph." It is:
 
@@ -908,14 +908,16 @@ The product lesson is simple:
 
 > Generic memory retrieves old context. OpenClawBrain governs memory as evidence: provenance, scope, validity, correction, forgetting, and proof.
 
-## The 0.2.32 Upgrade: Codex Thread Bridge
+## The 0.2.33 Upgrade: Codex Thread Bridge
 
-The first Codex continuity bridge answered "what is Codex doing?" The 0.2.32 bridge answers the mobile operator questions that actually matter:
+The first Codex continuity bridge answered "what is Codex doing?" The 0.2.33 bridge answers the mobile operator questions that actually matter:
 
 ```text
 What did Codex just say in that UI thread?
-Send this exact message into that Codex UI thread.
+Attach this passive note without starting Codex.
+Send this explicit action into that Codex UI thread.
 Steer the current active turn when Codex is already working.
+Detach Telegram when the thread gets noisy.
 ```
 
 The bridge now reads `threads.rollout_path` from local Codex SQLite, parses rollout JSONL for final user/assistant messages, and exposes direct-copy commands:
@@ -924,24 +926,28 @@ The bridge now reads `threads.rollout_path` from local Codex SQLite, parses roll
 - `/brain codex last`
 - `/brain codex tail`
 - `/brain codex watch --messages`
+- `/brain codex doctor`
 
-It also adds exact-thread binding and trusted local replies:
+It also adds exact-thread binding, passive notes, trusted local actions, active-turn steering, and cleanup:
 
 - `/brain codex bind <thread-id>`
 - `/brain codex binding`
 - `/brain codex unbind`
+- `/brain codex detach`
+- `/brain codex note <message>`
+- `/brain codex act [--with-notes] <message>`
 - `/brain codex reply <message>`
 - `/brain codex send <thread-id|--bound> <message>`
 - `/brain codex steer [thread-id|--bound] <message>`
 
-Reads may use latest or bound targets. Writes and steering must be exact or bound. The bridge refuses `--latest` writes, refuses high-risk Telegram wording by default, writes only through Codex app-server `thread/resume` plus `turn/start`, steers active turns through `turn/steer`, and never writes Codex SQLite or rollout JSONL.
+Reads may use latest or bound targets. Notes are passive and remain OpenClawBrain-owned until explicitly included in an action. Actions, replies, sends, and steering must be exact or bound. The bridge refuses `--latest` writes, refuses high-risk Telegram wording by default, writes only through Codex app-server `thread/resume` plus `turn/start`, steers active turns through `turn/steer`, detaches bindings/watches with one command, and never writes Codex SQLite or rollout JSONL.
 
 ## The Practical Operator Model
 
 Install or upgrade:
 
 ```bash
-openclaw plugins install clawhub:openclawbrain@0.2.32 --force
+openclaw plugins install clawhub:openclawbrain@0.2.33 --force
 openclaw plugins enable openclawbrain
 openclaw gateway restart
 ```
@@ -987,10 +993,10 @@ You want to see:
 
 ## Current Public Truth
 
-As of `0.2.32`:
+As of `0.2.33`:
 
-- The latest package is `openclawbrain@0.2.32`.
-- The source tag is `v0.2.32`.
+- The latest package is `openclawbrain@0.2.33`.
+- The source tag is `v0.2.33`.
 - The production route brain is route-policy-v3.
 - Memory Authority now separates relevance from authority before injection.
 - Memory Graph Maintenance keeps the graph healthier through dry-run proposals, canonical lineage, edge observations, tombstone recapture checks, and proofed deterministic repairs.

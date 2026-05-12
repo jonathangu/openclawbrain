@@ -1,5 +1,5 @@
 export type CodexBridgeSource = 'app_server' | 'sqlite_fallback' | 'none' | 'mock';
-export type CodexBridgeEventClass = 'completion' | 'failure' | 'blocker' | 'approval_required' | 'auth_failure' | 'assistant_message' | 'user_message' | 'turn_started' | 'turn_completed' | 'status_snapshot' | 'watch_created' | 'binding_created' | 'binding_removed' | 'outbound_write' | 'delivery_failed' | 'handoff' | 'quiet';
+export type CodexBridgeEventClass = 'completion' | 'failure' | 'blocker' | 'approval_required' | 'auth_failure' | 'assistant_message' | 'user_message' | 'turn_started' | 'turn_completed' | 'status_snapshot' | 'watch_created' | 'binding_created' | 'binding_removed' | 'note_attached' | 'chat_detached' | 'outbound_write' | 'delivery_failed' | 'handoff' | 'quiet';
 export interface CodexBridgeConfig {
     enabled: boolean;
     statePaths: string[];
@@ -91,6 +91,7 @@ export interface CodexHandoffBrief {
     observedFacts: string[];
     codexReportedClaims: string[];
     evidence: string[];
+    operatorNotes?: string[];
     interpretation: string[];
     nextActions: string[];
     stale: boolean;
@@ -197,6 +198,21 @@ export interface CodexConversationBinding {
     createdAt: string;
     updatedAt: string;
 }
+export interface CodexOperatorNote {
+    id: string;
+    agentId: string;
+    threadId: string;
+    sourceChannel: string;
+    sourceChatKey: string;
+    sourceSenderKey?: string;
+    body?: string;
+    redactedPreview: string;
+    status: 'active' | 'included_in_action' | 'dismissed' | 'expired';
+    expiresAt?: string;
+    includedOutboundId?: string;
+    createdAt: string;
+    updatedAt: string;
+}
 export declare const DEFAULT_CODEX_BRIDGE_CONFIG: CodexBridgeConfig;
 export declare function normalizeCodexBridgeConfig(source?: any): CodexBridgeConfig;
 export declare function buildCodexBridgeStatus(config: any, agentId?: string, deps?: CodexBridgeDeps): Promise<CodexBridgeStatus>;
@@ -257,7 +273,13 @@ export declare class CodexBridgeStore {
         lastEventAt?: string;
         status?: CodexBridgeWatch['status'];
     }): CodexBridgeWatch | null;
-    pauseWatches(agentId: string, target: string): number;
+    pauseWatches(agentId: string, target: string, options?: {
+        notifyTargets?: string[];
+    }): number;
+    detachChat(agentId: string, chatKey: string, notifyTargets: string[]): {
+        bindingRemoved: boolean;
+        pausedWatches: number;
+    };
     recordEvent(input: Omit<CodexBridgeEvent, 'id' | 'createdAt'> & {
         id?: string;
         createdAt?: string;
@@ -271,6 +293,22 @@ export declare class CodexBridgeStore {
     }): CodexConversationBinding;
     getBinding(agentId: string, chatKey: string): CodexConversationBinding | null;
     unbindConversation(agentId: string, chatKey: string): boolean;
+    createNote(input: {
+        agentId: string;
+        threadId: string;
+        sourceChannel: string;
+        sourceChatKey: string;
+        sourceSenderKey?: string;
+        body: string;
+        expiresAt?: string;
+    }): CodexOperatorNote;
+    getNote(id: string): CodexOperatorNote | null;
+    listNotes(agentId: string, options?: {
+        threadId?: string;
+        chatKey?: string;
+        activeOnly?: boolean;
+    }): CodexOperatorNote[];
+    markNotesIncluded(agentId: string, noteIds: string[], outboundId: string): number;
     getMessageCursor(watchId: string, threadId: string, rolloutPath: string): any | null;
     upsertMessageCursor(input: {
         watchId: string;
@@ -310,7 +348,10 @@ export declare class CodexBridgeStore {
         idempotencyKey: string;
     }): void;
     private migrate;
+    private expireDueWatches;
+    private expireDueNotes;
 }
 export declare function formatCodexStatus(status: CodexBridgeStatus): string;
+export declare function formatCodexDoctor(status: CodexBridgeStatus, config: CodexBridgeConfig): string;
 export declare function formatCodexThreads(status: CodexBridgeStatus, filter?: string): string;
 export declare function formatHandoffBrief(brief: CodexHandoffBrief): string;

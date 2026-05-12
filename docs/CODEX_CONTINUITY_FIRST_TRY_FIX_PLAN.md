@@ -1,9 +1,10 @@
 # OpenClawBrain Codex Continuity First-Try Fix Plan
 
-Status: fix plan after first real Telegram-to-Codex operator trial  
+Status: implemented in `openclawbrain@0.2.33` after the first real Telegram-to-Codex operator trial  
 Date: 2026-05-12  
 Owner: OpenClawBrain  
-Related release: `openclawbrain@0.2.32`
+Trial release: `openclawbrain@0.2.32`  
+Fix release: `openclawbrain@0.2.33`
 
 ## Executive Summary
 
